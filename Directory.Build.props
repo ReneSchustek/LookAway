@@ -1,0 +1,33 @@
+<Project>
+  <!--
+    Zentrale Build-Konfiguration für alle Projekte in dieser Solution.
+    Einzelne .csproj-Dateien k��nnen diese Werte überschreiben.
+  -->
+  <PropertyGroup>
+    <!-- Nullability: Null-Reference-Warnungen als Fehler -->
+    <Nullable>enable</Nullable>
+    <!-- Moderne using-Direktiven automatisch -->
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Alle Warnungen sind Fehler -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <!-- Code-Style in Build erzwingen -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- XML-Dokumentation generieren (für IntelliSense) -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <!-- Test-Projekte: xUnit-Konventionen und keine XML-Doku erforderlich -->
+  <PropertyGroup Condition="$(MSBuildProjectName.Contains('.Tests'))">
+    <NoWarn>CA1707</NoWarn>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <Optimize>true</Optimize>
+    <DebugType>none</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+</Project>

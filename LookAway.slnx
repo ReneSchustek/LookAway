@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LookAway.App/LookAway.App.csproj">
+      <Platform Project="x86" />
+    </Project>
+    <Project Path="src/LookAway.Application/LookAway.Application.csproj" />
+    <Project Path="src/LookAway.Core/LookAway.Core.csproj" />
+    <Project Path="src/LookAway.Data/LookAway.Data.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LookAway.Tests.Integration/LookAway.Tests.Integration.csproj" />
+    <Project Path="tests/LookAway.Tests.Unit/LookAway.Tests.Unit.csproj" />
+  </Folder>
+</Solution>

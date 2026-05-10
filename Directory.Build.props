@@ -12,17 +12,19 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest</AnalysisLevel>
+    <!-- Alle Analyzer-Regeln aktiv (Security, Performance, Reliability) -->
+    <AnalysisMode>All</AnalysisMode>
     <!-- Code-Style in Build erzwingen -->
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <!-- XML-Dokumentation generieren (für IntelliSense) -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <!-- Test-Projekte: xUnit-Konventionen und keine XML-Doku erforderlich -->
-  <PropertyGroup Condition="$(MSBuildProjectName.Contains('.Tests'))">
+  <!-- Test-Projekte: xUnit-Konventionen und keine XML-Doku erforderlich.
+       Trifft sowohl auf '*.Tests' als auch auf '*.Tests.*' zu (z. B. .Tests.Unit). -->
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests')) or $(MSBuildProjectName.Contains('.Tests.'))">
     <NoWarn>CA1707</NoWarn>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">

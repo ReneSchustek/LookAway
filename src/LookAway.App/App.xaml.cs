@@ -9,12 +9,15 @@ using LookAway.Data.Logging;
 using LookAway.Data.Power;
 using LookAway.Data.Repositories;
 using LookAway.Data.Time;
+using LookAway.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 
 // Aliase aufloesen Namespace-Kollisionen mit Microsoft.UI.Xaml und System.
 using LogService = LookAway.Application.Services.LogService;
+using SingleInstanceLock = LookAway.Application.Services.SingleInstanceLock;
 using TimerService = LookAway.Application.Services.TimerService;
 using XamlUnhandledExceptionEventArgs = Microsoft.UI.Xaml.UnhandledExceptionEventArgs;
 using SystemUnhandledExceptionEventArgs = System.UnhandledExceptionEventArgs;
@@ -23,12 +26,17 @@ namespace LookAway;
 
 /// <summary>
 /// Anwendungs-Bootstrap. Konfiguriert das DI-Container, das Logging
-/// (Datei-Sink mit Rotation) und die globalen Crash-Handler.
+/// (Datei-Sink mit Rotation), die globalen Crash-Handler und das
+/// Tray-Icon. Stellt sicher, dass nur eine Instanz pro Benutzer laeuft.
 /// </summary>
 [SuppressMessage(
     "Design",
     "CA1515:Consider making public types internal",
     Justification = "WinUI-3-XAML-Compiler erfordert eine 'public partial'-App-Klasse fuer den generierten Activator.")]
+[SuppressMessage(
+    "Design",
+    "CA1001:Types that own disposable fields should be disposable",
+    Justification = "Die App-Klasse implementiert keinen IDisposable-Vertrag. Disposing der gehaltenen Felder erfolgt im RequestExit-Pfad (Tray) und durch den ServiceProvider beim Process-Shutdown.")]
 public partial class App : global::Microsoft.UI.Xaml.Application
 {
     private const string AppFolderName = "LookAway";
@@ -37,6 +45,8 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     private const string CrashSourceAppDomain = "AppDomain.UnhandledException";
     private const string CrashSourceTaskScheduler = "TaskScheduler.UnobservedTaskException";
     private const string CrashSourceWinUi = "Application.UnhandledException";
+    private const string ShutdownReasonUserExit = "UserRequested";
+    private const string ShutdownReasonSecondInstance = "SecondInstanceDetected";
 
     /// <summary>
     /// Globaler Service-Provider, ueber den alle Schichten ihre Abhaengigkeiten beziehen.
@@ -46,6 +56,8 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     private Window? _window;
     private LogService? _logService;
     private ILogger<App>? _logger;
+    private SingleInstanceLock? _instanceLock;
+    private TrayIconService? _trayIcon;
 
     /// <summary>
     /// Initialisiert die Anwendung, das DI-Container und die globalen Handler.
@@ -60,7 +72,6 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         RegisterGlobalCrashHandlers();
         UnhandledException += OnApplicationUnhandledException;
 
-        // Power-Mode-Watcher fuer den TimerService starten (Sleep/Resume).
         Services.GetRequiredService<IPowerModeWatcher>().Start();
 
         bool lastRunCrashed = _logService.LogStart(GetVersion(), Language.German);
@@ -71,13 +82,69 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     }
 
     /// <summary>
-    /// Wird beim Start der Anwendung aufgerufen und oeffnet das Hauptfenster.
+    /// Wird beim Start aufgerufen. Pruefen Single-Instance, sonst Zeit-
+    /// instanz signalisieren und beenden. Bei alleiniger Instanz: Tray-Icon
+    /// einblenden und das Hauptfenster verborgen halten.
     /// </summary>
     /// <param name="args">Vom System gelieferte Startparameter.</param>
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        _instanceLock = new SingleInstanceLock(Environment.UserName);
+        if (!_instanceLock.TryAcquire())
+        {
+            AppLog.SecondInstanceDetected(_logger!);
+            _ = _instanceLock.SignalExistingInstance();
+            _logService?.LogShutdown(ShutdownReasonSecondInstance);
+            Exit();
+            return;
+        }
+
+        _instanceLock.ActivationRequested += OnActivationRequested;
+
         _window = new MainWindow();
-        _window.Activate();
+        // Hauptfenster bleibt verborgen — die App lebt im Tray.
+        _window.AppWindow.Hide();
+
+        _trayIcon = new TrayIconService(
+            Services.GetRequiredService<ITimerService>(),
+            _window.DispatcherQueue,
+            Services.GetRequiredService<ILogger<TrayIconService>>(),
+            ShowMainWindow,
+            RequestExit);
+
+        _trayIcon.Show();
+        AppLog.TrayReady(_logger!);
+    }
+
+    private bool ShowMainWindow()
+    {
+        if (_window is null)
+        {
+            return false;
+        }
+
+        _ = _window.DispatcherQueue.TryEnqueue(() =>
+        {
+            _window.AppWindow.Show();
+            _window.Activate();
+        });
+        return true;
+    }
+
+    private void RequestExit()
+    {
+        _logService?.LogShutdown(ShutdownReasonUserExit);
+        _trayIcon?.Dispose();
+        _trayIcon = null;
+        _instanceLock?.Dispose();
+        _instanceLock = null;
+        Exit();
+    }
+
+    private void OnActivationRequested(object? sender, EventArgs e)
+    {
+        AppLog.ActivationFromSecondInstance(_logger!);
+        _ = ShowMainWindow();
     }
 
     private static ServiceProvider ConfigureServices()
@@ -90,8 +157,6 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
         LogLevel minimumLevel = IsDebugBuild() ? LogLevel.Debug : LogLevel.Information;
 
-        // Sink und Provider werden vom DI-Container erzeugt, damit deren
-        // IDisposable-Implementierung bei ServiceProvider.Dispose() greift.
         _ = services.AddSingleton(_ => new RollingFileSink(logDirectory));
         _ = services.AddSingleton(sp => new RollingFileLoggerProvider(
             sp.GetRequiredService<RollingFileSink>(),
@@ -115,9 +180,6 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _ = services.AddSingleton<IPowerModeWatcher, WindowsPowerModeWatcher>();
         _ = services.AddSingleton<TimerService>();
         _ = services.AddSingleton<ITimerService>(sp => sp.GetRequiredService<TimerService>());
-
-        // Weitere Services werden hier registriert
-        // (Tray, Localization, ...)
 
         return services.BuildServiceProvider();
     }
@@ -180,4 +242,22 @@ internal static partial class AppLog
         Level = LogLevel.Warning,
         Message = "Vorheriger Lauf wurde mit einem Crash beendet. Crash-Berichte liegen in logs/crashes/.")]
     public static partial void LastRunCrashed(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 1110,
+        Level = LogLevel.Warning,
+        Message = "Zweite App-Instanz erkannt — bestehende wird benachrichtigt, neue beendet sich.")]
+    public static partial void SecondInstanceDetected(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 1111,
+        Level = LogLevel.Information,
+        Message = "Aktivierung durch Zweit-Instanz angefordert.")]
+    public static partial void ActivationFromSecondInstance(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 1120,
+        Level = LogLevel.Information,
+        Message = "Tray-Icon ist bereit.")]
+    public static partial void TrayReady(ILogger logger);
 }

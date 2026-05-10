@@ -123,6 +123,23 @@ System-Sleep wird konsequent als Pause behandelt: `WindowsPowerModeWatcher` uebe
 
 Tests: deterministisch ueber `FakeClock` und `FakePowerModeWatcher` in `LookAway.Tests.Unit`. Der reale Hintergrund-Loop wird in Tests durch ein hohes Tickintervall stillgelegt; Phasenwechsel werden ueber `internal void Tick()` (sichtbar via `InternalsVisibleTo`) ausgeloest.
 
+## Tray-Integration und Single-Instance
+
+LookAway laeuft als Hintergrund-Anwendung mit Tray-Icon (kein Hauptfenster im Vordergrund, keine Taskleisten-Praesenz):
+
+- `H.NotifyIcon.WinUI` (`TaskbarIcon`-Control) liefert das Tray-Icon
+- `TrayIconService` (`internal` in App) bindet das Kontextmenue an den `ITimerService` und an Settings-/Exit-Callbacks
+- Menue-Eintraege: "Einstellungen…", "Pause jetzt starten", "Pausieren"/"Fortsetzen" (zustandsabhaengig), "Ueber LookAway", "Beenden"
+- Doppelklick auf das Tray-Icon oeffnet das (in BRIEF008 noch zu fuellende) Settings-Fenster
+- Hauptfenster ist beim Start verborgen (`AppWindow.Hide()`) und wird nur auf User-Aktion sichtbar
+
+Single-Instance-Sperre via `SingleInstanceLock` (Application):
+
+- Mutex im `Local\`-Namespace pro Windows-Benutzer (`Local\LookAway-{userName}`)
+- Zweite Instanz erkennt die laufende, signalisiert sie ueber einen `EventWaitHandle` (`Local\LookAway-Activate-{userName}`) und beendet sich
+- Die laufende Instanz horcht im Hintergrund auf das Event und blendet auf Wunsch das Hauptfenster ein
+- Beim sauberen Beenden wird der Mutex freigegeben, damit ein erneuter Start moeglich ist
+
 ## Review
 
 `tools/review.ps1` orchestriert lokale Qualitaets-Checks:

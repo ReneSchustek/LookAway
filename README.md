@@ -93,6 +93,36 @@ LookAway protokolliert in eine tagesbasierte Datei pro Windows-Benutzer:
 
 Die Implementierung ist Microsoft-Standard (kein Serilog/NLog): eigener `RollingFileLoggerProvider` (Data) mit `LoggerMessage`-Source-Generator-Aufrufern in den Konsumenten.
 
+## Timer-Engine
+
+Domain-Modell der Pausen-Erinnerung in `LookAway.Application/Services/TimerService.cs`. Reine Logik, keine UI- oder Plattform-Abhaengigkeit; konsumiert die Plattformdienste ueber Interfaces:
+
+- `IClock` (Core) → `SystemClock` (Data)
+- `IPowerModeWatcher` (Core) → `WindowsPowerModeWatcher` (Data, `Microsoft.Win32.SystemEvents`)
+- `BreakModelRegistry` (Core) liefert die Standardintervalle pro `BreakModel`
+
+| Modell | Arbeit | Pause |
+|---|---|---|
+| `ShortBreaks` | 60 min | 5 min |
+| `ClassicPomodoro` | 25 min | 5 min |
+| `ModifiedPomodoro` | 50 min | 10 min |
+| `Ultradian` | 90 min | 20 min |
+| `PhysicalCounter` | 40 min | 2 min |
+| `TaskBased` | manuell, max 120 min | 10 min |
+| `LegalCompliance` | 120 min | 15 min |
+
+State-Machine: `Idle` → `Working` ↔ `OnBreak` (mit `Paused` als Querzustand). Events werden ueber einen unbeschraenkten `Channel<TimerEvent>` als `IAsyncEnumerable` ausgegeben:
+
+- `BreakDueEvent` → Pause faellig (Working → OnBreak)
+- `BreakCompletedEvent` + `WorkResumedEvent` → Pause beendet (OnBreak → Working)
+- `WorkResumedEvent` → Resume nach User-Pause (Paused → Working)
+- `TimerPausedEvent(state, bySystem)` → Pause begonnen (User oder System-Suspend)
+- `TimerStoppedEvent` → Stop
+
+System-Sleep wird konsequent als Pause behandelt: `WindowsPowerModeWatcher` uebersetzt `PowerModeChanged` in plattformneutrale Events, der `TimerService` friert die Restzeit ein und nimmt sie nach dem Aufwachen wieder auf. Eine Benutzer-Pause hat Vorrang vor System-Resume.
+
+Tests: deterministisch ueber `FakeClock` und `FakePowerModeWatcher` in `LookAway.Tests.Unit`. Der reale Hintergrund-Loop wird in Tests durch ein hohes Tickintervall stillgelegt; Phasenwechsel werden ueber `internal void Tick()` (sichtbar via `InternalsVisibleTo`) ausgeloest.
+
 ## Review
 
 `tools/review.ps1` orchestriert lokale Qualitaets-Checks:

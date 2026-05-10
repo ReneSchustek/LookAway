@@ -6,13 +6,16 @@ using System.Threading.Tasks;
 using LookAway.Core.Enums;
 using LookAway.Core.Interfaces;
 using LookAway.Data.Logging;
+using LookAway.Data.Power;
 using LookAway.Data.Repositories;
+using LookAway.Data.Time;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 
 // Aliase aufloesen Namespace-Kollisionen mit Microsoft.UI.Xaml und System.
 using LogService = LookAway.Application.Services.LogService;
+using TimerService = LookAway.Application.Services.TimerService;
 using XamlUnhandledExceptionEventArgs = Microsoft.UI.Xaml.UnhandledExceptionEventArgs;
 using SystemUnhandledExceptionEventArgs = System.UnhandledExceptionEventArgs;
 
@@ -56,6 +59,9 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
         RegisterGlobalCrashHandlers();
         UnhandledException += OnApplicationUnhandledException;
+
+        // Power-Mode-Watcher fuer den TimerService starten (Sleep/Resume).
+        Services.GetRequiredService<IPowerModeWatcher>().Start();
 
         bool lastRunCrashed = _logService.LogStart(GetVersion(), Language.German);
         if (lastRunCrashed)
@@ -104,8 +110,14 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _ = services.AddSingleton<LogService>();
         _ = services.AddSingleton<ISettingsRepository, JsonSettingsRepository>();
 
+        // Timer-Engine
+        _ = services.AddSingleton<IClock, SystemClock>();
+        _ = services.AddSingleton<IPowerModeWatcher, WindowsPowerModeWatcher>();
+        _ = services.AddSingleton<TimerService>();
+        _ = services.AddSingleton<ITimerService>(sp => sp.GetRequiredService<TimerService>());
+
         // Weitere Services werden hier registriert
-        // (Timer, Tray, Localization, ...)
+        // (Tray, Localization, ...)
 
         return services.BuildServiceProvider();
     }

@@ -1,77 +1,89 @@
 # ============================================================
-# .gitignore – LookAway
+# .gitignore – PostManager
+# ============================================================
+# Hinweis: AI-Artefakte, STATUS.md, briefs/, DEPLOYMENT.md,
+# zugaenge.md usw. sind in ~/.gitignore_global eingetragen
+# und müssen hier NICHT wiederholt werden.
 # ============================================================
 
-# Build-Ausgaben
-[Bb]in/
-[Oo]bj/
-[Oo]ut/
-[Dd]ebug/
-[Rr]elease/
-x64/
-x86/
-[Ww][Ii][Nn]32/
-[Aa][Rr][Mm]/
-[Aa][Rr][Mm]64/
-build/
-bld/
-[Ll]og/
-[Ll]ogs/
-
-# Visual Studio
-.vs/
-*.user
-*.userosscache
-*.sln.docstates
-*.userprefs
-*.suo
-
-# Rider
-.idea/
-
-# VS Code
-.vscode/
-
-# NuGet
-*.nupkg
-*.snupkg
-**/[Pp]ackages/*
-!**/[Pp]ackages/build/
-*.nuget.props
-*.nuget.targets
-
-# WinUI 3 / MSIX
-AppPackages/
-BundleArtifacts/
-*.appx
-*.appxbundle
-*.msix
-*.msixbundle
-GeneratedArtifacts/
-ModelManifest.xml
-
-# Test-Ergebnisse
-[Tt]est[Rr]esult*/
-[Bb]uild[Ll]og.*
-*.coverage
-*.coveragexml
-coverage*.json
-coverage*.xml
-coverage*.info
-
-# Secrets
-*.pfx
-*.p12
-*.key
-appsettings.Development.json
-.env
-.env.local
-
-# Logs
-*.log
-
-# KI-Konfiguration und -Artefakte (niemals committen)
+# ============================================================
+# KI-Vorlagen (global CLAUDE.md-Regel: nie committen)
+# ============================================================
 .ai/
 CLAUDE.md
 brief-template.md
 .gitignore-template
+
+# ============================================================
+# SCRIPTE nie committen — Ausnahme: tools/ liefert Repo-Skripte
+# ============================================================
+*.ps1
+!tools/*.ps1
+
+# ============================================================
+# Hinweis: reviews/ gehört NICHT in .gitignore
+# ============================================================
+# reviews/ wird auf DevBox in Git versioniert (Entwicklungshistorie).
+# GitHub-Export-Script schließt reviews/ automatisch aus.
+# Niemals reviews/ hier eintragen.
+# ============================================================
+
+# ============================================================
+# Secrets / Umgebungsvariablen (NIEMALS in Git!)
+# ============================================================
+.env
+.env.local
+.env.*.local
+!.env.example
+secrets.json
+*.pfx
+*.p12
+*.key
+config/secrets/
+
+# ============================================================
+# Logs
+# ============================================================
+*.log
+/logs/
+
+# ============================================================
+# .NET / Visual Studio
+# ============================================================
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+packages/
+*.nupkg
+project.lock.json
+*.nuget.props
+*.nuget.targets
+
+# Build-Ergebnisse
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+ARM64/
+[Bb]uild/
+bld/
+
+# Publish
+publish/
+
+# NuGet
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Rider
+.idea/

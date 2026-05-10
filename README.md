@@ -72,6 +72,39 @@ Die Benutzerkonfiguration liegt pro Windows-Benutzer unter:
 
 Die Persistenz wird ueber `ISettingsRepository` (Core) abstrahiert; `JsonSettingsRepository` (Data) ist die Standardimplementierung und wird in `App.xaml.cs` als Singleton registriert.
 
+## Logging und Crash-Handling
+
+LookAway protokolliert in eine tagesbasierte Datei pro Windows-Benutzer:
+
+```
+%APPDATA%\LookAway\logs\lookaway-YYYY-MM-DD.log
+%APPDATA%\LookAway\logs\crashes\crash-YYYYMMDD-hhmmss-fff.json
+```
+
+- **Format pro Eintrag:** `[Timestamp ISO-8601 UTC] [Level] Category: Message` plus optional Stack-Trace
+- **Rotation:** taeglich, alte Dateien (>7 Tage) werden beim ersten Schreibvorgang des Tages aufgeraeumt
+- **Log-Level:** Debug-Build = `Debug`, Release = `Information`. Microsoft- und System-Kategorien standardmaessig auf `Warning`
+- **Sanitisierung:** der Windows-Benutzername und Pfade unter `%LOCALAPPDATA%`, `%APPDATA%`, `%USERPROFILE%` werden vor dem Schreiben durch generische Platzhalter ersetzt
+- **Robustheit:** IO-Fehler im Logger werden geschluckt — die Anwendung crasht nicht, wenn die Festplatte voll ist
+- **Globaler Crash-Hook:** unbehandelte Exceptions aus `AppDomain.UnhandledException`, `TaskScheduler.UnobservedTaskException` und WinUI's `Application.UnhandledException` werden als JSON-Crash-Bericht im `crashes/`-Ordner persistiert (mit Sanitisierung)
+- **Erkennung:** beim naechsten Start meldet `LogService` ueber `ICrashReporter.HasUnresolvedCrashes()`, ob der vorherige Lauf gecrasht ist; das Ergebnis wird im Start-Log geschrieben
+
+Die Implementierung ist Microsoft-Standard (kein Serilog/NLog): eigener `RollingFileLoggerProvider` (Data) mit `LoggerMessage`-Source-Generator-Aufrufern in den Konsumenten.
+
+## Review
+
+`tools/review.ps1` orchestriert lokale Qualitaets-Checks:
+
+```powershell
+./tools/review.ps1 -Mode build       # nur Build
+./tools/review.ps1 -Mode test        # Build + Tests
+./tools/review.ps1 -Mode security    # Secret-Scan + sensible Patterns
+./tools/review.ps1 -Mode all         # Build + Tests + Security
+./tools/review.ps1 -Mode enterprise  # all + ERP-2026-Report-Skeleton in .ai/reviews/
+```
+
+`enterprise` legt einen Markdown-Report nach `.ai/rules/enterprise-review.md` an, in den Claude/der Reviewer die Bewertung eintraegt. Die Skript-Pfade gehen vom Solution-Root aus.
+
 ## Lizenz
 
 Proprietaer – alle Rechte vorbehalten.

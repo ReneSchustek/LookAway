@@ -17,6 +17,16 @@
 !tools/*.ps1
 
 # ============================================================
+# Test- und Coverage-Artefakte (CI legt diese unter test-results/ ab)
+# ============================================================
+test-results/
+TestResults/
+coverage/
+*.trx
+*.coverage
+*.coveragexml
+
+# ============================================================
 # Hinweis: reviews/ gehört NICHT in .gitignore
 # ============================================================
 # reviews/ wird auf DevBox in Git versioniert (Entwicklungshistorie).

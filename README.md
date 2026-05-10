@@ -1,5 +1,7 @@
 ﻿# LookAway
 
+[![CI](https://github.com/ReneSchustek/LookAway/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ReneSchustek/LookAway/actions/workflows/ci.yml)
+
 Eine schlanke Windows-Tray-Anwendung, die dezent an Bildschirmpausen erinnert. Mehrere wissenschaftlich fundierte Pausenmodelle, dreisprachig (Deutsch, Englisch, Franzoesisch), und vollstaendig konfigurierbar pro Windows-Benutzer.
 
 ## Voraussetzungen
@@ -102,6 +104,24 @@ Die Implementierung ist Microsoft-Standard (kein Serilog/NLog): eigener `Rolling
 ./tools/review.ps1 -Mode all         # Build + Tests + Security
 ```
 
+
+## Continuous Integration
+
+`.github/workflows/ci.yml` laeuft auf jedem Push/Pull-Request gegen `main` und auf manuellem `workflow_dispatch`:
+
+| Step | Was | Warum |
+|------|-----|-------|
+| `actions/checkout@v5` | Quelltext laden | Standard |
+| `actions/setup-dotnet@v5` | .NET 10 SDK | Solution-Target |
+| `actions/cache@v5` | NuGet-Cache pro `csproj`-Hash | Build-Beschleunigung |
+| `dotnet workload restore` | Windows App SDK Workloads | WinUI 3 |
+| `dotnet build -c Release` | Compile mit `TreatWarningsAsErrors` | Quality-Gate |
+| `dotnet test --logger trx --collect "XPlat Code Coverage"` | xUnit + Coverage | Substanz-Gate |
+| `tools/review.ps1 -Mode security` | Pattern-Scan | Zusaetzliche Heuristik (Secrets, BinaryFormatter, etc.) |
+| `actions/upload-artifact@v4` | trx + Coverage hochladen | Detail-Analyse |
+| `dorny/test-reporter@v2` | Test-Summary in der PR | Sichtbarkeit |
+
+Runner: `windows-latest` (zwingend wegen WinUI 3). Concurrency-Group bricht aeltere Laeufe pro Ref ab. Timeout 15 Minuten.
 
 ## Lizenz
 

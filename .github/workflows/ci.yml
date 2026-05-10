@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: '1'
+  DOTNET_VERSION: '10.0.x'
+  CONFIGURATION: 'Release'
+  SOLUTION_FILE: 'LookAway.slnx'
+
+jobs:
+  build-test:
+    name: Build, Test, Security-Scan
+    # WinUI 3 / Windows App SDK setzt einen Windows-Runner voraus.
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v5
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/Directory.Build.props', '**/Directory.Packages.props') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+
+      - name: Restore workloads (Windows App SDK)
+        # 'dotnet workload restore' liest die Anforderungen aus den Projekten
+        # und installiert nur, was tatsaechlich gebraucht wird.
+        run: dotnet workload restore ${{ env.SOLUTION_FILE }}
+
+      - name: Restore dependencies
+        run: dotnet restore ${{ env.SOLUTION_FILE }}
+
+      - name: Build
+        # TreatWarningsAsErrors greift global ueber Directory.Build.props.
+        run: dotnet build ${{ env.SOLUTION_FILE }} --configuration ${{ env.CONFIGURATION }} --no-restore
+
+      - name: Test
+        # 'trx'-Logger ohne fixen Dateinamen → dotnet legt pro Test-Projekt
+        # eine eigene Datei an (sonst ueberschreibt das zweite Projekt das erste).
+        run: >
+          dotnet test ${{ env.SOLUTION_FILE }}
+          --configuration ${{ env.CONFIGURATION }}
+          --no-build
+          --logger trx
+          --logger "console;verbosity=normal"
+          --results-directory ${{ github.workspace }}/test-results
+          --collect "XPlat Code Coverage"
+
+      - name: Security-Scan (review.ps1)
+        # Lokales Pattern-Audit aus tools/review.ps1 — ergaenzt die Compiler-Analyzer
+        # um zusaetzliche Heuristiken (Secrets, Console.WriteLine, BinaryFormatter, ...).
+        shell: pwsh
+        run: ./tools/review.ps1 -Mode security
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ${{ github.workspace }}/test-results/**/*
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Publish test summary
+        if: always()
+        uses: dorny/test-reporter@v2
+        with:
+          name: xUnit Tests
+          path: ${{ github.workspace }}/test-results/**/*.trx
+          reporter: dotnet-trx
+          fail-on-error: false

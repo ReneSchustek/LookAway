@@ -4,6 +4,10 @@
 
 Eine schlanke Windows-Tray-Anwendung, die dezent an Bildschirmpausen erinnert. Mehrere wissenschaftlich fundierte Pausenmodelle, dreisprachig (Deutsch, Englisch, Franzoesisch), und vollstaendig konfigurierbar pro Windows-Benutzer.
 
+> **KI-Workflow-Material:** Briefs, Rules, Memory, Reviews und Skripte liegen unter
+> `F:\Entwicklung\dotnet\_ai\LookAway\` (zentrale KI-Topologie). Die Junction
+> `_ai\` im Repo-Root verweist auf diesen Pfad und ist via `.gitignore` ausgeklammert.
+
 ## Voraussetzungen
 
 - Windows 10 1809 oder neuer / Windows 11

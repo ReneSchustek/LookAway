@@ -97,3 +97,12 @@ $RECYCLE.BIN/
 
 # Rider
 .idea/
+
+# KI-Workflow-Material (BRIEF126)
+**/.ai/
+.claude/
+**/.claude/
+**/CLAUDE.md
+_ai/
+**/_ai/
+

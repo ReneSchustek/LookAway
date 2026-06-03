@@ -141,7 +141,7 @@ function New-EnterpriseReportSkeleton {
 # Review-Report: LookAway
 
 > Stand: $((Get-Date).ToString('yyyy-MM-dd'))
-> Reviewer: manuell
+> Reviewer: Architektur-Review (manuell) + Ollama (Pattern-Scans)
 > Scope: gesamter Solution-Stand zum Stichtag
 
 ## Zusammenfassung

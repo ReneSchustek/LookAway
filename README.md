@@ -156,7 +156,7 @@ Single-Instance-Sperre via `SingleInstanceLock` (Application):
 ./tools/review.ps1 -Mode enterprise  # all + ERP-2026-Report-Skeleton in .ai/reviews/
 ```
 
-`enterprise` legt einen Markdown-Report nach `.ai/rules/enterprise-review.md` an, in den Claude/der Reviewer die Bewertung eintraegt. Die Skript-Pfade gehen vom Solution-Root aus.
+`enterprise` legt einen Markdown-Report nach `_ai/LookAway/rules/enterprise-review.md` an, in den der Reviewer die Bewertung eintraegt. Die Skript-Pfade gehen vom Solution-Root aus.
 
 ## Continuous Integration
 
@@ -184,10 +184,9 @@ Proprietaer – alle Rechte vorbehalten.
 ## Triage und Reviews
 
 - **Watcher starten:** `.\triage-watch.ps1` (bzw. `.\triage-watch-php.ps1` / `.\triage-watch-shopware.ps1`) im Projekt-Root
-- **Review on-demand:** `.\triage-review.ps1` -- laedt Projekt-Regeln aus `.ai/rules/` und uebergibt sie an Ollama
-- **Enterprise-Review (ERP-2026):** in Claude Code anfragen -- Claude orchestriert, Ollama macht mechanische Sub-Tasks
-- **Status-Dateien:** `.ai/triage-status.json`, `.ai/triage-escalation.md`, `.ai/reviews/*.md`, `.ai/erp/*.md`
+- **Review on-demand:** `.\triage-review.ps1` -- laedt Projekt-Regeln aus `_ai/<Projekt>/rules/` und uebergibt sie an Ollama
+- **Status-Dateien:** `_ai/<Projekt>/triage-status.json`, `_ai/<Projekt>/triage-escalation.md`, `_ai/<Projekt>/reviews/*.md`, `_ai/<Projekt>/erp/*.md`
 
 Volle Doku: `F:\Entwicklung\_Anleitungen\allgemein\triage-workflow.md`
-Routing-Regeln: `.ai/rules/ollama-delegation.md` und `.ai/rules/enterprise-review.md`
+Routing-Regeln: `_ai/<Projekt>/rules/ollama-delegation.md` und `_ai/<Projekt>/rules/enterprise-review.md`
 <!-- /TRIAGE-WORKFLOW -->

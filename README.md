@@ -179,7 +179,6 @@ Proprietaer – alle Rechte vorbehalten.
 ## Triage und Reviews
 
 - **Watcher starten:** `.\triage-watch.ps1` (bzw. `.\triage-watch-php.ps1` / `.\triage-watch-shopware.ps1`) im Projekt-Root
-- **Status-Dateien:** `.ai/triage-status.json`, `.ai/triage-escalation.md`, `.ai/reviews/*.md`, `.ai/erp/*.md`
 
 Volle Doku: `F:\Entwicklung\_Anleitungen\allgemein\triage-workflow.md`
 <!-- /TRIAGE-WORKFLOW -->

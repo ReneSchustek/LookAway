@@ -4,6 +4,7 @@
 
 Eine schlanke Windows-Tray-Anwendung, die dezent an Bildschirmpausen erinnert. Mehrere wissenschaftlich fundierte Pausenmodelle, dreisprachig (Deutsch, Englisch, Franzoesisch), und vollstaendig konfigurierbar pro Windows-Benutzer.
 
+
 ## Voraussetzungen
 
 - Windows 10 1809 oder neuer / Windows 11

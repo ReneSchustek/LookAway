@@ -143,7 +143,7 @@ function New-EnterpriseReportSkeleton {
 # Enterprise-Review: LookAway
 
 > Stand: $((Get-Date).ToString('yyyy-MM-dd'))
-> Reviewer: Claude (Architektur) + Ollama (Pattern-Scans)
+> Reviewer: Architektur-Review (manuell) + Ollama (Pattern-Scans)
 > Scope: gesamter Solution-Stand zum Stichtag
 
 ## Zusammenfassung
@@ -154,7 +154,7 @@ function New-EnterpriseReportSkeleton {
 - Tests: gruen (siehe Konsole)
 - Security: $secSummary
 $hitsTable
-## Saeulen-Audit (Claude)
+## Saeulen-Audit
 
 ### Resilienz
 - **Befund:** ...

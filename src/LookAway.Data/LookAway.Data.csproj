@@ -15,6 +15,9 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- LibraryImport-Source-Generator (P/Invoke fuer Idle-/Vollbild-Erkennung)
+         erzeugt unsafe-Marshalling-Code. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
 </Project>

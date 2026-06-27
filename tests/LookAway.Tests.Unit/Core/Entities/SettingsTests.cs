@@ -18,8 +18,42 @@ public sealed class SettingsTests
         Assert.Equal(Language.German, settings.Language);
         Assert.Equal(BreakModel.ClassicPomodoro, settings.BreakModel);
         Assert.False(settings.AutoStart);
+        Assert.True(settings.PauseOnIdle);
+        Assert.Equal(5, settings.IdleThresholdMinutes);
+        Assert.True(settings.SuppressOnFullscreen);
         Assert.Null(settings.CustomDurations);
         Assert.False(settings.IsFirstRun);
+    }
+
+    [Theory]
+    [InlineData(Settings.MinIdleThresholdMinutes)]
+    [InlineData(5)]
+    [InlineData(Settings.MaxIdleThresholdMinutes)]
+    public void IdleThresholdMinutes_AcceptsBoundaryValues(int minutes)
+    {
+        Settings settings = new() { IdleThresholdMinutes = minutes };
+        Assert.Equal(minutes, settings.IdleThresholdMinutes);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(Settings.MaxIdleThresholdMinutes + 1)]
+    public void IdleThresholdMinutes_ThrowsOnOutOfRange(int minutes)
+    {
+        Settings settings = new();
+
+        _ = Assert.Throws<ArgumentOutOfRangeException>(
+            () => settings.IdleThresholdMinutes = minutes);
+    }
+
+    [Fact]
+    public void DetectionFlags_CanBeToggled()
+    {
+        Settings settings = new() { PauseOnIdle = false, SuppressOnFullscreen = false };
+
+        Assert.False(settings.PauseOnIdle);
+        Assert.False(settings.SuppressOnFullscreen);
     }
 
     [Fact]

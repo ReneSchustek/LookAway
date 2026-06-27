@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using LookAway.Core.Domain;
 using LookAway.Core.Entities;
@@ -22,6 +23,8 @@ using Microsoft.UI.Xaml;
 
 // Aliase aufloesen Namespace-Kollisionen mit Microsoft.UI.Xaml und System.
 using AutoStartCoordinator = LookAway.Application.Services.AutoStartCoordinator;
+using FullscreenDetectionService = LookAway.Application.Services.FullscreenDetectionService;
+using IdleDetectionService = LookAway.Application.Services.IdleDetectionService;
 using LogService = LookAway.Application.Services.LogService;
 using TrayStatusPresenter = LookAway.Application.Services.TrayStatusPresenter;
 using SingleInstanceLock = LookAway.Application.Services.SingleInstanceLock;
@@ -60,11 +63,14 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     /// </summary>
     public static IServiceProvider Services { get; private set; } = null!;
 
+    private const int DetectionPollSeconds = 5;
+
     private Window? _window;
     private LogService? _logService;
     private ILogger<App>? _logger;
     private SingleInstanceLock? _instanceLock;
     private TrayIconService? _trayIcon;
+    private CancellationTokenSource? _detectionCts;
 
     /// <summary>
     /// Initialisiert die Anwendung, das DI-Container und die globalen Handler.
@@ -142,6 +148,8 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
             _trayIcon?.SetActiveModel(settings.BreakModel);
             Services.GetRequiredService<ITimerService>().Start(interval);
+
+            StartDetectionLoop(settings);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -150,6 +158,41 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         catch (IOException ex)
         {
             AppLog.TimerStartFailed(_logger!, ex);
+        }
+    }
+
+    private void StartDetectionLoop(Settings settings)
+    {
+        IdleDetectionService idle = Services.GetRequiredService<IdleDetectionService>();
+        FullscreenDetectionService fullscreen = Services.GetRequiredService<FullscreenDetectionService>();
+
+        idle.IsEnabled = settings.PauseOnIdle;
+        idle.Threshold = TimeSpan.FromMinutes(settings.IdleThresholdMinutes);
+        fullscreen.IsEnabled = settings.SuppressOnFullscreen;
+
+        _detectionCts = new CancellationTokenSource();
+        _ = RunDetectionLoopAsync(idle, fullscreen, _detectionCts.Token);
+    }
+
+    private async Task RunDetectionLoopAsync(
+        IdleDetectionService idle,
+        FullscreenDetectionService fullscreen,
+        CancellationToken cancellationToken)
+    {
+        using PeriodicTimer timer = new(TimeSpan.FromSeconds(DetectionPollSeconds));
+        try
+        {
+            while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
+            {
+                idle.Evaluate();
+                // Eine nachzuholende Erinnerung wird an anderer Stelle behandelt; hier nur DND-Status spiegeln.
+                _ = fullscreen.Evaluate();
+                _trayIcon?.SetDndActive(fullscreen.IsDndActive);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Erwartetes Ende beim Shutdown.
         }
     }
 
@@ -193,6 +236,9 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     private void RequestExit()
     {
         _logService?.LogShutdown(ShutdownReasonUserExit);
+        _detectionCts?.Cancel();
+        _detectionCts?.Dispose();
+        _detectionCts = null;
         _trayIcon?.Dispose();
         _trayIcon = null;
         _instanceLock?.Dispose();
@@ -240,6 +286,12 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
         // Tray-Status
         _ = services.AddSingleton<TrayStatusPresenter>();
+
+        // Idle-/Vollbild-Erkennung
+        _ = services.AddSingleton<IIdleDetector, WindowsIdleDetector>();
+        _ = services.AddSingleton<IFullscreenDetector, WindowsFullscreenDetector>();
+        _ = services.AddSingleton<IdleDetectionService>();
+        _ = services.AddSingleton<FullscreenDetectionService>();
 
         // Timer-Engine
         _ = services.AddSingleton<IClock, SystemClock>();

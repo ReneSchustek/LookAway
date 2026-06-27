@@ -61,6 +61,47 @@ public sealed class Settings
     /// </summary>
     public bool AutoStart { get; set; }
 
+    /// <summary>Untergrenze der Inaktivitaetsschwelle in Minuten.</summary>
+    public const int MinIdleThresholdMinutes = 1;
+
+    /// <summary>Obergrenze der Inaktivitaetsschwelle in Minuten.</summary>
+    public const int MaxIdleThresholdMinutes = 30;
+
+    private int _idleThresholdMinutes = 5;
+
+    /// <summary>
+    /// Soll der Timer bei laengerer Inaktivitaet automatisch pausieren?
+    /// Default: <c>true</c>.
+    /// </summary>
+    public bool PauseOnIdle { get; set; } = true;
+
+    /// <summary>
+    /// Inaktivitaetsschwelle in Minuten (gueltig
+    /// <see cref="MinIdleThresholdMinutes"/>–<see cref="MaxIdleThresholdMinutes"/>).
+    /// Default: 5.
+    /// </summary>
+    public int IdleThresholdMinutes
+    {
+        get => _idleThresholdMinutes;
+        set
+        {
+            if (value is < MinIdleThresholdMinutes or > MaxIdleThresholdMinutes)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
+                    value,
+                    $"IdleThresholdMinutes muss zwischen {MinIdleThresholdMinutes} und {MaxIdleThresholdMinutes} liegen.");
+            }
+            _idleThresholdMinutes = value;
+        }
+    }
+
+    /// <summary>
+    /// Sollen Pause-Erinnerungen unterdrueckt werden, solange eine Vollbild-App
+    /// laeuft (DND)? Default: <c>true</c>.
+    /// </summary>
+    public bool SuppressOnFullscreen { get; set; } = true;
+
     /// <summary>
     /// Optionale Benutzer-Ueberschreibung der Standarddauern. <c>null</c>,
     /// wenn die Defaults des aktiven Pausenmodells gelten sollen.

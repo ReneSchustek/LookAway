@@ -3,18 +3,17 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Tests.Unit.Core.ValueObjects;
 
 /// <summary>
-/// Tests fuer das <see cref="BreakInterval"/>-ValueObject.
+/// Tests fuer das <see cref="BreakInterval"/>-ValueObject: Wertebereiche,
+/// Querbedingung <c>MaxLimit ≥ WorkDuration</c> und Value-Equality.
 /// </summary>
 public sealed class BreakIntervalTests
 {
     [Fact]
-    public void Construction_AcceptsValidValues()
+    public void Create_AcceptsValidValues()
     {
-        BreakInterval interval = new()
-        {
-            WorkDuration = TimeSpan.FromMinutes(25),
-            BreakDuration = TimeSpan.FromMinutes(5),
-        };
+        BreakInterval interval = BreakInterval.Create(
+            TimeSpan.FromMinutes(25),
+            TimeSpan.FromMinutes(5));
 
         Assert.Equal(TimeSpan.FromMinutes(25), interval.WorkDuration);
         Assert.Equal(TimeSpan.FromMinutes(5), interval.BreakDuration);
@@ -22,82 +21,95 @@ public sealed class BreakIntervalTests
     }
 
     [Fact]
-    public void WorkDuration_BelowMinimum_Throws()
+    public void Create_AcceptsWorkAtFiveMinuteMinimum()
     {
-        _ = Assert.Throws<ArgumentOutOfRangeException>(() => new BreakInterval
-        {
-            WorkDuration = TimeSpan.FromSeconds(30),
-            BreakDuration = TimeSpan.FromMinutes(5),
-        });
+        BreakInterval interval = BreakInterval.Create(
+            TimeSpan.FromMinutes(5),
+            TimeSpan.FromMinutes(1));
+
+        Assert.Equal(TimeSpan.FromMinutes(5), interval.WorkDuration);
+        Assert.Equal(TimeSpan.FromMinutes(1), interval.BreakDuration);
     }
 
     [Fact]
-    public void WorkDuration_AboveMaximum_Throws()
+    public void Create_WorkBelowFiveMinutes_Throws()
     {
-        _ = Assert.Throws<ArgumentOutOfRangeException>(() => new BreakInterval
-        {
-            WorkDuration = TimeSpan.FromHours(9),
-            BreakDuration = TimeSpan.FromMinutes(5),
-        });
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => BreakInterval.Create(
+            TimeSpan.FromMinutes(4),
+            TimeSpan.FromMinutes(5)));
     }
 
     [Fact]
-    public void BreakDuration_BelowMinimum_Throws()
+    public void Create_WorkAboveMaximum_Throws()
     {
-        _ = Assert.Throws<ArgumentOutOfRangeException>(() => new BreakInterval
-        {
-            WorkDuration = TimeSpan.FromMinutes(25),
-            BreakDuration = TimeSpan.FromSeconds(30),
-        });
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => BreakInterval.Create(
+            TimeSpan.FromHours(9),
+            TimeSpan.FromMinutes(5)));
     }
 
     [Fact]
-    public void BreakDuration_AboveMaximum_Throws()
+    public void Create_BreakBelowMinimum_Throws()
     {
-        _ = Assert.Throws<ArgumentOutOfRangeException>(() => new BreakInterval
-        {
-            WorkDuration = TimeSpan.FromMinutes(25),
-            BreakDuration = TimeSpan.FromHours(3),
-        });
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => BreakInterval.Create(
+            TimeSpan.FromMinutes(25),
+            TimeSpan.FromSeconds(30)));
     }
 
     [Fact]
-    public void MaxLimit_AcceptsNull()
+    public void Create_BreakAboveMaximum_Throws()
     {
-        BreakInterval interval = new()
-        {
-            WorkDuration = TimeSpan.FromMinutes(25),
-            BreakDuration = TimeSpan.FromMinutes(5),
-            MaxLimit = null,
-        };
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => BreakInterval.Create(
+            TimeSpan.FromMinutes(25),
+            TimeSpan.FromHours(3)));
+    }
+
+    [Fact]
+    public void Create_AcceptsNullMaxLimit()
+    {
+        BreakInterval interval = BreakInterval.Create(
+            TimeSpan.FromMinutes(25),
+            TimeSpan.FromMinutes(5),
+            maxLimit: null);
 
         Assert.Null(interval.MaxLimit);
     }
 
     [Fact]
-    public void MaxLimit_OutsideRange_Throws()
+    public void Create_MaxLimitEqualToWork_IsAccepted()
     {
-        _ = Assert.Throws<ArgumentOutOfRangeException>(() => new BreakInterval
-        {
-            WorkDuration = TimeSpan.FromMinutes(25),
-            BreakDuration = TimeSpan.FromMinutes(5),
-            MaxLimit = TimeSpan.FromHours(10),
-        });
+        BreakInterval interval = BreakInterval.Create(
+            TimeSpan.FromMinutes(120),
+            TimeSpan.FromMinutes(10),
+            TimeSpan.FromMinutes(120));
+
+        Assert.Equal(TimeSpan.FromMinutes(120), interval.MaxLimit);
+    }
+
+    [Fact]
+    public void Create_MaxLimitOutsideRange_Throws()
+    {
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => BreakInterval.Create(
+            TimeSpan.FromMinutes(25),
+            TimeSpan.FromMinutes(5),
+            TimeSpan.FromHours(10)));
+    }
+
+    [Fact]
+    public void Create_MaxLimitBelowWork_ThrowsArgumentException()
+    {
+        ArgumentException exception = Assert.Throws<ArgumentException>(() => BreakInterval.Create(
+            TimeSpan.FromMinutes(60),
+            TimeSpan.FromMinutes(5),
+            TimeSpan.FromMinutes(30)));
+
+        Assert.Equal("maxLimit", exception.ParamName);
     }
 
     [Fact]
     public void Records_WithSameValuesAreEqual()
     {
-        BreakInterval a = new()
-        {
-            WorkDuration = TimeSpan.FromMinutes(25),
-            BreakDuration = TimeSpan.FromMinutes(5),
-        };
-        BreakInterval b = new()
-        {
-            WorkDuration = TimeSpan.FromMinutes(25),
-            BreakDuration = TimeSpan.FromMinutes(5),
-        };
+        BreakInterval a = BreakInterval.Create(TimeSpan.FromMinutes(25), TimeSpan.FromMinutes(5));
+        BreakInterval b = BreakInterval.Create(TimeSpan.FromMinutes(25), TimeSpan.FromMinutes(5));
 
         Assert.Equal(a, b);
     }

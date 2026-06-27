@@ -23,6 +23,7 @@ using Microsoft.UI.Xaml;
 
 // Aliase aufloesen Namespace-Kollisionen mit Microsoft.UI.Xaml und System.
 using AutoStartCoordinator = LookAway.Application.Services.AutoStartCoordinator;
+using BreakReminderViewModel = LookAway.Application.ViewModels.BreakReminderViewModel;
 using FullscreenDetectionService = LookAway.Application.Services.FullscreenDetectionService;
 using IdleDetectionService = LookAway.Application.Services.IdleDetectionService;
 using LogService = LookAway.Application.Services.LogService;
@@ -71,6 +72,9 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     private SingleInstanceLock? _instanceLock;
     private TrayIconService? _trayIcon;
     private CancellationTokenSource? _detectionCts;
+    private ReminderPresenter? _reminderPresenter;
+    private BreakModel _activeModel = BreakModel.ClassicPomodoro;
+    private BreakInterval? _activeInterval;
 
     /// <summary>
     /// Initialisiert die Anwendung, das DI-Container und die globalen Handler.
@@ -118,6 +122,8 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         // Hauptfenster bleibt verborgen — die App lebt im Tray.
         _window.AppWindow.Hide();
 
+        _reminderPresenter = new ReminderPresenter(_window.DispatcherQueue);
+
         _trayIcon = new TrayIconService(
             Services.GetRequiredService<ITimerService>(),
             Services.GetRequiredService<TrayStatusPresenter>(),
@@ -145,11 +151,15 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             ISettingsRepository repository = Services.GetRequiredService<ISettingsRepository>();
             Settings settings = await repository.LoadAsync().ConfigureAwait(true);
             BreakInterval interval = BreakModelRegistry.GetEffective(settings.BreakModel, settings.CustomDurations);
+            _activeModel = settings.BreakModel;
+            _activeInterval = interval;
 
             _trayIcon?.SetActiveModel(settings.BreakModel);
-            Services.GetRequiredService<ITimerService>().Start(interval);
+            ITimerService timerService = Services.GetRequiredService<ITimerService>();
+            timerService.Start(interval);
 
             StartDetectionLoop(settings);
+            _ = ConsumeTimerEventsAsync(timerService, _detectionCts!.Token);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -185,14 +195,71 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
             {
                 idle.Evaluate();
-                // Eine nachzuholende Erinnerung bindet BRIEF007 an; hier nur DND-Status spiegeln.
-                _ = fullscreen.Evaluate();
+                bool surfaceMissedReminder = fullscreen.Evaluate();
                 _trayIcon?.SetDndActive(fullscreen.IsDndActive);
+
+                if (surfaceMissedReminder)
+                {
+                    // DND wurde beendet: verpasste Erinnerung nachholen.
+                    ShowBreakReminder();
+                }
             }
         }
         catch (OperationCanceledException)
         {
             // Erwartetes Ende beim Shutdown.
+        }
+    }
+
+    private async Task ConsumeTimerEventsAsync(ITimerService timerService, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await foreach (TimerEvent timerEvent in timerService.Events.WithCancellation(cancellationToken))
+            {
+                if (timerEvent is not BreakDueEvent)
+                {
+                    continue;
+                }
+
+                FullscreenDetectionService fullscreen = Services.GetRequiredService<FullscreenDetectionService>();
+                if (fullscreen.TryShowReminder())
+                {
+                    ShowBreakReminder();
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Erwartetes Ende beim Shutdown.
+        }
+    }
+
+    private void ShowBreakReminder() => _reminderPresenter?.Show(_activeModel, OnReminderResult);
+
+    private void OnReminderResult(ReminderResult result)
+    {
+        if (_activeInterval is null)
+        {
+            return;
+        }
+
+        ITimerService timerService = Services.GetRequiredService<ITimerService>();
+        switch (result)
+        {
+            case ReminderResult.StartBreak:
+                // Die Pause laeuft bereits durch die Engine-Transition — nichts zu tun.
+                break;
+            case ReminderResult.Snooze:
+                timerService.Start(BreakInterval.Create(
+                    TimeSpan.FromMinutes(BreakReminderViewModel.SnoozeMinutes),
+                    _activeInterval.BreakDuration));
+                break;
+            case ReminderResult.Skip:
+                timerService.Start(_activeInterval);
+                break;
+            default:
+                break;
         }
     }
 

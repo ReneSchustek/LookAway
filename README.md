@@ -165,6 +165,14 @@ Die Abstraktion liegt in `IAutoStartService` (Core); `RegistryAutoStartService` 
 
 Tests: `AutoStartCoordinator` deterministisch ueber `FakeAutoStartService` und `InMemorySettingsRepository` in `LookAway.Tests.Unit`; `RegistryAutoStartService` gegen die echte Registry in `LookAway.Tests.Integration` (eindeutiger Eintragsname je Test mit Cleanup, daher keine Admin-Rechte noetig).
 
+## Pause-Erinnerung
+
+Wird eine Pause faellig (`BreakDueEvent`), zeigt LookAway ein dezentes Overlay-Fenster (BRIEF007):
+
+- Die UI-freie Aktionslogik liegt im `BreakReminderViewModel` (Application) und ist ohne WinUI testbar: drei Aktionen (Pause starten / 5 Min spaeter / Ueberspringen), Timeout-Default nach 30 s = "Pause starten", die erste Aktion gewinnt (kein Ueberschreiben durch Doppelklick oder Timeout-Race).
+- `BreakReminderWindow` (App/Views) ist eine eigenstaendige, nicht minimierbare `Window`-Instanz (480×320, zentriert, Farbpalette Indigo `#4361EE` / Weiss / Dunkelgrau). `IReminderPresenter`/`ReminderPresenter` (App) erzeugen sie auf dem UI-Thread und verhindern Stapel (zweite Meldung bei offenem Fenster wird ignoriert, `_isReminderOpen`).
+- Der App-Event-Loop konsumiert den `ITimerService.Events`-Stream; bei `BreakDue` wird die Erinnerung nur gezeigt, wenn kein DND aktiv ist (`FullscreenDetectionService.TryShowReminder`), sonst nachgeholt. Snooze startet einen 5-min-Arbeitszyklus, Ueberspringen den regulaeren. Texte sind Platzhalter bis BRIEF010.
+
 ## Idle- und Vollbild-Erkennung (DND)
 
 LookAway pausiert den Timer bei laengerer Inaktivitaet und unterdrueckt Erinnerungen waehrend Vollbild-Apps (BRIEF016):

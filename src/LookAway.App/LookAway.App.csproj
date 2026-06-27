@@ -25,6 +25,10 @@
     <Content Include="Assets\AppIcon.ico" />
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
     <Content Include="Assets\LookAwayLogo.png" />
+    <Content Include="Assets\tray-working.png" />
+    <Content Include="Assets\tray-onbreak.png" />
+    <Content Include="Assets\tray-paused.png" />
+    <Content Include="Assets\tray-disabled.png" />
   </ItemGroup>
 
   <ItemGroup>

@@ -144,6 +144,25 @@ Single-Instance-Sperre via `SingleInstanceLock` (Application):
 - Die laufende Instanz horcht im Hintergrund auf das Event und blendet auf Wunsch das Hauptfenster ein
 - Beim sauberen Beenden wird der Mutex freigegeben, damit ein erneuter Start moeglich ist
 
+## Autostart mit Windows
+
+LookAway kann optional mit dem Windows-Login starten — als Opt-in pro Benutzer, ohne Administrator-Rechte:
+
+- Eingetragen wird ausschliesslich unter `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run` (nie `HKLM`)
+- Eintragsname `LookAway`, Wert = vollstaendiger, in Anfuehrungszeichen gesetzter Pfad zur `LookAway.App.exe` plus `--minimized` (Quoting wegen moeglicher Leerzeichen, z. B. `C:\Program Files\…`)
+- Der Pfad wird ueber `Process.GetCurrentProcess().MainModule.FileName` ermittelt
+
+Die Abstraktion liegt in `IAutoStartService` (Core); `RegistryAutoStartService` (Data) ist die Windows-Implementierung. Fehler (z. B. durch Gruppenrichtlinien gesperrter Run-Schluessel) werden als `AutoStartException` (Core) signalisiert, damit Aufrufer sie gezielt behandeln koennen.
+
+`AutoStartCoordinator` (Application) haelt Einstellung und Registry synchron:
+
+- **Benutzeraenderung → Registry:** beim Umschalten der Option wird der Registry-Eintrag sofort geschrieben bzw. entfernt und die Einstellung persistiert (`SetEnabledAsync`)
+- **Startup-Abgleich Registry → Einstellung:** beim App-Start ist die Registry die fuehrende Quelle (`SynchronizeFromRegistryAsync`). Ein manueller Eingriff — z. B. Deaktivieren ueber den Task-Manager-Autostart — wird in die Einstellung uebernommen
+- **Pfadkorrektur:** wurde die Anwendung verschoben, bringt der naechste Start den hinterlegten Pfad wieder auf den aktuellen Stand. `Enable()` ist idempotent und schreibt nur bei abweichendem Wert
+- Der Abgleich ist optional und nicht startkritisch: schlaegt er fehl, wird das geloggt, der Start laeuft weiter
+
+Tests: `AutoStartCoordinator` deterministisch ueber `FakeAutoStartService` und `InMemorySettingsRepository` in `LookAway.Tests.Unit`; `RegistryAutoStartService` gegen die echte Registry in `LookAway.Tests.Integration` (eindeutiger Eintragsname je Test mit Cleanup, daher keine Admin-Rechte noetig).
+
 ## Review
 
 `tools/review.ps1` orchestriert lokale Qualitaets-Checks:

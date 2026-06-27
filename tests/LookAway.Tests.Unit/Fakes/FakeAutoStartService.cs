@@ -1,0 +1,55 @@
+using LookAway.Core.Exceptions;
+using LookAway.Core.Interfaces;
+
+namespace LookAway.Tests.Unit.Fakes;
+
+/// <summary>
+/// Test-Fake fuer <see cref="IAutoStartService"/>. Haelt den An/Aus-Zustand im
+/// Speicher und zaehlt die Aufrufe, damit die "Settings-Logik" des
+/// <c>AutoStartCoordinator</c> ohne echte Registry geprueft werden kann.
+/// </summary>
+internal sealed class FakeAutoStartService : IAutoStartService
+{
+    private bool _enabled;
+
+    /// <summary>Erzeugt den Fake mit einem Anfangszustand.</summary>
+    /// <param name="initiallyEnabled">Startzustand des Autostart-Eintrags.</param>
+    public FakeAutoStartService(bool initiallyEnabled = false)
+    {
+        _enabled = initiallyEnabled;
+    }
+
+    /// <summary>Anzahl der <see cref="Enable"/>-Aufrufe.</summary>
+    public int EnableCallCount { get; private set; }
+
+    /// <summary>Anzahl der <see cref="Disable"/>-Aufrufe.</summary>
+    public int DisableCallCount { get; private set; }
+
+    /// <summary>
+    /// Wenn gesetzt, wirft <see cref="Enable"/> eine
+    /// <see cref="AutoStartException"/> — zum Pruefen der Fehlerpfade.
+    /// </summary>
+    public bool ThrowOnEnable { get; set; }
+
+    /// <inheritdoc />
+    public bool IsEnabled() => _enabled;
+
+    /// <inheritdoc />
+    public void Enable()
+    {
+        if (ThrowOnEnable)
+        {
+            throw new AutoStartException("Test: Enable fehlgeschlagen.");
+        }
+
+        EnableCallCount++;
+        _enabled = true;
+    }
+
+    /// <inheritdoc />
+    public void Disable()
+    {
+        DisableCallCount++;
+        _enabled = false;
+    }
+}

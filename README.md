@@ -165,6 +165,14 @@ Die Abstraktion liegt in `IAutoStartService` (Core); `RegistryAutoStartService` 
 
 Tests: `AutoStartCoordinator` deterministisch ueber `FakeAutoStartService` und `InMemorySettingsRepository` in `LookAway.Tests.Unit`; `RegistryAutoStartService` gegen die echte Registry in `LookAway.Tests.Integration` (eindeutiger Eintragsname je Test mit Cleanup, daher keine Admin-Rechte noetig).
 
+## Idle- und Vollbild-Erkennung (DND)
+
+LookAway pausiert den Timer bei laengerer Inaktivitaet und unterdrueckt Erinnerungen waehrend Vollbild-Apps (BRIEF016):
+
+- **Idle:** `IIdleDetector` (Core) → `WindowsIdleDetector` (Data, Win32 `GetLastInputInfo` via `LibraryImport`-P/Invoke). `IdleDetectionService` (Application) pausiert den Timer bei Inaktivitaet ueber der Schwelle (Default 5 min, konfigurierbar 1–30) und setzt ihn bei wiederkehrender Aktivitaet fort. Eine selbst ausgeloeste Idle-Pause wird gemerkt, damit eine Benutzer-Pause nicht faelschlich fortgesetzt wird.
+- **Vollbild/DND:** `IFullscreenDetector` (Core) → `WindowsFullscreenDetector` (Data, `GetForegroundWindow` + Monitorvergleich, Shell/Sperrbildschirm ausgeschlossen). `FullscreenDetectionService` (Application) setzt den DND-Zustand, unterdrueckt faellige Erinnerungen und holt maximal eine verpasste Erinnerung nach Verlassen des Vollbildmodus nach.
+- Beide Dienste werden in einem Hintergrund-`PeriodicTimer` (5 s, nicht im UI-Thread) ausgewertet; der DND-Zustand spiegelt sich ins Tray-Icon (`SetDndActive`). Settings: `PauseOnIdle`, `IdleThresholdMinutes`, `SuppressOnFullscreen`. Die Plattform-Calls sind als P/Invoke in der Data-Schicht isoliert; die Entscheidungslogik ist ueber Fakes ohne Win32 testbar.
+
 ## Review
 
 `tools/review.ps1` orchestriert lokale Qualitaets-Checks:

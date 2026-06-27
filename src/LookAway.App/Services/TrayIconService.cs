@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Generic;
 using H.NotifyIcon;
 using H.NotifyIcon.Core;
+using LookAway.Application.Services;
 using LookAway.Core.Enums;
 using LookAway.Core.Interfaces;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.Extensions.Logging;
 
 namespace LookAway.Services;
@@ -21,43 +24,68 @@ namespace LookAway.Services;
 /// </remarks>
 internal sealed class TrayIconService : IDisposable
 {
+    private const int TooltipRefreshIntervalSeconds = 1;
+
     private readonly ITimerService _timerService;
+    private readonly TrayStatusPresenter _statusPresenter;
     private readonly ILogger<TrayIconService> _logger;
     private readonly DispatcherQueue _dispatcher;
     private readonly Func<bool> _showSettingsHandler;
     private readonly Action _exitHandler;
+    private readonly Dictionary<TrayIconVariant, BitmapImage> _iconCache = new();
 
     private TaskbarIcon? _icon;
     private MenuFlyoutItem? _toggleItem;
+    private DispatcherQueueTimer? _statusTimer;
+    private TrayIconVariant? _currentVariant;
+    private BreakModel _activeModel = BreakModel.ClassicPomodoro;
+    private bool _isDndActive;
     private bool _disposed;
 
     /// <summary>
     /// Erzeugt den Service mit den noetigen Abhaengigkeiten.
     /// </summary>
     /// <param name="timerService">Domain-Service fuer Pause/Resume.</param>
+    /// <param name="statusPresenter">Uebersetzt den Timer-Zustand in Icon und Tooltip.</param>
     /// <param name="dispatcher">UI-Dispatcher des Hauptfensters.</param>
     /// <param name="logger">Logger.</param>
     /// <param name="showSettingsHandler">Callback fuer Settings-Klick (zeigt das Hauptfenster).</param>
     /// <param name="exitHandler">Callback fuer "Beenden".</param>
     public TrayIconService(
         ITimerService timerService,
+        TrayStatusPresenter statusPresenter,
         DispatcherQueue dispatcher,
         ILogger<TrayIconService> logger,
         Func<bool> showSettingsHandler,
         Action exitHandler)
     {
         ArgumentNullException.ThrowIfNull(timerService);
+        ArgumentNullException.ThrowIfNull(statusPresenter);
         ArgumentNullException.ThrowIfNull(dispatcher);
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(showSettingsHandler);
         ArgumentNullException.ThrowIfNull(exitHandler);
 
         _timerService = timerService;
+        _statusPresenter = statusPresenter;
         _dispatcher = dispatcher;
         _logger = logger;
         _showSettingsHandler = showSettingsHandler;
         _exitHandler = exitHandler;
     }
+
+    /// <summary>
+    /// Setzt das aktive Pausenmodell, das im Tooltip angezeigt wird.
+    /// </summary>
+    /// <param name="model">Aktuelles Pausenmodell.</param>
+    public void SetActiveModel(BreakModel model) => _activeModel = model;
+
+    /// <summary>
+    /// Schaltet die DND-Anzeige (ausgesetzte Erinnerungen). Wird von der
+    /// Idle-/Vollbild-Erkennung (BRIEF016) angesteuert.
+    /// </summary>
+    /// <param name="isDndActive">Sind Erinnerungen aktuell ausgesetzt?</param>
+    public void SetDndActive(bool isDndActive) => _isDndActive = isDndActive;
 
     /// <summary>
     /// Erstellt das Tray-Icon und meldet die Klick-Handler an.
@@ -83,8 +111,65 @@ internal sealed class TrayIconService : IDisposable
         _icon.DoubleClickCommand = new DelegateCommand(OnSettingsRequested);
 
         _icon.ForceCreate();
+
+        RefreshStatus();
+        StartStatusTimer();
+
         TrayIconLog.IconShown(_logger);
     }
+
+    /// <summary>
+    /// Aktualisiert Icon-Variante und Tooltip anhand des aktuellen
+    /// Timer-Zustands. Das Icon wird nur bei einem Variantenwechsel neu gesetzt.
+    /// </summary>
+    private void RefreshStatus()
+    {
+        if (_disposed || _icon is null)
+        {
+            return;
+        }
+
+        TimerState state = _timerService.State;
+        TimeSpan remaining = _timerService.Remaining;
+
+        TrayIconVariant variant = _statusPresenter.GetIconVariant(state, _isDndActive);
+        _icon.ToolTipText = _statusPresenter.GetTooltip(state, remaining, _activeModel, _isDndActive);
+
+        if (_currentVariant != variant)
+        {
+            _icon.IconSource = GetIcon(variant);
+            _currentVariant = variant;
+        }
+    }
+
+    private void StartStatusTimer()
+    {
+        _statusTimer = _dispatcher.CreateTimer();
+        _statusTimer.Interval = TimeSpan.FromSeconds(TooltipRefreshIntervalSeconds);
+        _statusTimer.Tick += (_, _) => RefreshStatus();
+        _statusTimer.Start();
+    }
+
+    private BitmapImage GetIcon(TrayIconVariant variant)
+    {
+        if (_iconCache.TryGetValue(variant, out BitmapImage? cached))
+        {
+            return cached;
+        }
+
+        BitmapImage image = new(new Uri($"ms-appx:///Assets/{GetAssetFileName(variant)}"));
+        _iconCache[variant] = image;
+        return image;
+    }
+
+    private static string GetAssetFileName(TrayIconVariant variant) => variant switch
+    {
+        TrayIconVariant.Working => "tray-working.png",
+        TrayIconVariant.OnBreak => "tray-onbreak.png",
+        TrayIconVariant.Paused => "tray-paused.png",
+        TrayIconVariant.Disabled => "tray-disabled.png",
+        _ => "tray-paused.png",
+    };
 
     /// <summary>
     /// Aktualisiert die Sichtbarkeit der Pause/Fortsetzen-Eintraege passend
@@ -117,6 +202,13 @@ internal sealed class TrayIconService : IDisposable
         }
 
         _disposed = true;
+
+        if (_statusTimer is not null)
+        {
+            _statusTimer.Stop();
+            _statusTimer = null;
+        }
+
         if (_icon is not null)
         {
             try

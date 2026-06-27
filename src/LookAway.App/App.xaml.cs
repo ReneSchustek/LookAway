@@ -3,9 +3,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
+using LookAway.Core.Domain;
+using LookAway.Core.Entities;
 using LookAway.Core.Enums;
 using LookAway.Core.Exceptions;
 using LookAway.Core.Interfaces;
+using LookAway.Core.ValueObjects;
 using LookAway.Data.Logging;
 using LookAway.Data.Power;
 using LookAway.Data.Repositories;
@@ -20,6 +23,7 @@ using Microsoft.UI.Xaml;
 // Aliase aufloesen Namespace-Kollisionen mit Microsoft.UI.Xaml und System.
 using AutoStartCoordinator = LookAway.Application.Services.AutoStartCoordinator;
 using LogService = LookAway.Application.Services.LogService;
+using TrayStatusPresenter = LookAway.Application.Services.TrayStatusPresenter;
 using SingleInstanceLock = LookAway.Application.Services.SingleInstanceLock;
 using TimerService = LookAway.Application.Services.TimerService;
 using XamlUnhandledExceptionEventArgs = Microsoft.UI.Xaml.UnhandledExceptionEventArgs;
@@ -110,6 +114,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
         _trayIcon = new TrayIconService(
             Services.GetRequiredService<ITimerService>(),
+            Services.GetRequiredService<TrayStatusPresenter>(),
             _window.DispatcherQueue,
             Services.GetRequiredService<ILogger<TrayIconService>>(),
             ShowMainWindow,
@@ -121,6 +126,31 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         // Registry ist die fuehrende Quelle fuer den Autostart-Zustand: ein
         // manueller Eingriff wird uebernommen, ein veralteter Pfad korrigiert.
         _ = SynchronizeAutoStartAsync();
+
+        // Timer mit dem konfigurierten Modell starten — das Tray-Icon spiegelt
+        // den Zustand dann live wider (BRIEF015).
+        _ = StartTimerAsync();
+    }
+
+    private async Task StartTimerAsync()
+    {
+        try
+        {
+            ISettingsRepository repository = Services.GetRequiredService<ISettingsRepository>();
+            Settings settings = await repository.LoadAsync().ConfigureAwait(true);
+            BreakInterval interval = BreakModelRegistry.GetEffective(settings.BreakModel, settings.CustomDurations);
+
+            _trayIcon?.SetActiveModel(settings.BreakModel);
+            Services.GetRequiredService<ITimerService>().Start(interval);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            AppLog.TimerStartFailed(_logger!, ex);
+        }
+        catch (IOException ex)
+        {
+            AppLog.TimerStartFailed(_logger!, ex);
+        }
     }
 
     private async Task SynchronizeAutoStartAsync()
@@ -207,6 +237,9 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         // Autostart (BRIEF004)
         _ = services.AddSingleton<IAutoStartService, RegistryAutoStartService>();
         _ = services.AddSingleton<AutoStartCoordinator>();
+
+        // Tray-Status (BRIEF015)
+        _ = services.AddSingleton<TrayStatusPresenter>();
 
         // Timer-Engine (BRIEF005)
         _ = services.AddSingleton<IClock, SystemClock>();
@@ -299,4 +332,10 @@ internal static partial class AppLog
         Level = LogLevel.Warning,
         Message = "Autostart-Abgleich beim Start fehlgeschlagen — Autostart bleibt unveraendert.")]
     public static partial void AutoStartSyncFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(
+        EventId = 1140,
+        Level = LogLevel.Warning,
+        Message = "Timer-Start beim App-Start fehlgeschlagen — Einstellungen konnten nicht geladen werden.")]
+    public static partial void TimerStartFailed(ILogger logger, Exception exception);
 }

@@ -1,17 +1,19 @@
 namespace LookAway.Core.ValueObjects;
 
 /// <summary>
-/// Definiert ein Arbeits-/Pausen-Intervall fuer ein Pausenmodell.
+/// Arbeits-/Pausen-Intervall eines Pausenmodells als Rich-Domain-Value-Object.
 /// </summary>
 /// <remarks>
-/// Validierung erfolgt in den init-Settern. <see cref="MaxLimit"/> ist nur
-/// bei aufgabenbasierten Modellen gesetzt und begrenzt die maximale
-/// Arbeitsdauer ohne Pause.
+/// Konstruktion ausschliesslich ueber die Factory <see cref="Create"/>, damit die
+/// Invarianten (Wertebereiche und die Querbedingung <c>MaxLimit ≥ WorkDuration</c>)
+/// nie verletzt werden koennen. <see cref="MaxLimit"/> ist nur bei
+/// aufgabenbasierten Modellen gesetzt und begrenzt die maximale Arbeitsdauer
+/// ohne Pause.
 /// </remarks>
 public sealed record BreakInterval
 {
-    /// <summary>Untergrenze fuer Arbeitsdauer (1 Minute).</summary>
-    public static readonly TimeSpan MinWorkDuration = TimeSpan.FromMinutes(1);
+    /// <summary>Untergrenze fuer Arbeitsdauer (5 Minuten).</summary>
+    public static readonly TimeSpan MinWorkDuration = TimeSpan.FromMinutes(5);
 
     /// <summary>Obergrenze fuer Arbeitsdauer (8 Stunden).</summary>
     public static readonly TimeSpan MaxWorkDuration = TimeSpan.FromHours(8);
@@ -22,61 +24,75 @@ public sealed record BreakInterval
     /// <summary>Obergrenze fuer Pausendauer (2 Stunden).</summary>
     public static readonly TimeSpan MaxBreakDuration = TimeSpan.FromHours(2);
 
-    private TimeSpan _workDuration;
-    private TimeSpan _breakDuration;
-    private TimeSpan? _maxLimit;
+    private BreakInterval()
+    {
+    }
 
     /// <summary>Dauer einer Arbeitsphase.</summary>
-    public required TimeSpan WorkDuration
-    {
-        get => _workDuration;
-        init
-        {
-            if (value < MinWorkDuration || value > MaxWorkDuration)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(value),
-                    value,
-                    $"WorkDuration muss zwischen {MinWorkDuration} und {MaxWorkDuration} liegen.");
-            }
-            _workDuration = value;
-        }
-    }
+    public TimeSpan WorkDuration { get; private init; }
 
     /// <summary>Dauer einer Pause.</summary>
-    public required TimeSpan BreakDuration
-    {
-        get => _breakDuration;
-        init
-        {
-            if (value < MinBreakDuration || value > MaxBreakDuration)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(value),
-                    value,
-                    $"BreakDuration muss zwischen {MinBreakDuration} und {MaxBreakDuration} liegen.");
-            }
-            _breakDuration = value;
-        }
-    }
+    public TimeSpan BreakDuration { get; private init; }
 
     /// <summary>
     /// Maximale Arbeitsdauer ohne Pause (nur bei aufgabenbasierten Modellen).
     /// <c>null</c> bedeutet kein Limit.
     /// </summary>
-    public TimeSpan? MaxLimit
+    public TimeSpan? MaxLimit { get; private init; }
+
+    /// <summary>
+    /// Erzeugt ein validiertes Intervall.
+    /// </summary>
+    /// <param name="workDuration">Arbeitsdauer (zwischen <see cref="MinWorkDuration"/> und <see cref="MaxWorkDuration"/>).</param>
+    /// <param name="breakDuration">Pausendauer (zwischen <see cref="MinBreakDuration"/> und <see cref="MaxBreakDuration"/>).</param>
+    /// <param name="maxLimit">Optionales Arbeits-Maximum; muss &#8805; <paramref name="workDuration"/> sein.</param>
+    /// <returns>Das validierte <see cref="BreakInterval"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Ein Wert liegt ausserhalb seines gueltigen Bereichs.</exception>
+    /// <exception cref="ArgumentException"><paramref name="maxLimit"/> ist kleiner als <paramref name="workDuration"/>.</exception>
+    public static BreakInterval Create(
+        TimeSpan workDuration,
+        TimeSpan breakDuration,
+        TimeSpan? maxLimit = null)
     {
-        get => _maxLimit;
-        init
+        if (workDuration < MinWorkDuration || workDuration > MaxWorkDuration)
         {
-            if (value is { } limit && (limit < MinWorkDuration || limit > MaxWorkDuration))
+            throw new ArgumentOutOfRangeException(
+                nameof(workDuration),
+                workDuration,
+                $"WorkDuration muss zwischen {MinWorkDuration} und {MaxWorkDuration} liegen.");
+        }
+
+        if (breakDuration < MinBreakDuration || breakDuration > MaxBreakDuration)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(breakDuration),
+                breakDuration,
+                $"BreakDuration muss zwischen {MinBreakDuration} und {MaxBreakDuration} liegen.");
+        }
+
+        if (maxLimit is { } limit)
+        {
+            if (limit < MinWorkDuration || limit > MaxWorkDuration)
             {
                 throw new ArgumentOutOfRangeException(
-                    nameof(value),
-                    value,
+                    nameof(maxLimit),
+                    maxLimit,
                     $"MaxLimit muss zwischen {MinWorkDuration} und {MaxWorkDuration} liegen.");
             }
-            _maxLimit = value;
+
+            if (limit < workDuration)
+            {
+                throw new ArgumentException(
+                    $"MaxLimit ({limit}) darf nicht kleiner als WorkDuration ({workDuration}) sein.",
+                    nameof(maxLimit));
+            }
         }
+
+        return new BreakInterval
+        {
+            WorkDuration = workDuration,
+            BreakDuration = breakDuration,
+            MaxLimit = maxLimit,
+        };
     }
 }

@@ -18,11 +18,9 @@ public sealed class TimerServiceTests
 {
     private static readonly DateTimeOffset Start = new(2026, 5, 10, 12, 0, 0, TimeSpan.Zero);
 
-    private static readonly BreakInterval ClassicPomodoro = new()
-    {
-        WorkDuration = TimeSpan.FromMinutes(25),
-        BreakDuration = TimeSpan.FromMinutes(5),
-    };
+    private static readonly BreakInterval ClassicPomodoro = BreakInterval.Create(
+        TimeSpan.FromMinutes(25),
+        TimeSpan.FromMinutes(5));
 
     private static (TimerService Service, FakeClock Clock, FakePowerModeWatcher Power) CreateService()
     {

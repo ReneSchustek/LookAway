@@ -4,10 +4,12 @@ using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 using LookAway.Core.Enums;
+using LookAway.Core.Exceptions;
 using LookAway.Core.Interfaces;
 using LookAway.Data.Logging;
 using LookAway.Data.Power;
 using LookAway.Data.Repositories;
+using LookAway.Data.Services;
 using LookAway.Data.Time;
 using LookAway.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +18,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 
 // Aliase aufloesen Namespace-Kollisionen mit Microsoft.UI.Xaml und System.
+using AutoStartCoordinator = LookAway.Application.Services.AutoStartCoordinator;
 using LogService = LookAway.Application.Services.LogService;
 using SingleInstanceLock = LookAway.Application.Services.SingleInstanceLock;
 using TimerService = LookAway.Application.Services.TimerService;
@@ -114,6 +117,32 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
         _trayIcon.Show();
         AppLog.TrayReady(_logger!);
+
+        // Registry ist die fuehrende Quelle fuer den Autostart-Zustand: ein
+        // manueller Eingriff wird uebernommen, ein veralteter Pfad korrigiert.
+        _ = SynchronizeAutoStartAsync();
+    }
+
+    private async Task SynchronizeAutoStartAsync()
+    {
+        AutoStartCoordinator coordinator = Services.GetRequiredService<AutoStartCoordinator>();
+        try
+        {
+            _ = await coordinator.SynchronizeFromRegistryAsync().ConfigureAwait(false);
+        }
+        catch (AutoStartException ex)
+        {
+            // Autostart ist optional — ein Fehler darf den Start nicht abbrechen.
+            AppLog.AutoStartSyncFailed(_logger!, ex);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            AppLog.AutoStartSyncFailed(_logger!, ex);
+        }
+        catch (IOException ex)
+        {
+            AppLog.AutoStartSyncFailed(_logger!, ex);
+        }
     }
 
     private bool ShowMainWindow()
@@ -174,6 +203,10 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _ = services.AddSingleton<ICrashReporter>(_ => new CrashReporter(crashDirectory));
         _ = services.AddSingleton<LogService>();
         _ = services.AddSingleton<ISettingsRepository, JsonSettingsRepository>();
+
+        // Autostart
+        _ = services.AddSingleton<IAutoStartService, RegistryAutoStartService>();
+        _ = services.AddSingleton<AutoStartCoordinator>();
 
         // Timer-Engine
         _ = services.AddSingleton<IClock, SystemClock>();
@@ -260,4 +293,10 @@ internal static partial class AppLog
         Level = LogLevel.Information,
         Message = "Tray-Icon ist bereit.")]
     public static partial void TrayReady(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 1130,
+        Level = LogLevel.Warning,
+        Message = "Autostart-Abgleich beim Start fehlgeschlagen — Autostart bleibt unveraendert.")]
+    public static partial void AutoStartSyncFailed(ILogger logger, Exception exception);
 }

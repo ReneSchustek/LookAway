@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
@@ -13,6 +14,7 @@ using LookAway.Core.Exceptions;
 using LookAway.Core.Interfaces;
 using LookAway.Core.ValueObjects;
 using LookAway.Data.Logging;
+using LookAway.Data.Net;
 using LookAway.Data.Power;
 using LookAway.Data.Repositories;
 using LookAway.Data.Services;
@@ -89,6 +91,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     private int _soundVolume;
     private DateTimeOffset _reminderShownAt;
     private bool _manualDnd;
+    private Uri? _updateDownloadUrl;
 
     /// <summary>
     /// Initialisiert die Anwendung, das DI-Container und die globalen Handler.
@@ -186,6 +189,9 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             _ = PurgeHistoryAsync();
 
             StartTimer(settings);
+
+            // Update-Pruefung im Hintergrund — nicht startkritisch (BRIEF020).
+            _ = CheckForUpdatesAtStartupAsync(settings);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -197,6 +203,70 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         }
     }
 
+    private async Task CheckForUpdatesAtStartupAsync(Settings settings)
+    {
+        if (!settings.UpdateCheckEnabled)
+        {
+            return;
+        }
+
+        DateTimeOffset now = Services.GetRequiredService<IClock>().UtcNow;
+        if (!UpdateSchedule.IsDue(settings.UpdateCheckFrequency, settings.LastUpdateCheck, now))
+        {
+            return;
+        }
+
+        UpdateInfo info = await Services.GetRequiredService<IUpdateChecker>()
+            .CheckForUpdateAsync()
+            .ConfigureAwait(true);
+
+        try
+        {
+            ISettingsRepository repository = Services.GetRequiredService<ISettingsRepository>();
+            Settings current = await repository.LoadAsync().ConfigureAwait(true);
+            current.LastUpdateCheck = now;
+            await repository.SaveAsync(current).ConfigureAwait(true);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            AppLog.UpdateCheckPersistFailed(_logger!, ex);
+        }
+        catch (IOException ex)
+        {
+            AppLog.UpdateCheckPersistFailed(_logger!, ex);
+        }
+
+        if (info.IsUpdateAvailable && info.DownloadUrl is not null)
+        {
+            _updateDownloadUrl = info.DownloadUrl;
+            _trayIcon?.SetUpdateAvailable(true);
+        }
+    }
+
+    [SuppressMessage(
+        "Reliability",
+        "CA1031:Do not catch general exception types",
+        Justification = "Das Oeffnen des Browsers ist unkritisch; jeder Fehler wird geloggt, statt die App zu beenden.")]
+    private void OpenUpdatePage()
+    {
+        if (_updateDownloadUrl is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _ = Process.Start(new ProcessStartInfo(_updateDownloadUrl.ToString()) { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            AppLog.UpdateCheckPersistFailed(_logger!, ex);
+        }
+    }
+
+    private static Version ParseVersion(string version)
+        => Version.TryParse(version, out Version? parsed) ? parsed : new Version(0, 0, 0);
+
     private void InitializeTray()
     {
         _trayIcon = new TrayIconService(
@@ -206,7 +276,8 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             _window!.DispatcherQueue,
             Services.GetRequiredService<ILogger<TrayIconService>>(),
             OpenSettings,
-            RequestExit);
+            RequestExit,
+            OpenUpdatePage);
 
         _trayIcon.Show();
         AppLog.TrayReady(_logger!);
@@ -507,6 +578,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         Services.GetRequiredService<AutoStartCoordinator>(),
         Services.GetRequiredService<ILocalizationService>(),
         Services.GetRequiredService<ISoundService>(),
+        Services.GetRequiredService<IUpdateChecker>(),
         CreateStatisticsViewModel(),
         Services.GetRequiredService<ILogger<SettingsViewModel>>(),
         GetVersion());
@@ -618,6 +690,13 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
         // Globale Hotkeys (BRIEF019)
         _ = services.AddSingleton<IHotkeyService, WindowsHotkeyService>();
+
+        // Update-Pruefung (BRIEF020)
+        _ = services.AddSingleton<IHttpGetClient>(sp => new HttpGetClient(sp.GetRequiredService<ILogger<HttpGetClient>>()));
+        _ = services.AddSingleton<IUpdateChecker>(sp => new GitHubUpdateChecker(
+            sp.GetRequiredService<IHttpGetClient>(),
+            ParseVersion(GetVersion()),
+            sp.GetRequiredService<ILogger<GitHubUpdateChecker>>()));
 
         // Autostart (BRIEF004)
         _ = services.AddSingleton<IAutoStartService, RegistryAutoStartService>();
@@ -735,4 +814,10 @@ internal static partial class AppLog
         Level = LogLevel.Warning,
         Message = "Pausen-Historie konnte nicht geschrieben werden — Statistik bleibt unveraendert.")]
     public static partial void HistoryWriteFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(
+        EventId = 1160,
+        Level = LogLevel.Warning,
+        Message = "Update-Pruefung konnte nicht abgeschlossen werden.")]
+    public static partial void UpdateCheckPersistFailed(ILogger logger, Exception exception);
 }

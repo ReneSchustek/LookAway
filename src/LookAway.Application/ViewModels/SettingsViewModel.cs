@@ -30,6 +30,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private readonly AutoStartCoordinator _autoStartCoordinator;
     private readonly ILocalizationService _localization;
     private readonly ISoundService _soundService;
+    private readonly IUpdateChecker _updateChecker;
     private readonly ILogger<SettingsViewModel> _logger;
     private readonly string _applicationVersion;
 
@@ -89,6 +90,19 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private HotkeyDefinition _hotkeySkipOrSnooze = HotkeyDefaults.SkipOrSnooze;
     private HotkeyDefinition _hotkeyToggleDnd = HotkeyDefaults.ToggleDnd;
 
+    [ObservableProperty]
+    private bool _updateCheckEnabled;
+
+    [ObservableProperty]
+    private SettingsOption<UpdateCheckFrequency>? _selectedFrequencyOption;
+
+    [ObservableProperty]
+    private string _updateStatusText = string.Empty;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsDownloadAvailable))]
+    private Uri? _downloadUri;
+
     /// <summary>
     /// Erzeugt das ViewModel mit seinen Abhaengigkeiten.
     /// </summary>
@@ -96,6 +110,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <param name="autoStartCoordinator">Haelt Einstellung und Registry synchron.</param>
     /// <param name="localization">Liefert Texte und steuert den Sprachwechsel.</param>
     /// <param name="soundService">Spielt den Erinnerungston fuer die Vorschau.</param>
+    /// <param name="updateChecker">Prueft auf Updates.</param>
     /// <param name="statistics">Statistik-ViewModel (komponiert).</param>
     /// <param name="logger">Logger.</param>
     /// <param name="applicationVersion">Anzuzeigende Versionsnummer (Ueber-Bereich).</param>
@@ -104,6 +119,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         AutoStartCoordinator autoStartCoordinator,
         ILocalizationService localization,
         ISoundService soundService,
+        IUpdateChecker updateChecker,
         StatisticsViewModel statistics,
         ILogger<SettingsViewModel> logger,
         string applicationVersion)
@@ -112,6 +128,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(autoStartCoordinator);
         ArgumentNullException.ThrowIfNull(localization);
         ArgumentNullException.ThrowIfNull(soundService);
+        ArgumentNullException.ThrowIfNull(updateChecker);
         ArgumentNullException.ThrowIfNull(statistics);
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentException.ThrowIfNullOrWhiteSpace(applicationVersion);
@@ -120,6 +137,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _autoStartCoordinator = autoStartCoordinator;
         _localization = localization;
         _soundService = soundService;
+        _updateChecker = updateChecker;
         Statistics = statistics;
         _logger = logger;
         _applicationVersion = applicationVersion;
@@ -127,6 +145,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         Languages = BuildLanguageOptions();
         Models = BuildModelOptions();
         Sounds = BuildSoundOptions();
+        UpdateFrequencies = BuildFrequencyOptions();
 
         _localization.LanguageChanged += OnLanguageChanged;
     }
@@ -149,6 +168,15 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     /// <summary>Auswaehlbare Erinnerungstoene mit lokalisierter Beschriftung.</summary>
     public IReadOnlyList<SettingsOption<SoundType>> Sounds { get; }
+
+    /// <summary>Auswaehlbare Update-Pruef-Haeufigkeiten mit lokalisierter Beschriftung.</summary>
+    public IReadOnlyList<SettingsOption<UpdateCheckFrequency>> UpdateFrequencies { get; }
+
+    /// <summary>Die aktuell gewaehlte Pruef-Haeufigkeit.</summary>
+    public UpdateCheckFrequency SelectedFrequency => SelectedFrequencyOption?.Value ?? UpdateCheckFrequency.Weekly;
+
+    /// <summary>Wahr, wenn ein Download-Link vorliegt.</summary>
+    public bool IsDownloadAvailable => DownloadUri is not null;
 
     /// <summary>Untere Grenze der Arbeitsdauer (Minuten) fuer das aktive Modell.</summary>
     public int WorkMinMinutes { get; private set; } = (int)BreakInterval.MinWorkDuration.TotalMinutes;
@@ -308,6 +336,18 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Anzeigetext des "DND umschalten"-Hotkeys.</summary>
     public string HotkeyToggleDndText => _hotkeyToggleDnd.ToString();
 
+    /// <summary>Beschriftung "Auf Updates pruefen".</summary>
+    public string UpdateEnableLabel => _localization.GetText(SettingsTextKeys.UpdateEnableLabel);
+
+    /// <summary>Beschriftung der Pruef-Haeufigkeit.</summary>
+    public string UpdateFrequencyLabel => _localization.GetText(SettingsTextKeys.UpdateFrequencyLabel);
+
+    /// <summary>Beschriftung des "Jetzt pruefen"-Buttons.</summary>
+    public string UpdateCheckNowLabel => _localization.GetText(SettingsTextKeys.UpdateCheckNow);
+
+    /// <summary>Download-Link-Text.</summary>
+    public string UpdateDownloadLabel => _localization.GetText(SettingsTextKeys.UpdateDownload);
+
     /// <summary>
     /// Laedt die persistierten Einstellungen in das ViewModel. Vor dem ersten
     /// Anzeigen aufzurufen.
@@ -340,6 +380,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             _hotkeySkipOrSnooze = settings.HotkeySkipOrSnooze;
             _hotkeyToggleDnd = settings.HotkeyToggleDnd;
 
+            UpdateCheckEnabled = settings.UpdateCheckEnabled;
+            SelectFrequency(settings.UpdateCheckFrequency);
+
             LoadDurations(settings);
         }
         finally
@@ -368,6 +411,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public void SelectSound(SoundType soundType)
         => SelectedSoundOption = Sounds.First(option => option.Value == soundType);
 
+    /// <summary>Waehlt die Pruef-Haeufigkeit anhand ihres Werts (UI/Test-Hilfe).</summary>
+    /// <param name="frequency">Zu waehlende Haeufigkeit.</param>
+    public void SelectFrequency(UpdateCheckFrequency frequency)
+        => SelectedFrequencyOption = UpdateFrequencies.First(option => option.Value == frequency);
+
     private void LoadDurations(Settings settings)
     {
         if (settings.CustomDurations is { } custom)
@@ -392,6 +440,33 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     [RelayCommand]
     private void PreviewSound() => _soundService.Play(SelectedSound, SoundVolume);
+
+    [RelayCommand]
+    private async Task CheckForUpdatesAsync(CancellationToken cancellationToken)
+    {
+        UpdateStatusText = _localization.GetText(SettingsTextKeys.UpdateChecking);
+        DownloadUri = null;
+
+        UpdateInfo info = await _updateChecker.CheckForUpdateAsync(cancellationToken).ConfigureAwait(true);
+
+        // Letzten Pruefzeitpunkt persistieren.
+        Settings settings = await _settingsRepository.LoadAsync(cancellationToken).ConfigureAwait(true);
+        settings.LastUpdateCheck = DateTimeOffset.UtcNow;
+        await _settingsRepository.SaveAsync(settings, cancellationToken).ConfigureAwait(true);
+
+        if (info.IsUpdateAvailable)
+        {
+            UpdateStatusText = string.Format(
+                CultureInfo.CurrentCulture,
+                _localization.GetText(SettingsTextKeys.UpdateAvailable),
+                info.LatestVersion);
+            DownloadUri = info.DownloadUrl;
+        }
+        else
+        {
+            UpdateStatusText = _localization.GetText(SettingsTextKeys.UpdateUpToDate);
+        }
+    }
 
     [RelayCommand]
     private void ResetHotkeys()
@@ -432,6 +507,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         settings.HotkeyStartBreak = _hotkeyStartBreak;
         settings.HotkeySkipOrSnooze = _hotkeySkipOrSnooze;
         settings.HotkeyToggleDnd = _hotkeyToggleDnd;
+        settings.UpdateCheckEnabled = UpdateCheckEnabled;
+        settings.UpdateCheckFrequency = SelectedFrequency;
 
         await _settingsRepository.SaveAsync(settings).ConfigureAwait(true);
 
@@ -557,6 +634,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             option.RefreshLabel();
         }
 
+        foreach (SettingsOption<UpdateCheckFrequency> option in UpdateFrequencies)
+        {
+            option.RefreshLabel();
+        }
+
         // Fehlertexte in neuer Sprache, danach alle gebundenen Texte aktualisieren.
         Validate();
         Statistics.RefreshTexts();
@@ -582,6 +664,13 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             .Select(sound => new SettingsOption<SoundType>(
                 sound,
                 () => _localization.GetText(SettingsTextKeys.ForSound(sound))))
+            .ToList();
+
+    private List<SettingsOption<UpdateCheckFrequency>> BuildFrequencyOptions()
+        => Enum.GetValues<UpdateCheckFrequency>()
+            .Select(frequency => new SettingsOption<UpdateCheckFrequency>(
+                frequency,
+                () => _localization.GetText(SettingsTextKeys.ForFrequency(frequency))))
             .ToList();
 
     /// <summary>Meldet den Sprachwechsel-Handler ab.</summary>

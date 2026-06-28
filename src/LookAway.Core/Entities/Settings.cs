@@ -172,6 +172,31 @@ public sealed class Settings
     /// <summary>Hotkey fuer "DND umschalten".</summary>
     public HotkeyDefinition HotkeyToggleDnd { get; set; } = HotkeyDefaults.ToggleDnd;
 
+    private UpdateCheckFrequency _updateCheckFrequency = UpdateCheckFrequency.Weekly;
+
+    /// <summary>Soll auf Updates geprueft werden? Default: <c>true</c>.</summary>
+    public bool UpdateCheckEnabled { get; set; } = true;
+
+    /// <summary>Haeufigkeit der Update-Pruefung. Default: woechentlich.</summary>
+    public UpdateCheckFrequency UpdateCheckFrequency
+    {
+        get => _updateCheckFrequency;
+        set
+        {
+            if (!Enum.IsDefined(value))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
+                    value,
+                    "Unbekannte Update-Pruef-Haeufigkeit.");
+            }
+            _updateCheckFrequency = value;
+        }
+    }
+
+    /// <summary>Zeitpunkt der letzten Update-Pruefung; <c>null</c>, wenn nie geprueft.</summary>
+    public DateTimeOffset? LastUpdateCheck { get; set; }
+
     /// <summary>
     /// Wahr, wenn beim letzten Lesevorgang keine Konfigurationsdatei vorhanden war.
     /// Wird vom Repository gesetzt und nicht persistiert.

@@ -1,7 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/LookAway.App/LookAway.App.csproj">
-      <Platform Project="x86" />
+      <Platform Project="x64" />
       <Deploy Solution="Debug|*" />
     </Project>
     <Project Path="src/LookAway.Application/LookAway.Application.csproj" />

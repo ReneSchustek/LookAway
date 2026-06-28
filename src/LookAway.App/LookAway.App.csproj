@@ -17,6 +17,9 @@
          die portable Variante laufen ohne Deploy. Fuer ein MSIX-Paket explizit
          mit -p:WindowsPackageType=MSIX bauen. -->
     <WindowsPackageType Condition="'$(WindowsPackageType)' == ''">None</WindowsPackageType>
+    <!-- Im unpackaged-Modus die Msix-ProjectCapability abschalten, damit Visual
+         Studio keinen (fehlschlagenden) Deploy-Schritt anbietet (DEP1560). -->
+    <DisableMsixProjectCapabilityAddedByProject Condition="'$(WindowsPackageType)' == 'None'">true</DisableMsixProjectCapabilityAddedByProject>
   </PropertyGroup>
 
   <ItemGroup>

@@ -201,12 +201,21 @@ Ueber LookAway (BRIEF008).
 - **Autostart** wird beim Speichern ueber den `AutoStartCoordinator` mit der Registry synchronisiert; ist
   der Run-Schluessel gesperrt, werden die uebrigen Einstellungen trotzdem gespeichert.
 
-### Lokalisierung (Seam)
+### Lokalisierung (DE/EN/FR)
 
-Der Sprachwechsel wirkt im Settings-Fenster sofort: `ILocalizationService` (Core) →
-`JsonLocalizationService` (Data) liefert Texte ueber sprachneutrale Schluessel aus eingebetteten
-JSON-Tabellen (`Localization/<sprache>.json`). Deutsch ist die Referenzsprache und der Fallback;
-Englisch und Franzoesisch werden in BRIEF010 befuellt und fallen bis dahin auf Deutsch zurueck.
+LookAway ist vollstaendig dreisprachig (Deutsch, Englisch, Franzoesisch) mit Sprachwechsel zur
+Laufzeit (BRIEF010): `ILocalizationService` (Core) → `JsonLocalizationService` (Data) liefert Texte
+ueber sprachneutrale Schluessel aus eingebetteten JSON-Tabellen (`Localization/<sprache>.json`).
+
+- Alle UI-Texte (Settings, Wizard, Reminder, Tray-Menue und -Tooltips, Pausenmodell-Namen und
+  Uebungs-Hinweise) verwenden den Service. Schluessel-Konvention: `Bereich.Element` (z. B.
+  `Settings.Title`, `Reminder.StartBreak`).
+- Der Wechsel ueber das Settings-Fenster aktualisiert die UI sofort (`LanguageChanged` →
+  `INotifyPropertyChanged` in den ViewModels, Live-Refresh des Tray-Menues).
+- Deutsch ist die Referenzsprache und der Fallback bei einem fehlenden Schluessel (danach der
+  Schluesselname). Ein Konsistenztest stellt sicher, dass alle drei Tabellen exakt denselben
+  Schlusselsatz haben.
+- Beim Erststart wird die Sprache aus `CultureInfo.CurrentUICulture` vorbelegt (de/fr, sonst Englisch).
 
 ## First-Run-Wizard
 

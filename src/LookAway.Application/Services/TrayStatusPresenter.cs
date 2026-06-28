@@ -1,5 +1,7 @@
 using System.Globalization;
+using LookAway.Application.Localization;
 using LookAway.Core.Enums;
+using LookAway.Core.Interfaces;
 
 namespace LookAway.Application.Services;
 
@@ -10,13 +12,21 @@ namespace LookAway.Application.Services;
 /// </summary>
 /// <remarks>
 /// Die Tooltip-Texte sind bewusst kompakt gehalten (Windows-Tooltip-Limit) und
-/// noch deutschsprachig hartcodiert; die Lokalisierung folgt in BRIEF010.
+/// werden ueber die Lokalisierung in der aktuellen Sprache aufgeloest (BRIEF010).
 /// </remarks>
 public sealed class TrayStatusPresenter
 {
-    private const string DndTooltip = "DND aktiv — Erinnerungen ausgesetzt";
-    private const string PausedTooltip = "Timer pausiert";
-    private const string IdleTooltip = "Timer gestoppt";
+    private readonly ILocalizationService _localization;
+
+    /// <summary>
+    /// Erzeugt den Presenter mit der Lokalisierung.
+    /// </summary>
+    /// <param name="localization">Liefert die sprachabhaengigen Tooltip-Texte.</param>
+    public TrayStatusPresenter(ILocalizationService localization)
+    {
+        ArgumentNullException.ThrowIfNull(localization);
+        _localization = localization;
+    }
 
     /// <summary>
     /// Liefert die Icon-Variante fuer den aktuellen Zustand. Ein aktiver
@@ -58,18 +68,29 @@ public sealed class TrayStatusPresenter
     {
         if (isDndActive)
         {
-            return DndTooltip;
+            return _localization.GetText(TrayTextKeys.TooltipDnd);
         }
 
         return state switch
         {
-            TimerState.Working => $"Naechste Pause in {FormatRemaining(remaining)}\nModell: {model}",
-            TimerState.OnBreak => $"Pause laeuft ({FormatRemaining(remaining)} verbleibend)",
-            TimerState.Paused => PausedTooltip,
-            TimerState.Idle => IdleTooltip,
-            _ => IdleTooltip,
+            TimerState.Working => BuildWorkingTooltip(remaining, model),
+            TimerState.OnBreak => Format(TrayTextKeys.TooltipOnBreak, FormatRemaining(remaining)),
+            TimerState.Paused => _localization.GetText(TrayTextKeys.TooltipPaused),
+            TimerState.Idle => _localization.GetText(TrayTextKeys.TooltipIdle),
+            _ => _localization.GetText(TrayTextKeys.TooltipIdle),
         };
     }
+
+    private string BuildWorkingTooltip(TimeSpan remaining, BreakModel model)
+    {
+        string nextBreak = Format(TrayTextKeys.TooltipNextBreak, FormatRemaining(remaining));
+        string modelName = _localization.GetText(SettingsTextKeys.ForModel(model));
+        string modelLine = Format(TrayTextKeys.TooltipModel, modelName);
+        return $"{nextBreak}\n{modelLine}";
+    }
+
+    private string Format(string key, object argument)
+        => string.Format(CultureInfo.CurrentCulture, _localization.GetText(key), argument);
 
     /// <summary>
     /// Formatiert eine Restzeit als <c>mm:ss</c> (Minuten koennen &gt; 59 sein,

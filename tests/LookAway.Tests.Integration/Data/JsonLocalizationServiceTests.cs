@@ -1,3 +1,5 @@
+using System.Reflection;
+using System.Text.Json;
 using LookAway.Core.Enums;
 using LookAway.Data.Services;
 
@@ -20,14 +22,23 @@ public sealed class JsonLocalizationServiceTests
     }
 
     [Fact]
-    public void GetText_faellt_bei_unbefuellter_Sprache_auf_Deutsch_zurueck()
+    public void GetText_liefert_den_englischen_Text()
     {
-        // Englisch ist noch nicht befuellt (BRIEF010) und faellt auf Deutsch zurueck.
         JsonLocalizationService service = new(Language.English);
 
         string text = service.GetText("Settings.Title");
 
-        Assert.Equal("Einstellungen", text);
+        Assert.Equal("Settings", text);
+    }
+
+    [Fact]
+    public void GetText_liefert_den_franzoesischen_Text()
+    {
+        JsonLocalizationService service = new(Language.French);
+
+        string text = service.GetText("Settings.Title");
+
+        Assert.Equal("Paramètres", text);
     }
 
     [Fact]
@@ -52,5 +63,40 @@ public sealed class JsonLocalizationServiceTests
 
         Assert.Equal(1, raised);
         Assert.Equal(Language.French, service.CurrentLanguage);
+    }
+
+    [Theory]
+    [InlineData("en.json")]
+    [InlineData("fr.json")]
+    public void Alle_deutschen_Schluessel_existieren_auch_in_den_anderen_Sprachen(string otherFile)
+    {
+        HashSet<string> german = LoadKeys("de.json");
+        HashSet<string> other = LoadKeys(otherFile);
+
+        string[] missing = german.Except(other).Order().ToArray();
+        Assert.True(missing.Length == 0, $"Fehlende Schluessel in {otherFile}: {string.Join(", ", missing)}");
+    }
+
+    [Theory]
+    [InlineData("en.json")]
+    [InlineData("fr.json")]
+    public void Keine_ueberzaehligen_Schluessel_in_den_anderen_Sprachen(string otherFile)
+    {
+        HashSet<string> german = LoadKeys("de.json");
+        HashSet<string> other = LoadKeys(otherFile);
+
+        string[] extra = other.Except(german).Order().ToArray();
+        Assert.True(extra.Length == 0, $"Ueberzaehlige Schluessel in {otherFile}: {string.Join(", ", extra)}");
+    }
+
+    private static HashSet<string> LoadKeys(string fileName)
+    {
+        string resourceName = "LookAway.Data.Localization." + fileName;
+        Assembly assembly = typeof(JsonLocalizationService).Assembly;
+
+        using Stream stream = assembly.GetManifestResourceStream(resourceName)
+            ?? throw new InvalidOperationException($"Ressource {resourceName} fehlt.");
+        Dictionary<string, string>? entries = JsonSerializer.Deserialize<Dictionary<string, string>>(stream);
+        return entries is null ? new HashSet<string>() : new HashSet<string>(entries.Keys);
     }
 }

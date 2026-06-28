@@ -1,15 +1,31 @@
 using LookAway.Application.Services;
 using LookAway.Core.Enums;
+using LookAway.Tests.Unit.Fakes;
 
 namespace LookAway.Tests.Unit.Application.Services;
 
 /// <summary>
 /// Tests der UI-freien Tray-Darstellungslogik (<see cref="TrayStatusPresenter"/>):
-/// Icon-Variante pro Zustand und Tooltip-Formatierung.
+/// Icon-Variante pro Zustand und Tooltip-Formatierung. Die Tooltip-Texte stammen
+/// aus der (gefakten) Lokalisierung; geprueft werden Schluesselwahl und Formatierung.
 /// </summary>
 public sealed class TrayStatusPresenterTests
 {
-    private readonly TrayStatusPresenter _presenter = new();
+    private static readonly Dictionary<string, string> Texts = new()
+    {
+        ["Tray.Tooltip.Dnd"] = "DND aktiv",
+        ["Tray.Tooltip.Paused"] = "Timer pausiert",
+        ["Tray.Tooltip.Idle"] = "Timer gestoppt",
+        ["Tray.Tooltip.NextBreak"] = "Naechste Pause in {0}",
+        ["Tray.Tooltip.Model"] = "Modell: {0}",
+        ["Tray.Tooltip.OnBreak"] = "Pause laeuft ({0} verbleibend)",
+        ["Settings.Model.ModifiedPomodoro"] = "ModifiedPomodoro",
+        ["Settings.Model.ClassicPomodoro"] = "ClassicPomodoro",
+        ["Settings.Model.Ultradian"] = "Ultradian",
+    };
+
+    private readonly TrayStatusPresenter _presenter =
+        new(new FakeLocalizationService(Language.German, Texts));
 
     [Theory]
     [InlineData(TimerState.Working, TrayIconVariant.Working)]
@@ -79,7 +95,7 @@ public sealed class TrayStatusPresenterTests
             BreakModel.ClassicPomodoro,
             isDndActive: true);
 
-        Assert.Equal("DND aktiv — Erinnerungen ausgesetzt", tooltip);
+        Assert.Equal("DND aktiv", tooltip);
     }
 
     [Fact]

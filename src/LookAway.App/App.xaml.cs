@@ -99,20 +99,53 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     /// </summary>
     public App()
     {
-        InitializeComponent();
-        Services = ConfigureServices();
-        _logService = Services.GetRequiredService<LogService>();
-        _logger = Services.GetRequiredService<ILogger<App>>();
-
-        RegisterGlobalCrashHandlers();
-        UnhandledException += OnApplicationUnhandledException;
-
-        Services.GetRequiredService<IPowerModeWatcher>().Start();
-
-        bool lastRunCrashed = _logService.LogStart(GetVersion(), Language.German);
-        if (lastRunCrashed)
+        try
         {
-            AppLog.LastRunCrashed(_logger);
+            InitializeComponent();
+            Services = ConfigureServices();
+            _logService = Services.GetRequiredService<LogService>();
+            _logger = Services.GetRequiredService<ILogger<App>>();
+
+            RegisterGlobalCrashHandlers();
+            UnhandledException += OnApplicationUnhandledException;
+
+            Services.GetRequiredService<IPowerModeWatcher>().Start();
+
+            bool lastRunCrashed = _logService.LogStart(GetVersion(), Language.German);
+            if (lastRunCrashed)
+            {
+                AppLog.LastRunCrashed(_logger);
+            }
+        }
+        catch (Exception ex)
+        {
+            // Startfehler vor der Handler-Registrierung werden sonst nicht
+            // protokolliert. Bestes Bemuehen: in eine Datei schreiben, dann weiter.
+            WriteStartupError(ex);
+            throw;
+        }
+    }
+
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Letzte Diagnose-Chance fuer Startfehler: jede Ausnahme wird in eine Datei geschrieben und anschliessend weitergereicht.")]
+    private static void WriteStartupError(Exception exception)
+    {
+        try
+        {
+            string directory = Path.Combine(AppDataLocation.GetDataDirectory(), LogFolderName);
+            _ = Directory.CreateDirectory(directory);
+            string path = Path.Combine(directory, "startup-error.log");
+            File.AppendAllText(path, $"[{DateTimeOffset.UtcNow:O}] {exception}{Environment.NewLine}{Environment.NewLine}");
+        }
+        catch (IOException)
+        {
+            // Diagnose ist best-effort.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Diagnose ist best-effort.
         }
     }
 

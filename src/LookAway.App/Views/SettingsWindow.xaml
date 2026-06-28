@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="LookAway.Views.SettingsWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid x:Name="RootGrid" Padding="24" RowSpacing="16">
+        <Grid.Background>
+            <SolidColorBrush Color="#FFFFFFFF" />
+        </Grid.Background>
+        <Grid.Resources>
+            <SolidColorBrush x:Key="TextBrush" Color="#FF1F2937" />
+            <SolidColorBrush x:Key="AccentBrush" Color="#FF4361EE" />
+            <SolidColorBrush x:Key="ErrorBrush" Color="#FFB00020" />
+        </Grid.Resources>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Pivot Grid.Row="0" Foreground="{StaticResource TextBrush}">
+
+            <!-- Allgemein -->
+            <PivotItem Header="{Binding TabGeneralHeader}">
+                <StackPanel Spacing="16">
+                    <ComboBox
+                        Header="{Binding LanguageLabel}"
+                        ItemsSource="{Binding Languages}"
+                        SelectedItem="{Binding SelectedLanguageOption, Mode=TwoWay}"
+                        DisplayMemberPath="Label"
+                        MinWidth="240" />
+                    <CheckBox
+                        Content="{Binding AutoStartLabel}"
+                        IsChecked="{Binding AutoStart, Mode=TwoWay}" />
+                    <CheckBox
+                        Content="{Binding IdlePauseLabel}"
+                        IsChecked="{Binding PauseOnIdle, Mode=TwoWay}" />
+                    <NumberBox
+                        Header="{Binding IdleThresholdLabel}"
+                        Value="{Binding IdleThresholdMinutes, Mode=TwoWay}"
+                        Minimum="{Binding IdleMinMinutes}"
+                        Maximum="{Binding IdleMaxMinutes}"
+                        IsEnabled="{Binding PauseOnIdle}"
+                        SpinButtonPlacementMode="Inline"
+                        MinWidth="160"
+                        HorizontalAlignment="Left" />
+                    <CheckBox
+                        Content="{Binding FullscreenSuppressLabel}"
+                        IsChecked="{Binding SuppressOnFullscreen, Mode=TwoWay}" />
+                </StackPanel>
+            </PivotItem>
+
+            <!-- Pausenmodell -->
+            <PivotItem Header="{Binding TabModelHeader}">
+                <StackPanel Spacing="16">
+                    <ComboBox
+                        Header="{Binding ModelLabel}"
+                        ItemsSource="{Binding Models}"
+                        SelectedItem="{Binding SelectedModelOption, Mode=TwoWay}"
+                        DisplayMemberPath="Label"
+                        MinWidth="320" />
+                </StackPanel>
+            </PivotItem>
+
+            <!-- Eigene Intervalle -->
+            <PivotItem Header="{Binding TabIntervalsHeader}">
+                <StackPanel Spacing="16">
+                    <TextBlock
+                        Text="{Binding IntervalsHint}"
+                        TextWrapping="Wrap"
+                        Foreground="{StaticResource TextBrush}" />
+                    <CheckBox
+                        Content="{Binding UseCustomLabel}"
+                        IsChecked="{Binding UseCustomDurations, Mode=TwoWay}" />
+                    <NumberBox
+                        Header="{Binding WorkLabel}"
+                        Value="{Binding WorkMinutes, Mode=TwoWay}"
+                        Minimum="{Binding WorkMinMinutes}"
+                        Maximum="{Binding WorkMaxMinutes}"
+                        IsEnabled="{Binding UseCustomDurations}"
+                        SpinButtonPlacementMode="Inline"
+                        MinWidth="160"
+                        HorizontalAlignment="Left" />
+                    <TextBlock
+                        Text="{Binding WorkRangeText}"
+                        FontSize="12"
+                        Foreground="{StaticResource TextBrush}" />
+                    <TextBlock
+                        Text="{Binding WorkError}"
+                        FontSize="12"
+                        Foreground="{StaticResource ErrorBrush}" />
+                    <NumberBox
+                        Header="{Binding BreakLabel}"
+                        Value="{Binding BreakMinutes, Mode=TwoWay}"
+                        Minimum="{Binding BreakMinMinutes}"
+                        Maximum="{Binding BreakMaxMinutes}"
+                        IsEnabled="{Binding UseCustomDurations}"
+                        SpinButtonPlacementMode="Inline"
+                        MinWidth="160"
+                        HorizontalAlignment="Left" />
+                    <TextBlock
+                        Text="{Binding BreakError}"
+                        FontSize="12"
+                        Foreground="{StaticResource ErrorBrush}" />
+                </StackPanel>
+            </PivotItem>
+
+            <!-- Ueber LookAway -->
+            <PivotItem Header="{Binding TabAboutHeader}">
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="{Binding AboutVersionLabel}" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
+                        <TextBlock Text="{Binding Version}" Foreground="{StaticResource TextBrush}" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="{Binding LicenseLabel}" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
+                        <TextBlock Text="{Binding LicenseText}" Foreground="{StaticResource TextBrush}" />
+                    </StackPanel>
+                    <HyperlinkButton Content="{Binding DocsLabel}" NavigateUri="{Binding DocsUri}" />
+                </StackPanel>
+            </PivotItem>
+        </Pivot>
+
+        <StackPanel
+            Grid.Row="1"
+            Orientation="Horizontal"
+            Spacing="12"
+            HorizontalAlignment="Right">
+            <Button Content="{Binding ApplyLabel}" Command="{Binding ApplyCommand}" />
+            <Button Content="{Binding SaveLabel}" Command="{Binding SaveCommand}">
+                <Button.Background>
+                    <SolidColorBrush Color="#FF4361EE" />
+                </Button.Background>
+                <Button.Foreground>
+                    <SolidColorBrush Color="#FFFFFFFF" />
+                </Button.Foreground>
+            </Button>
+            <Button Content="{Binding CancelLabel}" Command="{Binding CancelCommand}" />
+        </StackPanel>
+    </Grid>
+</Window>

@@ -24,6 +24,7 @@ using Microsoft.UI.Xaml;
 // Aliase aufloesen Namespace-Kollisionen mit Microsoft.UI.Xaml und System.
 using AutoStartCoordinator = LookAway.Application.Services.AutoStartCoordinator;
 using BreakReminderViewModel = LookAway.Application.ViewModels.BreakReminderViewModel;
+using SettingsViewModel = LookAway.Application.ViewModels.SettingsViewModel;
 using FullscreenDetectionService = LookAway.Application.Services.FullscreenDetectionService;
 using IdleDetectionService = LookAway.Application.Services.IdleDetectionService;
 using LogService = LookAway.Application.Services.LogService;
@@ -73,6 +74,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     private TrayIconService? _trayIcon;
     private CancellationTokenSource? _detectionCts;
     private ReminderPresenter? _reminderPresenter;
+    private SettingsPresenter? _settingsPresenter;
     private BreakModel _activeModel = BreakModel.ClassicPomodoro;
     private BreakInterval? _activeInterval;
 
@@ -123,13 +125,17 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _window.AppWindow.Hide();
 
         _reminderPresenter = new ReminderPresenter(_window.DispatcherQueue);
+        _settingsPresenter = new SettingsPresenter(
+            _window.DispatcherQueue,
+            CreateSettingsViewModel,
+            ApplySettingsLive);
 
         _trayIcon = new TrayIconService(
             Services.GetRequiredService<ITimerService>(),
             Services.GetRequiredService<TrayStatusPresenter>(),
             _window.DispatcherQueue,
             Services.GetRequiredService<ILogger<TrayIconService>>(),
-            ShowMainWindow,
+            OpenSettings,
             RequestExit);
 
         _trayIcon.Show();
@@ -150,6 +156,10 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         {
             ISettingsRepository repository = Services.GetRequiredService<ISettingsRepository>();
             Settings settings = await repository.LoadAsync().ConfigureAwait(true);
+
+            // Anzeigesprache aus der Konfiguration uebernehmen.
+            Services.GetRequiredService<ILocalizationService>().SetLanguage(settings.Language);
+
             BreakInterval interval = BreakModelRegistry.GetEffective(settings.BreakModel, settings.CustomDurations);
             _activeModel = settings.BreakModel;
             _activeInterval = interval;
@@ -285,6 +295,40 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         }
     }
 
+    private bool OpenSettings()
+    {
+        _settingsPresenter?.Show();
+        return true;
+    }
+
+    private SettingsViewModel CreateSettingsViewModel() => new(
+        Services.GetRequiredService<ISettingsRepository>(),
+        Services.GetRequiredService<AutoStartCoordinator>(),
+        Services.GetRequiredService<ILocalizationService>(),
+        Services.GetRequiredService<ILogger<SettingsViewModel>>(),
+        GetVersion());
+
+    /// <summary>
+    /// Uebernimmt gespeicherte Einstellungen sofort: startet den Timer mit dem
+    /// neuen Modell neu und aktualisiert Idle-/Vollbild-Erkennung sowie das Tray.
+    /// </summary>
+    private void ApplySettingsLive(Settings settings)
+    {
+        BreakInterval interval = BreakModelRegistry.GetEffective(settings.BreakModel, settings.CustomDurations);
+        _activeModel = settings.BreakModel;
+        _activeInterval = interval;
+        _trayIcon?.SetActiveModel(settings.BreakModel);
+
+        Services.GetRequiredService<ITimerService>().Start(interval);
+
+        IdleDetectionService idle = Services.GetRequiredService<IdleDetectionService>();
+        idle.IsEnabled = settings.PauseOnIdle;
+        idle.Threshold = TimeSpan.FromMinutes(settings.IdleThresholdMinutes);
+
+        FullscreenDetectionService fullscreen = Services.GetRequiredService<FullscreenDetectionService>();
+        fullscreen.IsEnabled = settings.SuppressOnFullscreen;
+    }
+
     private bool ShowMainWindow()
     {
         if (_window is null)
@@ -346,6 +390,9 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _ = services.AddSingleton<ICrashReporter>(_ => new CrashReporter(crashDirectory));
         _ = services.AddSingleton<LogService>();
         _ = services.AddSingleton<ISettingsRepository, JsonSettingsRepository>();
+
+        // Lokalisierung: Deutsch ist die Referenzsprache.
+        _ = services.AddSingleton<ILocalizationService>(_ => new JsonLocalizationService(Language.German));
 
         // Autostart
         _ = services.AddSingleton<IAutoStartService, RegistryAutoStartService>();

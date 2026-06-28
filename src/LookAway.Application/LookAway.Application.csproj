@@ -6,6 +6,9 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.5" />
+    <!-- UI-agnostische MVVM-Bausteine (ObservableObject/RelayCommand) fuer die
+         testbaren ViewModels der Application-Schicht. Keine WinUI-Abhaengigkeit. -->
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
   </ItemGroup>
 
   <ItemGroup>

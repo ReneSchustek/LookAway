@@ -1,0 +1,44 @@
+{
+  "Settings.Title": "Einstellungen",
+  "Settings.Tab.General": "Allgemein",
+  "Settings.Tab.Model": "Pausenmodell",
+  "Settings.Tab.Intervals": "Eigene Intervalle",
+  "Settings.Tab.About": "Über LookAway",
+
+  "Settings.Language.Label": "Sprache",
+  "Settings.AutoStart.Label": "Mit Windows starten",
+  "Settings.Idle.PauseLabel": "Bei Inaktivität automatisch pausieren",
+  "Settings.Idle.ThresholdLabel": "Inaktivitätsschwelle (Minuten)",
+  "Settings.Fullscreen.SuppressLabel": "Im Vollbildmodus nicht stören",
+
+  "Settings.Model.Label": "Aktives Pausenmodell",
+  "Settings.Model.ShortBreaks": "Kurze Pausen (60 / 5 min)",
+  "Settings.Model.ClassicPomodoro": "Klassisches Pomodoro (25 / 5 min)",
+  "Settings.Model.ModifiedPomodoro": "Modifiziertes Pomodoro (50 / 10 min)",
+  "Settings.Model.Ultradian": "Ultradianer Rhythmus (90 / 20 min)",
+  "Settings.Model.PhysicalCounter": "Physical Counter (40 / 2 min)",
+  "Settings.Model.TaskBased": "Aufgabenbasiert (max. 120 / 10 min)",
+  "Settings.Model.LegalCompliance": "Gesetzliche Empfehlung (120 / 15 min)",
+
+  "Settings.Intervals.UseCustom": "Eigene Dauern statt der Modell-Vorgaben verwenden",
+  "Settings.Intervals.Hint": "Passe Arbeits- und Pausendauer an. Ausgeschaltet gelten die Vorgaben des Modells.",
+  "Settings.Intervals.WorkLabel": "Arbeitsdauer (Minuten)",
+  "Settings.Intervals.BreakLabel": "Pausendauer (Minuten)",
+  "Settings.Intervals.WorkRangeHint": "Erlaubter Bereich für dieses Modell: {0}–{1} Minuten.",
+  "Settings.Validation.WorkRange": "Arbeitsdauer muss zwischen {0} und {1} Minuten liegen.",
+  "Settings.Validation.BreakRange": "Pausendauer muss zwischen {0} und {1} Minuten liegen.",
+
+  "Settings.About.VersionLabel": "Version",
+  "Settings.About.LicenseLabel": "Lizenz",
+  "Settings.About.License": "Proprietär – alle Rechte vorbehalten.",
+  "Settings.About.DocsLabel": "Dokumentation",
+  "Settings.About.DocsUrl": "https://github.com/ReneSchustek/LookAway",
+
+  "Settings.Button.Save": "Speichern",
+  "Settings.Button.Cancel": "Abbrechen",
+  "Settings.Button.Apply": "Anwenden",
+
+  "Language.German": "Deutsch",
+  "Language.English": "Englisch",
+  "Language.French": "Französisch"
+}

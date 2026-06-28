@@ -54,6 +54,21 @@ public sealed class HotkeyTests
     }
 
     [Fact]
+    public void FindConflicts_meldet_ungueltige_Leer_Bindungen_nicht()
+    {
+        // Zwei ungebundene Aktionen (None+0) sind wertgleich, duerfen aber nicht
+        // als Konflikt gelten.
+        Dictionary<HotkeyAction, HotkeyDefinition> bindings = new()
+        {
+            [HotkeyAction.StartBreak] = new HotkeyDefinition(HotkeyModifiers.None, 0),
+            [HotkeyAction.SkipOrSnooze] = new HotkeyDefinition(HotkeyModifiers.None, 0),
+            [HotkeyAction.ToggleDnd] = HotkeyDefaults.ToggleDnd,
+        };
+
+        Assert.Empty(HotkeyValidator.FindConflicts(bindings));
+    }
+
+    [Fact]
     public void Defaults_sind_gueltig_und_kollisionsfrei()
     {
         IReadOnlyDictionary<HotkeyAction, HotkeyDefinition> defaults = HotkeyDefaults.CreateDefaults();

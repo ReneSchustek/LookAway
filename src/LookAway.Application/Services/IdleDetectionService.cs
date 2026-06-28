@@ -12,8 +12,7 @@ namespace LookAway.Application.Services;
 /// </summary>
 /// <remarks>
 /// Ein selbst ausgeloester Idle-Pause wird gemerkt (<c>_pausedByIdle</c>), damit
-/// eine vom Benutzer ausgeloeste Pause nicht faelschlich fortgesetzt wird
-/// (Risiko-Hinweis BRIEF016).
+/// eine vom Benutzer ausgeloeste Pause nicht faelschlich fortgesetzt wird.
 /// </remarks>
 public sealed class IdleDetectionService
 {

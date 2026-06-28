@@ -7,7 +7,7 @@ namespace LookAway.Application.Statistics;
 
 /// <summary>
 /// Aggregiert die Pausen-Historie zu Kennzahlen fuer Heute, diese Woche und
-/// dieses Jahr (BRIEF018). Reine, UI-freie Logik; arbeitet in lokaler Zeit
+/// dieses Jahr. Reine, UI-freie Logik; arbeitet in lokaler Zeit
 /// relativ zur <see cref="IClock"/>-Gegenwart und ist damit testbar.
 /// </summary>
 public sealed class StatisticsService

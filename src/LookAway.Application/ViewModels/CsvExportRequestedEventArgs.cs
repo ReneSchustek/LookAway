@@ -2,7 +2,7 @@ namespace LookAway.Application.ViewModels;
 
 /// <summary>
 /// Traegt den fertigen CSV-Inhalt, der von der UI in eine Datei geschrieben
-/// werden soll (BRIEF018).
+/// werden soll.
 /// </summary>
 public sealed class CsvExportRequestedEventArgs : EventArgs
 {

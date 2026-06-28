@@ -1,7 +1,7 @@
 namespace LookAway.Application.Localization;
 
 /// <summary>
-/// Sprachneutrale Schluessel des First-Run-Wizards (BRIEF009). Texte liegen in
+/// Sprachneutrale Schluessel des First-Run-Wizards. Texte liegen in
 /// den eingebetteten Sprachtabellen (Data-Schicht).
 /// </summary>
 public static class WelcomeTextKeys

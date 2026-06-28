@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Data.Repositories;
 
 /// <summary>
-/// Persistiert die Pausen-Historie als JSON-Array pro Windows-Benutzer (BRIEF018).
+/// Persistiert die Pausen-Historie als JSON-Array pro Windows-Benutzer.
 /// </summary>
 /// <remarks>
 /// Append-only: jede neue Sitzung wird der bestehenden Liste hinzugefuegt und das

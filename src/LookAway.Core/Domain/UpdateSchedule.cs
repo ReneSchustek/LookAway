@@ -3,7 +3,7 @@ using LookAway.Core.Enums;
 namespace LookAway.Core.Domain;
 
 /// <summary>
-/// Entscheidet, ob eine Update-Pruefung gemaess Haeufigkeit faellig ist (BRIEF020).
+/// Entscheidet, ob eine Update-Pruefung gemaess Haeufigkeit faellig ist.
 /// Reine Logik — ohne Netzwerk testbar.
 /// </summary>
 public static class UpdateSchedule

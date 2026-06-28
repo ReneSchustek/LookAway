@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Data.Net;
 
 /// <summary>
-/// <see cref="IHttpGetClient"/> auf Basis von <see cref="HttpClient"/> (BRIEF020).
+/// <see cref="IHttpGetClient"/> auf Basis von <see cref="HttpClient"/>.
 /// Setzt den von der GitHub-API geforderten User-Agent und einen Timeout; jeder
 /// Netzwerkfehler fuehrt zu <c>null</c> statt zu einer Exception.
 /// </summary>

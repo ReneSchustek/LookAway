@@ -11,7 +11,7 @@ namespace LookAway.Services;
 
 /// <summary>
 /// Pausiert und reaktiviert die System-Medienwiedergabe ueber die SMTC-API
-/// (<see cref="GlobalSystemMediaTransportControlsSessionManager"/>, BRIEF021).
+/// (<see cref="GlobalSystemMediaTransportControlsSessionManager"/>).
 /// Fehlt die API oder eine Session, bleibt der Aufruf wirkungslos.
 /// </summary>
 internal sealed class WindowsMediaController : IMediaController

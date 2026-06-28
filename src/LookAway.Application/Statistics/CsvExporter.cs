@@ -5,7 +5,7 @@ using LookAway.Core.Entities;
 namespace LookAway.Application.Statistics;
 
 /// <summary>
-/// Erzeugt aus Pausen-Sitzungen eine CSV-Darstellung (BRIEF018). Zeitstempel und
+/// Erzeugt aus Pausen-Sitzungen eine CSV-Darstellung. Zeitstempel und
 /// Dauer werden invariant (maschinenlesbar) formatiert; Felder werden bei Bedarf
 /// CSV-konform escaped.
 /// </summary>

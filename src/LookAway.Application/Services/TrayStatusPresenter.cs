@@ -7,12 +7,11 @@ namespace LookAway.Application.Services;
 
 /// <summary>
 /// Uebersetzt den Timer-Zustand in die Tray-Darstellung: Icon-Variante und
-/// Tooltip-Text. Reine, UI-freie Logik — damit ohne Tray-Control testbar
-/// (siehe BRIEF015, "Icon-Wechsel-Logik auf Service-Level").
+/// Tooltip-Text. Reine, UI-freie Logik — damit ohne Tray-Control testbar.
 /// </summary>
 /// <remarks>
 /// Die Tooltip-Texte sind bewusst kompakt gehalten (Windows-Tooltip-Limit) und
-/// werden ueber die Lokalisierung in der aktuellen Sprache aufgeloest (BRIEF010).
+/// werden ueber die Lokalisierung in der aktuellen Sprache aufgeloest.
 /// </remarks>
 public sealed class TrayStatusPresenter
 {

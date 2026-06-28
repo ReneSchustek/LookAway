@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Data.Services;
 
 /// <summary>
-/// Prueft die neueste Release ueber die GitHub-Releases-API (BRIEF020). Der
+/// Prueft die neueste Release ueber die GitHub-Releases-API. Der
 /// eigentliche Netzwerkzugriff ist ueber <see cref="IHttpGetClient"/> gekapselt
 /// und damit testbar; die Versionsvergleichslogik liegt in <see cref="UpdateInfo"/>.
 /// </summary>

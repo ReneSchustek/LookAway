@@ -1,7 +1,7 @@
 namespace LookAway.Application.Localization;
 
 /// <summary>
-/// Sprachneutrale Schluessel des Tray-Menues und der Tooltips (BRIEF010).
+/// Sprachneutrale Schluessel des Tray-Menues und der Tooltips.
 /// </summary>
 public static class TrayTextKeys
 {

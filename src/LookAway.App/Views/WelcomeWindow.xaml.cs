@@ -7,7 +7,7 @@ using Windows.Graphics;
 namespace LookAway.Views;
 
 /// <summary>
-/// First-Run-Wizard-Fenster (BRIEF009). Bindet an das UI-freie
+/// First-Run-Wizard-Fenster. Bindet an das UI-freie
 /// <see cref="WelcomeViewModel"/>; die Ablauflogik liegt dort.
 /// </summary>
 internal sealed partial class WelcomeWindow : Window

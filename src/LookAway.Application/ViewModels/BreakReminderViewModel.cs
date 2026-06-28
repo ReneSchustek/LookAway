@@ -20,7 +20,7 @@ public sealed class BreakReminderViewModel
     /// <summary>Verschiebedauer in Minuten bei "Snooze".</summary>
     public const int SnoozeMinutes = 5;
 
-    /// <summary>Lokalisierungs-Schluessel des Titels (Texte folgen in BRIEF010).</summary>
+    /// <summary>Lokalisierungs-Schluessel des Titels.</summary>
     public const string TitleKey = "Reminder.Title";
 
     private bool _completed;
@@ -28,7 +28,7 @@ public sealed class BreakReminderViewModel
     /// <summary>
     /// Erzeugt das ViewModel fuer ein Pausenmodell.
     /// </summary>
-    /// <param name="hintKey">Lokalisierungs-Schluessel des Uebungs-Hinweises (BRIEF006).</param>
+    /// <param name="hintKey">Lokalisierungs-Schluessel des Uebungs-Hinweises.</param>
     public BreakReminderViewModel(string hintKey)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(hintKey);

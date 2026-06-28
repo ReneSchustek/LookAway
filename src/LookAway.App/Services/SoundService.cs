@@ -10,7 +10,7 @@ namespace LookAway.Services;
 
 /// <summary>
 /// Spielt die eingebetteten Erinnerungstoene ueber einen wiederverwendeten
-/// <see cref="MediaPlayer"/> ab (BRIEF017). Die Lautstaerke wird pro Wiedergabe
+/// <see cref="MediaPlayer"/> ab. Die Lautstaerke wird pro Wiedergabe
 /// gesetzt; Fehler (z. B. Audiogeraete-Wechsel) werden geschluckt.
 /// </summary>
 internal sealed class SoundService : ISoundService, IDisposable
@@ -19,6 +19,7 @@ internal sealed class SoundService : ISoundService, IDisposable
 
     private readonly ILogger<SoundService> _logger;
     private readonly MediaPlayer _player = new();
+    private MediaSource? _currentSource;
     private bool _disposed;
 
     /// <summary>
@@ -52,7 +53,13 @@ internal sealed class SoundService : ISoundService, IDisposable
         try
         {
             Uri uri = new($"ms-appx:///Assets/Sounds/{GetFileName(soundType)}");
-            _player.Source = MediaSource.CreateFromUri(uri);
+            MediaSource source = MediaSource.CreateFromUri(uri);
+            _player.Source = source;
+
+            // Vorherige Quelle erst nach dem Umhaengen freigeben (kein COM-Leak).
+            _currentSource?.Dispose();
+            _currentSource = source;
+
             _player.Volume = clamped / VolumeDivisor;
             _player.Play();
         }
@@ -82,6 +89,8 @@ internal sealed class SoundService : ISoundService, IDisposable
 
         _disposed = true;
         _player.Dispose();
+        _currentSource?.Dispose();
+        _currentSource = null;
     }
 }
 

@@ -3,7 +3,7 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Core.Interfaces;
 
 /// <summary>
-/// Prueft, ob eine neuere LookAway-Version verfuegbar ist (BRIEF020).
+/// Prueft, ob eine neuere LookAway-Version verfuegbar ist.
 /// </summary>
 public interface IUpdateChecker
 {

@@ -1,7 +1,7 @@
 namespace LookAway.Core.ValueObjects;
 
 /// <summary>
-/// Ergebnis einer Update-Pruefung (BRIEF020). Enthaelt die reine, testbare
+/// Ergebnis einer Update-Pruefung. Enthaelt die reine, testbare
 /// Vergleichslogik zwischen installierter und neuester Version.
 /// </summary>
 public sealed class UpdateInfo

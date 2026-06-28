@@ -11,8 +11,7 @@ namespace LookAway.Views;
 
 /// <summary>
 /// Eigenstaendiges, dezentes Erinnerungsfenster. Bindet an das UI-freie
-/// <see cref="BreakReminderViewModel"/>; die Texte sind Platzhalter bis zur
-/// Lokalisierung (BRIEF010).
+/// <see cref="BreakReminderViewModel"/>; die Texte kommen aus der Lokalisierung.
 /// </summary>
 internal sealed partial class BreakReminderWindow : Window
 {
@@ -43,6 +42,7 @@ internal sealed partial class BreakReminderWindow : Window
         SkipButton.Content = localization.GetText(ReminderTextKeys.Skip);
 
         _viewModel.Completed += OnViewModelCompleted;
+        Closed += OnWindowClosed;
 
         ConfigureWindow();
         StartTimeoutTimer();
@@ -86,6 +86,21 @@ internal sealed partial class BreakReminderWindow : Window
         _timeoutTimer?.Stop();
         _timeoutTimer = null;
         Close();
+    }
+
+    private void OnWindowClosed(object sender, WindowEventArgs args)
+    {
+        _timeoutTimer?.Stop();
+        _timeoutTimer = null;
+        _viewModel.Completed -= OnViewModelCompleted;
+        Closed -= OnWindowClosed;
+
+        // Direkt ueber das X geschlossen (keine Aktion gewaehlt): wie "Ueberspringen"
+        // behandeln, damit kein Default-"Pause starten" per Timeout nachfeuert.
+        if (!_viewModel.IsCompleted)
+        {
+            _viewModel.Skip();
+        }
     }
 
     private void OnStartBreakClick(object sender, RoutedEventArgs e) => _viewModel.StartBreak();

@@ -1,7 +1,7 @@
 namespace LookAway.Core.Interfaces;
 
 /// <summary>
-/// Steuert die Bildschirmhelligkeit waehrend einer Pause (BRIEF021).
+/// Steuert die Bildschirmhelligkeit waehrend einer Pause.
 /// Implementierungen kapseln die Plattform-Anbindung (DDC/CI bzw. Fallback).
 /// </summary>
 public interface IScreenDimmer

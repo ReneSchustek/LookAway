@@ -3,7 +3,7 @@ using LookAway.Core.Domain;
 namespace LookAway.Data;
 
 /// <summary>
-/// Ermittelt das Datenverzeichnis zur Laufzeit (BRIEF022). Portable-Modus wird
+/// Ermittelt das Datenverzeichnis zur Laufzeit. Portable-Modus wird
 /// erkannt, wenn neben der EXE die Datei <c>portable.flag</c> liegt.
 /// </summary>
 public static class AppDataLocation

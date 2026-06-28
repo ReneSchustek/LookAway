@@ -2,7 +2,7 @@ namespace LookAway.Core.Domain;
 
 /// <summary>
 /// Stabile Lokalisierungs-Schluessel fuer die Uebungs-/Pausen-Hinweise pro
-/// Pausenmodell. Die konkreten Texte liefert die Lokalisierung (BRIEF010);
+/// Pausenmodell. Die konkreten Texte liefert die Lokalisierung;
 /// hier stehen bewusst nur die sprachneutralen Schluessel, kein UI-Text.
 /// </summary>
 public static class BreakHintKeys

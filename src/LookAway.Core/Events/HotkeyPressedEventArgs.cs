@@ -3,7 +3,7 @@ using LookAway.Core.Enums;
 namespace LookAway.Core.Events;
 
 /// <summary>
-/// Traegt die per globalem Hotkey ausgeloeste Aktion (BRIEF019).
+/// Traegt die per globalem Hotkey ausgeloeste Aktion.
 /// </summary>
 public sealed class HotkeyPressedEventArgs : EventArgs
 {

@@ -296,9 +296,8 @@ public sealed class TimerService : ITimerService, IDisposable
 
         TimerServiceLog.TimerResumed(_logger, resumedState);
 
-        // Brief verlangt explizit ein WorkResumed-Event nach Resume aus
-        // einer Working-Pause; bei OnBreak-Resume bleibt das Event-Stream-
-        // Konsument auf den State angewiesen.
+        // Nach Resume in eine Arbeitsphase wird ein WorkResumed-Event emittiert;
+        // beim Resume aus einer Pause (OnBreak) verlaesst sich der Konsument auf den State.
         if (resumedState == TimerState.Working)
         {
             EnqueueEvent(new WorkResumedEvent { Timestamp = _clock.UtcNow });

@@ -1,7 +1,7 @@
 namespace LookAway.Application.Localization;
 
 /// <summary>
-/// Sprachneutrale Schluessel des Pause-Erinnerungsfensters (BRIEF010).
+/// Sprachneutrale Schluessel des Pause-Erinnerungsfensters.
 /// </summary>
 public static class ReminderTextKeys
 {

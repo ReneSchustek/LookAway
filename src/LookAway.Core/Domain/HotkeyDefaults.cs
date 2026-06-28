@@ -4,7 +4,7 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Core.Domain;
 
 /// <summary>
-/// Standard-Tastenkombinationen der globalen Hotkeys (BRIEF019).
+/// Standard-Tastenkombinationen der globalen Hotkeys.
 /// </summary>
 public static class HotkeyDefaults
 {

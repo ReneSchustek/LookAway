@@ -58,7 +58,7 @@ namespace LookAway;
 [SuppressMessage(
     "Design",
     "CA1001:Types that own disposable fields should be disposable",
-    Justification = "Die App-Klasse implementiert keinen IDisposable-Vertrag. Disposing der gehaltenen Felder erfolgt im RequestExit-Pfad (Tray) und durch den ServiceProvider beim Process-Shutdown.")]
+    Justification = "Die App-Klasse implementiert keinen IDisposable-Vertrag. Die gehaltenen Felder und der DI-ServiceProvider werden im RequestExit-Pfad explizit freigegeben.")]
 public partial class App : global::Microsoft.UI.Xaml.Application
 {
     private const string LogFolderName = "logs";
@@ -153,7 +153,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
     /// <summary>
     /// Startsequenz: beim allerersten Start fuehrt der Wizard durch die
-    /// Erstkonfiguration (BRIEF009); danach werden Tray und Timer eingerichtet.
+    /// Erstkonfiguration; danach werden Tray und Timer eingerichtet.
     /// </summary>
     private async Task StartAsync()
     {
@@ -191,7 +191,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
             StartTimer(settings);
 
-            // Update-Pruefung im Hintergrund — nicht startkritisch (BRIEF020).
+            // Update-Pruefung im Hintergrund — nicht startkritisch.
             _ = CheckForUpdatesAtStartupAsync(settings);
         }
         catch (UnauthorizedAccessException ex)
@@ -278,14 +278,15 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             Services.GetRequiredService<ILogger<TrayIconService>>(),
             OpenSettings,
             RequestExit,
-            OpenUpdatePage);
+            OpenUpdatePage,
+            ShowBreakReminder);
 
         _trayIcon.Show();
         AppLog.TrayReady(_logger!);
     }
 
     // Timer mit dem konfigurierten Modell starten — das Tray-Icon spiegelt den
-    // Zustand dann live wider (BRIEF015).
+    // Zustand dann live wider.
     private void StartTimer(Settings settings)
     {
         BreakInterval interval = BreakModelRegistry.GetEffective(settings.BreakModel, settings.CustomDurations);
@@ -432,7 +433,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
                         break;
                     case BreakCompletedEvent:
-                        // Pause vorbei: Dimmen/Medien-Pause rueckgaengig machen (BRIEF021).
+                        // Pause vorbei: Dimmen/Medien-Pause rueckgaengig machen.
                         _ = Services.GetRequiredService<PauseActionService>().EndBreakAsync(cancellationToken);
                         break;
                     default:
@@ -492,7 +493,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         switch (result)
         {
             case ReminderResult.StartBreak:
-                // Die Pause laeuft bereits durch die Engine-Transition; Pause-Aktionen starten (BRIEF021).
+                // Die Pause laeuft bereits durch die Engine-Transition; Pause-Aktionen starten.
                 _ = Services.GetRequiredService<PauseActionService>().BeginBreakAsync();
                 break;
             case ReminderResult.Snooze:
@@ -654,11 +655,15 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _detectionCts?.Cancel();
         _detectionCts?.Dispose();
         _detectionCts = null;
-        (Services.GetService<IHotkeyService>() as IDisposable)?.Dispose();
         _trayIcon?.Dispose();
         _trayIcon = null;
         _instanceLock?.Dispose();
         _instanceLock = null;
+
+        // Gibt alle per DI gehaltenen Singletons frei: stellt u. a. die
+        // Bildschirmhelligkeit wieder her, gibt Hotkeys frei und leert den Log-Puffer.
+        (Services as IDisposable)?.Dispose();
+
         Exit();
     }
 
@@ -696,47 +701,47 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _ = services.AddSingleton<LogService>();
         _ = services.AddSingleton<ISettingsRepository, JsonSettingsRepository>();
 
-        // Lokalisierung (BRIEF008/BRIEF010): Deutsch ist die Referenzsprache.
+        // Lokalisierung: Deutsch ist die Referenzsprache.
         _ = services.AddSingleton<ILocalizationService>(_ => new JsonLocalizationService(Language.German));
 
-        // Sound-Optionen (BRIEF017)
+        // Sound-Optionen
         _ = services.AddSingleton<ISoundService>(sp =>
             new SoundService(sp.GetRequiredService<ILogger<SoundService>>()));
 
-        // Statistiken / History / CSV (BRIEF018)
+        // Statistiken / History / CSV
         _ = services.AddSingleton<IBreakHistoryRepository, JsonBreakHistoryRepository>();
         _ = services.AddSingleton<CsvExporter>();
         _ = services.AddSingleton<StatisticsService>();
 
-        // Globale Hotkeys (BRIEF019)
+        // Globale Hotkeys
         _ = services.AddSingleton<IHotkeyService, WindowsHotkeyService>();
 
-        // Pause-Aktionen (BRIEF021)
+        // Pause-Aktionen
         _ = services.AddSingleton<IScreenDimmer>(sp => new WindowsScreenDimmer(sp.GetRequiredService<ILogger<WindowsScreenDimmer>>()));
         _ = services.AddSingleton<IMediaController>(sp => new WindowsMediaController(sp.GetRequiredService<ILogger<WindowsMediaController>>()));
         _ = services.AddSingleton<PauseActionService>();
 
-        // Update-Pruefung (BRIEF020)
+        // Update-Pruefung
         _ = services.AddSingleton<IHttpGetClient>(sp => new HttpGetClient(sp.GetRequiredService<ILogger<HttpGetClient>>()));
         _ = services.AddSingleton<IUpdateChecker>(sp => new GitHubUpdateChecker(
             sp.GetRequiredService<IHttpGetClient>(),
             ParseVersion(GetVersion()),
             sp.GetRequiredService<ILogger<GitHubUpdateChecker>>()));
 
-        // Autostart (BRIEF004)
+        // Autostart
         _ = services.AddSingleton<IAutoStartService, RegistryAutoStartService>();
         _ = services.AddSingleton<AutoStartCoordinator>();
 
-        // Tray-Status (BRIEF015)
+        // Tray-Status
         _ = services.AddSingleton<TrayStatusPresenter>();
 
-        // Idle-/Vollbild-Erkennung (BRIEF016)
+        // Idle-/Vollbild-Erkennung
         _ = services.AddSingleton<IIdleDetector, WindowsIdleDetector>();
         _ = services.AddSingleton<IFullscreenDetector, WindowsFullscreenDetector>();
         _ = services.AddSingleton<IdleDetectionService>();
         _ = services.AddSingleton<FullscreenDetectionService>();
 
-        // Timer-Engine (BRIEF005)
+        // Timer-Engine
         _ = services.AddSingleton<IClock, SystemClock>();
         _ = services.AddSingleton<IPowerModeWatcher, WindowsPowerModeWatcher>();
         _ = services.AddSingleton<TimerService>();

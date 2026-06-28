@@ -3,7 +3,7 @@ using LookAway.Core.Enums;
 namespace LookAway.Core.Interfaces;
 
 /// <summary>
-/// Spielt dezente Erinnerungstoene ab (BRIEF017). Die Lautstaerke wird pro
+/// Spielt dezente Erinnerungstoene ab. Die Lautstaerke wird pro
 /// Wiedergabe gesetzt und veraendert die System-Lautstaerke nicht.
 /// </summary>
 public interface ISoundService

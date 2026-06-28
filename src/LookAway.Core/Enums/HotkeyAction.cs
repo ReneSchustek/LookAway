@@ -1,7 +1,7 @@
 namespace LookAway.Core.Enums;
 
 /// <summary>
-/// Per globalem Hotkey ausloesbare Aktionen (BRIEF019).
+/// Per globalem Hotkey ausloesbare Aktionen.
 /// </summary>
 public enum HotkeyAction
 {

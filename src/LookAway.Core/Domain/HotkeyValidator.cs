@@ -4,7 +4,7 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Core.Domain;
 
 /// <summary>
-/// Prueft globale Hotkeys auf Gueltigkeit und Kollisionen (BRIEF019). Reine,
+/// Prueft globale Hotkeys auf Gueltigkeit und Kollisionen. Reine,
 /// plattformunabhaengige Logik — ohne echte Registrierung testbar.
 /// </summary>
 public static class HotkeyValidator
@@ -37,6 +37,13 @@ public static class HotkeyValidator
 
         for (int i = 0; i < entries.Count; i++)
         {
+            // Nur gueltige Bindungen koennen kollidieren; ungebundene/ungueltige
+            // (z. B. None+0) duerfen sich nicht gegenseitig als Konflikt melden.
+            if (!IsValid(entries[i].Value))
+            {
+                continue;
+            }
+
             for (int j = i + 1; j < entries.Count; j++)
             {
                 if (entries[i].Value == entries[j].Value)

@@ -1,7 +1,7 @@
 namespace LookAway.Core.Enums;
 
 /// <summary>
-/// Auswaehlbarer Erinnerungston (BRIEF017). Die konkreten Audiodateien liefert
+/// Auswaehlbarer Erinnerungston. Die konkreten Audiodateien liefert
 /// die Implementierung von <see cref="LookAway.Core.Interfaces.ISoundService"/>.
 /// </summary>
 public enum SoundType

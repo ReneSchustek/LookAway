@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Application.ViewModels;
 
 /// <summary>
-/// Zustand und Ablauflogik des First-Run-Wizards (BRIEF009) — UI-frei und damit
+/// Zustand und Ablauflogik des First-Run-Wizards — UI-frei und damit
 /// ohne WinUI testbar. Fuehrt in drei Schritten durch Sprache, Pausenmodell und
 /// Autostart und persistiert beim Abschluss die Erstkonfiguration.
 /// </summary>

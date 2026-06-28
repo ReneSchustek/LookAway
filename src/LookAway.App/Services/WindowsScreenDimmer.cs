@@ -8,8 +8,8 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Services;
 
 /// <summary>
-/// Dimmt DDC/CI-faehige Monitore ueber die Win32-Helligkeitssteuerung (Dxva2,
-/// BRIEF021). Auf Hardware ohne DDC/CI (z. B. viele Notebooks) bleibt der Aufruf
+/// Dimmt DDC/CI-faehige Monitore ueber die Win32-Helligkeitssteuerung (Dxva2).
+/// Auf Hardware ohne DDC/CI (z. B. viele Notebooks) bleibt der Aufruf
 /// wirkungslos — Fehler werden geschluckt und geloggt.
 /// </summary>
 internal sealed partial class WindowsScreenDimmer : IScreenDimmer, IDisposable

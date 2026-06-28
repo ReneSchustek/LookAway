@@ -1,7 +1,7 @@
 namespace LookAway.Core.Domain;
 
 /// <summary>
-/// Bestimmt das Datenverzeichnis der Anwendung (BRIEF022). Im Portable-Modus
+/// Bestimmt das Datenverzeichnis der Anwendung. Im Portable-Modus
 /// liegen Konfiguration, Historie und Logs neben der EXE, sonst unter
 /// <c>%APPDATA%\LookAway</c>. Reine Logik — ohne Dateisystem testbar.
 /// </summary>

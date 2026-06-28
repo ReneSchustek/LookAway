@@ -12,7 +12,7 @@ namespace LookAway.Core.Interfaces;
 [SuppressMessage(
     "Naming",
     "CA1716:Identifiers should not match keywords",
-    Justification = "BRIEF005 schreibt die Schnittstellen-Member 'Stop()' und 'Resume()' vor. Die Konflikte mit VB.NET-Schluesselwoertern werden in einer Single-Language-C#-Codebasis bewusst akzeptiert.")]
+    Justification = "Die Member 'Stop()' und 'Resume()' sind bewusst so benannt; die Konflikte mit VB.NET-Schluesselwoertern werden in einer Single-Language-C#-Codebasis akzeptiert.")]
 public interface ITimerService
 {
     /// <summary>Aktueller Zustand der State-Machine.</summary>

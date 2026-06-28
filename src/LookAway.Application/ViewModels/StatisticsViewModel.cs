@@ -9,7 +9,7 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Application.ViewModels;
 
 /// <summary>
-/// Bereitet die Pausen-Statistik fuer die Anzeige auf (BRIEF018) und stoesst den
+/// Bereitet die Pausen-Statistik fuer die Anzeige auf und stoesst den
 /// CSV-Export an. UI-frei und damit testbar.
 /// </summary>
 public sealed partial class StatisticsViewModel : ObservableObject

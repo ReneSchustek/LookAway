@@ -1,7 +1,7 @@
 namespace LookAway.Core.Enums;
 
 /// <summary>
-/// Ergebnis einer angebotenen Pause-Erinnerung (BRIEF018).
+/// Ergebnis einer angebotenen Pause-Erinnerung.
 /// </summary>
 public enum BreakOutcome
 {

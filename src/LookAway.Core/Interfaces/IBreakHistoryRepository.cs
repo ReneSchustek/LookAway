@@ -3,7 +3,7 @@ using LookAway.Core.Entities;
 namespace LookAway.Core.Interfaces;
 
 /// <summary>
-/// Persistenz-Vertrag fuer die Pausen-Historie (BRIEF018). Append-only mit
+/// Persistenz-Vertrag fuer die Pausen-Historie. Append-only mit
 /// automatischem Aufraeumen alter Eintraege.
 /// </summary>
 public interface IBreakHistoryRepository

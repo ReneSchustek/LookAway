@@ -11,7 +11,7 @@ using Windows.Storage.Pickers;
 namespace LookAway.Views;
 
 /// <summary>
-/// Settings-Fenster (BRIEF008). Bindet an das UI-freie
+/// Settings-Fenster. Bindet an das UI-freie
 /// <see cref="SettingsViewModel"/>; die gesamte Lade-, Validierungs- und
 /// Persistenzlogik liegt dort.
 /// </summary>

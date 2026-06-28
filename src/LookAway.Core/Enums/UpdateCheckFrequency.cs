@@ -1,7 +1,7 @@
 namespace LookAway.Core.Enums;
 
 /// <summary>
-/// Haeufigkeit der Update-Pruefung (BRIEF020).
+/// Haeufigkeit der Update-Pruefung.
 /// </summary>
 public enum UpdateCheckFrequency
 {

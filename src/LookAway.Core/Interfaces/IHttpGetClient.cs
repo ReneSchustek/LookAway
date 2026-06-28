@@ -1,7 +1,7 @@
 namespace LookAway.Core.Interfaces;
 
 /// <summary>
-/// Minimale Abstraktion ueber einen lesenden HTTP-GET-Zugriff (BRIEF020). Erlaubt
+/// Minimale Abstraktion ueber einen lesenden HTTP-GET-Zugriff. Erlaubt
 /// es, Netzwerkzugriffe in Tests durch einen Fake zu ersetzen.
 /// </summary>
 public interface IHttpGetClient

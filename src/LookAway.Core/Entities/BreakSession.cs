@@ -4,7 +4,7 @@ using LookAway.Core.Enums;
 namespace LookAway.Core.Entities;
 
 /// <summary>
-/// Aufgezeichnete Pause-Erinnerung mit Zeitraum, Modell und Ergebnis (BRIEF018).
+/// Aufgezeichnete Pause-Erinnerung mit Zeitraum, Modell und Ergebnis.
 /// Unveraenderlich; die Invarianten werden im Konstruktor geprueft.
 /// </summary>
 public sealed class BreakSession

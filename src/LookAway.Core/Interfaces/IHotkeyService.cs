@@ -6,7 +6,7 @@ namespace LookAway.Core.Interfaces;
 
 /// <summary>
 /// Registriert systemweite Tastenkombinationen und meldet ihre Ausloesung
-/// (BRIEF019). Implementierungen kapseln die Plattform-Anbindung (Win32).
+///. Implementierungen kapseln die Plattform-Anbindung (Win32).
 /// </summary>
 public interface IHotkeyService
 {

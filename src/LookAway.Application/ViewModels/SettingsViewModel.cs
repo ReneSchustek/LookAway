@@ -34,7 +34,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private readonly ILogger<SettingsViewModel> _logger;
     private readonly string _applicationVersion;
 
-    /// <summary>Statistik-Bereich (BRIEF018), als eigenes ViewModel komponiert.</summary>
+    /// <summary>Statistik-Bereich, als eigenes ViewModel komponiert.</summary>
     public StatisticsViewModel Statistics { get; }
 
     private Language _originalLanguage;
@@ -294,8 +294,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Beschriftung "Dokumentation".</summary>
     public string DocsLabel => _localization.GetText(SettingsTextKeys.DocsLabel);
 
-    /// <summary>URL zur Dokumentation (fuer einen HyperlinkButton).</summary>
-    public Uri DocsUri => new(_localization.GetText(SettingsTextKeys.DocsUrl));
+    /// <summary>URL zur Dokumentation (fuer einen HyperlinkButton); <c>null</c> bei ungueltigem Wert.</summary>
+    public Uri? DocsUri =>
+        Uri.TryCreate(_localization.GetText(SettingsTextKeys.DocsUrl), UriKind.Absolute, out Uri? uri) ? uri : null;
 
     /// <summary>Beschriftung des Speichern-Buttons.</summary>
     public string SaveLabel => _localization.GetText(SettingsTextKeys.ButtonSave);

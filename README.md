@@ -231,6 +231,24 @@ Assistent durch die Erstkonfiguration (BRIEF009): Sprache, Pausenmodell und Auto
   Schliesst der Benutzer das Fenster ohne Abschluss, beendet sich die App und der Wizard erscheint beim
   naechsten Start erneut.
 
+## Theme und Design
+
+Das visuelle Design ist zentral in `src/LookAway.App/Themes/` definiert und wird in `App.xaml`
+gemerged (BRIEF011):
+
+- `Colors.xaml`: die Farbpalette als `SolidColorBrush`-Ressourcen — `RcBackground` (`#FFFFFF`),
+  `RcAccent` (Indigo `#4361EE`), `RcTextPrimary` (`#1F2937`), `RcInteraction` (`#F3F4F6`),
+  `RcDivider` (`#E5E7EB`), `RcError`.
+- `Typography.xaml`: `RcFontFamily` (Roboto mit System-Fallback), Schriftgroessen (H1 28, H2 22, H3 18,
+  Body 14, Caption 12) sowie ein implizites `TextBlock`-Standardformat und Heading-Styles.
+- `Controls.xaml`: `RcButtonStyle` (implizit, abgerundete Ecken, Roboto) und `RcPrimaryButtonStyle`
+  (voller Indigo-Akzent fuer Primaeraktionen wie Speichern/Fertig/Pause starten).
+
+Die Views (Reminder, Settings, Wizard) referenzieren ausschliesslich diese Ressourcen — keine
+hartcodierten Farben mehr. **Hinweis:** Eine eingebettete `Roboto`-TTF unter `Assets/Fonts/` ist
+noch nachzulegen (Open Font License); bis dahin greift die installierte Roboto bzw. die
+Windows-Standardschrift ueber die Fallback-Kette in `RcFontFamily`.
+
 ## Review
 
 `tools/review.ps1` orchestriert lokale Qualitaets-Checks:

@@ -7,21 +7,13 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid x:Name="RootGrid" Padding="24" RowSpacing="16">
-        <Grid.Background>
-            <SolidColorBrush Color="#FFFFFFFF" />
-        </Grid.Background>
-        <Grid.Resources>
-            <SolidColorBrush x:Key="TextBrush" Color="#FF1F2937" />
-            <SolidColorBrush x:Key="AccentBrush" Color="#FF4361EE" />
-            <SolidColorBrush x:Key="ErrorBrush" Color="#FFB00020" />
-        </Grid.Resources>
+    <Grid x:Name="RootGrid" Padding="24" RowSpacing="16" Background="{StaticResource RcBackground}">
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Pivot Grid.Row="0" Foreground="{StaticResource TextBrush}">
+        <Pivot Grid.Row="0">
 
             <!-- Allgemein -->
             <PivotItem Header="{Binding TabGeneralHeader}">
@@ -68,10 +60,7 @@
             <!-- Eigene Intervalle -->
             <PivotItem Header="{Binding TabIntervalsHeader}">
                 <StackPanel Spacing="16">
-                    <TextBlock
-                        Text="{Binding IntervalsHint}"
-                        TextWrapping="Wrap"
-                        Foreground="{StaticResource TextBrush}" />
+                    <TextBlock Text="{Binding IntervalsHint}" />
                     <CheckBox
                         Content="{Binding UseCustomLabel}"
                         IsChecked="{Binding UseCustomDurations, Mode=TwoWay}" />
@@ -84,14 +73,8 @@
                         SpinButtonPlacementMode="Inline"
                         MinWidth="160"
                         HorizontalAlignment="Left" />
-                    <TextBlock
-                        Text="{Binding WorkRangeText}"
-                        FontSize="12"
-                        Foreground="{StaticResource TextBrush}" />
-                    <TextBlock
-                        Text="{Binding WorkError}"
-                        FontSize="12"
-                        Foreground="{StaticResource ErrorBrush}" />
+                    <TextBlock Text="{Binding WorkRangeText}" FontSize="{StaticResource RcFontSizeCaption}" />
+                    <TextBlock Text="{Binding WorkError}" FontSize="{StaticResource RcFontSizeCaption}" Foreground="{StaticResource RcError}" />
                     <NumberBox
                         Header="{Binding BreakLabel}"
                         Value="{Binding BreakMinutes, Mode=TwoWay}"
@@ -101,10 +84,7 @@
                         SpinButtonPlacementMode="Inline"
                         MinWidth="160"
                         HorizontalAlignment="Left" />
-                    <TextBlock
-                        Text="{Binding BreakError}"
-                        FontSize="12"
-                        Foreground="{StaticResource ErrorBrush}" />
+                    <TextBlock Text="{Binding BreakError}" FontSize="{StaticResource RcFontSizeCaption}" Foreground="{StaticResource RcError}" />
                 </StackPanel>
             </PivotItem>
 
@@ -112,12 +92,12 @@
             <PivotItem Header="{Binding TabAboutHeader}">
                 <StackPanel Spacing="12">
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Text="{Binding AboutVersionLabel}" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
-                        <TextBlock Text="{Binding Version}" Foreground="{StaticResource TextBrush}" />
+                        <TextBlock Text="{Binding AboutVersionLabel}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Version}" />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Text="{Binding LicenseLabel}" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
-                        <TextBlock Text="{Binding LicenseText}" Foreground="{StaticResource TextBrush}" />
+                        <TextBlock Text="{Binding LicenseLabel}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding LicenseText}" />
                     </StackPanel>
                     <HyperlinkButton Content="{Binding DocsLabel}" NavigateUri="{Binding DocsUri}" />
                 </StackPanel>
@@ -130,14 +110,7 @@
             Spacing="12"
             HorizontalAlignment="Right">
             <Button Content="{Binding ApplyLabel}" Command="{Binding ApplyCommand}" />
-            <Button Content="{Binding SaveLabel}" Command="{Binding SaveCommand}">
-                <Button.Background>
-                    <SolidColorBrush Color="#FF4361EE" />
-                </Button.Background>
-                <Button.Foreground>
-                    <SolidColorBrush Color="#FFFFFFFF" />
-                </Button.Foreground>
-            </Button>
+            <Button Content="{Binding SaveLabel}" Command="{Binding SaveCommand}" Style="{StaticResource RcPrimaryButtonStyle}" />
             <Button Content="{Binding CancelLabel}" Command="{Binding CancelCommand}" />
         </StackPanel>
     </Grid>

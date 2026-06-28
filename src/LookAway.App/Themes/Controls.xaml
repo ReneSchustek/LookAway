@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Basis-Button: Roboto, abgerundete Ecken. Baut auf dem WinUI-Default auf,
+         damit die Standard-Visual-States (Hover/Pressed) erhalten bleiben. -->
+    <Style x:Key="RcButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+        <Setter Property="FontFamily" Value="{StaticResource RcFontFamily}" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="16,6" />
+    </Style>
+
+    <!-- Implizit: alle Buttons erben den Basis-Stil. -->
+    <Style TargetType="Button" BasedOn="{StaticResource RcButtonStyle}" />
+
+    <!-- Primaer-Aktion: voller Indigo-Akzent (Speichern, Fertig, Pause starten). -->
+    <Style x:Key="RcPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource RcButtonStyle}">
+        <Setter Property="Background" Value="{StaticResource RcAccent}" />
+        <Setter Property="Foreground" Value="{StaticResource RcAccentForeground}" />
+    </Style>
+
+    <!-- Dezente Trennlinie (1 px). -->
+    <Style x:Key="RcDividerStyle" TargetType="Border">
+        <Setter Property="BorderBrush" Value="{StaticResource RcDivider}" />
+        <Setter Property="BorderThickness" Value="0,1,0,0" />
+    </Style>
+
+</ResourceDictionary>

@@ -13,6 +13,7 @@ using LookAway.Core.Events;
 using LookAway.Core.Exceptions;
 using LookAway.Core.Interfaces;
 using LookAway.Core.ValueObjects;
+using LookAway.Data;
 using LookAway.Data.Logging;
 using LookAway.Data.Net;
 using LookAway.Data.Power;
@@ -60,7 +61,6 @@ namespace LookAway;
     Justification = "Die App-Klasse implementiert keinen IDisposable-Vertrag. Disposing der gehaltenen Felder erfolgt im RequestExit-Pfad (Tray) und durch den ServiceProvider beim Process-Shutdown.")]
 public partial class App : global::Microsoft.UI.Xaml.Application
 {
-    private const string AppFolderName = "LookAway";
     private const string LogFolderName = "logs";
     private const string CrashFolderName = "crashes";
     private const string CrashSourceAppDomain = "AppDomain.UnhandledException";
@@ -672,8 +672,8 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     {
         ServiceCollection services = new();
 
-        string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        string logDirectory = Path.Combine(appData, AppFolderName, LogFolderName);
+        string dataDirectory = AppDataLocation.GetDataDirectory();
+        string logDirectory = Path.Combine(dataDirectory, LogFolderName);
         string crashDirectory = Path.Combine(logDirectory, CrashFolderName);
 
         LogLevel minimumLevel = IsDebugBuild() ? LogLevel.Debug : LogLevel.Information;

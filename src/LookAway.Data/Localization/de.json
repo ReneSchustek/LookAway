@@ -4,6 +4,15 @@
   "Settings.Tab.Model": "Pausenmodell",
   "Settings.Tab.Intervals": "Eigene Intervalle",
   "Settings.Tab.About": "Über LookAway",
+  "Settings.Tab.Sound": "Sound",
+
+  "Settings.Sound.EnableLabel": "Ton bei Erinnerung abspielen",
+  "Settings.Sound.SelectLabel": "Ton-Auswahl",
+  "Settings.Sound.VolumeLabel": "Lautstärke (%)",
+  "Settings.Sound.PreviewButton": "Vorhören",
+  "Settings.Sound.Chime": "Glöckchen",
+  "Settings.Sound.Bell": "Glocke",
+  "Settings.Sound.Pop": "Plopp",
 
   "Settings.Language.Label": "Sprache",
   "Settings.AutoStart.Label": "Mit Windows starten",

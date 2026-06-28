@@ -50,6 +50,9 @@ internal sealed class InMemorySettingsRepository : ISettingsRepository
         IdleThresholdMinutes = source.IdleThresholdMinutes,
         SuppressOnFullscreen = source.SuppressOnFullscreen,
         CustomDurations = source.CustomDurations,
+        SoundEnabled = source.SoundEnabled,
+        ReminderSound = source.ReminderSound,
+        SoundVolumePercent = source.SoundVolumePercent,
         IsFirstRun = source.IsFirstRun,
     };
 }

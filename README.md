@@ -249,6 +249,20 @@ hartcodierten Farben mehr. **Hinweis:** Eine eingebettete `Roboto`-TTF unter `As
 noch nachzulegen (Open Font License); bis dahin greift die installierte Roboto bzw. die
 Windows-Standardschrift ueber die Fallback-Kette in `RcFontFamily`.
 
+## Sound-Optionen
+
+Optional spielt LookAway bei einer Pause-Erinnerung einen dezenten Ton (BRIEF017, Default: aus):
+
+- Drei eingebettete, selbst synthetisierte PCM-WAVs unter `Assets/Sounds/` (`chime`, `bell`, `pop`) —
+  jeweils unter 200 KB, lizenzfrei.
+- `ISoundService` (Core) → `SoundService` (App, `Windows.Media.Playback.MediaPlayer`). Die Lautstaerke
+  wird pro Wiedergabe gesetzt (kein Eingriff in die System-Lautstaerke); Wiedergabefehler (fehlendes
+  Geraet, Geraetewechsel) werden geloggt und geschluckt, damit die App nie abstuerzt.
+- Settings-Tab "Sound": Ton aktivieren, Auswahl (Chime/Bell/Pop), Lautstaerke-Slider (0–100 %, Default 30)
+  und ein "Vorhoeren"-Button. Bei `SoundVolumePercent = 0` bleibt die Erinnerung stumm.
+- Der Ton wird nur beim tatsaechlichen Oeffnen der Erinnerung abgespielt — ein bereits offenes
+  Reminder-Fenster loest keinen zweiten Ton aus.
+
 ## Review
 
 `tools/review.ps1` orchestriert lokale Qualitaets-Checks:

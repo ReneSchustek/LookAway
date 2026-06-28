@@ -108,6 +108,57 @@ public sealed class Settings
     /// </summary>
     public CustomDurations? CustomDurations { get; set; }
 
+    private SoundType _reminderSound = SoundType.Chime;
+    private int _soundVolumePercent = 30;
+
+    /// <summary>Untergrenze der Lautstaerke in Prozent.</summary>
+    public const int MinSoundVolumePercent = 0;
+
+    /// <summary>Obergrenze der Lautstaerke in Prozent.</summary>
+    public const int MaxSoundVolumePercent = 100;
+
+    /// <summary>
+    /// Soll bei einer Pause-Erinnerung ein Ton abgespielt werden? Default: <c>false</c>.
+    /// </summary>
+    public bool SoundEnabled { get; set; }
+
+    /// <summary>Gewaehlter Erinnerungston. Default: <see cref="SoundType.Chime"/>.</summary>
+    public SoundType ReminderSound
+    {
+        get => _reminderSound;
+        set
+        {
+            if (!Enum.IsDefined(value))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
+                    value,
+                    "Unbekannter Sound-Typ.");
+            }
+            _reminderSound = value;
+        }
+    }
+
+    /// <summary>
+    /// Lautstaerke des Erinnerungstons in Prozent (gueltig
+    /// <see cref="MinSoundVolumePercent"/>–<see cref="MaxSoundVolumePercent"/>). Default: 30.
+    /// </summary>
+    public int SoundVolumePercent
+    {
+        get => _soundVolumePercent;
+        set
+        {
+            if (value is < MinSoundVolumePercent or > MaxSoundVolumePercent)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
+                    value,
+                    $"SoundVolumePercent muss zwischen {MinSoundVolumePercent} und {MaxSoundVolumePercent} liegen.");
+            }
+            _soundVolumePercent = value;
+        }
+    }
+
     /// <summary>
     /// Wahr, wenn beim letzten Lesevorgang keine Konfigurationsdatei vorhanden war.
     /// Wird vom Repository gesetzt und nicht persistiert.

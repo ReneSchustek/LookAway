@@ -23,6 +23,21 @@ public static class SettingsTextKeys
     /// <summary>Tab "Ueber LookAway".</summary>
     public const string TabAbout = "Settings.Tab.About";
 
+    /// <summary>Tab "Sound".</summary>
+    public const string TabSound = "Settings.Tab.Sound";
+
+    /// <summary>Beschriftung "Ton abspielen".</summary>
+    public const string SoundEnableLabel = "Settings.Sound.EnableLabel";
+
+    /// <summary>Beschriftung der Ton-Auswahl.</summary>
+    public const string SoundSelectLabel = "Settings.Sound.SelectLabel";
+
+    /// <summary>Beschriftung der Lautstaerke.</summary>
+    public const string SoundVolumeLabel = "Settings.Sound.VolumeLabel";
+
+    /// <summary>Beschriftung des Vorhoer-Buttons.</summary>
+    public const string SoundPreviewButton = "Settings.Sound.PreviewButton";
+
     /// <summary>Beschriftung des Sprach-Dropdowns.</summary>
     public const string LanguageLabel = "Settings.Language.Label";
 
@@ -92,6 +107,13 @@ public static class SettingsTextKeys
     /// <param name="model">Pausenmodell.</param>
     /// <returns>Schluessel der Form <c>"Settings.Model.&lt;Name&gt;"</c>.</returns>
     public static string ForModel(BreakModel model) => "Settings.Model." + model;
+
+    /// <summary>
+    /// Liefert den Anzeigenamen-Schluessel eines Erinnerungstons.
+    /// </summary>
+    /// <param name="soundType">Ton-Typ.</param>
+    /// <returns>Schluessel der Form <c>"Settings.Sound.&lt;Name&gt;"</c>.</returns>
+    public static string ForSound(SoundType soundType) => "Settings.Sound." + soundType;
 
     /// <summary>
     /// Liefert den Anzeigenamen-Schluessel einer Sprache.

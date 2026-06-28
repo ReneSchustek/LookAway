@@ -36,6 +36,7 @@ using CsvExporter = LookAway.Application.Statistics.CsvExporter;
 using FullscreenDetectionService = LookAway.Application.Services.FullscreenDetectionService;
 using IdleDetectionService = LookAway.Application.Services.IdleDetectionService;
 using LogService = LookAway.Application.Services.LogService;
+using PauseActionService = LookAway.Application.Services.PauseActionService;
 using TrayStatusPresenter = LookAway.Application.Services.TrayStatusPresenter;
 using SingleInstanceLock = LookAway.Application.Services.SingleInstanceLock;
 using TimerService = LookAway.Application.Services.TimerService;
@@ -291,6 +292,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _activeModel = settings.BreakModel;
         _activeInterval = interval;
         CaptureSoundSettings(settings);
+        CapturePauseActionSettings(settings);
 
         _trayIcon?.SetActiveModel(settings.BreakModel);
         ITimerService timerService = Services.GetRequiredService<ITimerService>();
@@ -419,15 +421,22 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         {
             await foreach (TimerEvent timerEvent in timerService.Events.WithCancellation(cancellationToken))
             {
-                if (timerEvent is not BreakDueEvent)
+                switch (timerEvent)
                 {
-                    continue;
-                }
+                    case BreakDueEvent:
+                        FullscreenDetectionService fullscreen = Services.GetRequiredService<FullscreenDetectionService>();
+                        if (fullscreen.TryShowReminder())
+                        {
+                            ShowBreakReminder();
+                        }
 
-                FullscreenDetectionService fullscreen = Services.GetRequiredService<FullscreenDetectionService>();
-                if (fullscreen.TryShowReminder())
-                {
-                    ShowBreakReminder();
+                        break;
+                    case BreakCompletedEvent:
+                        // Pause vorbei: Dimmen/Medien-Pause rueckgaengig machen (BRIEF021).
+                        _ = Services.GetRequiredService<PauseActionService>().EndBreakAsync(cancellationToken);
+                        break;
+                    default:
+                        break;
                 }
             }
         }
@@ -442,6 +451,15 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _soundEnabled = settings.SoundEnabled;
         _soundType = settings.ReminderSound;
         _soundVolume = settings.SoundVolumePercent;
+    }
+
+    private void CapturePauseActionSettings(Settings settings)
+    {
+        PauseActionService service = Services.GetRequiredService<PauseActionService>();
+        service.DimScreenEnabled = settings.DimScreenDuringBreak;
+        service.DimBrightnessPercent = settings.DimBrightnessPercent;
+        service.PauseMediaEnabled = settings.PauseMediaDuringBreak;
+        service.ResumeMediaAfterBreak = settings.ResumeMediaAfterBreak;
     }
 
     private void ShowBreakReminder()
@@ -474,7 +492,8 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         switch (result)
         {
             case ReminderResult.StartBreak:
-                // Die Pause laeuft bereits durch die Engine-Transition — nichts zu tun.
+                // Die Pause laeuft bereits durch die Engine-Transition; Pause-Aktionen starten (BRIEF021).
+                _ = Services.GetRequiredService<PauseActionService>().BeginBreakAsync();
                 break;
             case ReminderResult.Snooze:
                 timerService.Start(BreakInterval.Create(
@@ -599,6 +618,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _activeModel = settings.BreakModel;
         _activeInterval = interval;
         CaptureSoundSettings(settings);
+        CapturePauseActionSettings(settings);
         _trayIcon?.SetActiveModel(settings.BreakModel);
 
         Services.GetRequiredService<ITimerService>().Start(interval);
@@ -690,6 +710,11 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
         // Globale Hotkeys (BRIEF019)
         _ = services.AddSingleton<IHotkeyService, WindowsHotkeyService>();
+
+        // Pause-Aktionen (BRIEF021)
+        _ = services.AddSingleton<IScreenDimmer>(sp => new WindowsScreenDimmer(sp.GetRequiredService<ILogger<WindowsScreenDimmer>>()));
+        _ = services.AddSingleton<IMediaController>(sp => new WindowsMediaController(sp.GetRequiredService<ILogger<WindowsMediaController>>()));
+        _ = services.AddSingleton<PauseActionService>();
 
         // Update-Pruefung (BRIEF020)
         _ = services.AddSingleton<IHttpGetClient>(sp => new HttpGetClient(sp.GetRequiredService<ILogger<HttpGetClient>>()));

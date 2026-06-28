@@ -117,6 +117,26 @@
                 </StackPanel>
             </PivotItem>
 
+            <!-- Pause-Aktionen -->
+            <PivotItem Header="{Binding TabPauseActionsHeader}">
+                <StackPanel Spacing="16">
+                    <CheckBox Content="{Binding DimEnableLabel}" IsChecked="{Binding DimScreenDuringBreak, Mode=TwoWay}" />
+                    <Slider
+                        Header="{Binding DimBrightnessLabel}"
+                        Value="{Binding DimBrightnessPercent, Mode=TwoWay}"
+                        Minimum="{Binding DimBrightnessMin}"
+                        Maximum="{Binding DimBrightnessMax}"
+                        IsEnabled="{Binding DimScreenDuringBreak}"
+                        Width="240"
+                        HorizontalAlignment="Left" />
+                    <CheckBox Content="{Binding PauseMediaLabel}" IsChecked="{Binding PauseMediaDuringBreak, Mode=TwoWay}" />
+                    <CheckBox
+                        Content="{Binding ResumeMediaLabel}"
+                        IsChecked="{Binding ResumeMediaAfterBreak, Mode=TwoWay}"
+                        IsEnabled="{Binding PauseMediaDuringBreak}" />
+                </StackPanel>
+            </PivotItem>
+
             <!-- Hotkeys -->
             <PivotItem Header="{Binding TabHotkeysHeader}">
                 <StackPanel Spacing="16">

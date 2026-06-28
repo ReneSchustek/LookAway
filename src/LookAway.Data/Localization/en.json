@@ -43,6 +43,12 @@
 
   "Tray.Menu.Update": "Download update",
 
+  "Settings.Tab.PauseActions": "Break actions",
+  "Settings.PauseActions.DimEnable": "Dim the screen during the break",
+  "Settings.PauseActions.DimBrightness": "Brightness during the break (%)",
+  "Settings.PauseActions.PauseMedia": "Pause media playback",
+  "Settings.PauseActions.ResumeMedia": "Resume media after the break",
+
   "Settings.Language.Label": "Language",
   "Settings.AutoStart.Label": "Start with Windows",
   "Settings.Idle.PauseLabel": "Automatically pause when idle",

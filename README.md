@@ -310,6 +310,20 @@ LookAway prueft optional auf neue Versionen ueber die GitHub-Releases-API (BRIEF
   Download-Link. Findet die Hintergrundpruefung beim Start ein Update, erscheint im Tray der Eintrag
   "Update herunterladen", der die Release-Seite im Browser oeffnet (kein Auto-Install).
 
+## Pause-Aktionen
+
+Optional verstaerkt LookAway den Pausencharakter (BRIEF021, beide opt-in und reversibel):
+
+- **Bildschirm dimmen:** `IScreenDimmer` (Core) → `WindowsScreenDimmer` (App) senkt die Helligkeit
+  DDC/CI-faehiger Monitore (Dxva2) und stellt sie am Pausenende wieder her. Auf Hardware ohne DDC/CI
+  (viele Notebooks) bleibt der Aufruf wirkungslos; Fehler werden geschluckt und geloggt.
+- **Medien pausieren:** `IMediaController` (Core) → `WindowsMediaController` (App) pausiert ueber die
+  SMTC-API alle laufenden Wiedergabe-Sessions und setzt am Pausenende nur die zuvor laufenden fort.
+- Die UI-freie `PauseActionService` (Application, getestet) koordiniert beides anhand der Einstellungen
+  (`BeginBreakAsync`/`EndBreakAsync`); die App ruft sie beim Pausenbeginn (gewaehlte Pause) und beim
+  `BreakCompletedEvent` auf. Settings-Tab "Pause-Aktionen": Dimmen + Helligkeit (10–80 %), Medien
+  pausieren + nach der Pause fortsetzen.
+
 ## Review
 
 `tools/review.ps1` orchestriert lokale Qualitaets-Checks:

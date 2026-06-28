@@ -89,6 +89,21 @@ public static class SettingsTextKeys
     /// <summary>Download-Link-Text.</summary>
     public const string UpdateDownload = "Settings.Update.Download";
 
+    /// <summary>Tab "Pause-Aktionen".</summary>
+    public const string TabPauseActions = "Settings.Tab.PauseActions";
+
+    /// <summary>Beschriftung "Bildschirm dimmen".</summary>
+    public const string PauseActionsDimEnable = "Settings.PauseActions.DimEnable";
+
+    /// <summary>Beschriftung der Pause-Helligkeit.</summary>
+    public const string PauseActionsDimBrightness = "Settings.PauseActions.DimBrightness";
+
+    /// <summary>Beschriftung "Medien pausieren".</summary>
+    public const string PauseActionsPauseMedia = "Settings.PauseActions.PauseMedia";
+
+    /// <summary>Beschriftung "Medien fortsetzen".</summary>
+    public const string PauseActionsResumeMedia = "Settings.PauseActions.ResumeMedia";
+
     /// <summary>
     /// Liefert den Anzeigenamen-Schluessel einer Pruef-Haeufigkeit.
     /// </summary>

@@ -43,6 +43,12 @@
 
   "Tray.Menu.Update": "Update herunterladen",
 
+  "Settings.Tab.PauseActions": "Pause-Aktionen",
+  "Settings.PauseActions.DimEnable": "Bildschirm während der Pause dimmen",
+  "Settings.PauseActions.DimBrightness": "Helligkeit während der Pause (%)",
+  "Settings.PauseActions.PauseMedia": "Medien-Wiedergabe pausieren",
+  "Settings.PauseActions.ResumeMedia": "Medien nach der Pause fortsetzen",
+
   "Settings.Language.Label": "Sprache",
   "Settings.AutoStart.Label": "Mit Windows starten",
   "Settings.Idle.PauseLabel": "Bei Inaktivität automatisch pausieren",

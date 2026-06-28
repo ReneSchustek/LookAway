@@ -47,6 +47,14 @@ dotnet test
 dotnet run --project src/LookAway.App
 ```
 
+Die App laeuft standardmaessig **unpackaged** (`WindowsPackageType=None`) — also als normale `.exe`
+ohne MSIX-Registrierung. So funktionieren `dotnet run`, F5 und die portable Variante ohne Deploy.
+Ein MSIX-Paket entsteht nur mit explizitem Override, z. B.:
+
+```bash
+msbuild src/LookAway.App/LookAway.App.csproj -p:Configuration=Release -p:Platform=x64 -p:WindowsPackageType=MSIX -p:GenerateAppxPackageOnBuild=true
+```
+
 ## Architektur
 
 Das Projekt folgt einer klassischen Schichtenarchitektur mit strikter Abhaengigkeitsrichtung von aussen nach innen:

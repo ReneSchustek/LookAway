@@ -33,6 +33,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private readonly ILogger<SettingsViewModel> _logger;
     private readonly string _applicationVersion;
 
+    /// <summary>Statistik-Bereich (BRIEF018), als eigenes ViewModel komponiert.</summary>
+    public StatisticsViewModel Statistics { get; }
+
     private Language _originalLanguage;
     private bool _isInitializing;
     private bool _disposed;
@@ -86,6 +89,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <param name="autoStartCoordinator">Haelt Einstellung und Registry synchron.</param>
     /// <param name="localization">Liefert Texte und steuert den Sprachwechsel.</param>
     /// <param name="soundService">Spielt den Erinnerungston fuer die Vorschau.</param>
+    /// <param name="statistics">Statistik-ViewModel (komponiert).</param>
     /// <param name="logger">Logger.</param>
     /// <param name="applicationVersion">Anzuzeigende Versionsnummer (Ueber-Bereich).</param>
     public SettingsViewModel(
@@ -93,6 +97,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         AutoStartCoordinator autoStartCoordinator,
         ILocalizationService localization,
         ISoundService soundService,
+        StatisticsViewModel statistics,
         ILogger<SettingsViewModel> logger,
         string applicationVersion)
     {
@@ -100,6 +105,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(autoStartCoordinator);
         ArgumentNullException.ThrowIfNull(localization);
         ArgumentNullException.ThrowIfNull(soundService);
+        ArgumentNullException.ThrowIfNull(statistics);
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentException.ThrowIfNullOrWhiteSpace(applicationVersion);
 
@@ -107,6 +113,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _autoStartCoordinator = autoStartCoordinator;
         _localization = localization;
         _soundService = soundService;
+        Statistics = statistics;
         _logger = logger;
         _applicationVersion = applicationVersion;
 
@@ -300,6 +307,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         {
             _isInitializing = false;
         }
+
+        await Statistics.LoadAsync(cancellationToken).ConfigureAwait(true);
 
         Validate();
         OnPropertyChanged(string.Empty);
@@ -496,6 +505,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
         // Fehlertexte in neuer Sprache, danach alle gebundenen Texte aktualisieren.
         Validate();
+        Statistics.RefreshTexts();
         OnPropertyChanged(string.Empty);
     }
 

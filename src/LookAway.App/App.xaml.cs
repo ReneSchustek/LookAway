@@ -26,7 +26,10 @@ using Microsoft.UI.Xaml;
 using AutoStartCoordinator = LookAway.Application.Services.AutoStartCoordinator;
 using BreakReminderViewModel = LookAway.Application.ViewModels.BreakReminderViewModel;
 using SettingsViewModel = LookAway.Application.ViewModels.SettingsViewModel;
+using StatisticsViewModel = LookAway.Application.ViewModels.StatisticsViewModel;
 using WelcomeViewModel = LookAway.Application.ViewModels.WelcomeViewModel;
+using StatisticsService = LookAway.Application.Statistics.StatisticsService;
+using CsvExporter = LookAway.Application.Statistics.CsvExporter;
 using FullscreenDetectionService = LookAway.Application.Services.FullscreenDetectionService;
 using IdleDetectionService = LookAway.Application.Services.IdleDetectionService;
 using LogService = LookAway.Application.Services.LogService;
@@ -68,6 +71,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     public static IServiceProvider Services { get; private set; } = null!;
 
     private const int DetectionPollSeconds = 5;
+    private const int HistoryRetentionDays = 365;
 
     private Window? _window;
     private LogService? _logService;
@@ -82,6 +86,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     private bool _soundEnabled;
     private SoundType _soundType = SoundType.Chime;
     private int _soundVolume;
+    private DateTimeOffset _reminderShownAt;
 
     /// <summary>
     /// Initialisiert die Anwendung, das DI-Container und die globalen Handler.
@@ -174,6 +179,9 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             // Registry ist die fuehrende Quelle fuer den Autostart-Zustand: ein
             // manueller Eingriff wird uebernommen, ein veralteter Pfad korrigiert.
             _ = SynchronizeAutoStartAsync();
+
+            // Alte Historie-Eintraege (>1 Jahr) aufraeumen — nicht startkritisch.
+            _ = PurgeHistoryAsync();
 
             StartTimer(settings);
         }
@@ -327,11 +335,14 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             Services.GetRequiredService<ISoundService>().Play(_soundType, _soundVolume);
         }
 
+        _reminderShownAt = Services.GetRequiredService<IClock>().UtcNow;
         _reminderPresenter.Show(_activeModel, OnReminderResult);
     }
 
     private void OnReminderResult(ReminderResult result)
     {
+        RecordSession(result);
+
         if (_activeInterval is null)
         {
             return;
@@ -353,6 +364,62 @@ public partial class App : global::Microsoft.UI.Xaml.Application
                 break;
             default:
                 break;
+        }
+    }
+
+    private void RecordSession(ReminderResult result)
+    {
+        BreakOutcome outcome = result switch
+        {
+            ReminderResult.StartBreak => BreakOutcome.Taken,
+            ReminderResult.Snooze => BreakOutcome.Snoozed,
+            ReminderResult.Skip => BreakOutcome.Skipped,
+            _ => BreakOutcome.Taken,
+        };
+
+        // Bei tatsaechlicher Pause die Pausendauer als Zeitraum, sonst Null-Dauer.
+        DateTimeOffset end = outcome == BreakOutcome.Taken && _activeInterval is not null
+            ? _reminderShownAt + _activeInterval.BreakDuration
+            : _reminderShownAt;
+
+        BreakSession session = new(Guid.NewGuid(), _reminderShownAt, end, _activeModel, outcome);
+        _ = AppendSessionAsync(session);
+    }
+
+    private async Task AppendSessionAsync(BreakSession session)
+    {
+        try
+        {
+            await Services.GetRequiredService<IBreakHistoryRepository>()
+                .AppendAsync(session)
+                .ConfigureAwait(false);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            AppLog.HistoryWriteFailed(_logger!, ex);
+        }
+        catch (IOException ex)
+        {
+            AppLog.HistoryWriteFailed(_logger!, ex);
+        }
+    }
+
+    private async Task PurgeHistoryAsync()
+    {
+        try
+        {
+            DateTimeOffset cutoff = Services.GetRequiredService<IClock>().UtcNow.AddDays(-HistoryRetentionDays);
+            _ = await Services.GetRequiredService<IBreakHistoryRepository>()
+                .PurgeOlderThanAsync(cutoff)
+                .ConfigureAwait(false);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            AppLog.HistoryWriteFailed(_logger!, ex);
+        }
+        catch (IOException ex)
+        {
+            AppLog.HistoryWriteFailed(_logger!, ex);
         }
     }
 
@@ -389,8 +456,15 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         Services.GetRequiredService<AutoStartCoordinator>(),
         Services.GetRequiredService<ILocalizationService>(),
         Services.GetRequiredService<ISoundService>(),
+        CreateStatisticsViewModel(),
         Services.GetRequiredService<ILogger<SettingsViewModel>>(),
         GetVersion());
+
+    private StatisticsViewModel CreateStatisticsViewModel() => new(
+        Services.GetRequiredService<StatisticsService>(),
+        Services.GetRequiredService<IBreakHistoryRepository>(),
+        Services.GetRequiredService<CsvExporter>(),
+        Services.GetRequiredService<ILocalizationService>());
 
     /// <summary>
     /// Uebernimmt gespeicherte Einstellungen sofort: startet den Timer mit dem
@@ -482,6 +556,11 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         // Sound-Optionen (BRIEF017)
         _ = services.AddSingleton<ISoundService>(sp =>
             new SoundService(sp.GetRequiredService<ILogger<SoundService>>()));
+
+        // Statistiken / History / CSV (BRIEF018)
+        _ = services.AddSingleton<IBreakHistoryRepository, JsonBreakHistoryRepository>();
+        _ = services.AddSingleton<CsvExporter>();
+        _ = services.AddSingleton<StatisticsService>();
 
         // Autostart (BRIEF004)
         _ = services.AddSingleton<IAutoStartService, RegistryAutoStartService>();
@@ -593,4 +672,10 @@ internal static partial class AppLog
         Level = LogLevel.Warning,
         Message = "Timer-Start beim App-Start fehlgeschlagen — Einstellungen konnten nicht geladen werden.")]
     public static partial void TimerStartFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(
+        EventId = 1150,
+        Level = LogLevel.Warning,
+        Message = "Pausen-Historie konnte nicht geschrieben werden — Statistik bleibt unveraendert.")]
+    public static partial void HistoryWriteFailed(ILogger logger, Exception exception);
 }

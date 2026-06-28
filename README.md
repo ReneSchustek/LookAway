@@ -263,6 +263,22 @@ Optional spielt LookAway bei einer Pause-Erinnerung einen dezenten Ton (BRIEF017
 - Der Ton wird nur beim tatsaechlichen Oeffnen der Erinnerung abgespielt — ein bereits offenes
   Reminder-Fenster loest keinen zweiten Ton aus.
 
+## Statistiken, History und CSV-Export
+
+LookAway zeichnet jede angebotene Pause auf und zeigt Statistiken im Settings-Tab "Statistik" (BRIEF018):
+
+- `BreakSession` (Core, validiert) mit Beginn, Ende, Modell und Ergebnis (`Taken`/`Snoozed`/`Skipped`).
+  `IBreakHistoryRepository` (Core) → `JsonBreakHistoryRepository` (Data): append-only nach
+  `%APPDATA%\LookAway\history.json`, atomar geschrieben; Eintraege aelter als 365 Tage werden beim
+  Start entfernt.
+- `StatisticsService` (Application, UI-frei, getestet ueber `IClock`/Fakes) aggregiert Heute (Anzahl,
+  Pausenzeit, uebersprungen), diese Woche (7 Tagesbalken) und dieses Jahr (12 Monatsbalken).
+- Der Tab visualisiert die Balken mit schlichten `Border`-Elementen (kein Chart-Framework) und bietet
+  einen CSV-Export (`CsvExporter`, UTF-8 mit BOM, Spalten `StartedAt,EndedAt,Duration,Model,Outcome`)
+  ueber den `FileSavePicker`.
+- Aufgezeichnet wird beim Schliessen der Erinnerung (Outcome aus der gewaehlten Aktion); fuer gemachte
+  Pausen wird die Pausendauer als Zeitraum hinterlegt.
+
 ## Review
 
 `tools/review.ps1` orchestriert lokale Qualitaets-Checks:

@@ -14,6 +14,15 @@
   "Settings.Sound.Bell": "Bell",
   "Settings.Sound.Pop": "Pop",
 
+  "Settings.Tab.Statistics": "Statistics",
+  "Statistics.Today": "Today",
+  "Statistics.Week": "This week",
+  "Statistics.Year": "This year",
+  "Statistics.Breaks": "Breaks",
+  "Statistics.BreakTime": "Break time",
+  "Statistics.Skipped": "Skipped",
+  "Statistics.Export": "Export as CSV",
+
   "Settings.Language.Label": "Language",
   "Settings.AutoStart.Label": "Start with Windows",
   "Settings.Idle.PauseLabel": "Automatically pause when idle",

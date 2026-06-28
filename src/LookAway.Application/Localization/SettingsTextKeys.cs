@@ -26,6 +26,30 @@ public static class SettingsTextKeys
     /// <summary>Tab "Sound".</summary>
     public const string TabSound = "Settings.Tab.Sound";
 
+    /// <summary>Tab "Statistik".</summary>
+    public const string TabStatistics = "Settings.Tab.Statistics";
+
+    /// <summary>Statistik-Abschnitt "Heute".</summary>
+    public const string StatisticsToday = "Statistics.Today";
+
+    /// <summary>Statistik-Abschnitt "Diese Woche".</summary>
+    public const string StatisticsWeek = "Statistics.Week";
+
+    /// <summary>Statistik-Abschnitt "Dieses Jahr".</summary>
+    public const string StatisticsYear = "Statistics.Year";
+
+    /// <summary>Statistik-Beschriftung "Pausen".</summary>
+    public const string StatisticsBreaks = "Statistics.Breaks";
+
+    /// <summary>Statistik-Beschriftung "Pausenzeit".</summary>
+    public const string StatisticsBreakTime = "Statistics.BreakTime";
+
+    /// <summary>Statistik-Beschriftung "Uebersprungen".</summary>
+    public const string StatisticsSkipped = "Statistics.Skipped";
+
+    /// <summary>Statistik-Export-Button.</summary>
+    public const string StatisticsExport = "Statistics.Export";
+
     /// <summary>Beschriftung "Ton abspielen".</summary>
     public const string SoundEnableLabel = "Settings.Sound.EnableLabel";
 

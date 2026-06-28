@@ -1,8 +1,12 @@
 using System;
+using System.Text;
+using System.Threading.Tasks;
 using LookAway.Application.ViewModels;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Windows.Graphics;
+using Windows.Storage;
+using Windows.Storage.Pickers;
 
 namespace LookAway.Views;
 
@@ -15,6 +19,8 @@ internal sealed partial class SettingsWindow : Window
 {
     private const int WindowWidth = 560;
     private const int WindowHeight = 600;
+
+    private static readonly string[] CsvFileExtensions = { ".csv" };
 
     private readonly SettingsViewModel _viewModel;
 
@@ -33,6 +39,7 @@ internal sealed partial class SettingsWindow : Window
         Title = viewModel.Title;
 
         _viewModel.CloseRequested += OnCloseRequested;
+        _viewModel.Statistics.CsvExportRequested += OnCsvExportRequested;
         Closed += OnWindowClosed;
 
         ConfigureWindow();
@@ -62,9 +69,33 @@ internal sealed partial class SettingsWindow : Window
 
     private void OnCloseRequested(object? sender, EventArgs e) => Close();
 
+    private async void OnCsvExportRequested(object? sender, CsvExportRequestedEventArgs e)
+    {
+        FileSavePicker picker = new()
+        {
+            SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+            SuggestedFileName = "lookaway-history",
+        };
+        picker.FileTypeChoices.Add("CSV", CsvFileExtensions);
+
+        nint hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+        StorageFile? file = await picker.PickSaveFileAsync();
+        if (file is null)
+        {
+            return;
+        }
+
+        // UTF-8 mit BOM, damit Excel die Datei korrekt erkennt.
+        byte[] bytes = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true).GetBytes(e.Content);
+        await FileIO.WriteBytesAsync(file, bytes);
+    }
+
     private void OnWindowClosed(object sender, WindowEventArgs args)
     {
         _viewModel.CloseRequested -= OnCloseRequested;
+        _viewModel.Statistics.CsvExportRequested -= OnCsvExportRequested;
         Closed -= OnWindowClosed;
         _viewModel.Dispose();
     }

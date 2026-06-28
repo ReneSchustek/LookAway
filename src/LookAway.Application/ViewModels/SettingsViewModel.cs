@@ -103,6 +103,18 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [NotifyPropertyChangedFor(nameof(IsDownloadAvailable))]
     private Uri? _downloadUri;
 
+    [ObservableProperty]
+    private bool _dimScreenDuringBreak;
+
+    [ObservableProperty]
+    private int _dimBrightnessPercent;
+
+    [ObservableProperty]
+    private bool _pauseMediaDuringBreak;
+
+    [ObservableProperty]
+    private bool _resumeMediaAfterBreak;
+
     /// <summary>
     /// Erzeugt das ViewModel mit seinen Abhaengigkeiten.
     /// </summary>
@@ -348,6 +360,27 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Download-Link-Text.</summary>
     public string UpdateDownloadLabel => _localization.GetText(SettingsTextKeys.UpdateDownload);
 
+    /// <summary>Tab-Ueberschrift "Pause-Aktionen".</summary>
+    public string TabPauseActionsHeader => _localization.GetText(SettingsTextKeys.TabPauseActions);
+
+    /// <summary>Beschriftung "Bildschirm dimmen".</summary>
+    public string DimEnableLabel => _localization.GetText(SettingsTextKeys.PauseActionsDimEnable);
+
+    /// <summary>Beschriftung der Pause-Helligkeit.</summary>
+    public string DimBrightnessLabel => _localization.GetText(SettingsTextKeys.PauseActionsDimBrightness);
+
+    /// <summary>Beschriftung "Medien pausieren".</summary>
+    public string PauseMediaLabel => _localization.GetText(SettingsTextKeys.PauseActionsPauseMedia);
+
+    /// <summary>Beschriftung "Medien fortsetzen".</summary>
+    public string ResumeMediaLabel => _localization.GetText(SettingsTextKeys.PauseActionsResumeMedia);
+
+    /// <summary>Untere Grenze der Pause-Helligkeit.</summary>
+    public int DimBrightnessMin => Settings.MinDimBrightnessPercent;
+
+    /// <summary>Obere Grenze der Pause-Helligkeit.</summary>
+    public int DimBrightnessMax => Settings.MaxDimBrightnessPercent;
+
     /// <summary>
     /// Laedt die persistierten Einstellungen in das ViewModel. Vor dem ersten
     /// Anzeigen aufzurufen.
@@ -382,6 +415,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
             UpdateCheckEnabled = settings.UpdateCheckEnabled;
             SelectFrequency(settings.UpdateCheckFrequency);
+
+            DimScreenDuringBreak = settings.DimScreenDuringBreak;
+            DimBrightnessPercent = settings.DimBrightnessPercent;
+            PauseMediaDuringBreak = settings.PauseMediaDuringBreak;
+            ResumeMediaAfterBreak = settings.ResumeMediaAfterBreak;
 
             LoadDurations(settings);
         }
@@ -509,6 +547,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         settings.HotkeyToggleDnd = _hotkeyToggleDnd;
         settings.UpdateCheckEnabled = UpdateCheckEnabled;
         settings.UpdateCheckFrequency = SelectedFrequency;
+        settings.DimScreenDuringBreak = DimScreenDuringBreak;
+        settings.DimBrightnessPercent = Math.Clamp(DimBrightnessPercent, DimBrightnessMin, DimBrightnessMax);
+        settings.PauseMediaDuringBreak = PauseMediaDuringBreak;
+        settings.ResumeMediaAfterBreak = ResumeMediaAfterBreak;
 
         await _settingsRepository.SaveAsync(settings).ConfigureAwait(true);
 

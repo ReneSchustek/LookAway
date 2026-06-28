@@ -197,6 +197,43 @@ public sealed class Settings
     /// <summary>Zeitpunkt der letzten Update-Pruefung; <c>null</c>, wenn nie geprueft.</summary>
     public DateTimeOffset? LastUpdateCheck { get; set; }
 
+    /// <summary>Untergrenze der Pause-Helligkeit in Prozent.</summary>
+    public const int MinDimBrightnessPercent = 10;
+
+    /// <summary>Obergrenze der Pause-Helligkeit in Prozent.</summary>
+    public const int MaxDimBrightnessPercent = 80;
+
+    private int _dimBrightnessPercent = 30;
+
+    /// <summary>Soll der Bildschirm waehrend der Pause gedimmt werden? Default: <c>false</c>.</summary>
+    public bool DimScreenDuringBreak { get; set; }
+
+    /// <summary>
+    /// Zielhelligkeit waehrend der Pause in Prozent (gueltig
+    /// <see cref="MinDimBrightnessPercent"/>–<see cref="MaxDimBrightnessPercent"/>). Default: 30.
+    /// </summary>
+    public int DimBrightnessPercent
+    {
+        get => _dimBrightnessPercent;
+        set
+        {
+            if (value is < MinDimBrightnessPercent or > MaxDimBrightnessPercent)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
+                    value,
+                    $"DimBrightnessPercent muss zwischen {MinDimBrightnessPercent} und {MaxDimBrightnessPercent} liegen.");
+            }
+            _dimBrightnessPercent = value;
+        }
+    }
+
+    /// <summary>Soll die Medienwiedergabe waehrend der Pause pausiert werden? Default: <c>false</c>.</summary>
+    public bool PauseMediaDuringBreak { get; set; }
+
+    /// <summary>Sollen Medien nach der Pause fortgesetzt werden? Default: <c>true</c>.</summary>
+    public bool ResumeMediaAfterBreak { get; set; } = true;
+
     /// <summary>
     /// Wahr, wenn beim letzten Lesevorgang keine Konfigurationsdatei vorhanden war.
     /// Wird vom Repository gesetzt und nicht persistiert.

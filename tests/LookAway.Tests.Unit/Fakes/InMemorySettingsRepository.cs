@@ -60,6 +60,10 @@ internal sealed class InMemorySettingsRepository : ISettingsRepository
         UpdateCheckEnabled = source.UpdateCheckEnabled,
         UpdateCheckFrequency = source.UpdateCheckFrequency,
         LastUpdateCheck = source.LastUpdateCheck,
+        DimScreenDuringBreak = source.DimScreenDuringBreak,
+        DimBrightnessPercent = source.DimBrightnessPercent,
+        PauseMediaDuringBreak = source.PauseMediaDuringBreak,
+        ResumeMediaAfterBreak = source.ResumeMediaAfterBreak,
         IsFirstRun = source.IsFirstRun,
     };
 }

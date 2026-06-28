@@ -4,7 +4,7 @@ namespace LookAway.Application.Localization;
 
 /// <summary>
 /// Sprachneutrale Schluessel der Settings-Oberflaeche. Die zugehoerigen Texte
-/// liegen in den eingebetteten Sprachtabellen (Data-Schicht).
+/// liegen in den eingebetteten Sprachtabellen der Data-Schicht.
 /// </summary>
 public static class SettingsTextKeys
 {

@@ -11,7 +11,7 @@ namespace LookAway.Application.Services;
 /// Einstellungen.
 /// </summary>
 /// <remarks>
-/// Die Klasse ist die testbare "Settings-Logik": sie kennt nur die
+/// Die Klasse kapselt die testbare Settings-Logik: sie kennt nur die
 /// Core-Interfaces <see cref="IAutoStartService"/> und
 /// <see cref="ISettingsRepository"/> und laesst sich mit Fakes ohne echte
 /// Registry pruefen.

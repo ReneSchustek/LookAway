@@ -58,7 +58,7 @@ namespace LookAway;
 [SuppressMessage(
     "Design",
     "CA1001:Types that own disposable fields should be disposable",
-    Justification = "Die App-Klasse implementiert keinen IDisposable-Vertrag. Disposing der gehaltenen Felder erfolgt im RequestExit-Pfad (Tray) und durch den ServiceProvider beim Process-Shutdown.")]
+    Justification = "Die App-Klasse implementiert keinen IDisposable-Vertrag. Die gehaltenen Felder und der DI-ServiceProvider werden im RequestExit-Pfad explizit freigegeben.")]
 public partial class App : global::Microsoft.UI.Xaml.Application
 {
     private const string LogFolderName = "logs";
@@ -278,7 +278,8 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             Services.GetRequiredService<ILogger<TrayIconService>>(),
             OpenSettings,
             RequestExit,
-            OpenUpdatePage);
+            OpenUpdatePage,
+            ShowBreakReminder);
 
         _trayIcon.Show();
         AppLog.TrayReady(_logger!);
@@ -654,11 +655,15 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _detectionCts?.Cancel();
         _detectionCts?.Dispose();
         _detectionCts = null;
-        (Services.GetService<IHotkeyService>() as IDisposable)?.Dispose();
         _trayIcon?.Dispose();
         _trayIcon = null;
         _instanceLock?.Dispose();
         _instanceLock = null;
+
+        // Gibt alle per DI gehaltenen Singletons frei: stellt u. a. die
+        // Bildschirmhelligkeit wieder her, gibt Hotkeys frei und leert den Log-Puffer.
+        (Services as IDisposable)?.Dispose();
+
         Exit();
     }
 

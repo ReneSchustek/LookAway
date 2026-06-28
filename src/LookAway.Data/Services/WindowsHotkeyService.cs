@@ -22,11 +22,12 @@ namespace LookAway.Data.Services;
     "Usage",
     "CA2216:Disposable types should declare finalizer",
     Justification = "Das einzige native Handle (Nachrichtenfenster) gehoert einem Hintergrund-Thread mit Prozess-Lebensdauer und wird in Dispose freigegeben; ein Finalizer koennte nicht sicher auf diesen Thread marshallen.")]
+[System.Runtime.Versioning.SupportedOSPlatform("windows")]
 public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
 {
     private const uint WmHotkey = 0x0312;
     private const uint WmApplyBindings = 0x0400; // WM_APP
-    private const uint WmClose = 0x0010;
+    private const uint WmQuitLoop = 0x0401;      // WM_APP + 1 — beendet den Message-Loop
     private const uint ModNoRepeat = 0x4000;
     private const int GwlpWndProc = -4;
 
@@ -98,23 +99,25 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
 
     private void SignalApply()
     {
-        if (_hwnd != 0)
+        nint hwnd = Volatile.Read(ref _hwnd);
+        if (hwnd != 0)
         {
-            _ = PostMessageW(_hwnd, WmApplyBindings, 0, 0);
+            _ = PostMessageW(hwnd, WmApplyBindings, 0, 0);
         }
     }
 
     private void RunMessageLoop()
     {
-        _hwnd = CreateWindowExW(0, "STATIC", null, 0, 0, 0, 0, 0, HwndMessage, 0, 0, 0);
-        if (_hwnd == 0)
+        nint hwnd = CreateWindowExW(0, "STATIC", null, 0, 0, 0, 0, 0, HwndMessage, 0, 0, 0);
+        if (hwnd == 0)
         {
             WindowsHotkeyServiceLog.WindowCreationFailed(_logger);
             return;
         }
 
         _wndProc = WindowProc;
-        _originalWndProc = SetWindowLongPtrW(_hwnd, GwlpWndProc, Marshal.GetFunctionPointerForDelegate(_wndProc));
+        _originalWndProc = SetWindowLongPtrW(hwnd, GwlpWndProc, Marshal.GetFunctionPointerForDelegate(_wndProc));
+        Volatile.Write(ref _hwnd, hwnd);
 
         // Falls vor dem Fensteraufbau bereits Bindings gesetzt wurden.
         ApplyPending();
@@ -136,9 +139,25 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
             case WmApplyBindings:
                 ApplyPending();
                 return 0;
+            case WmQuitLoop:
+                // Abbau auf dem Thread, dem das Fenster gehoert (Hotkeys sind thread-affin).
+                TeardownOnMessageThread(hWnd);
+                return 0;
             default:
                 return CallWindowProcW(_originalWndProc, hWnd, msg, wParam, lParam);
         }
+    }
+
+    private void TeardownOnMessageThread(nint hWnd)
+    {
+        foreach (HotkeyAction action in _registered)
+        {
+            _ = UnregisterHotKey(hWnd, (int)action);
+        }
+
+        _registered.Clear();
+        _ = DestroyWindow(hWnd);
+        PostQuitMessage(0);
     }
 
     private void OnHotkey(int id)
@@ -193,14 +212,12 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
 
         _disposed = true;
 
-        if (_hwnd != 0)
+        // Abbau auf dem Message-Thread anstossen (Hotkeys sind thread-affin); der
+        // Handler gibt die Hotkeys frei, zerstoert das Fenster und beendet den Loop.
+        nint hwnd = Volatile.Read(ref _hwnd);
+        if (hwnd != 0)
         {
-            foreach (HotkeyAction action in _registered)
-            {
-                _ = UnregisterHotKey(_hwnd, (int)action);
-            }
-
-            _ = PostMessageW(_hwnd, WmClose, 0, 0);
+            _ = PostMessageW(hwnd, WmQuitLoop, 0, 0);
         }
 
         _ = _thread?.Join(TimeSpan.FromSeconds(2));
@@ -251,6 +268,15 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
     [LibraryImport("user32.dll", SetLastError = true)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial nint SetWindowLongPtrW(nint hWnd, int nIndex, nint dwNewLong);
+
+    [LibraryImport("user32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static partial bool DestroyWindow(nint hWnd);
+
+    [LibraryImport("user32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    private static partial void PostQuitMessage(int nExitCode);
 
     [LibraryImport("user32.dll")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]

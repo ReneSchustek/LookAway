@@ -44,7 +44,7 @@ internal sealed class RollingFileLogger : ILogger
         }
         catch (IOException)
         {
-            // Schreibfehler nicht hochwerfen.
+            // Schreibfehler nicht hochwerfen — der Logger darf die App nie zum Absturz bringen.
         }
         catch (UnauthorizedAccessException)
         {

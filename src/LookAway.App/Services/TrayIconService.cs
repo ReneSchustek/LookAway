@@ -35,6 +35,7 @@ internal sealed class TrayIconService : IDisposable
     private readonly Func<bool> _showSettingsHandler;
     private readonly Action _exitHandler;
     private readonly Action _updateDownloadHandler;
+    private readonly Action _startBreakHandler;
     private readonly Dictionary<TrayIconVariant, BitmapImage> _iconCache = new();
 
     private TaskbarIcon? _icon;
@@ -61,6 +62,7 @@ internal sealed class TrayIconService : IDisposable
     /// <param name="showSettingsHandler">Callback fuer Settings-Klick (zeigt das Hauptfenster).</param>
     /// <param name="exitHandler">Callback fuer "Beenden".</param>
     /// <param name="updateDownloadHandler">Callback fuer "Update herunterladen".</param>
+    /// <param name="startBreakHandler">Callback fuer "Pause jetzt starten".</param>
     public TrayIconService(
         ITimerService timerService,
         TrayStatusPresenter statusPresenter,
@@ -69,7 +71,8 @@ internal sealed class TrayIconService : IDisposable
         ILogger<TrayIconService> logger,
         Func<bool> showSettingsHandler,
         Action exitHandler,
-        Action updateDownloadHandler)
+        Action updateDownloadHandler,
+        Action startBreakHandler)
     {
         ArgumentNullException.ThrowIfNull(timerService);
         ArgumentNullException.ThrowIfNull(statusPresenter);
@@ -79,6 +82,7 @@ internal sealed class TrayIconService : IDisposable
         ArgumentNullException.ThrowIfNull(showSettingsHandler);
         ArgumentNullException.ThrowIfNull(exitHandler);
         ArgumentNullException.ThrowIfNull(updateDownloadHandler);
+        ArgumentNullException.ThrowIfNull(startBreakHandler);
 
         _timerService = timerService;
         _statusPresenter = statusPresenter;
@@ -88,6 +92,7 @@ internal sealed class TrayIconService : IDisposable
         _showSettingsHandler = showSettingsHandler;
         _exitHandler = exitHandler;
         _updateDownloadHandler = updateDownloadHandler;
+        _startBreakHandler = startBreakHandler;
 
         _localization.LanguageChanged += OnLanguageChanged;
     }
@@ -171,6 +176,9 @@ internal sealed class TrayIconService : IDisposable
             _icon.IconSource = GetIcon(variant);
             _currentVariant = variant;
         }
+
+        // Pausieren/Fortsetzen-Eintrag an den aktuellen Zustand angleichen.
+        UpdateMenuForState(state);
     }
 
     private void StartStatusTimer()
@@ -346,13 +354,7 @@ internal sealed class TrayIconService : IDisposable
     private void OnStartBreakNow()
     {
         TrayIconLog.StartBreakRequested(_logger);
-        // Konkrete Logik wird in Folgearbeit (Pause-jetzt-Aktion)
-        // an den TimerService angebunden. Aktueller Hook setzt den Service
-        // in den OnBreak-Zustand, falls bereits gestartet.
-        if (_timerService.State == TimerState.Working || _timerService.State == TimerState.OnBreak)
-        {
-            _timerService.Pause();
-        }
+        _startBreakHandler();
     }
 
     private void OnTogglePause()

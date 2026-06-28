@@ -112,6 +112,7 @@ public sealed class SingleInstanceLock : IDisposable
         }
         catch (AggregateException)
         {
+            // Fehler des Listener-Tasks beim Herunterfahren werden bewusst toleriert.
         }
 
         _listenerCts?.Dispose();

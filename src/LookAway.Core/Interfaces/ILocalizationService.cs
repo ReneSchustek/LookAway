@@ -8,8 +8,8 @@ namespace LookAway.Core.Interfaces;
 /// </summary>
 /// <remarks>
 /// Die UI bindet an die uebersetzten Texte und aktualisiert sie bei
-/// <see cref="LanguageChanged"/>. Aktuell ist nur Deutsch befuellt; Englisch und
-/// Franzoesisch folgen und fallen bis dahin auf Deutsch zurueck.
+/// <see cref="LanguageChanged"/>. Deutsch ist die Referenzsprache; fehlt ein
+/// Schluessel in einer anderen Sprache, wird auf Deutsch zurueckgegriffen.
 /// </remarks>
 public interface ILocalizationService
 {

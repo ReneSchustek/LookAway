@@ -8,9 +8,8 @@ namespace LookAway.Data.Services;
 
 /// <summary>
 /// Lokalisierung ueber eingebettete JSON-Ressourcen (eine Datei je Sprache).
-/// Deutsch ist die Referenzsprache und dient als Fallback; Englisch und
-/// Franzoesisch werden befuellt und fallen bis dahin auf Deutsch
-/// zurueck.
+/// Deutsch ist die Referenzsprache und dient als Fallback, falls ein Schluessel
+/// in der gewaehlten Sprache fehlt.
 /// </summary>
 public sealed class JsonLocalizationService : ILocalizationService
 {

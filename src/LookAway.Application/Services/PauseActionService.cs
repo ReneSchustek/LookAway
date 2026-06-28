@@ -43,7 +43,9 @@ public sealed class PauseActionService
     {
         if (DimScreenEnabled)
         {
-            _screenDimmer.DimTo(DimBrightnessPercent);
+            // DDC/CI-Aufrufe koennen blockieren — nicht auf dem UI-Thread ausfuehren.
+            int target = DimBrightnessPercent;
+            await Task.Run(() => _screenDimmer.DimTo(target), cancellationToken).ConfigureAwait(false);
         }
 
         if (PauseMediaEnabled)
@@ -58,7 +60,7 @@ public sealed class PauseActionService
     {
         if (DimScreenEnabled)
         {
-            _screenDimmer.Restore();
+            await Task.Run(_screenDimmer.Restore, cancellationToken).ConfigureAwait(false);
         }
 
         if (PauseMediaEnabled && ResumeMediaAfterBreak)

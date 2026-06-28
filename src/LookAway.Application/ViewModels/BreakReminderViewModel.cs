@@ -20,7 +20,7 @@ public sealed class BreakReminderViewModel
     /// <summary>Verschiebedauer in Minuten bei "Snooze".</summary>
     public const int SnoozeMinutes = 5;
 
-    /// <summary>Lokalisierungs-Schluessel des Titels (Texte folgen).</summary>
+    /// <summary>Lokalisierungs-Schluessel des Titels.</summary>
     public const string TitleKey = "Reminder.Title";
 
     private bool _completed;

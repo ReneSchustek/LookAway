@@ -4,8 +4,7 @@ using Microsoft.UI.Xaml;
 namespace LookAway;
 
 /// <summary>
-/// Hauptfenster der Anwendung.
-/// Spaeter wird das Fenster beim Start versteckt und nur das Tray-Icon ist sichtbar.
+/// Hauptfenster der Anwendung. Bleibt beim Start verborgen — die App lebt im Tray-Icon.
 /// </summary>
 [SuppressMessage(
     "Design",

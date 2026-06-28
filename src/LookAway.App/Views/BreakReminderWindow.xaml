@@ -7,10 +7,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Padding="32" RowSpacing="16">
-        <Grid.Background>
-            <SolidColorBrush Color="#FFFFFFFF" />
-        </Grid.Background>
+    <Grid Padding="32" RowSpacing="16" Background="{StaticResource RcBackground}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -21,36 +18,19 @@
         <TextBlock
             x:Name="TitleText"
             Grid.Row="0"
-            FontSize="28"
-            FontWeight="SemiBold">
-            <TextBlock.Foreground>
-                <SolidColorBrush Color="#FF1F2937" />
-            </TextBlock.Foreground>
-        </TextBlock>
+            Style="{StaticResource RcH1TextStyle}" />
 
         <TextBlock
             x:Name="HintText"
             Grid.Row="1"
-            FontSize="16"
-            TextWrapping="Wrap">
-            <TextBlock.Foreground>
-                <SolidColorBrush Color="#FF1F2937" />
-            </TextBlock.Foreground>
-        </TextBlock>
+            FontSize="{StaticResource RcFontSizeH3}" />
 
         <StackPanel
             Grid.Row="3"
             Orientation="Horizontal"
             Spacing="12"
             HorizontalAlignment="Right">
-            <Button x:Name="StartButton" Click="OnStartBreakClick">
-                <Button.Background>
-                    <SolidColorBrush Color="#FF4361EE" />
-                </Button.Background>
-                <Button.Foreground>
-                    <SolidColorBrush Color="#FFFFFFFF" />
-                </Button.Foreground>
-            </Button>
+            <Button x:Name="StartButton" Click="OnStartBreakClick" Style="{StaticResource RcPrimaryButtonStyle}" />
             <Button x:Name="SnoozeButton" Click="OnSnoozeClick" />
             <Button x:Name="SkipButton" Click="OnSkipClick" />
         </StackPanel>

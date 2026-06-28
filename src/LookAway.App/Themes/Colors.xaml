@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Farbpalette laut Designvorgabe. -->
+    <SolidColorBrush x:Key="RcBackground" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="RcAccent" Color="#FF4361EE" />
+    <SolidColorBrush x:Key="RcAccentForeground" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="RcTextPrimary" Color="#FF1F2937" />
+    <SolidColorBrush x:Key="RcInteraction" Color="#FFF3F4F6" />
+    <SolidColorBrush x:Key="RcDivider" Color="#FFE5E7EB" />
+    <SolidColorBrush x:Key="RcError" Color="#FFB00020" />
+
+</ResourceDictionary>

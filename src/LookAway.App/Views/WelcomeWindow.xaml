@@ -8,12 +8,8 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid x:Name="RootGrid" Padding="32" RowSpacing="16">
-        <Grid.Background>
-            <SolidColorBrush Color="#FFFFFFFF" />
-        </Grid.Background>
+    <Grid x:Name="RootGrid" Padding="32" RowSpacing="16" Background="{StaticResource RcBackground}">
         <Grid.Resources>
-            <SolidColorBrush x:Key="TextBrush" Color="#FF1F2937" />
             <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
         </Grid.Resources>
         <Grid.RowDefinitions>
@@ -24,26 +20,16 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TextBlock
-            Grid.Row="0"
-            Text="{Binding Title}"
-            FontSize="28"
-            FontWeight="SemiBold"
-            Foreground="{StaticResource TextBrush}" />
+        <TextBlock Grid.Row="0" Text="{Binding Title}" Style="{StaticResource RcH1TextStyle}" />
 
-        <TextBlock
-            Grid.Row="1"
-            Text="{Binding Intro}"
-            FontSize="14"
-            TextWrapping="Wrap"
-            Foreground="{StaticResource TextBrush}" />
+        <TextBlock Grid.Row="1" Text="{Binding Intro}" />
 
         <!-- Schritt-Inhalt -->
         <Grid Grid.Row="2" VerticalAlignment="Top" Margin="0,12,0,0">
             <StackPanel
                 Spacing="12"
                 Visibility="{Binding IsStepLanguage, Converter={StaticResource BoolToVisibility}}">
-                <TextBlock Text="{Binding StepHeader}" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
+                <TextBlock Text="{Binding StepHeader}" Style="{StaticResource RcH3TextStyle}" />
                 <ComboBox
                     Header="{Binding LanguageLabel}"
                     ItemsSource="{Binding Languages}"
@@ -55,7 +41,7 @@
             <StackPanel
                 Spacing="12"
                 Visibility="{Binding IsStepModel, Converter={StaticResource BoolToVisibility}}">
-                <TextBlock Text="{Binding StepHeader}" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
+                <TextBlock Text="{Binding StepHeader}" Style="{StaticResource RcH3TextStyle}" />
                 <ComboBox
                     Header="{Binding ModelLabel}"
                     ItemsSource="{Binding Models}"
@@ -67,26 +53,23 @@
             <StackPanel
                 Spacing="12"
                 Visibility="{Binding IsStepAutoStart, Converter={StaticResource BoolToVisibility}}">
-                <TextBlock Text="{Binding StepHeader}" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
+                <TextBlock Text="{Binding StepHeader}" Style="{StaticResource RcH3TextStyle}" />
                 <CheckBox Content="{Binding AutoStartLabel}" IsChecked="{Binding AutoStart, Mode=TwoWay}" />
-                <TextBlock Text="{Binding AutoStartHint}" FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource TextBrush}" />
+                <TextBlock Text="{Binding AutoStartHint}" FontSize="{StaticResource RcFontSizeCaption}" />
             </StackPanel>
         </Grid>
 
         <TextBlock
             Grid.Row="3"
             Text="{Binding CloseHint}"
-            FontSize="12"
-            TextWrapping="Wrap"
-            Opacity="0.7"
-            Foreground="{StaticResource TextBrush}" />
+            FontSize="{StaticResource RcFontSizeCaption}"
+            Opacity="0.7" />
 
         <Grid Grid.Row="4">
             <TextBlock
                 Text="{Binding StepProgress}"
                 VerticalAlignment="Center"
-                FontSize="12"
-                Foreground="{StaticResource TextBrush}" />
+                FontSize="{StaticResource RcFontSizeCaption}" />
             <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
                 <Button
                     Content="{Binding BackLabel}"
@@ -99,14 +82,8 @@
                 <Button
                     Content="{Binding FinishLabel}"
                     Command="{Binding FinishCommand}"
-                    Visibility="{Binding ShowFinishButton, Converter={StaticResource BoolToVisibility}}">
-                    <Button.Background>
-                        <SolidColorBrush Color="#FF4361EE" />
-                    </Button.Background>
-                    <Button.Foreground>
-                        <SolidColorBrush Color="#FFFFFFFF" />
-                    </Button.Foreground>
-                </Button>
+                    Style="{StaticResource RcPrimaryButtonStyle}"
+                    Visibility="{Binding ShowFinishButton, Converter={StaticResource BoolToVisibility}}" />
             </StackPanel>
         </Grid>
     </Grid>

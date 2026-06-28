@@ -68,6 +68,34 @@ public static class SettingsTextKeys
     /// <summary>Beschriftung des Zuruecksetzen-Buttons.</summary>
     public const string HotkeysReset = "Settings.Hotkeys.Reset";
 
+    /// <summary>Beschriftung "Auf Updates pruefen".</summary>
+    public const string UpdateEnableLabel = "Settings.Update.EnableLabel";
+
+    /// <summary>Beschriftung der Pruef-Haeufigkeit.</summary>
+    public const string UpdateFrequencyLabel = "Settings.Update.FrequencyLabel";
+
+    /// <summary>Beschriftung des "Jetzt pruefen"-Buttons.</summary>
+    public const string UpdateCheckNow = "Settings.Update.CheckNow";
+
+    /// <summary>Status "auf dem neuesten Stand".</summary>
+    public const string UpdateUpToDate = "Settings.Update.UpToDate";
+
+    /// <summary>Status "Update verfuegbar" (Formatstring {0}).</summary>
+    public const string UpdateAvailable = "Settings.Update.Available";
+
+    /// <summary>Status "wird geprueft".</summary>
+    public const string UpdateChecking = "Settings.Update.Checking";
+
+    /// <summary>Download-Link-Text.</summary>
+    public const string UpdateDownload = "Settings.Update.Download";
+
+    /// <summary>
+    /// Liefert den Anzeigenamen-Schluessel einer Pruef-Haeufigkeit.
+    /// </summary>
+    /// <param name="frequency">Haeufigkeit.</param>
+    /// <returns>Schluessel der Form <c>"Settings.Update.Frequency.&lt;Name&gt;"</c>.</returns>
+    public static string ForFrequency(UpdateCheckFrequency frequency) => "Settings.Update.Frequency." + frequency;
+
     /// <summary>Beschriftung "Ton abspielen".</summary>
     public const string SoundEnableLabel = "Settings.Sound.EnableLabel";
 

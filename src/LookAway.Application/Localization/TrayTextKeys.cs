@@ -23,6 +23,9 @@ public static class TrayTextKeys
     /// <summary>Menue: "Beenden".</summary>
     public const string MenuExit = "Tray.Menu.Exit";
 
+    /// <summary>Menue: "Update herunterladen" (nur bei verfuegbarem Update sichtbar).</summary>
+    public const string MenuUpdate = "Tray.Menu.Update";
+
     /// <summary>Tooltip im Ruhezustand (App laeuft im Hintergrund).</summary>
     public const string TooltipBackground = "Tray.Tooltip.Background";
 

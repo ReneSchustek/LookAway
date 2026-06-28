@@ -54,6 +54,7 @@ public sealed class SettingsViewModelTests
             coordinator,
             localization,
             sound,
+            new FakeUpdateChecker(),
             statistics,
             NullLogger<SettingsViewModel>.Instance,
             TestVersion);

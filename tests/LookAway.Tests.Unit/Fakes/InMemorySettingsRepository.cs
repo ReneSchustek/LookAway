@@ -57,6 +57,9 @@ internal sealed class InMemorySettingsRepository : ISettingsRepository
         HotkeyStartBreak = source.HotkeyStartBreak,
         HotkeySkipOrSnooze = source.HotkeySkipOrSnooze,
         HotkeyToggleDnd = source.HotkeyToggleDnd,
+        UpdateCheckEnabled = source.UpdateCheckEnabled,
+        UpdateCheckFrequency = source.UpdateCheckFrequency,
+        LastUpdateCheck = source.LastUpdateCheck,
         IsFirstRun = source.IsFirstRun,
     };
 }

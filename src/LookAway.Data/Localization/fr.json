@@ -30,6 +30,19 @@
   "Settings.Hotkeys.ToggleDnd": "Basculer Ne pas déranger",
   "Settings.Hotkeys.Reset": "Restaurer les valeurs par défaut",
 
+  "Settings.Update.EnableLabel": "Rechercher les mises à jour",
+  "Settings.Update.FrequencyLabel": "Fréquence",
+  "Settings.Update.CheckNow": "Vérifier maintenant",
+  "Settings.Update.UpToDate": "LookAway est à jour.",
+  "Settings.Update.Available": "Mise à jour disponible : {0}",
+  "Settings.Update.Checking": "Vérification …",
+  "Settings.Update.Download": "Télécharger",
+  "Settings.Update.Frequency.OnStartup": "À chaque démarrage",
+  "Settings.Update.Frequency.Daily": "Quotidienne",
+  "Settings.Update.Frequency.Weekly": "Hebdomadaire",
+
+  "Tray.Menu.Update": "Télécharger la mise à jour",
+
   "Settings.Language.Label": "Langue",
   "Settings.AutoStart.Label": "Démarrer avec Windows",
   "Settings.Idle.PauseLabel": "Suspendre automatiquement en cas d'inactivité",

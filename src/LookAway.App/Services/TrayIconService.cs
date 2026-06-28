@@ -34,9 +34,11 @@ internal sealed class TrayIconService : IDisposable
     private readonly DispatcherQueue _dispatcher;
     private readonly Func<bool> _showSettingsHandler;
     private readonly Action _exitHandler;
+    private readonly Action _updateDownloadHandler;
     private readonly Dictionary<TrayIconVariant, BitmapImage> _iconCache = new();
 
     private TaskbarIcon? _icon;
+    private MenuFlyoutItem? _updateItem;
     private MenuFlyoutItem? _settingsItem;
     private MenuFlyoutItem? _startBreakItem;
     private MenuFlyoutItem? _toggleItem;
@@ -58,6 +60,7 @@ internal sealed class TrayIconService : IDisposable
     /// <param name="logger">Logger.</param>
     /// <param name="showSettingsHandler">Callback fuer Settings-Klick (zeigt das Hauptfenster).</param>
     /// <param name="exitHandler">Callback fuer "Beenden".</param>
+    /// <param name="updateDownloadHandler">Callback fuer "Update herunterladen".</param>
     public TrayIconService(
         ITimerService timerService,
         TrayStatusPresenter statusPresenter,
@@ -65,7 +68,8 @@ internal sealed class TrayIconService : IDisposable
         DispatcherQueue dispatcher,
         ILogger<TrayIconService> logger,
         Func<bool> showSettingsHandler,
-        Action exitHandler)
+        Action exitHandler,
+        Action updateDownloadHandler)
     {
         ArgumentNullException.ThrowIfNull(timerService);
         ArgumentNullException.ThrowIfNull(statusPresenter);
@@ -74,6 +78,7 @@ internal sealed class TrayIconService : IDisposable
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(showSettingsHandler);
         ArgumentNullException.ThrowIfNull(exitHandler);
+        ArgumentNullException.ThrowIfNull(updateDownloadHandler);
 
         _timerService = timerService;
         _statusPresenter = statusPresenter;
@@ -82,9 +87,23 @@ internal sealed class TrayIconService : IDisposable
         _logger = logger;
         _showSettingsHandler = showSettingsHandler;
         _exitHandler = exitHandler;
+        _updateDownloadHandler = updateDownloadHandler;
 
         _localization.LanguageChanged += OnLanguageChanged;
     }
+
+    /// <summary>
+    /// Zeigt oder verbirgt den "Update herunterladen"-Eintrag im Tray-Menue.
+    /// </summary>
+    /// <param name="available">Ist ein Update verfuegbar?</param>
+    public void SetUpdateAvailable(bool available)
+        => _ = _dispatcher.TryEnqueue(() =>
+        {
+            if (_updateItem is not null)
+            {
+                _updateItem.Visibility = available ? Visibility.Visible : Visibility.Collapsed;
+            }
+        });
 
     /// <summary>
     /// Setzt das aktive Pausenmodell, das im Tooltip angezeigt wird.
@@ -241,6 +260,14 @@ internal sealed class TrayIconService : IDisposable
     {
         MenuFlyout flyout = new();
 
+        _updateItem = new MenuFlyoutItem
+        {
+            Text = _localization.GetText(TrayTextKeys.MenuUpdate),
+            Visibility = Visibility.Collapsed,
+        };
+        _updateItem.Click += (_, _) => _updateDownloadHandler();
+        flyout.Items.Add(_updateItem);
+
         _settingsItem = new MenuFlyoutItem { Text = _localization.GetText(TrayTextKeys.MenuSettings) };
         _settingsItem.Click += (_, _) => OnSettingsRequested();
         flyout.Items.Add(_settingsItem);
@@ -276,6 +303,11 @@ internal sealed class TrayIconService : IDisposable
         if (_disposed)
         {
             return;
+        }
+
+        if (_updateItem is not null)
+        {
+            _updateItem.Text = _localization.GetText(TrayTextKeys.MenuUpdate);
         }
 
         if (_settingsItem is not null)

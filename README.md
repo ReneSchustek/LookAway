@@ -292,6 +292,21 @@ der Settings-Tab "Hotkeys" erlaubt Aktivieren und Zuruecksetzen auf die Standard
 Einzelregistrierungen (Konflikt mit einer anderen App) werden geloggt, ohne die uebrigen zu verhindern;
 beim Beenden werden alle Hotkeys freigegeben.
 
+## Update-Pruefung
+
+LookAway prueft optional auf neue Versionen ueber die GitHub-Releases-API (Standard aktiv):
+
+- `IUpdateChecker` (Core) → `GitHubUpdateChecker` (Data) ruft `releases/latest` ab und vergleicht das
+  Tag mit der installierten Version. Der HTTP-Zugriff ist hinter `IHttpGetClient` (→ `HttpGetClient`,
+  User-Agent + 10 s Timeout) gekapselt und damit testbar; Netzwerk-/Parsefehler ergeben "kein Update"
+  statt einer Exception. Die Versionsvergleichslogik liegt im UI-freien `UpdateInfo` (fuehrendes `v`
+  und Praerelease-Suffix werden abgeschnitten).
+- `UpdateSchedule` (Core) entscheidet anhand der Haeufigkeit (`OnStartup`/`Daily`/`Weekly`) und des
+  letzten Pruefzeitpunkts, ob beim Start geprueft wird — schont das GitHub-Rate-Limit.
+- Einstellungen (Ueber-Tab): Aktivieren, Haeufigkeit, "Jetzt pruefen" mit Statusanzeige und
+  Download-Link. Findet die Hintergrundpruefung beim Start ein Update, erscheint im Tray der Eintrag
+  "Update herunterladen", der die Release-Seite im Browser oeffnet (kein Auto-Install).
+
 ## Review
 
 `tools/review.ps1` orchestriert lokale Qualitaets-Checks:

@@ -7,8 +7,8 @@ namespace LookAway.Data.Services;
 /// <see cref="RegistryAutoStartService"/>.
 /// </summary>
 /// <remarks>
-/// Eingesetzt nach <c>logging.md</c>: vermeidet Boxing und String-Allocation,
-/// erfuellt CA1848 und liefert strukturierte Properties (PascalCase).
+/// Source-generierte <c>LoggerMessage</c>-Methoden vermeiden Boxing und
+/// String-Allocation (CA1848) und liefern strukturierte Properties.
 /// </remarks>
 internal static partial class RegistryAutoStartServiceLog
 {

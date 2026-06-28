@@ -12,7 +12,6 @@
                 <ResourceDictionary Source="ms-appx:///Themes/Typography.xaml" />
                 <ResourceDictionary Source="ms-appx:///Themes/Controls.xaml" />
             </ResourceDictionary.MergedDictionaries>
-            <!-- Other app resources here -->
         </ResourceDictionary>
     </Application.Resources>
 </Application>

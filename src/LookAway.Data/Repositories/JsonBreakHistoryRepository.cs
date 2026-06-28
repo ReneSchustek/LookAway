@@ -143,6 +143,17 @@ public sealed class JsonBreakHistoryRepository : IBreakHistoryRepository, IDispo
         {
             return new List<BreakSession>();
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            // Historie ist nicht startkritisch — bei Zugriffsfehler leer behandeln.
+            JsonBreakHistoryRepositoryLog.HistoryReadFailed(_logger, ex, _filePath);
+            return new List<BreakSession>();
+        }
+        catch (IOException ex)
+        {
+            JsonBreakHistoryRepositoryLog.HistoryReadFailed(_logger, ex, _filePath);
+            return new List<BreakSession>();
+        }
 
         if (string.IsNullOrWhiteSpace(json))
         {
@@ -192,32 +203,7 @@ public sealed class JsonBreakHistoryRepository : IBreakHistoryRepository, IDispo
             await tempStream.FlushAsync(cancellationToken).ConfigureAwait(false);
         }
 
-        await MoveWithRetryAsync(tempPath, _filePath, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Ersetzt die Zieldatei durch die Temp-Datei und wiederholt den Rename bei
-    /// transienten Sharing-Fehlern (paralleler Reader, Virenscanner).
-    /// </summary>
-    private static async Task MoveWithRetryAsync(string sourcePath, string destinationPath, CancellationToken cancellationToken)
-    {
-        const int maxAttempts = 5;
-        for (int attempt = 1; ; attempt++)
-        {
-            try
-            {
-                File.Move(sourcePath, destinationPath, overwrite: true);
-                return;
-            }
-            catch (IOException) when (attempt < maxAttempts)
-            {
-                await Task.Delay(20 * attempt, cancellationToken).ConfigureAwait(false);
-            }
-            catch (UnauthorizedAccessException) when (attempt < maxAttempts)
-            {
-                await Task.Delay(20 * attempt, cancellationToken).ConfigureAwait(false);
-            }
-        }
+        await AtomicFile.ReplaceWithRetryAsync(tempPath, _filePath, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>Gibt den Schreib-Semaphor frei.</summary>
@@ -248,4 +234,7 @@ internal static partial class JsonBreakHistoryRepositoryLog
 
     [LoggerMessage(EventId = 1402, Level = LogLevel.Warning, Message = "Historie {Path} ist beschaedigt — sie wird leer behandelt.")]
     public static partial void HistoryCorrupted(ILogger logger, Exception exception, string path);
+
+    [LoggerMessage(EventId = 1403, Level = LogLevel.Warning, Message = "Historie {Path} konnte nicht gelesen werden — sie wird leer behandelt.")]
+    public static partial void HistoryReadFailed(ILogger logger, Exception exception, string path);
 }

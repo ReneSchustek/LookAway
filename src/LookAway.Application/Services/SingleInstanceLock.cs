@@ -104,6 +104,7 @@ public sealed class SingleInstanceLock : IDisposable
         }
         catch (ObjectDisposedException)
         {
+            // Handle bereits freigegeben — beim Herunterfahren unkritisch.
         }
 
         try

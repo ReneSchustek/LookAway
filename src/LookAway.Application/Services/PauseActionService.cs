@@ -3,8 +3,8 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Application.Services;
 
 /// <summary>
-/// Fuehrt beim Pausenbeginn und -ende die konfigurierten Pause-Aktionen aus
-///: Bildschirm dimmen und Medien pausieren. UI-frei und damit ueber
+/// Fuehrt beim Pausenbeginn und -ende die konfigurierten Pause-Aktionen aus:
+/// Bildschirm dimmen und Medien pausieren. UI-frei und damit ueber
 /// Fakes testbar; die Aktivierung steuert der Aufrufer ueber die Eigenschaften.
 /// </summary>
 public sealed class PauseActionService

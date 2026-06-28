@@ -5,8 +5,8 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Core.Interfaces;
 
 /// <summary>
-/// Registriert systemweite Tastenkombinationen und meldet ihre Ausloesung
-///. Implementierungen kapseln die Plattform-Anbindung (Win32).
+/// Registriert systemweite Tastenkombinationen und meldet ihre Ausloesung.
+/// Implementierungen kapseln die Plattform-Anbindung (Win32).
 /// </summary>
 public interface IHotkeyService
 {

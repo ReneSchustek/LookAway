@@ -48,13 +48,20 @@ public sealed class StatisticsService
     {
         IReadOnlyList<BreakSession> all = await _historyRepository.LoadAllAsync(cancellationToken).ConfigureAwait(false);
         DateTime weekStart = StartOfWeek(Now().Date);
+        DateTime weekEnd = weekStart.AddDays(DaysPerWeek);
+
+        // Lokale Datumsberechnung nur einmal pro Sitzung.
+        ILookup<DateTime, BreakSession> byDay = all
+            .Select(session => (session, date: LocalDate(session)))
+            .Where(item => item.date >= weekStart && item.date < weekEnd)
+            .ToLookup(item => item.date, item => item.session);
 
         List<StatBucket> buckets = new(DaysPerWeek);
         List<BreakSession> ofWeek = new();
         for (int offset = 0; offset < DaysPerWeek; offset++)
         {
             DateTime day = weekStart.AddDays(offset);
-            List<BreakSession> ofDay = all.Where(session => LocalDate(session) == day).ToList();
+            List<BreakSession> ofDay = byDay[day].ToList();
             ofWeek.AddRange(ofDay);
             buckets.Add(BuildBucket(day.ToString("ddd", CultureInfo.CurrentCulture), ofDay));
         }
@@ -69,13 +76,17 @@ public sealed class StatisticsService
         IReadOnlyList<BreakSession> all = await _historyRepository.LoadAllAsync(cancellationToken).ConfigureAwait(false);
         int year = Now().Year;
 
+        // Lokale Datumsberechnung nur einmal pro Sitzung, dann nach Monat gruppieren.
+        ILookup<int, BreakSession> byMonth = all
+            .Select(session => (session, date: LocalDate(session)))
+            .Where(item => item.date.Year == year)
+            .ToLookup(item => item.date.Month, item => item.session);
+
         List<StatBucket> buckets = new(MonthsPerYear);
         List<BreakSession> ofYear = new();
         for (int month = 1; month <= MonthsPerYear; month++)
         {
-            List<BreakSession> ofMonth = all
-                .Where(session => LocalDate(session).Year == year && LocalDate(session).Month == month)
-                .ToList();
+            List<BreakSession> ofMonth = byMonth[month].ToList();
             ofYear.AddRange(ofMonth);
             string label = CultureInfo.CurrentCulture.DateTimeFormat.GetAbbreviatedMonthName(month);
             buckets.Add(BuildBucket(label, ofMonth));

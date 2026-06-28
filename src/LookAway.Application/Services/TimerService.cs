@@ -357,7 +357,9 @@ public sealed class TimerService : ITimerService, IDisposable
 
     private void EnsureLoopStarted()
     {
-        if (_loopTask is not null && !_loopTask.IsCompleted)
+        // Nur weiterlaufen lassen, wenn der Loop aktiv UND nicht bereits abgebrochen
+        // ist (sonst wuerde ein Start nach Stop keinen neuen Loop aufsetzen).
+        if (_loopTask is { IsCompleted: false } && _loopCts is { IsCancellationRequested: false })
         {
             return;
         }
@@ -369,21 +371,25 @@ public sealed class TimerService : ITimerService, IDisposable
 
     private void StopLoop()
     {
-        CancellationTokenSource? cts = _loopCts;
-        if (cts is null)
+        // Zugriff auf das Lebenszyklus-Feld konsistent zu EnsureLoopStarted unter
+        // demselben Lock. Die Entsorgung erfolgt in EnsureLoopStarted (vor dem
+        // Neustart) bzw. in Dispose — hier wird nur abgebrochen.
+        lock (_lock)
         {
-            return;
-        }
+            if (_loopCts is null)
+            {
+                return;
+            }
 
-        try
-        {
-            cts.Cancel();
+            try
+            {
+                _loopCts.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+                // Bereits freigegeben (paralleler Stop/Dispose) — kein Handlungsbedarf.
+            }
         }
-        catch (ObjectDisposedException)
-        {
-        }
-
-        _loopCts = null;
     }
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage(

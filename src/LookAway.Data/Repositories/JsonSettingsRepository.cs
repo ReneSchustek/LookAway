@@ -175,7 +175,7 @@ public sealed class JsonSettingsRepository : ISettingsRepository, IDisposable
                 await tempStream.FlushAsync(cancellationToken).ConfigureAwait(false);
             }
 
-            await MoveWithRetryAsync(tempPath, _filePath, cancellationToken).ConfigureAwait(false);
+            await AtomicFile.ReplaceWithRetryAsync(tempPath, _filePath, cancellationToken).ConfigureAwait(false);
 
             JsonSettingsRepositoryLog.SettingsSaved(_logger, _filePath);
         }
@@ -207,33 +207,6 @@ public sealed class JsonSettingsRepository : ISettingsRepository, IDisposable
 
         _writeLock.Dispose();
         _disposed = true;
-    }
-
-    /// <summary>
-    /// Ersetzt die Zieldatei durch die Temp-Datei und wiederholt den Rename bei
-    /// transienten Sharing-Fehlern (z. B. ein paralleler Reader oder ein
-    /// Virenscanner haelt das Handle kurz). So bleibt das atomare Schreiben
-    /// unter Last robust.
-    /// </summary>
-    private static async Task MoveWithRetryAsync(string sourcePath, string destinationPath, CancellationToken cancellationToken)
-    {
-        const int maxAttempts = 5;
-        for (int attempt = 1; ; attempt++)
-        {
-            try
-            {
-                File.Move(sourcePath, destinationPath, overwrite: true);
-                return;
-            }
-            catch (IOException) when (attempt < maxAttempts)
-            {
-                await Task.Delay(20 * attempt, cancellationToken).ConfigureAwait(false);
-            }
-            catch (UnauthorizedAccessException) when (attempt < maxAttempts)
-            {
-                await Task.Delay(20 * attempt, cancellationToken).ConfigureAwait(false);
-            }
-        }
     }
 
     private static Settings CreateFirstRunDefaults() => new() { IsFirstRun = true };

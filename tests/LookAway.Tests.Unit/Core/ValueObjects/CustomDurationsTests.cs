@@ -17,7 +17,7 @@ public sealed class CustomDurationsTests
     }
 
     [Theory]
-    [InlineData(1)]
+    [InlineData(CustomDurations.MinWorkMinutes)]
     [InlineData(60)]
     [InlineData(CustomDurations.MaxWorkMinutes)]
     public void WorkMinutes_AcceptsBoundaryValues(int minutes)
@@ -27,7 +27,7 @@ public sealed class CustomDurationsTests
     }
 
     [Theory]
-    [InlineData(0)]
+    [InlineData(CustomDurations.MinWorkMinutes - 1)]
     [InlineData(-5)]
     [InlineData(CustomDurations.MaxWorkMinutes + 1)]
     public void WorkMinutes_ThrowsOnOutOfRange(int minutes)

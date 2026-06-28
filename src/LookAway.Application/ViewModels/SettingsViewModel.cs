@@ -82,6 +82,13 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private int _soundVolume;
 
+    [ObservableProperty]
+    private bool _hotkeysEnabled;
+
+    private HotkeyDefinition _hotkeyStartBreak = HotkeyDefaults.StartBreak;
+    private HotkeyDefinition _hotkeySkipOrSnooze = HotkeyDefaults.SkipOrSnooze;
+    private HotkeyDefinition _hotkeyToggleDnd = HotkeyDefaults.ToggleDnd;
+
     /// <summary>
     /// Erzeugt das ViewModel mit seinen Abhaengigkeiten.
     /// </summary>
@@ -274,6 +281,33 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Beschriftung des Vorhoer-Buttons.</summary>
     public string SoundPreviewLabel => _localization.GetText(SettingsTextKeys.SoundPreviewButton);
 
+    /// <summary>Tab-Ueberschrift "Hotkeys".</summary>
+    public string TabHotkeysHeader => _localization.GetText(SettingsTextKeys.TabHotkeys);
+
+    /// <summary>Beschriftung der Hotkey-aktivieren-Option.</summary>
+    public string HotkeysEnableLabel => _localization.GetText(SettingsTextKeys.HotkeysEnableLabel);
+
+    /// <summary>Beschriftung der Aktion "Pause starten".</summary>
+    public string HotkeyStartBreakLabel => _localization.GetText(SettingsTextKeys.HotkeyStartBreak);
+
+    /// <summary>Beschriftung der Aktion "Ueberspringen/Snooze".</summary>
+    public string HotkeySkipOrSnoozeLabel => _localization.GetText(SettingsTextKeys.HotkeySkipOrSnooze);
+
+    /// <summary>Beschriftung der Aktion "DND umschalten".</summary>
+    public string HotkeyToggleDndLabel => _localization.GetText(SettingsTextKeys.HotkeyToggleDnd);
+
+    /// <summary>Beschriftung des Zuruecksetzen-Buttons.</summary>
+    public string HotkeysResetLabel => _localization.GetText(SettingsTextKeys.HotkeysReset);
+
+    /// <summary>Anzeigetext des "Pause starten"-Hotkeys.</summary>
+    public string HotkeyStartBreakText => _hotkeyStartBreak.ToString();
+
+    /// <summary>Anzeigetext des "Ueberspringen/Snooze"-Hotkeys.</summary>
+    public string HotkeySkipOrSnoozeText => _hotkeySkipOrSnooze.ToString();
+
+    /// <summary>Anzeigetext des "DND umschalten"-Hotkeys.</summary>
+    public string HotkeyToggleDndText => _hotkeyToggleDnd.ToString();
+
     /// <summary>
     /// Laedt die persistierten Einstellungen in das ViewModel. Vor dem ersten
     /// Anzeigen aufzurufen.
@@ -300,6 +334,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             SoundEnabled = settings.SoundEnabled;
             SelectSound(settings.ReminderSound);
             SoundVolume = settings.SoundVolumePercent;
+
+            HotkeysEnabled = settings.HotkeysEnabled;
+            _hotkeyStartBreak = settings.HotkeyStartBreak;
+            _hotkeySkipOrSnooze = settings.HotkeySkipOrSnooze;
+            _hotkeyToggleDnd = settings.HotkeyToggleDnd;
 
             LoadDurations(settings);
         }
@@ -355,6 +394,17 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private void PreviewSound() => _soundService.Play(SelectedSound, SoundVolume);
 
     [RelayCommand]
+    private void ResetHotkeys()
+    {
+        _hotkeyStartBreak = HotkeyDefaults.StartBreak;
+        _hotkeySkipOrSnooze = HotkeyDefaults.SkipOrSnooze;
+        _hotkeyToggleDnd = HotkeyDefaults.ToggleDnd;
+        OnPropertyChanged(nameof(HotkeyStartBreakText));
+        OnPropertyChanged(nameof(HotkeySkipOrSnoozeText));
+        OnPropertyChanged(nameof(HotkeyToggleDndText));
+    }
+
+    [RelayCommand]
     private void Cancel()
     {
         // Nur Vorschau-Aenderungen verwerfen: zuletzt gespeicherte Sprache zurueck.
@@ -378,6 +428,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         settings.SoundEnabled = SoundEnabled;
         settings.ReminderSound = SelectedSound;
         settings.SoundVolumePercent = Math.Clamp(SoundVolume, SoundVolumeMin, SoundVolumeMax);
+        settings.HotkeysEnabled = HotkeysEnabled;
+        settings.HotkeyStartBreak = _hotkeyStartBreak;
+        settings.HotkeySkipOrSnooze = _hotkeySkipOrSnooze;
+        settings.HotkeyToggleDnd = _hotkeyToggleDnd;
 
         await _settingsRepository.SaveAsync(settings).ConfigureAwait(true);
 

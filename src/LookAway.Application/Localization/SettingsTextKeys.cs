@@ -50,6 +50,24 @@ public static class SettingsTextKeys
     /// <summary>Statistik-Export-Button.</summary>
     public const string StatisticsExport = "Statistics.Export";
 
+    /// <summary>Tab "Hotkeys".</summary>
+    public const string TabHotkeys = "Settings.Tab.Hotkeys";
+
+    /// <summary>Beschriftung "Globale Hotkeys aktivieren".</summary>
+    public const string HotkeysEnableLabel = "Settings.Hotkeys.EnableLabel";
+
+    /// <summary>Beschriftung der Aktion "Pause starten".</summary>
+    public const string HotkeyStartBreak = "Settings.Hotkeys.StartBreak";
+
+    /// <summary>Beschriftung der Aktion "Ueberspringen/Snooze".</summary>
+    public const string HotkeySkipOrSnooze = "Settings.Hotkeys.SkipOrSnooze";
+
+    /// <summary>Beschriftung der Aktion "DND umschalten".</summary>
+    public const string HotkeyToggleDnd = "Settings.Hotkeys.ToggleDnd";
+
+    /// <summary>Beschriftung des Zuruecksetzen-Buttons.</summary>
+    public const string HotkeysReset = "Settings.Hotkeys.Reset";
+
     /// <summary>Beschriftung "Ton abspielen".</summary>
     public const string SoundEnableLabel = "Settings.Sound.EnableLabel";
 

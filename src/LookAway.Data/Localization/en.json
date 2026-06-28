@@ -23,6 +23,13 @@
   "Statistics.Skipped": "Skipped",
   "Statistics.Export": "Export as CSV",
 
+  "Settings.Tab.Hotkeys": "Hotkeys",
+  "Settings.Hotkeys.EnableLabel": "Enable global hotkeys",
+  "Settings.Hotkeys.StartBreak": "Start break",
+  "Settings.Hotkeys.SkipOrSnooze": "Skip / snooze",
+  "Settings.Hotkeys.ToggleDnd": "Toggle do not disturb",
+  "Settings.Hotkeys.Reset": "Restore defaults",
+
   "Settings.Language.Label": "Language",
   "Settings.AutoStart.Label": "Start with Windows",
   "Settings.Idle.PauseLabel": "Automatically pause when idle",

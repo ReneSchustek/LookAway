@@ -113,6 +113,31 @@
                 </StackPanel>
             </PivotItem>
 
+            <!-- Hotkeys -->
+            <PivotItem Header="{Binding TabHotkeysHeader}">
+                <StackPanel Spacing="16">
+                    <CheckBox Content="{Binding HotkeysEnableLabel}" IsChecked="{Binding HotkeysEnabled, Mode=TwoWay}" />
+                    <Grid ColumnSpacing="16" RowSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding HotkeyStartBreakLabel}" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding HotkeyStartBreakText}" FontWeight="SemiBold" />
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding HotkeySkipOrSnoozeLabel}" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding HotkeySkipOrSnoozeText}" FontWeight="SemiBold" />
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding HotkeyToggleDndLabel}" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding HotkeyToggleDndText}" FontWeight="SemiBold" />
+                    </Grid>
+                    <Button Content="{Binding HotkeysResetLabel}" Command="{Binding ResetHotkeysCommand}" HorizontalAlignment="Left" />
+                </StackPanel>
+            </PivotItem>
+
             <!-- Statistik -->
             <PivotItem Header="{Binding Statistics.TabStatisticsHeader}">
                 <ScrollViewer>

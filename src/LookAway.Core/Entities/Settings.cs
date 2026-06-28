@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using LookAway.Core.Domain;
 using LookAway.Core.Enums;
 using LookAway.Core.ValueObjects;
 
@@ -158,6 +159,18 @@ public sealed class Settings
             _soundVolumePercent = value;
         }
     }
+
+    /// <summary>Sollen globale Hotkeys aktiv sein? Default: <c>true</c>.</summary>
+    public bool HotkeysEnabled { get; set; } = true;
+
+    /// <summary>Hotkey fuer "Pause starten".</summary>
+    public HotkeyDefinition HotkeyStartBreak { get; set; } = HotkeyDefaults.StartBreak;
+
+    /// <summary>Hotkey fuer "Ueberspringen/Snooze".</summary>
+    public HotkeyDefinition HotkeySkipOrSnooze { get; set; } = HotkeyDefaults.SkipOrSnooze;
+
+    /// <summary>Hotkey fuer "DND umschalten".</summary>
+    public HotkeyDefinition HotkeyToggleDnd { get; set; } = HotkeyDefaults.ToggleDnd;
 
     /// <summary>
     /// Wahr, wenn beim letzten Lesevorgang keine Konfigurationsdatei vorhanden war.

@@ -29,6 +29,9 @@
     <Content Include="Assets\tray-onbreak.png" />
     <Content Include="Assets\tray-paused.png" />
     <Content Include="Assets\tray-disabled.png" />
+    <Content Include="Assets\Sounds\chime.wav" />
+    <Content Include="Assets\Sounds\bell.wav" />
+    <Content Include="Assets\Sounds\pop.wav" />
   </ItemGroup>
 
   <ItemGroup>

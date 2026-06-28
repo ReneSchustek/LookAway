@@ -4,6 +4,15 @@
   "Settings.Tab.Model": "Modèle de pause",
   "Settings.Tab.Intervals": "Intervalles personnalisés",
   "Settings.Tab.About": "À propos de LookAway",
+  "Settings.Tab.Sound": "Son",
+
+  "Settings.Sound.EnableLabel": "Jouer un son lors du rappel",
+  "Settings.Sound.SelectLabel": "Choix du son",
+  "Settings.Sound.VolumeLabel": "Volume (%)",
+  "Settings.Sound.PreviewButton": "Écouter",
+  "Settings.Sound.Chime": "Carillon",
+  "Settings.Sound.Bell": "Cloche",
+  "Settings.Sound.Pop": "Pop",
 
   "Settings.Language.Label": "Langue",
   "Settings.AutoStart.Label": "Démarrer avec Windows",

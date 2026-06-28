@@ -21,10 +21,19 @@ public sealed class SettingsViewModelTests
         out FakeAutoStartService autoStart,
         out FakeLocalizationService localization,
         Settings? initial = null)
+        => CreateViewModel(out repository, out autoStart, out localization, out _, initial);
+
+    private static SettingsViewModel CreateViewModel(
+        out InMemorySettingsRepository repository,
+        out FakeAutoStartService autoStart,
+        out FakeLocalizationService localization,
+        out FakeSoundService sound,
+        Settings? initial = null)
     {
         repository = new InMemorySettingsRepository(initial);
         autoStart = new FakeAutoStartService();
         localization = new FakeLocalizationService();
+        sound = new FakeSoundService();
 
         AutoStartCoordinator coordinator = new(
             autoStart,
@@ -35,6 +44,7 @@ public sealed class SettingsViewModelTests
             repository,
             coordinator,
             localization,
+            sound,
             NullLogger<SettingsViewModel>.Instance,
             TestVersion);
     }
@@ -244,5 +254,48 @@ public sealed class SettingsViewModelTests
 
         Assert.Equal(90, viewModel.WorkMinutes);
         Assert.Equal(20, viewModel.BreakMinutes);
+    }
+
+    [Fact]
+    public async Task Sound_Einstellungen_werden_geladen_und_gespeichert()
+    {
+        Settings stored = new()
+        {
+            SoundEnabled = true,
+            ReminderSound = SoundType.Bell,
+            SoundVolumePercent = 55,
+        };
+        using SettingsViewModel viewModel = CreateViewModel(
+            out InMemorySettingsRepository repository, out _, out _, out _, stored);
+        await viewModel.LoadAsync();
+
+        Assert.True(viewModel.SoundEnabled);
+        Assert.Equal(SoundType.Bell, viewModel.SelectedSound);
+        Assert.Equal(55, viewModel.SoundVolume);
+
+        viewModel.SelectSound(SoundType.Pop);
+        viewModel.SoundVolume = 40;
+        await viewModel.SaveCommand.ExecuteAsync(null);
+
+        Settings persisted = await repository.LoadAsync();
+        Assert.True(persisted.SoundEnabled);
+        Assert.Equal(SoundType.Pop, persisted.ReminderSound);
+        Assert.Equal(40, persisted.SoundVolumePercent);
+    }
+
+    [Fact]
+    public async Task Vorhoeren_spielt_den_gewaehlten_Ton_mit_der_Lautstaerke()
+    {
+        using SettingsViewModel viewModel = CreateViewModel(
+            out _, out _, out _, out FakeSoundService sound);
+        await viewModel.LoadAsync();
+
+        viewModel.SelectSound(SoundType.Bell);
+        viewModel.SoundVolume = 70;
+        viewModel.PreviewSoundCommand.Execute(null);
+
+        Assert.Equal(1, sound.PlayCallCount);
+        Assert.Equal(SoundType.Bell, sound.LastSound);
+        Assert.Equal(70, sound.LastVolume);
     }
 }

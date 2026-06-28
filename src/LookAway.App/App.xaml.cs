@@ -79,6 +79,9 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     private SettingsPresenter? _settingsPresenter;
     private BreakModel _activeModel = BreakModel.ClassicPomodoro;
     private BreakInterval? _activeInterval;
+    private bool _soundEnabled;
+    private SoundType _soundType = SoundType.Chime;
+    private int _soundVolume;
 
     /// <summary>
     /// Initialisiert die Anwendung, das DI-Container und die globalen Handler.
@@ -206,6 +209,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         BreakInterval interval = BreakModelRegistry.GetEffective(settings.BreakModel, settings.CustomDurations);
         _activeModel = settings.BreakModel;
         _activeInterval = interval;
+        CaptureSoundSettings(settings);
 
         _trayIcon?.SetActiveModel(settings.BreakModel);
         ITimerService timerService = Services.GetRequiredService<ITimerService>();
@@ -303,7 +307,28 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         }
     }
 
-    private void ShowBreakReminder() => _reminderPresenter?.Show(_activeModel, OnReminderResult);
+    private void CaptureSoundSettings(Settings settings)
+    {
+        _soundEnabled = settings.SoundEnabled;
+        _soundType = settings.ReminderSound;
+        _soundVolume = settings.SoundVolumePercent;
+    }
+
+    private void ShowBreakReminder()
+    {
+        if (_reminderPresenter is null || _reminderPresenter.IsReminderOpen)
+        {
+            // Bereits offen: keinen Ton erneut abspielen (kein doppelter Sound).
+            return;
+        }
+
+        if (_soundEnabled)
+        {
+            Services.GetRequiredService<ISoundService>().Play(_soundType, _soundVolume);
+        }
+
+        _reminderPresenter.Show(_activeModel, OnReminderResult);
+    }
 
     private void OnReminderResult(ReminderResult result)
     {
@@ -363,6 +388,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         Services.GetRequiredService<ISettingsRepository>(),
         Services.GetRequiredService<AutoStartCoordinator>(),
         Services.GetRequiredService<ILocalizationService>(),
+        Services.GetRequiredService<ISoundService>(),
         Services.GetRequiredService<ILogger<SettingsViewModel>>(),
         GetVersion());
 
@@ -375,6 +401,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         BreakInterval interval = BreakModelRegistry.GetEffective(settings.BreakModel, settings.CustomDurations);
         _activeModel = settings.BreakModel;
         _activeInterval = interval;
+        CaptureSoundSettings(settings);
         _trayIcon?.SetActiveModel(settings.BreakModel);
 
         Services.GetRequiredService<ITimerService>().Start(interval);
@@ -451,6 +478,10 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
         // Lokalisierung: Deutsch ist die Referenzsprache.
         _ = services.AddSingleton<ILocalizationService>(_ => new JsonLocalizationService(Language.German));
+
+        // Sound-Optionen
+        _ = services.AddSingleton<ISoundService>(sp =>
+            new SoundService(sp.GetRequiredService<ILogger<SoundService>>()));
 
         // Autostart
         _ = services.AddSingleton<IAutoStartService, RegistryAutoStartService>();

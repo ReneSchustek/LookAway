@@ -88,6 +88,31 @@
                 </StackPanel>
             </PivotItem>
 
+            <!-- Sound -->
+            <PivotItem Header="{Binding TabSoundHeader}">
+                <StackPanel Spacing="16">
+                    <CheckBox
+                        Content="{Binding SoundEnableLabel}"
+                        IsChecked="{Binding SoundEnabled, Mode=TwoWay}" />
+                    <ComboBox
+                        Header="{Binding SoundSelectLabel}"
+                        ItemsSource="{Binding Sounds}"
+                        SelectedItem="{Binding SelectedSoundOption, Mode=TwoWay}"
+                        DisplayMemberPath="Label"
+                        IsEnabled="{Binding SoundEnabled}"
+                        MinWidth="240" />
+                    <Slider
+                        Header="{Binding SoundVolumeLabel}"
+                        Value="{Binding SoundVolume, Mode=TwoWay}"
+                        Minimum="{Binding SoundVolumeMin}"
+                        Maximum="{Binding SoundVolumeMax}"
+                        IsEnabled="{Binding SoundEnabled}"
+                        Width="240"
+                        HorizontalAlignment="Left" />
+                    <Button Content="{Binding SoundPreviewLabel}" Command="{Binding PreviewSoundCommand}" />
+                </StackPanel>
+            </PivotItem>
+
             <!-- Ueber LookAway -->
             <PivotItem Header="{Binding TabAboutHeader}">
                 <StackPanel Spacing="12">

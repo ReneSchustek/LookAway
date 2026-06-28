@@ -29,6 +29,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private readonly ISettingsRepository _settingsRepository;
     private readonly AutoStartCoordinator _autoStartCoordinator;
     private readonly ILocalizationService _localization;
+    private readonly ISoundService _soundService;
     private readonly ILogger<SettingsViewModel> _logger;
     private readonly string _applicationVersion;
 
@@ -69,35 +70,49 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private string? _breakError;
 
+    [ObservableProperty]
+    private bool _soundEnabled;
+
+    [ObservableProperty]
+    private SettingsOption<SoundType>? _selectedSoundOption;
+
+    [ObservableProperty]
+    private int _soundVolume;
+
     /// <summary>
     /// Erzeugt das ViewModel mit seinen Abhaengigkeiten.
     /// </summary>
     /// <param name="settingsRepository">Persistenz der Einstellungen.</param>
     /// <param name="autoStartCoordinator">Haelt Einstellung und Registry synchron.</param>
     /// <param name="localization">Liefert Texte und steuert den Sprachwechsel.</param>
+    /// <param name="soundService">Spielt den Erinnerungston fuer die Vorschau.</param>
     /// <param name="logger">Logger.</param>
     /// <param name="applicationVersion">Anzuzeigende Versionsnummer (Ueber-Bereich).</param>
     public SettingsViewModel(
         ISettingsRepository settingsRepository,
         AutoStartCoordinator autoStartCoordinator,
         ILocalizationService localization,
+        ISoundService soundService,
         ILogger<SettingsViewModel> logger,
         string applicationVersion)
     {
         ArgumentNullException.ThrowIfNull(settingsRepository);
         ArgumentNullException.ThrowIfNull(autoStartCoordinator);
         ArgumentNullException.ThrowIfNull(localization);
+        ArgumentNullException.ThrowIfNull(soundService);
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentException.ThrowIfNullOrWhiteSpace(applicationVersion);
 
         _settingsRepository = settingsRepository;
         _autoStartCoordinator = autoStartCoordinator;
         _localization = localization;
+        _soundService = soundService;
         _logger = logger;
         _applicationVersion = applicationVersion;
 
         Languages = BuildLanguageOptions();
         Models = BuildModelOptions();
+        Sounds = BuildSoundOptions();
 
         _localization.LanguageChanged += OnLanguageChanged;
     }
@@ -117,6 +132,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     /// <summary>Auswaehlbare Pausenmodelle mit lokalisierter Beschriftung.</summary>
     public IReadOnlyList<SettingsOption<BreakModel>> Models { get; }
+
+    /// <summary>Auswaehlbare Erinnerungstoene mit lokalisierter Beschriftung.</summary>
+    public IReadOnlyList<SettingsOption<SoundType>> Sounds { get; }
 
     /// <summary>Untere Grenze der Arbeitsdauer (Minuten) fuer das aktive Modell.</summary>
     public int WorkMinMinutes { get; private set; } = (int)BreakInterval.MinWorkDuration.TotalMinutes;
@@ -144,6 +162,15 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     /// <summary>Die aktuell gewaehlte Sprache.</summary>
     public Language SelectedLanguage => SelectedLanguageOption?.Value ?? Language.German;
+
+    /// <summary>Der aktuell gewaehlte Erinnerungston.</summary>
+    public SoundType SelectedSound => SelectedSoundOption?.Value ?? SoundType.Chime;
+
+    /// <summary>Untere Grenze der Lautstaerke.</summary>
+    public int SoundVolumeMin => Settings.MinSoundVolumePercent;
+
+    /// <summary>Obere Grenze der Lautstaerke.</summary>
+    public int SoundVolumeMax => Settings.MaxSoundVolumePercent;
 
     /// <summary>Wahr, wenn die aktuellen Eingaben gespeichert werden duerfen.</summary>
     public bool CanPersist => WorkError is null && BreakError is null;
@@ -225,6 +252,21 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Beschriftung des Anwenden-Buttons.</summary>
     public string ApplyLabel => _localization.GetText(SettingsTextKeys.ButtonApply);
 
+    /// <summary>Tab-Ueberschrift "Sound".</summary>
+    public string TabSoundHeader => _localization.GetText(SettingsTextKeys.TabSound);
+
+    /// <summary>Beschriftung der Ton-aktivieren-Option.</summary>
+    public string SoundEnableLabel => _localization.GetText(SettingsTextKeys.SoundEnableLabel);
+
+    /// <summary>Beschriftung der Ton-Auswahl.</summary>
+    public string SoundSelectLabel => _localization.GetText(SettingsTextKeys.SoundSelectLabel);
+
+    /// <summary>Beschriftung der Lautstaerke.</summary>
+    public string SoundVolumeLabel => _localization.GetText(SettingsTextKeys.SoundVolumeLabel);
+
+    /// <summary>Beschriftung des Vorhoer-Buttons.</summary>
+    public string SoundPreviewLabel => _localization.GetText(SettingsTextKeys.SoundPreviewButton);
+
     /// <summary>
     /// Laedt die persistierten Einstellungen in das ViewModel. Vor dem ersten
     /// Anzeigen aufzurufen.
@@ -248,6 +290,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             IdleThresholdMinutes = settings.IdleThresholdMinutes;
             SuppressOnFullscreen = settings.SuppressOnFullscreen;
 
+            SoundEnabled = settings.SoundEnabled;
+            SelectSound(settings.ReminderSound);
+            SoundVolume = settings.SoundVolumePercent;
+
             LoadDurations(settings);
         }
         finally
@@ -268,6 +314,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <param name="language">Zu waehlende Sprache.</param>
     public void SelectLanguage(Language language)
         => SelectedLanguageOption = Languages.First(option => option.Value == language);
+
+    /// <summary>Waehlt den Erinnerungston anhand seines Werts (UI/Test-Hilfe).</summary>
+    /// <param name="soundType">Zu waehlender Ton.</param>
+    public void SelectSound(SoundType soundType)
+        => SelectedSoundOption = Sounds.First(option => option.Value == soundType);
 
     private void LoadDurations(Settings settings)
     {
@@ -292,6 +343,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private Task ApplyAsync() => PersistAsync(closeAfterwards: false);
 
     [RelayCommand]
+    private void PreviewSound() => _soundService.Play(SelectedSound, SoundVolume);
+
+    [RelayCommand]
     private void Cancel()
     {
         // Nur Vorschau-Aenderungen verwerfen: zuletzt gespeicherte Sprache zurueck.
@@ -312,6 +366,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         settings.CustomDurations = UseCustomDurations
             ? new CustomDurations { WorkMinutes = WorkMinutes, BreakMinutes = BreakMinutes }
             : null;
+        settings.SoundEnabled = SoundEnabled;
+        settings.ReminderSound = SelectedSound;
+        settings.SoundVolumePercent = Math.Clamp(SoundVolume, SoundVolumeMin, SoundVolumeMax);
 
         await _settingsRepository.SaveAsync(settings).ConfigureAwait(true);
 
@@ -432,6 +489,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             option.RefreshLabel();
         }
 
+        foreach (SettingsOption<SoundType> option in Sounds)
+        {
+            option.RefreshLabel();
+        }
+
         // Fehlertexte in neuer Sprache, danach alle gebundenen Texte aktualisieren.
         Validate();
         OnPropertyChanged(string.Empty);
@@ -449,6 +511,13 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             .Select(model => new SettingsOption<BreakModel>(
                 model,
                 () => _localization.GetText(SettingsTextKeys.ForModel(model))))
+            .ToList();
+
+    private List<SettingsOption<SoundType>> BuildSoundOptions()
+        => Enum.GetValues<SoundType>()
+            .Select(sound => new SettingsOption<SoundType>(
+                sound,
+                () => _localization.GetText(SettingsTextKeys.ForSound(sound))))
             .ToList();
 
     /// <summary>Meldet den Sprachwechsel-Handler ab.</summary>

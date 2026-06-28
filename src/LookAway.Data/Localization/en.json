@@ -4,6 +4,15 @@
   "Settings.Tab.Model": "Break model",
   "Settings.Tab.Intervals": "Custom intervals",
   "Settings.Tab.About": "About LookAway",
+  "Settings.Tab.Sound": "Sound",
+
+  "Settings.Sound.EnableLabel": "Play a sound on reminder",
+  "Settings.Sound.SelectLabel": "Sound selection",
+  "Settings.Sound.VolumeLabel": "Volume (%)",
+  "Settings.Sound.PreviewButton": "Preview",
+  "Settings.Sound.Chime": "Chime",
+  "Settings.Sound.Bell": "Bell",
+  "Settings.Sound.Pop": "Pop",
 
   "Settings.Language.Label": "Language",
   "Settings.AutoStart.Label": "Start with Windows",

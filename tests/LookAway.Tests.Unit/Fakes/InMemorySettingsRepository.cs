@@ -46,6 +46,9 @@ internal sealed class InMemorySettingsRepository : ISettingsRepository
         Language = source.Language,
         BreakModel = source.BreakModel,
         AutoStart = source.AutoStart,
+        PauseOnIdle = source.PauseOnIdle,
+        IdleThresholdMinutes = source.IdleThresholdMinutes,
+        SuppressOnFullscreen = source.SuppressOnFullscreen,
         CustomDurations = source.CustomDurations,
         IsFirstRun = source.IsFirstRun,
     };

@@ -5,6 +5,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Sprachtabellen werden ins Assembly eingebettet und zur Laufzeit ueber
+         den Manifest-Ressourcennamen geladen (JsonLocalizationService). -->
+    <EmbeddedResource Include="Localization\de.json" />
+    <EmbeddedResource Include="Localization\en.json" />
+    <EmbeddedResource Include="Localization\fr.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.5" />
     <!-- SystemEvents.PowerModeChanged ist Windows-spezifisch und benoetigt
          dieses Paket; der TFM 'net10.0-windows' macht den Zugriff legitim. -->

@@ -181,6 +181,33 @@ LookAway pausiert den Timer bei laengerer Inaktivitaet und unterdrueckt Erinneru
 - **Vollbild/DND:** `IFullscreenDetector` (Core) → `WindowsFullscreenDetector` (Data, `GetForegroundWindow` + Monitorvergleich, Shell/Sperrbildschirm ausgeschlossen). `FullscreenDetectionService` (Application) setzt den DND-Zustand, unterdrueckt faellige Erinnerungen und holt maximal eine verpasste Erinnerung nach Verlassen des Vollbildmodus nach.
 - Beide Dienste werden in einem Hintergrund-`PeriodicTimer` (5 s, nicht im UI-Thread) ausgewertet; der DND-Zustand spiegelt sich ins Tray-Icon (`SetDndActive`). Settings: `PauseOnIdle`, `IdleThresholdMinutes`, `SuppressOnFullscreen`. Die Plattform-Calls sind als P/Invoke in der Data-Schicht isoliert; die Entscheidungslogik ist ueber Fakes ohne Win32 testbar.
 
+## Settings-Fenster
+
+Ueber das Tray-Menue ("Einstellungen…", Doppelklick oder Linksklick) oeffnet sich ein
+WinUI-3-Fenster mit vier Bereichen (Pivot): Allgemein, Pausenmodell, Eigene Intervalle und
+Ueber LookAway (BRIEF008).
+
+- Die gesamte Lade-, Validierungs- und Persistenzlogik liegt im UI-freien `SettingsViewModel`
+  (Application, `CommunityToolkit.Mvvm`) und ist ohne WinUI testbar. Das Fenster
+  (`SettingsWindow`, App/Views) bindet nur daran; `ISettingsPresenter`/`SettingsPresenter`
+  erzeugen es auf dem UI-Thread und verhindern Mehrfach-Fenster.
+- **Allgemein:** Sprache (DE/EN/FR), Autostart, Auto-Pause bei Inaktivitaet samt Schwelle, DND im Vollbild.
+- **Pausenmodell:** Auswahl aus allen sieben Modellen.
+- **Eigene Intervalle:** optionale Ueberschreibung von Arbeits-/Pausendauer; die Grenzen folgen dem
+  Modell (z. B. PhysicalCounter 30–45 min). Ungueltige Werte werden markiert und blockieren "Speichern".
+- **Speichern** schliesst das Fenster, **Anwenden** speichert ohne zu schliessen, **Abbrechen** verwirft.
+  Gespeicherte Aenderungen werden sofort uebernommen (`SettingsApplied` → Timer-Neustart mit neuem Modell,
+  Idle-/Vollbild-Dienste, Tray), nicht erst beim naechsten Start.
+- **Autostart** wird beim Speichern ueber den `AutoStartCoordinator` mit der Registry synchronisiert; ist
+  der Run-Schluessel gesperrt, werden die uebrigen Einstellungen trotzdem gespeichert.
+
+### Lokalisierung (Seam)
+
+Der Sprachwechsel wirkt im Settings-Fenster sofort: `ILocalizationService` (Core) →
+`JsonLocalizationService` (Data) liefert Texte ueber sprachneutrale Schluessel aus eingebetteten
+JSON-Tabellen (`Localization/<sprache>.json`). Deutsch ist die Referenzsprache und der Fallback;
+Englisch und Franzoesisch werden in BRIEF010 befuellt und fallen bis dahin auf Deutsch zurueck.
+
 ## Review
 
 `tools/review.ps1` orchestriert lokale Qualitaets-Checks:

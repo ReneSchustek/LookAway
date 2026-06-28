@@ -261,7 +261,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         }
         catch (Exception ex)
         {
-            AppLog.UpdateCheckPersistFailed(_logger!, ex);
+            AppLog.BrowserOpenFailed(_logger!, ex);
         }
     }
 
@@ -850,4 +850,10 @@ internal static partial class AppLog
         Level = LogLevel.Warning,
         Message = "Update-Pruefung konnte nicht abgeschlossen werden.")]
     public static partial void UpdateCheckPersistFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(
+        EventId = 1161,
+        Level = LogLevel.Warning,
+        Message = "Die Update-Seite konnte nicht im Browser geoeffnet werden.")]
+    public static partial void BrowserOpenFailed(ILogger logger, Exception exception);
 }

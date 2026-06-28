@@ -1,8 +1,8 @@
 namespace LookAway.Core.Interfaces;
 
 /// <summary>
-/// Pausiert und reaktiviert die System-Medienwiedergabe waehrend einer Pause
-///. Implementierungen kapseln die Plattform-Anbindung (SMTC).
+/// Pausiert und reaktiviert die System-Medienwiedergabe waehrend einer Pause.
+/// Implementierungen kapseln die Plattform-Anbindung (SMTC).
 /// </summary>
 public interface IMediaController
 {

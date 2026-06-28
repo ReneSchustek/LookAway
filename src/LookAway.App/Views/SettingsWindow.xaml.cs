@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using LookAway.Application.ViewModels;
@@ -87,9 +88,21 @@ internal sealed partial class SettingsWindow : Window
             return;
         }
 
-        // UTF-8 mit BOM, damit Excel die Datei korrekt erkennt.
-        byte[] bytes = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true).GetBytes(e.Content);
-        await FileIO.WriteBytesAsync(file, bytes);
+        try
+        {
+            // UTF-8 mit BOM, damit Excel die Datei korrekt erkennt.
+            byte[] bytes = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true).GetBytes(e.Content);
+            await FileIO.WriteBytesAsync(file, bytes);
+        }
+        catch (IOException)
+        {
+            // Schreibfehler (z. B. voller Datentraeger) darf den Export nicht
+            // zum Absturz bringen — der Benutzer kann erneut versuchen.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Fehlende Schreibrechte am Zielort — bewusst toleriert.
+        }
     }
 
     private void OnWindowClosed(object sender, WindowEventArgs args)

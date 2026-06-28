@@ -6,6 +6,9 @@ namespace LookAway.Core.ValueObjects;
 /// </summary>
 public sealed record CustomDurations
 {
+    /// <summary>Minimale Arbeitsdauer in Minuten (entspricht dem Domaenen-Minimum von <see cref="BreakInterval.MinWorkDuration"/>).</summary>
+    public const int MinWorkMinutes = 5;
+
     /// <summary>Maximale Arbeitsdauer in Minuten (8 Stunden).</summary>
     public const int MaxWorkMinutes = 480;
 
@@ -16,19 +19,19 @@ public sealed record CustomDurations
     private int _breakMinutes;
 
     /// <summary>
-    /// Arbeitsdauer in Minuten. Gueltig: 1 bis <see cref="MaxWorkMinutes"/>.
+    /// Arbeitsdauer in Minuten. Gueltig: <see cref="MinWorkMinutes"/> bis <see cref="MaxWorkMinutes"/>.
     /// </summary>
     public required int WorkMinutes
     {
         get => _workMinutes;
         init
         {
-            if (value is < 1 or > MaxWorkMinutes)
+            if (value is < MinWorkMinutes or > MaxWorkMinutes)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(value),
                     value,
-                    $"WorkMinutes muss zwischen 1 und {MaxWorkMinutes} liegen.");
+                    $"WorkMinutes muss zwischen {MinWorkMinutes} und {MaxWorkMinutes} liegen.");
             }
             _workMinutes = value;
         }

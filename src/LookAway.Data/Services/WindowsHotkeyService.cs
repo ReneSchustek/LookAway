@@ -116,7 +116,7 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
         }
 
         _wndProc = WindowProc;
-        _originalWndProc = SetWindowLongPtrW(hwnd, GwlpWndProc, Marshal.GetFunctionPointerForDelegate(_wndProc));
+        _originalWndProc = SetWindowProc(hwnd, Marshal.GetFunctionPointerForDelegate(_wndProc));
         Volatile.Write(ref _hwnd, hwnd);
 
         // Falls vor dem Fensteraufbau bereits Bindings gesetzt wurden.
@@ -265,9 +265,20 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
         nint hInstance,
         nint lpParam);
 
-    [LibraryImport("user32.dll", SetLastError = true)]
+    // SetWindowLongPtrW existiert nur in der 64-bit-user32.dll; in 32-bit-Prozessen
+    // muss SetWindowLongW verwendet werden. Die Wahl erfolgt zur Laufzeit.
+    private static nint SetWindowProc(nint hWnd, nint newWndProc)
+        => IntPtr.Size == 8
+            ? SetWindowLongPtrW(hWnd, GwlpWndProc, newWndProc)
+            : SetWindowLongW(hWnd, GwlpWndProc, newWndProc.ToInt32());
+
+    [LibraryImport("user32.dll", SetLastError = true, EntryPoint = "SetWindowLongPtrW")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial nint SetWindowLongPtrW(nint hWnd, int nIndex, nint dwNewLong);
+
+    [LibraryImport("user32.dll", SetLastError = true, EntryPoint = "SetWindowLongW")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    private static partial int SetWindowLongW(nint hWnd, int nIndex, int dwNewLong);
 
     [LibraryImport("user32.dll", SetLastError = true)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]

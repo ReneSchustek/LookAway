@@ -1,4 +1,5 @@
 using LookAway.Application.Services;
+using LookAway.Application.Statistics;
 using LookAway.Application.ViewModels;
 using LookAway.Core.Entities;
 using LookAway.Core.Enums;
@@ -40,11 +41,20 @@ public sealed class SettingsViewModelTests
             repository,
             NullLogger<AutoStartCoordinator>.Instance);
 
+        FakeBreakHistoryRepository history = new();
+        FakeClock clock = new(new DateTimeOffset(2026, 6, 28, 12, 0, 0, TimeSpan.Zero));
+        StatisticsViewModel statistics = new(
+            new StatisticsService(history, clock),
+            history,
+            new CsvExporter(),
+            localization);
+
         return new SettingsViewModel(
             repository,
             coordinator,
             localization,
             sound,
+            statistics,
             NullLogger<SettingsViewModel>.Instance,
             TestVersion);
     }

@@ -113,6 +113,67 @@
                 </StackPanel>
             </PivotItem>
 
+            <!-- Statistik -->
+            <PivotItem Header="{Binding Statistics.TabStatisticsHeader}">
+                <ScrollViewer>
+                    <StackPanel Spacing="16">
+                        <TextBlock Text="{Binding Statistics.TodayHeader}" Style="{StaticResource RcH3TextStyle}" />
+                        <StackPanel Orientation="Horizontal" Spacing="32">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Statistics.BreaksLabel}" FontSize="{StaticResource RcFontSizeCaption}" />
+                                <TextBlock Text="{Binding Statistics.TodayCount}" Style="{StaticResource RcH1TextStyle}" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Statistics.BreakTimeLabel}" FontSize="{StaticResource RcFontSizeCaption}" />
+                                <TextBlock Text="{Binding Statistics.TodayBreakTime}" Style="{StaticResource RcH1TextStyle}" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Statistics.SkippedLabel}" FontSize="{StaticResource RcFontSizeCaption}" />
+                                <TextBlock Text="{Binding Statistics.TodaySkipped}" Style="{StaticResource RcH1TextStyle}" />
+                            </StackPanel>
+                        </StackPanel>
+
+                        <TextBlock Text="{Binding Statistics.WeekHeader}" Style="{StaticResource RcH3TextStyle}" />
+                        <ItemsControl ItemsSource="{Binding Statistics.WeekBars}" Height="120">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Width="36" VerticalAlignment="Bottom" Spacing="2">
+                                        <TextBlock Text="{Binding Count}" FontSize="{StaticResource RcFontSizeCaption}" HorizontalAlignment="Center" />
+                                        <Border Width="22" Height="{Binding BarHeight}" CornerRadius="3" HorizontalAlignment="Center" Background="{StaticResource RcAccent}" />
+                                        <TextBlock Text="{Binding Label}" FontSize="{StaticResource RcFontSizeCaption}" HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="{Binding Statistics.YearHeader}" Style="{StaticResource RcH3TextStyle}" />
+                        <ItemsControl ItemsSource="{Binding Statistics.YearBars}" Height="120">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Bottom" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Width="30" VerticalAlignment="Bottom" Spacing="2">
+                                        <TextBlock Text="{Binding Count}" FontSize="{StaticResource RcFontSizeCaption}" HorizontalAlignment="Center" />
+                                        <Border Width="18" Height="{Binding BarHeight}" CornerRadius="3" HorizontalAlignment="Center" Background="{StaticResource RcAccent}" />
+                                        <TextBlock Text="{Binding Label}" FontSize="{StaticResource RcFontSizeCaption}" HorizontalAlignment="Center" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Button Content="{Binding Statistics.ExportLabel}" Command="{Binding Statistics.ExportCsvCommand}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                </ScrollViewer>
+            </PivotItem>
+
             <!-- Ueber LookAway -->
             <PivotItem Header="{Binding TabAboutHeader}">
                 <StackPanel Spacing="12">

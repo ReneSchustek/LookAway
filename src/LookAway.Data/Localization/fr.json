@@ -14,6 +14,15 @@
   "Settings.Sound.Bell": "Cloche",
   "Settings.Sound.Pop": "Pop",
 
+  "Settings.Tab.Statistics": "Statistiques",
+  "Statistics.Today": "Aujourd'hui",
+  "Statistics.Week": "Cette semaine",
+  "Statistics.Year": "Cette année",
+  "Statistics.Breaks": "Pauses",
+  "Statistics.BreakTime": "Temps de pause",
+  "Statistics.Skipped": "Ignorées",
+  "Statistics.Export": "Exporter en CSV",
+
   "Settings.Language.Label": "Langue",
   "Settings.AutoStart.Label": "Démarrer avec Windows",
   "Settings.Idle.PauseLabel": "Suspendre automatiquement en cas d'inactivité",

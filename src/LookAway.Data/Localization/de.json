@@ -14,6 +14,15 @@
   "Settings.Sound.Bell": "Glocke",
   "Settings.Sound.Pop": "Plopp",
 
+  "Settings.Tab.Statistics": "Statistik",
+  "Statistics.Today": "Heute",
+  "Statistics.Week": "Diese Woche",
+  "Statistics.Year": "Dieses Jahr",
+  "Statistics.Breaks": "Pausen",
+  "Statistics.BreakTime": "Pausenzeit",
+  "Statistics.Skipped": "Übersprungen",
+  "Statistics.Export": "Als CSV exportieren",
+
   "Settings.Language.Label": "Sprache",
   "Settings.AutoStart.Label": "Mit Windows starten",
   "Settings.Idle.PauseLabel": "Bei Inaktivität automatisch pausieren",

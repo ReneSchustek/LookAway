@@ -11,15 +11,14 @@
     <PublishProfile>win-$(Platform).pubxml</PublishProfile>
     <UseWinUI>true</UseWinUI>
     <WinUISDKReferences>false</WinUISDKReferences>
-    <EnableMsixTooling>true</EnableMsixTooling>
     <Nullable>enable</Nullable>
     <!-- Standardmaessig unpackaged (Tray-App ohne MSIX-Registrierung): F5/Run und
          die portable Variante laufen ohne Deploy. Fuer ein MSIX-Paket explizit
          mit -p:WindowsPackageType=MSIX bauen. -->
     <WindowsPackageType Condition="'$(WindowsPackageType)' == ''">None</WindowsPackageType>
-    <!-- Im unpackaged-Modus die Msix-ProjectCapability abschalten, damit Visual
-         Studio keinen (fehlschlagenden) Deploy-Schritt anbietet (DEP1560). -->
-    <DisableMsixProjectCapabilityAddedByProject Condition="'$(WindowsPackageType)' == 'None'">true</DisableMsixProjectCapabilityAddedByProject>
+    <!-- MSIX-Tooling (und damit der Deploy-Zwang in Visual Studio, DEP1560) nur im
+         Paket-Modus aktivieren. Muss nach WindowsPackageType ausgewertet werden. -->
+    <EnableMsixTooling Condition="'$(WindowsPackageType)' != 'None'">true</EnableMsixTooling>
   </PropertyGroup>
 
   <ItemGroup>

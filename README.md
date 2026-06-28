@@ -208,6 +208,20 @@ Der Sprachwechsel wirkt im Settings-Fenster sofort: `ILocalizationService` (Core
 JSON-Tabellen (`Localization/<sprache>.json`). Deutsch ist die Referenzsprache und der Fallback;
 Englisch und Franzoesisch werden in BRIEF010 befuellt und fallen bis dahin auf Deutsch zurueck.
 
+## First-Run-Wizard
+
+Beim allerersten Start (keine `settings.json` vorhanden, `Settings.IsFirstRun`) fuehrt ein dreistufiger
+Assistent durch die Erstkonfiguration (BRIEF009): Sprache, Pausenmodell und Autostart.
+
+- UI-freies `WelcomeViewModel` (Application, getestete State-Machine: Schritte vor/zurueck, Abschluss nur
+  im letzten Schritt). `WelcomeWindow` (App/Views, nicht resizable, zentriert) bindet daran;
+  `WelcomePresenter` zeigt es und meldet ueber `Task<bool>`, ob der Wizard abgeschlossen wurde.
+- Die Startsprache wird aus `CultureInfo.CurrentUICulture` erkannt (de/fr, sonst Englisch), Default-Modell
+  ist ModifiedPomodoro, Autostart vorausgewaehlt.
+- "Fertig" speichert die Konfiguration (Autostart registry-synchron) und startet die App in den Tray-Modus.
+  Schliesst der Benutzer das Fenster ohne Abschluss, beendet sich die App und der Wizard erscheint beim
+  naechsten Start erneut.
+
 ## Review
 
 `tools/review.ps1` orchestriert lokale Qualitaets-Checks:

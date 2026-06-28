@@ -17,7 +17,6 @@ namespace LookAway.Data.Repositories;
 /// </remarks>
 public sealed class JsonBreakHistoryRepository : IBreakHistoryRepository, IDisposable
 {
-    private const string AppFolderName = "LookAway";
     private const string HistoryFileName = "history.json";
     private const string TempFileSuffix = ".tmp";
     private const int FileBufferSize = 4096;
@@ -60,10 +59,7 @@ public sealed class JsonBreakHistoryRepository : IBreakHistoryRepository, IDispo
 
     /// <summary>Standardpfad der Historie-Datei im Roaming-AppData.</summary>
     public static string GetDefaultFilePath()
-    {
-        string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        return Path.Combine(appData, AppFolderName, HistoryFileName);
-    }
+        => Path.Combine(AppDataLocation.GetDataDirectory(), HistoryFileName);
 
     /// <inheritdoc />
     public async Task AppendAsync(BreakSession session, CancellationToken cancellationToken = default)

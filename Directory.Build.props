@@ -1,9 +1,12 @@
 <Project>
   <!--
     Zentrale Build-Konfiguration für alle Projekte in dieser Solution.
-    Einzelne .csproj-Dateien k��nnen diese Werte überschreiben.
+    Einzelne .csproj-Dateien können diese Werte überschreiben.
   -->
   <PropertyGroup>
+    <!-- Single Source of Truth für die Versionsnummer.
+         Die CI kann diesen Wert beim Tag-Push überschreiben (-p:Version=…). -->
+    <Version>1.0.0</Version>
     <!-- Nullability: Null-Reference-Warnungen als Fehler -->
     <Nullable>enable</Nullable>
     <!-- Moderne using-Direktiven automatisch -->

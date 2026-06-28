@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*.*.*'
   pull_request:
     branches:
       - main
@@ -95,3 +97,40 @@ jobs:
           path: ${{ github.workspace }}/test-results/**/*.trx
           reporter: dotnet-trx
           fail-on-error: false
+
+  release:
+    name: Release-Artefakte (Tag-Push)
+    needs: build-test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: windows-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore workloads (Windows App SDK)
+        run: dotnet workload restore ${{ env.SOLUTION_FILE }}
+
+      - name: Versionsnummer aus Tag ableiten
+        id: version
+        shell: pwsh
+        # 'v1.2.3' → '1.2.3'
+        run: echo "value=$($env:GITHUB_REF_NAME.TrimStart('v'))" >> $env:GITHUB_OUTPUT
+
+      - name: Portable-Artefakt erstellen
+        shell: pwsh
+        run: ./tools/publish.ps1 -Version ${{ steps.version.outputs.value }}
+
+      - name: Release veroeffentlichen
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/LookAway-Portable-v${{ steps.version.outputs.value }}.zip
+          generate_release_notes: true

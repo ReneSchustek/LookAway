@@ -321,6 +321,36 @@ Optional verstaerkt LookAway den Pausencharakter (beide opt-in und reversibel):
   `BreakCompletedEvent` auf. Settings-Tab "Pause-Aktionen": Dimmen + Helligkeit (10–80 %), Medien
   pausieren + nach der Pause fortsetzen.
 
+## Distribution und Installation
+
+LookAway wird als portable ZIP und als MSIX-Paket verteilt. Die Versionsnummer ist
+zentral in `Directory.Build.props` (`<Version>`) gepflegt; die CI kann sie beim Tag-Push ueber
+`-p:Version=…` ueberschreiben.
+
+### Portable
+
+```powershell
+./tools/publish.ps1 -Version 1.0.0
+```
+
+Das Skript fuehrt ein Self-Contained-`dotnet publish` (win-x64) aus, legt die Markierung
+`portable.flag` neben die EXE und packt alles als `dist/LookAway-Portable-v<Version>.zip`. Liegt die
+`portable.flag` neben `LookAway.exe`, speichert die App Konfiguration, Historie und Logs **neben der
+EXE** statt unter `%APPDATA%\LookAway` (`AppDataLocation` / `AppPaths.ResolveDataDirectory`, getestet).
+
+### MSIX
+
+Das MSIX-Paket entsteht ueber die Windows-Packaging-Tools (Visual Studio „Paket erstellen" oder
+`msbuild /p:WindowsPackageType=MSIX /p:GenerateAppxPackageOnBuild=true`). Fuer lokale Tests genuegt ein
+selbst signiertes Zertifikat mit eindeutiger Publisher-CN; fuer die Produktion ist ein Code-Signing-
+Zertifikat einer vertrauenswuerdigen CA noetig. Capabilities bleiben minimal (kein
+`broadFileSystemAccess`).
+
+### CI-Release
+
+Bei einem Tag-Push `v*.*.*` baut die CI nach dem gruenen `build-test`-Job die portable ZIP und
+veroeffentlicht sie als GitHub-Release-Artefakt (`.github/workflows/ci.yml`, Job `release`).
+
 ## Review
 
 `tools/review.ps1` orchestriert lokale Qualitaets-Checks:

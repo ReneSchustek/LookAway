@@ -20,7 +20,6 @@ namespace LookAway.Data.Repositories;
 /// </remarks>
 public sealed class JsonSettingsRepository : ISettingsRepository, IDisposable
 {
-    private const string AppFolderName = "LookAway";
     private const string SettingsFileName = "settings.json";
     private const string TempFileSuffix = ".tmp";
     private const int FileBufferSize = 4096;
@@ -68,10 +67,7 @@ public sealed class JsonSettingsRepository : ISettingsRepository, IDisposable
     /// Windows-Benutzers.
     /// </summary>
     public static string GetDefaultFilePath()
-    {
-        string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        return Path.Combine(appData, AppFolderName, SettingsFileName);
-    }
+        => Path.Combine(AppDataLocation.GetDataDirectory(), SettingsFileName);
 
     /// <inheritdoc />
     public async Task<Settings> LoadAsync(CancellationToken cancellationToken = default)

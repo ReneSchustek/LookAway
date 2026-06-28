@@ -126,7 +126,9 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         // Hauptfenster bleibt verborgen — die App lebt im Tray.
         _window.AppWindow.Hide();
 
-        _reminderPresenter = new ReminderPresenter(_window.DispatcherQueue);
+        _reminderPresenter = new ReminderPresenter(
+            _window.DispatcherQueue,
+            Services.GetRequiredService<ILocalizationService>());
         _settingsPresenter = new SettingsPresenter(
             _window.DispatcherQueue,
             CreateSettingsViewModel,
@@ -187,6 +189,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _trayIcon = new TrayIconService(
             Services.GetRequiredService<ITimerService>(),
             Services.GetRequiredService<TrayStatusPresenter>(),
+            Services.GetRequiredService<ILocalizationService>(),
             _window!.DispatcherQueue,
             Services.GetRequiredService<ILogger<TrayIconService>>(),
             OpenSettings,

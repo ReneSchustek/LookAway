@@ -1,5 +1,7 @@
 using System;
+using LookAway.Application.Localization;
 using LookAway.Application.ViewModels;
+using LookAway.Core.Interfaces;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -24,19 +26,21 @@ internal sealed partial class BreakReminderWindow : Window
     /// Erzeugt das Fenster fuer das angegebene ViewModel.
     /// </summary>
     /// <param name="viewModel">Aktionslogik der Erinnerung.</param>
-    public BreakReminderWindow(BreakReminderViewModel viewModel)
+    /// <param name="localization">Liefert die sprachabhaengigen Texte.</param>
+    public BreakReminderWindow(BreakReminderViewModel viewModel, ILocalizationService localization)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
+        ArgumentNullException.ThrowIfNull(localization);
         _viewModel = viewModel;
 
         InitializeComponent();
 
         Title = "LookAway";
-        TitleText.Text = "Zeit fuer eine Pause";
-        HintText.Text = viewModel.HintKey;
-        StartButton.Content = "Pause starten";
-        SnoozeButton.Content = "5 Min spaeter";
-        SkipButton.Content = "Ueberspringen";
+        TitleText.Text = localization.GetText(ReminderTextKeys.Title);
+        HintText.Text = localization.GetText(viewModel.HintKey);
+        StartButton.Content = localization.GetText(ReminderTextKeys.StartBreak);
+        SnoozeButton.Content = localization.GetText(ReminderTextKeys.Snooze);
+        SkipButton.Content = localization.GetText(ReminderTextKeys.Skip);
 
         _viewModel.Completed += OnViewModelCompleted;
 

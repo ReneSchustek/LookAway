@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using H.NotifyIcon;
 using H.NotifyIcon.Core;
+using LookAway.Application.Localization;
 using LookAway.Application.Services;
 using LookAway.Core.Enums;
 using LookAway.Core.Interfaces;
@@ -28,6 +29,7 @@ internal sealed class TrayIconService : IDisposable
 
     private readonly ITimerService _timerService;
     private readonly TrayStatusPresenter _statusPresenter;
+    private readonly ILocalizationService _localization;
     private readonly ILogger<TrayIconService> _logger;
     private readonly DispatcherQueue _dispatcher;
     private readonly Func<bool> _showSettingsHandler;
@@ -35,7 +37,11 @@ internal sealed class TrayIconService : IDisposable
     private readonly Dictionary<TrayIconVariant, BitmapImage> _iconCache = new();
 
     private TaskbarIcon? _icon;
+    private MenuFlyoutItem? _settingsItem;
+    private MenuFlyoutItem? _startBreakItem;
     private MenuFlyoutItem? _toggleItem;
+    private MenuFlyoutItem? _aboutItem;
+    private MenuFlyoutItem? _exitItem;
     private DispatcherQueueTimer? _statusTimer;
     private TrayIconVariant? _currentVariant;
     private BreakModel _activeModel = BreakModel.ClassicPomodoro;
@@ -47,6 +53,7 @@ internal sealed class TrayIconService : IDisposable
     /// </summary>
     /// <param name="timerService">Domain-Service fuer Pause/Resume.</param>
     /// <param name="statusPresenter">Uebersetzt den Timer-Zustand in Icon und Tooltip.</param>
+    /// <param name="localization">Liefert die sprachabhaengigen Menue- und Tooltip-Texte.</param>
     /// <param name="dispatcher">UI-Dispatcher des Hauptfensters.</param>
     /// <param name="logger">Logger.</param>
     /// <param name="showSettingsHandler">Callback fuer Settings-Klick (zeigt das Hauptfenster).</param>
@@ -54,6 +61,7 @@ internal sealed class TrayIconService : IDisposable
     public TrayIconService(
         ITimerService timerService,
         TrayStatusPresenter statusPresenter,
+        ILocalizationService localization,
         DispatcherQueue dispatcher,
         ILogger<TrayIconService> logger,
         Func<bool> showSettingsHandler,
@@ -61,6 +69,7 @@ internal sealed class TrayIconService : IDisposable
     {
         ArgumentNullException.ThrowIfNull(timerService);
         ArgumentNullException.ThrowIfNull(statusPresenter);
+        ArgumentNullException.ThrowIfNull(localization);
         ArgumentNullException.ThrowIfNull(dispatcher);
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(showSettingsHandler);
@@ -68,10 +77,13 @@ internal sealed class TrayIconService : IDisposable
 
         _timerService = timerService;
         _statusPresenter = statusPresenter;
+        _localization = localization;
         _dispatcher = dispatcher;
         _logger = logger;
         _showSettingsHandler = showSettingsHandler;
         _exitHandler = exitHandler;
+
+        _localization.LanguageChanged += OnLanguageChanged;
     }
 
     /// <summary>
@@ -102,7 +114,7 @@ internal sealed class TrayIconService : IDisposable
 
         _icon = new TaskbarIcon
         {
-            ToolTipText = "LookAway laeuft im Hintergrund",
+            ToolTipText = _localization.GetText(TrayTextKeys.TooltipBackground),
             ContextMenuMode = ContextMenuMode.SecondWindow,
             ContextFlyout = BuildContextMenu(),
         };
@@ -185,8 +197,8 @@ internal sealed class TrayIconService : IDisposable
         _ = _dispatcher.TryEnqueue(() =>
         {
             _toggleItem.Text = state == TimerState.Paused
-                ? "Fortsetzen"
-                : "Pausieren";
+                ? _localization.GetText(TrayTextKeys.MenuResume)
+                : _localization.GetText(TrayTextKeys.MenuPause);
             _toggleItem.IsEnabled = state != TimerState.Idle;
         });
     }
@@ -202,6 +214,8 @@ internal sealed class TrayIconService : IDisposable
         }
 
         _disposed = true;
+
+        _localization.LanguageChanged -= OnLanguageChanged;
 
         if (_statusTimer is not null)
         {
@@ -227,32 +241,66 @@ internal sealed class TrayIconService : IDisposable
     {
         MenuFlyout flyout = new();
 
-        MenuFlyoutItem settingsItem = new() { Text = "Einstellungen…" };
-        settingsItem.Click += (_, _) => OnSettingsRequested();
-        flyout.Items.Add(settingsItem);
+        _settingsItem = new MenuFlyoutItem { Text = _localization.GetText(TrayTextKeys.MenuSettings) };
+        _settingsItem.Click += (_, _) => OnSettingsRequested();
+        flyout.Items.Add(_settingsItem);
 
-        MenuFlyoutItem startBreakItem = new() { Text = "Pause jetzt starten" };
-        startBreakItem.Click += (_, _) => OnStartBreakNow();
-        flyout.Items.Add(startBreakItem);
+        _startBreakItem = new MenuFlyoutItem { Text = _localization.GetText(TrayTextKeys.MenuStartBreak) };
+        _startBreakItem.Click += (_, _) => OnStartBreakNow();
+        flyout.Items.Add(_startBreakItem);
 
-        MenuFlyoutItem toggleItem = new() { Text = "Pausieren", IsEnabled = false };
-        toggleItem.Click += (_, _) => OnTogglePause();
-        flyout.Items.Add(toggleItem);
-        _toggleItem = toggleItem;
-
-        flyout.Items.Add(new MenuFlyoutSeparator());
-
-        MenuFlyoutItem aboutItem = new() { Text = "Ueber LookAway" };
-        aboutItem.Click += (_, _) => OnAboutRequested();
-        flyout.Items.Add(aboutItem);
+        _toggleItem = new MenuFlyoutItem { Text = _localization.GetText(TrayTextKeys.MenuPause), IsEnabled = false };
+        _toggleItem.Click += (_, _) => OnTogglePause();
+        flyout.Items.Add(_toggleItem);
 
         flyout.Items.Add(new MenuFlyoutSeparator());
 
-        MenuFlyoutItem exitItem = new() { Text = "Beenden" };
-        exitItem.Click += (_, _) => OnExitRequested();
-        flyout.Items.Add(exitItem);
+        _aboutItem = new MenuFlyoutItem { Text = _localization.GetText(TrayTextKeys.MenuAbout) };
+        _aboutItem.Click += (_, _) => OnAboutRequested();
+        flyout.Items.Add(_aboutItem);
+
+        flyout.Items.Add(new MenuFlyoutSeparator());
+
+        _exitItem = new MenuFlyoutItem { Text = _localization.GetText(TrayTextKeys.MenuExit) };
+        _exitItem.Click += (_, _) => OnExitRequested();
+        flyout.Items.Add(_exitItem);
 
         return flyout;
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+        => _ = _dispatcher.TryEnqueue(RefreshMenuTexts);
+
+    private void RefreshMenuTexts()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        if (_settingsItem is not null)
+        {
+            _settingsItem.Text = _localization.GetText(TrayTextKeys.MenuSettings);
+        }
+
+        if (_startBreakItem is not null)
+        {
+            _startBreakItem.Text = _localization.GetText(TrayTextKeys.MenuStartBreak);
+        }
+
+        if (_aboutItem is not null)
+        {
+            _aboutItem.Text = _localization.GetText(TrayTextKeys.MenuAbout);
+        }
+
+        if (_exitItem is not null)
+        {
+            _exitItem.Text = _localization.GetText(TrayTextKeys.MenuExit);
+        }
+
+        // Toggle-Text haengt vom Zustand ab; Tooltip aktualisiert RefreshStatus.
+        UpdateMenuForState(_timerService.State);
+        RefreshStatus();
     }
 
     private void OnLeftClick() => OnSettingsRequested();

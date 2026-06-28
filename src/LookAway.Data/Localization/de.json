@@ -52,5 +52,31 @@
   "Welcome.StepProgress": "Schritt {0} von {1}",
   "Welcome.Button.Back": "Zurück",
   "Welcome.Button.Next": "Weiter",
-  "Welcome.Button.Finish": "Fertig"
+  "Welcome.Button.Finish": "Fertig",
+
+  "Tray.Menu.Settings": "Einstellungen…",
+  "Tray.Menu.StartBreak": "Pause jetzt starten",
+  "Tray.Menu.Pause": "Pausieren",
+  "Tray.Menu.Resume": "Fortsetzen",
+  "Tray.Menu.About": "Über LookAway",
+  "Tray.Menu.Exit": "Beenden",
+  "Tray.Tooltip.Background": "LookAway läuft im Hintergrund",
+  "Tray.Tooltip.Dnd": "Nicht stören aktiv — Erinnerungen ausgesetzt",
+  "Tray.Tooltip.Paused": "Timer pausiert",
+  "Tray.Tooltip.Idle": "Timer gestoppt",
+  "Tray.Tooltip.NextBreak": "Nächste Pause in {0}",
+  "Tray.Tooltip.Model": "Modell: {0}",
+  "Tray.Tooltip.OnBreak": "Pause läuft ({0} verbleibend)",
+
+  "Reminder.Title": "Zeit für eine Pause",
+  "Reminder.StartBreak": "Pause starten",
+  "Reminder.Snooze": "5 Min später",
+  "Reminder.Skip": "Überspringen",
+
+  "BreakHint.ShortBreaks": "Kurz aufstehen, strecken und kurz lüften.",
+  "BreakHint.Pomodoro": "Blick in die Ferne richten und tief durchatmen.",
+  "BreakHint.Ultradian": "Mentaler Reset: den Schreibtisch verlassen und abschalten.",
+  "BreakHint.PhysicalCounter": "Chest Opener: Arme weit nach hinten strecken, Handgelenke lockern.",
+  "BreakHint.TaskBased": "Meilenstein erreicht — kurz innehalten und durchatmen.",
+  "BreakHint.LegalCompliance": "Gesetzliche Bildschirmpause: Augen entspannen, Haltung wechseln."
 }

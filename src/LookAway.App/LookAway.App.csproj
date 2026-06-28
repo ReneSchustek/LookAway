@@ -13,6 +13,10 @@
     <WinUISDKReferences>false</WinUISDKReferences>
     <EnableMsixTooling>true</EnableMsixTooling>
     <Nullable>enable</Nullable>
+    <!-- Standardmaessig unpackaged (Tray-App ohne MSIX-Registrierung): F5/Run und
+         die portable Variante laufen ohne Deploy. Fuer ein MSIX-Paket explizit
+         mit -p:WindowsPackageType=MSIX bauen. -->
+    <WindowsPackageType Condition="'$(WindowsPackageType)' == ''">None</WindowsPackageType>
   </PropertyGroup>
 
   <ItemGroup>

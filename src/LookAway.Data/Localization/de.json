@@ -40,5 +40,17 @@
 
   "Language.German": "Deutsch",
   "Language.English": "Englisch",
-  "Language.French": "Französisch"
+  "Language.French": "Französisch",
+
+  "Welcome.Title": "Willkommen bei LookAway",
+  "Welcome.Intro": "In wenigen Schritten ist alles eingerichtet.",
+  "Welcome.Step.Language": "Sprache wählen",
+  "Welcome.Step.Model": "Pausenmodell wählen",
+  "Welcome.Step.AutoStart": "Mit Windows starten",
+  "Welcome.AutoStartHint": "LookAway startet dann automatisch beim Anmelden.",
+  "Welcome.CloseHint": "Schließt du dieses Fenster, erscheint der Assistent beim nächsten Start erneut.",
+  "Welcome.StepProgress": "Schritt {0} von {1}",
+  "Welcome.Button.Back": "Zurück",
+  "Welcome.Button.Next": "Weiter",
+  "Welcome.Button.Finish": "Fertig"
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Threading;
@@ -25,6 +26,7 @@ using Microsoft.UI.Xaml;
 using AutoStartCoordinator = LookAway.Application.Services.AutoStartCoordinator;
 using BreakReminderViewModel = LookAway.Application.ViewModels.BreakReminderViewModel;
 using SettingsViewModel = LookAway.Application.ViewModels.SettingsViewModel;
+using WelcomeViewModel = LookAway.Application.ViewModels.WelcomeViewModel;
 using FullscreenDetectionService = LookAway.Application.Services.FullscreenDetectionService;
 using IdleDetectionService = LookAway.Application.Services.IdleDetectionService;
 using LogService = LookAway.Application.Services.LogService;
@@ -130,46 +132,45 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             CreateSettingsViewModel,
             ApplySettingsLive);
 
-        _trayIcon = new TrayIconService(
-            Services.GetRequiredService<ITimerService>(),
-            Services.GetRequiredService<TrayStatusPresenter>(),
-            _window.DispatcherQueue,
-            Services.GetRequiredService<ILogger<TrayIconService>>(),
-            OpenSettings,
-            RequestExit);
-
-        _trayIcon.Show();
-        AppLog.TrayReady(_logger!);
-
-        // Registry ist die fuehrende Quelle fuer den Autostart-Zustand: ein
-        // manueller Eingriff wird uebernommen, ein veralteter Pfad korrigiert.
-        _ = SynchronizeAutoStartAsync();
-
-        // Timer mit dem konfigurierten Modell starten — das Tray-Icon spiegelt
-        // den Zustand dann live wider.
-        _ = StartTimerAsync();
+        _ = StartAsync();
     }
 
-    private async Task StartTimerAsync()
+    /// <summary>
+    /// Startsequenz: beim allerersten Start fuehrt der Wizard durch die
+    /// Erstkonfiguration; danach werden Tray und Timer eingerichtet.
+    /// </summary>
+    private async Task StartAsync()
     {
         try
         {
             ISettingsRepository repository = Services.GetRequiredService<ISettingsRepository>();
             Settings settings = await repository.LoadAsync().ConfigureAwait(true);
 
+            if (settings.IsFirstRun)
+            {
+                bool completed = await ShowWelcomeAsync().ConfigureAwait(true);
+                if (!completed)
+                {
+                    // Der Benutzer hat den Wizard ohne Abschluss geschlossen —
+                    // ohne gueltige Konfiguration wird nicht weitergestartet.
+                    _logService?.LogShutdown(ShutdownReasonUserExit);
+                    Exit();
+                    return;
+                }
+
+                settings = await repository.LoadAsync().ConfigureAwait(true);
+            }
+
             // Anzeigesprache aus der Konfiguration uebernehmen.
             Services.GetRequiredService<ILocalizationService>().SetLanguage(settings.Language);
 
-            BreakInterval interval = BreakModelRegistry.GetEffective(settings.BreakModel, settings.CustomDurations);
-            _activeModel = settings.BreakModel;
-            _activeInterval = interval;
+            InitializeTray();
 
-            _trayIcon?.SetActiveModel(settings.BreakModel);
-            ITimerService timerService = Services.GetRequiredService<ITimerService>();
-            timerService.Start(interval);
+            // Registry ist die fuehrende Quelle fuer den Autostart-Zustand: ein
+            // manueller Eingriff wird uebernommen, ein veralteter Pfad korrigiert.
+            _ = SynchronizeAutoStartAsync();
 
-            StartDetectionLoop(settings);
-            _ = ConsumeTimerEventsAsync(timerService, _detectionCts!.Token);
+            StartTimer(settings);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -180,6 +181,60 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             AppLog.TimerStartFailed(_logger!, ex);
         }
     }
+
+    private void InitializeTray()
+    {
+        _trayIcon = new TrayIconService(
+            Services.GetRequiredService<ITimerService>(),
+            Services.GetRequiredService<TrayStatusPresenter>(),
+            _window!.DispatcherQueue,
+            Services.GetRequiredService<ILogger<TrayIconService>>(),
+            OpenSettings,
+            RequestExit);
+
+        _trayIcon.Show();
+        AppLog.TrayReady(_logger!);
+    }
+
+    // Timer mit dem konfigurierten Modell starten — das Tray-Icon spiegelt den
+    // Zustand dann live wider.
+    private void StartTimer(Settings settings)
+    {
+        BreakInterval interval = BreakModelRegistry.GetEffective(settings.BreakModel, settings.CustomDurations);
+        _activeModel = settings.BreakModel;
+        _activeInterval = interval;
+
+        _trayIcon?.SetActiveModel(settings.BreakModel);
+        ITimerService timerService = Services.GetRequiredService<ITimerService>();
+        timerService.Start(interval);
+
+        StartDetectionLoop(settings);
+        _ = ConsumeTimerEventsAsync(timerService, _detectionCts!.Token);
+    }
+
+    private Task<bool> ShowWelcomeAsync()
+    {
+        WelcomePresenter presenter = new(
+            _window!.DispatcherQueue,
+            CreateWelcomeViewModel,
+            _ => { });
+        return presenter.ShowAsync();
+    }
+
+    private WelcomeViewModel CreateWelcomeViewModel() => new(
+        Services.GetRequiredService<ISettingsRepository>(),
+        Services.GetRequiredService<AutoStartCoordinator>(),
+        Services.GetRequiredService<ILocalizationService>(),
+        Services.GetRequiredService<ILogger<WelcomeViewModel>>(),
+        DetectSystemLanguage());
+
+    private static Language DetectSystemLanguage() =>
+        CultureInfo.CurrentUICulture.TwoLetterISOLanguageName switch
+        {
+            "de" => Language.German,
+            "fr" => Language.French,
+            _ => Language.English,
+        };
 
     private void StartDetectionLoop(Settings settings)
     {

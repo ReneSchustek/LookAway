@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="LookAway.Views.WelcomeWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:LookAway.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid x:Name="RootGrid" Padding="32" RowSpacing="16">
+        <Grid.Background>
+            <SolidColorBrush Color="#FFFFFFFF" />
+        </Grid.Background>
+        <Grid.Resources>
+            <SolidColorBrush x:Key="TextBrush" Color="#FF1F2937" />
+            <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+        </Grid.Resources>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock
+            Grid.Row="0"
+            Text="{Binding Title}"
+            FontSize="28"
+            FontWeight="SemiBold"
+            Foreground="{StaticResource TextBrush}" />
+
+        <TextBlock
+            Grid.Row="1"
+            Text="{Binding Intro}"
+            FontSize="14"
+            TextWrapping="Wrap"
+            Foreground="{StaticResource TextBrush}" />
+
+        <!-- Schritt-Inhalt -->
+        <Grid Grid.Row="2" VerticalAlignment="Top" Margin="0,12,0,0">
+            <StackPanel
+                Spacing="12"
+                Visibility="{Binding IsStepLanguage, Converter={StaticResource BoolToVisibility}}">
+                <TextBlock Text="{Binding StepHeader}" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
+                <ComboBox
+                    Header="{Binding LanguageLabel}"
+                    ItemsSource="{Binding Languages}"
+                    SelectedItem="{Binding SelectedLanguageOption, Mode=TwoWay}"
+                    DisplayMemberPath="Label"
+                    MinWidth="280" />
+            </StackPanel>
+
+            <StackPanel
+                Spacing="12"
+                Visibility="{Binding IsStepModel, Converter={StaticResource BoolToVisibility}}">
+                <TextBlock Text="{Binding StepHeader}" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
+                <ComboBox
+                    Header="{Binding ModelLabel}"
+                    ItemsSource="{Binding Models}"
+                    SelectedItem="{Binding SelectedModelOption, Mode=TwoWay}"
+                    DisplayMemberPath="Label"
+                    MinWidth="360" />
+            </StackPanel>
+
+            <StackPanel
+                Spacing="12"
+                Visibility="{Binding IsStepAutoStart, Converter={StaticResource BoolToVisibility}}">
+                <TextBlock Text="{Binding StepHeader}" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource TextBrush}" />
+                <CheckBox Content="{Binding AutoStartLabel}" IsChecked="{Binding AutoStart, Mode=TwoWay}" />
+                <TextBlock Text="{Binding AutoStartHint}" FontSize="12" TextWrapping="Wrap" Foreground="{StaticResource TextBrush}" />
+            </StackPanel>
+        </Grid>
+
+        <TextBlock
+            Grid.Row="3"
+            Text="{Binding CloseHint}"
+            FontSize="12"
+            TextWrapping="Wrap"
+            Opacity="0.7"
+            Foreground="{StaticResource TextBrush}" />
+
+        <Grid Grid.Row="4">
+            <TextBlock
+                Text="{Binding StepProgress}"
+                VerticalAlignment="Center"
+                FontSize="12"
+                Foreground="{StaticResource TextBrush}" />
+            <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
+                <Button
+                    Content="{Binding BackLabel}"
+                    Command="{Binding BackCommand}"
+                    Visibility="{Binding ShowBackButton, Converter={StaticResource BoolToVisibility}}" />
+                <Button
+                    Content="{Binding NextLabel}"
+                    Command="{Binding NextCommand}"
+                    Visibility="{Binding ShowNextButton, Converter={StaticResource BoolToVisibility}}" />
+                <Button
+                    Content="{Binding FinishLabel}"
+                    Command="{Binding FinishCommand}"
+                    Visibility="{Binding ShowFinishButton, Converter={StaticResource BoolToVisibility}}">
+                    <Button.Background>
+                        <SolidColorBrush Color="#FF4361EE" />
+                    </Button.Background>
+                    <Button.Foreground>
+                        <SolidColorBrush Color="#FFFFFFFF" />
+                    </Button.Foreground>
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

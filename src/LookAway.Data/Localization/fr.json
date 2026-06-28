@@ -23,6 +23,13 @@
   "Statistics.Skipped": "Ignorées",
   "Statistics.Export": "Exporter en CSV",
 
+  "Settings.Tab.Hotkeys": "Raccourcis",
+  "Settings.Hotkeys.EnableLabel": "Activer les raccourcis globaux",
+  "Settings.Hotkeys.StartBreak": "Démarrer la pause",
+  "Settings.Hotkeys.SkipOrSnooze": "Ignorer / reporter",
+  "Settings.Hotkeys.ToggleDnd": "Basculer Ne pas déranger",
+  "Settings.Hotkeys.Reset": "Restaurer les valeurs par défaut",
+
   "Settings.Language.Label": "Langue",
   "Settings.AutoStart.Label": "Démarrer avec Windows",
   "Settings.Idle.PauseLabel": "Suspendre automatiquement en cas d'inactivité",

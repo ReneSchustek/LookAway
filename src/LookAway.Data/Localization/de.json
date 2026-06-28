@@ -23,6 +23,13 @@
   "Statistics.Skipped": "Übersprungen",
   "Statistics.Export": "Als CSV exportieren",
 
+  "Settings.Tab.Hotkeys": "Hotkeys",
+  "Settings.Hotkeys.EnableLabel": "Globale Hotkeys aktivieren",
+  "Settings.Hotkeys.StartBreak": "Pause starten",
+  "Settings.Hotkeys.SkipOrSnooze": "Überspringen / Snooze",
+  "Settings.Hotkeys.ToggleDnd": "Nicht stören umschalten",
+  "Settings.Hotkeys.Reset": "Standard wiederherstellen",
+
   "Settings.Language.Label": "Sprache",
   "Settings.AutoStart.Label": "Mit Windows starten",
   "Settings.Idle.PauseLabel": "Bei Inaktivität automatisch pausieren",

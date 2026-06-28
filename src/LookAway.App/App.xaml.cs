@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using LookAway.Core.Domain;
 using LookAway.Core.Entities;
 using LookAway.Core.Enums;
+using LookAway.Core.Events;
 using LookAway.Core.Exceptions;
 using LookAway.Core.Interfaces;
 using LookAway.Core.ValueObjects;
@@ -87,6 +88,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     private SoundType _soundType = SoundType.Chime;
     private int _soundVolume;
     private DateTimeOffset _reminderShownAt;
+    private bool _manualDnd;
 
     /// <summary>
     /// Initialisiert die Anwendung, das DI-Container und die globalen Handler.
@@ -225,6 +227,55 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
         StartDetectionLoop(settings);
         _ = ConsumeTimerEventsAsync(timerService, _detectionCts!.Token);
+
+        RegisterHotkeys(settings);
+    }
+
+    private void RegisterHotkeys(Settings settings)
+    {
+        IHotkeyService hotkeys = Services.GetRequiredService<IHotkeyService>();
+        hotkeys.HotkeyPressed -= OnHotkeyPressed;
+        hotkeys.HotkeyPressed += OnHotkeyPressed;
+
+        if (!settings.HotkeysEnabled)
+        {
+            hotkeys.UnregisterAll();
+            return;
+        }
+
+        Dictionary<HotkeyAction, HotkeyDefinition> bindings = new()
+        {
+            [HotkeyAction.StartBreak] = settings.HotkeyStartBreak,
+            [HotkeyAction.SkipOrSnooze] = settings.HotkeySkipOrSnooze,
+            [HotkeyAction.ToggleDnd] = settings.HotkeyToggleDnd,
+        };
+        hotkeys.Register(bindings);
+    }
+
+    private void OnHotkeyPressed(object? sender, HotkeyPressedEventArgs e)
+        => _ = _window?.DispatcherQueue.TryEnqueue(() => HandleHotkey(e.Action));
+
+    private void HandleHotkey(HotkeyAction action)
+    {
+        switch (action)
+        {
+            case HotkeyAction.StartBreak:
+                ShowBreakReminder();
+                break;
+            case HotkeyAction.SkipOrSnooze:
+                if (_activeInterval is not null)
+                {
+                    Services.GetRequiredService<ITimerService>().Start(_activeInterval);
+                }
+
+                break;
+            case HotkeyAction.ToggleDnd:
+                _manualDnd = !_manualDnd;
+                _trayIcon?.SetDndActive(_manualDnd);
+                break;
+            default:
+                break;
+        }
     }
 
     private Task<bool> ShowWelcomeAsync()
@@ -276,7 +327,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             {
                 idle.Evaluate();
                 bool surfaceMissedReminder = fullscreen.Evaluate();
-                _trayIcon?.SetDndActive(fullscreen.IsDndActive);
+                _trayIcon?.SetDndActive(fullscreen.IsDndActive || _manualDnd);
 
                 if (surfaceMissedReminder)
                 {
@@ -324,9 +375,9 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
     private void ShowBreakReminder()
     {
-        if (_reminderPresenter is null || _reminderPresenter.IsReminderOpen)
+        if (_reminderPresenter is null || _reminderPresenter.IsReminderOpen || _manualDnd)
         {
-            // Bereits offen: keinen Ton erneut abspielen (kein doppelter Sound).
+            // Bereits offen oder manuelles DND aktiv: nichts anzeigen, kein Ton.
             return;
         }
 
@@ -486,6 +537,8 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
         FullscreenDetectionService fullscreen = Services.GetRequiredService<FullscreenDetectionService>();
         fullscreen.IsEnabled = settings.SuppressOnFullscreen;
+
+        RegisterHotkeys(settings);
     }
 
     private bool ShowMainWindow()
@@ -509,6 +562,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _detectionCts?.Cancel();
         _detectionCts?.Dispose();
         _detectionCts = null;
+        (Services.GetService<IHotkeyService>() as IDisposable)?.Dispose();
         _trayIcon?.Dispose();
         _trayIcon = null;
         _instanceLock?.Dispose();
@@ -561,6 +615,9 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _ = services.AddSingleton<IBreakHistoryRepository, JsonBreakHistoryRepository>();
         _ = services.AddSingleton<CsvExporter>();
         _ = services.AddSingleton<StatisticsService>();
+
+        // Globale Hotkeys (BRIEF019)
+        _ = services.AddSingleton<IHotkeyService, WindowsHotkeyService>();
 
         // Autostart (BRIEF004)
         _ = services.AddSingleton<IAutoStartService, RegistryAutoStartService>();

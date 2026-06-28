@@ -53,6 +53,10 @@ internal sealed class InMemorySettingsRepository : ISettingsRepository
         SoundEnabled = source.SoundEnabled,
         ReminderSound = source.ReminderSound,
         SoundVolumePercent = source.SoundVolumePercent,
+        HotkeysEnabled = source.HotkeysEnabled,
+        HotkeyStartBreak = source.HotkeyStartBreak,
+        HotkeySkipOrSnooze = source.HotkeySkipOrSnooze,
+        HotkeyToggleDnd = source.HotkeyToggleDnd,
         IsFirstRun = source.IsFirstRun,
     };
 }

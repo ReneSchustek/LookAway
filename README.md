@@ -279,6 +279,22 @@ LookAway zeichnet jede angebotene Pause auf und zeigt Statistiken im Settings-Ta
 - Aufgezeichnet wird beim Schliessen der Erinnerung (Outcome aus der gewaehlten Aktion); fuer gemachte
   Pausen wird die Pausendauer als Zeitraum hinterlegt.
 
+## Globale Hotkeys
+
+LookAway laesst sich systemweit per Tastenkombination bedienen (BRIEF019, Standard aktiv):
+
+- `Strg+Alt+P` → Pause-Erinnerung sofort anzeigen
+- `Strg+Alt+S` → ueberspringen / Arbeitszyklus neu starten
+- `Strg+Alt+D` → Nicht-stoeren manuell umschalten (Tray-Icon spiegelt den Zustand)
+
+`IHotkeyService` (Core) → `WindowsHotkeyService` (Data) nutzt die Win32-API `RegisterHotKey` auf einem
+eigenen Hintergrund-Thread mit nachrichtenfreiem Fenster (`HWND_MESSAGE`) und Message-Loop.
+`HotkeyValidator`/`HotkeyDefaults` (Core, getestet) liefern Validierung (Modifikator + Taste,
+Kollisionspruefung) und die Standardbelegung. Die Bindungen werden in den Einstellungen persistiert;
+der Settings-Tab "Hotkeys" erlaubt Aktivieren und Zuruecksetzen auf die Standardwerte. Fehlgeschlagene
+Einzelregistrierungen (Konflikt mit einer anderen App) werden geloggt, ohne die uebrigen zu verhindern;
+beim Beenden werden alle Hotkeys freigegeben.
+
 ## Review
 
 `tools/review.ps1` orchestriert lokale Qualitaets-Checks:

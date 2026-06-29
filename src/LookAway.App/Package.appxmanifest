@@ -11,7 +11,7 @@
   <Identity
     Name="ReneSchustek.LookAway"
     Publisher="CN=ReneSchustek"
-    Version="1.0.1.0" />
+    Version="1.0.2.0" />
 
   <mp:PhoneIdentity PhoneProductId="c3f647f6-745f-4a02-9b89-491613b896ce" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 

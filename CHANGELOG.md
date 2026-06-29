@@ -6,6 +6,28 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveroeffentlicht]
 
+## [1.0.2] – 2026-06-29
+
+### Behoben
+
+- Startabsturz im unpackaged-Betrieb behoben: Das Tray-Icon wurde als PNG an
+  H.NotifyIcon uebergeben und warf eine Ausnahme; jetzt als DIB-ICO. Zudem
+  fehlten beim Publish der Ressourcen-Index (PRI) und lose Asset-Dateien
+  (XamlParseException / DirectoryNotFoundException) — die App startet nun
+  zuverlaessig. Portable-ZIP und MSIX sind damit erstmals voll lauffaehig.
+
+### Hinzugefuegt
+
+- Setup.exe-Installer (Inno Setup): frei waehlbarer Speicherort, Installation
+  fuer den aktuellen oder alle Benutzer, Startmenue-/optionale Desktop-Verknuepfung,
+  optionaler Autostart und Uninstaller. Self-contained — keine vorinstallierte
+  .NET-/Windows-App-SDK-Runtime noetig.
+
+### Geaendert
+
+- Verteilbare Builds sind self-contained (Windows App SDK), CI-Pipeline gehaertet
+  (gruener Lauf, SHA-gepinnte Actions, node24) und die Git-Historie bereinigt.
+
 ## [1.0.1] – 2026-06-29
 
 ### Hinzugefuegt
@@ -41,6 +63,7 @@ Erste vollstaendige Version.
 - Autostart mit Windows ueber den benutzerspezifischen Run-Eintrag
 - Distribution als portable ZIP und MSIX-Paket
 
-[Unveroeffentlicht]: https://github.com/ReneSchustek/LookAway/compare/v1.0.1...HEAD
+[Unveroeffentlicht]: https://github.com/ReneSchustek/LookAway/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/ReneSchustek/LookAway/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/ReneSchustek/LookAway/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/ReneSchustek/LookAway/releases/tag/v1.0.0

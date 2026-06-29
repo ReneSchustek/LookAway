@@ -20,7 +20,7 @@
     Ziel-RID (Default: win-x64).
 #>
 param(
-    [string]$Version = '1.0.1',
+    [string]$Version = '1.0.2',
     [string]$OutputDir = 'F:\Entwicklung\publish',
     [string]$Runtime = 'win-x64'
 )

@@ -23,6 +23,44 @@
     <EnableMsixTooling Condition="'$(WindowsPackageType)' != 'None'">true</EnableMsixTooling>
   </PropertyGroup>
 
+  <!-- WinAppSDK-self-contained-Publish (verteilbares EXE/Setup ohne installierte
+       Runtime) zieht die generierte Datei UndockedRegFreeWinRT-AutoInitializer.cs
+       aus dem WindowsAppSDK-Paket herein, die CA5392 verletzt. Da das Fremd-/
+       Generat-Code ausserhalb unserer .editorconfig (NuGet-Cache) ist und nur in
+       diesem Modus kompiliert wird, wird CA5392 ausschliesslich hier unterdrueckt;
+       normale Builds bleiben streng. -->
+  <PropertyGroup Condition="'$(WindowsAppSDKSelfContained)' == 'true'">
+    <NoWarn>$(NoWarn);CA5392</NoWarn>
+  </PropertyGroup>
+
+  <!-- WinUI-3-Resource-Index (LookAway.pri) wird beim Build erzeugt, aber von
+       'dotnet publish' (unpackaged) nicht mitgenommen. Ohne PRI scheitert das
+       Laden von XAML/ms-appx-Assets zur Laufzeit (XamlParseException). Daher die
+       generierte PRI explizit in den Publish-Output aufnehmen. -->
+  <Target Name="IncludeProjectPriInPublish" AfterTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <ResolvedFileToPublish Include="$(OutDir)$(AssemblyName).pri" Condition="Exists('$(OutDir)$(AssemblyName).pri')">
+        <RelativePath>$(AssemblyName).pri</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+
+  <!-- Assets, die zur Laufzeit ueber echte Dateipfade geladen werden
+       (AppWindow.SetIcon -> Assets\AppIcon.ico; H.NotifyIcon -> Assets\tray-*.ico;
+       Sounds), liegen beim unpackaged-Publish sonst nur in der PRI und fehlen als
+       lose Dateien -> DirectoryNotFoundException. Daher den Assets-Baum lose mit
+       in den Publish-Output kopieren (wie im normalen Build). -->
+  <Target Name="CopyLooseAssetsToPublish" AfterTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <_LooseAsset Include="$(MSBuildProjectDirectory)\Assets\**\*" />
+      <ResolvedFileToPublish Include="@(_LooseAsset)">
+        <RelativePath>Assets\%(RecursiveDir)%(Filename)%(Extension)</RelativePath>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </ResolvedFileToPublish>
+    </ItemGroup>
+  </Target>
+
   <ItemGroup>
     <Content Include="Assets\SplashScreen.scale-200.png" />
     <Content Include="Assets\LockScreenLogo.scale-200.png" />

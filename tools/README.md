@@ -18,5 +18,6 @@ powershell _ai/_global/scripts/secret-scan.ps1
 powershell _ai/_global/scripts/secret-scan.ps1 -History
 ```
 
-CI nutzt stattdessen die `gitleaks-action` (siehe `.github/workflows/security.yml`),
-braucht das lokale Binary nicht.
+Die CI braucht das Binary nicht: Der Security-Scan laeuft ueber das
+pattern-basierte `tools/review.ps1 -Mode security` (Schritt „Security-Scan" in
+`.github/workflows/ci.yml`). gitleaks bleibt ein optionales lokales Werkzeug.

@@ -26,7 +26,9 @@ ihre Augen, Haltung und Konzentration schonen moechten.
 - **Statistiken und CSV-Export** – Pausen pro Tag, Woche und Jahr, exportierbar
 - **Globale Hotkeys** – Pause starten, ueberspringen, Nicht stoeren – von ueberall
 - **Optionaler Ton** – dezenter Hinweis bei der Erinnerung (aus drei Toenen waehlbar)
-- **Pause-Aktionen** – Bildschirm dimmen und Medienwiedergabe waehrend der Pause pausieren
+- **Abgedunkelter Pausen-Screen** – ein ruhiger Vollbild-Overlay verdeckt den Bildschirm waehrend der
+  Pause, zeigt den Countdown und das Uebungs-Ziel und laesst sich jederzeit mit **ESC** vorzeitig beenden
+- **Pause-Aktionen** – Bildschirm dimmen (DDC/CI) und Medienwiedergabe waehrend der Pause pausieren
 - **Autostart** – startet auf Wunsch automatisch mit Windows
 
 ## Voraussetzungen

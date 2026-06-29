@@ -117,6 +117,9 @@
   "Reminder.Snooze": "5 min later",
   "Reminder.Skip": "Skip",
 
+  "Overlay.Title": "Break – look into the distance",
+  "Overlay.EndHint": "Press ESC to end the break",
+
   "BreakHint.ShortBreaks": "Stand up briefly, stretch and air the room.",
   "BreakHint.Pomodoro": "Look into the distance and breathe deeply.",
   "BreakHint.Ultradian": "Mental reset: leave your desk and switch off.",

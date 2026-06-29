@@ -106,3 +106,6 @@ $RECYCLE.BIN/
 _ai/
 **/_ai/
 
+
+# MSIX-Build-Artefakte
+**/AppPackages/

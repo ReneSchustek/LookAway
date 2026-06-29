@@ -117,6 +117,9 @@
   "Reminder.Snooze": "5 min plus tard",
   "Reminder.Skip": "Ignorer",
 
+  "Overlay.Title": "Pause – regardez au loin",
+  "Overlay.EndHint": "Appuyez sur ÉCHAP pour terminer la pause",
+
   "BreakHint.ShortBreaks": "Levez-vous brièvement, étirez-vous et aérez la pièce.",
   "BreakHint.Pomodoro": "Regardez au loin et respirez profondément.",
   "BreakHint.Ultradian": "Réinitialisation mentale : quittez votre bureau et déconnectez-vous.",

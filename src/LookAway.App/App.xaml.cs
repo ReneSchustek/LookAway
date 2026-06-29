@@ -84,6 +84,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     private TrayIconService? _trayIcon;
     private CancellationTokenSource? _detectionCts;
     private ReminderPresenter? _reminderPresenter;
+    private BreakOverlayPresenter? _overlayPresenter;
     private SettingsPresenter? _settingsPresenter;
     private BreakModel _activeModel = BreakModel.ClassicPomodoro;
     private BreakInterval? _activeInterval;
@@ -174,6 +175,9 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _window.AppWindow.Hide();
 
         _reminderPresenter = new ReminderPresenter(
+            _window.DispatcherQueue,
+            Services.GetRequiredService<ILocalizationService>());
+        _overlayPresenter = new BreakOverlayPresenter(
             _window.DispatcherQueue,
             Services.GetRequiredService<ILocalizationService>());
         _settingsPresenter = new SettingsPresenter(
@@ -466,7 +470,8 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
                         break;
                     case BreakCompletedEvent:
-                        // Pause vorbei: Dimmen/Medien-Pause rueckgaengig machen.
+                        // Pause regulaer vorbei: Overlay schliessen, Dimmen/Medien-Pause rueckgaengig machen.
+                        _overlayPresenter?.Close();
                         _ = Services.GetRequiredService<PauseActionService>().EndBreakAsync(cancellationToken);
                         break;
                     default:
@@ -526,8 +531,10 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         switch (result)
         {
             case ReminderResult.StartBreak:
-                // Die Pause laeuft bereits durch die Engine-Transition; Pause-Aktionen starten.
+                // Die Pause laeuft bereits durch die Engine-Transition; Pause-Aktionen starten
+                // und den Bildschirm mit dem abdunkelnden Overlay verdecken (ESC beendet vorzeitig).
                 _ = Services.GetRequiredService<PauseActionService>().BeginBreakAsync();
+                _overlayPresenter?.Show(_activeModel, _activeInterval.BreakDuration, OnBreakOverlayEnded);
                 break;
             case ReminderResult.Snooze:
                 timerService.Start(BreakInterval.Create(
@@ -539,6 +546,26 @@ public partial class App : global::Microsoft.UI.Xaml.Application
                 break;
             default:
                 break;
+        }
+    }
+
+    /// <summary>
+    /// Reaktion auf das Ende der laufenden Pause aus dem Overlay. Ein regulaeres
+    /// Ende treibt die Timer-Engine selbst (<see cref="BreakCompletedEvent"/>);
+    /// ein vorzeitiges Ende per ESC nimmt die Pause-Aktionen sofort zurueck und
+    /// startet eine neue Arbeitsphase, damit die Restpause nicht weiterlaeuft.
+    /// </summary>
+    private void OnBreakOverlayEnded(BreakEndReason reason)
+    {
+        if (reason != BreakEndReason.EndedByUser)
+        {
+            return;
+        }
+
+        _ = Services.GetRequiredService<PauseActionService>().EndBreakAsync();
+        if (_activeInterval is not null)
+        {
+            Services.GetRequiredService<ITimerService>().Start(_activeInterval);
         }
     }
 

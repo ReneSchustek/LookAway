@@ -6,6 +6,16 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveroeffentlicht]
 
+### Hinzugefuegt
+
+- Abgedunkelter Vollbild-Pausen-Screen: verdeckt waehrend der Pause den Bildschirm, zeigt den
+  Countdown und das Uebungs-Ziel und laesst sich mit **ESC** vorzeitig beenden
+- EXE-Anwendungsicon (Explorer, Taskleiste, Alt+Tab) aus dem LookAway-Logo
+
+### Geaendert
+
+- Kachel- und Store-Logos (MSIX) aus dem LookAway-Logo neu erzeugt
+
 ## [1.0.0] – 2026-06-28
 
 Erste vollstaendige Version.

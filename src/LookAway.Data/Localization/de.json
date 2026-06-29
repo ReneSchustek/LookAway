@@ -117,6 +117,9 @@
   "Reminder.Snooze": "5 Min später",
   "Reminder.Skip": "Überspringen",
 
+  "Overlay.Title": "Pause – schau in die Ferne",
+  "Overlay.EndHint": "ESC drücken, um die Pause zu beenden",
+
   "BreakHint.ShortBreaks": "Kurz aufstehen, strecken und kurz lüften.",
   "BreakHint.Pomodoro": "Blick in die Ferne richten und tief durchatmen.",
   "BreakHint.Ultradian": "Mentaler Reset: den Schreibtisch verlassen und abschalten.",

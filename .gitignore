@@ -101,3 +101,6 @@ $RECYCLE.BIN/
 
 # Verteil-Artefakte (publish.ps1)
 /dist/
+
+# Portable Werkzeuge werden nicht versioniert (lokal via tools/install-*.ps1 holen)
+*.exe

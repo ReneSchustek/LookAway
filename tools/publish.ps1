@@ -42,6 +42,7 @@ Write-Host "Publish (Self-Contained, $Runtime) ..." -ForegroundColor Cyan
     --self-contained `
     -p:Platform=x64 `
     -p:Version=$Version `
+    -p:WindowsAppSDKSelfContained=true `
     -o $publishDir
 
 # Portable-Markierung: laesst die App ihre Daten neben der EXE ablegen.

@@ -105,3 +105,6 @@ $RECYCLE.BIN/
 # Portable Werkzeuge werden nicht versioniert (lokal via tools/install-*.ps1 holen)
 *.exe
 
+
+# Generiertes Setup-Icon (via installer/make-setup-icon.ps1)
+installer/setup-icon.ico

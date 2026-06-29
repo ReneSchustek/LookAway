@@ -1,10 +1,10 @@
 {
   "profiles": {
-    "LookAway.App (Package)": {
-      "commandName": "MsixPackage"
-    },
     "LookAway.App (Unpackaged)": {
       "commandName": "Project"
+    },
+    "LookAway.App (Package)": {
+      "commandName": "MsixPackage"
     }
   }
 }

@@ -9,15 +9,15 @@
   IgnorableNamespaces="uap rescap systemai">
 
   <Identity
-    Name="C3F647F6-745F-4A02-9B89-491613B896CE"
-    Publisher="CN=AppPublisher"
-    Version="1.0.0.0" />
+    Name="ReneSchustek.LookAway"
+    Publisher="CN=ReneSchustek"
+    Version="1.0.1.0" />
 
-  <mp:PhoneIdentity PhoneProductId="C3F647F6-745F-4A02-9B89-491613B896CE" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+  <mp:PhoneIdentity PhoneProductId="c3f647f6-745f-4a02-9b89-491613b896ce" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>LookAway.App</DisplayName>
-    <PublisherDisplayName>AppPublisher</PublisherDisplayName>
+    <DisplayName>LookAway</DisplayName>
+    <PublisherDisplayName>Rene Schustek</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
@@ -35,8 +35,8 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="LookAway.App"
-        Description="LookAway.App"
+        DisplayName="LookAway"
+        Description="Bildschirmpausen, intelligent erinnert."
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">

@@ -37,18 +37,25 @@ ihre Augen, Haltung und Konzentration schonen moechten.
 
 ## Installation
 
-### Variante A: MSIX (empfohlen)
+### Variante A: Portable (empfohlen, ohne Installation)
 
-1. Die aktuelle `LookAway.msix` von der [Releases-Seite](https://github.com/ReneSchustek/LookAway/releases/latest) herunterladen.
-2. Doppelklick auf die Datei und der Installationsanweisung folgen.
-3. LookAway erscheint danach im Startmenue und startet ins Tray.
-
-### Variante B: Portable (ohne Installation)
-
-1. `LookAway-Portable-vX.Y.Z.zip` von der Releases-Seite herunterladen.
+1. `LookAway-Portable-vX.Y.Z.zip` von der [Releases-Seite](https://github.com/ReneSchustek/LookAway/releases/latest) herunterladen.
 2. Das Archiv in einen beliebigen Ordner entpacken.
 3. `LookAway.exe` starten. Im Portable-Modus liegen alle Daten neben der EXE – ideal fuer den
    USB-Stick.
+
+### Variante B: MSIX
+
+Das MSIX ist mit einem **selbstsignierten** Zertifikat signiert. Damit Windows die Installation
+zulaesst, muss das mitgelieferte Zertifikat einmalig als vertrauenswuerdig importiert werden:
+
+1. `LookAway-vX.Y.Z.cer` und `LookAway-vX.Y.Z-x64.msix` von der Releases-Seite herunterladen.
+2. In einer **Administrator**-PowerShell das Zertifikat importieren:
+   ```powershell
+   Import-Certificate -FilePath .\LookAway-vX.Y.Z.cer -CertStoreLocation Cert:\LocalMachine\Root
+   ```
+3. Doppelklick auf die `.msix` und der Installationsanweisung folgen. LookAway erscheint danach im
+   Startmenue und startet ins Tray.
 
 ## Erste Schritte
 

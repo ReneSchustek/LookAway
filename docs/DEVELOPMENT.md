@@ -142,7 +142,7 @@ LookAway laeuft als Hintergrund-Anwendung mit Tray-Icon (kein Hauptfenster im Vo
 - Doppelklick auf das Tray-Icon oeffnet das Settings-Fenster
 - Hauptfenster ist beim Start verborgen (`AppWindow.Hide()`) und wird nur auf User-Aktion sichtbar
 
-Status-Anzeige: das Icon spiegelt den Timer-Zustand wider (Arbeit/Pause/pausiert/DND), ein Tooltip zeigt live Restzeit und aktives Modell. Die UI-freie Uebersetzung Zustand → Icon-Variante + Tooltip liegt im `TrayStatusPresenter` (Application) und ist ohne Tray-Control testbar; der `TrayIconService` pollt den `ITimerService` im Sekundentakt ueber einen `DispatcherQueueTimer` und tauscht die Icon-Variante (`tray-working/onbreak/paused/disabled.png`) nur bei Zustandswechsel. Der Timer wird beim App-Start mit dem konfigurierten Modell (`BreakModelRegistry.GetEffective`) gestartet.
+Status-Anzeige: das Icon spiegelt den Timer-Zustand wider (Arbeit/Pause/pausiert/DND), ein Tooltip zeigt live Restzeit und aktives Modell. Die UI-freie Uebersetzung Zustand → Icon-Variante + Tooltip liegt im `TrayStatusPresenter` (Application) und ist ohne Tray-Control testbar; der `TrayIconService` pollt den `ITimerService` im Sekundentakt ueber einen `DispatcherQueueTimer` und tauscht die Icon-Variante (`tray-working/onbreak/paused/disabled.ico`) nur bei Zustandswechsel. Der Timer wird beim App-Start mit dem konfigurierten Modell (`BreakModelRegistry.GetEffective`) gestartet.
 
 Single-Instance-Sperre via `SingleInstanceLock` (Application):
 

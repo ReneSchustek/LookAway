@@ -109,3 +109,6 @@ _ai/
 
 # MSIX-Build-Artefakte
 **/AppPackages/
+
+# Verteil-Artefakte (publish.ps1)
+/dist/

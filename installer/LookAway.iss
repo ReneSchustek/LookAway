@@ -8,7 +8,7 @@
 ;   ISCC.exe /DMyAppVersion=1.0.1 installer\LookAway.iss
 
 #ifndef MyAppVersion
-  #define MyAppVersion "1.0.1"
+  #define MyAppVersion "1.0.2"
 #endif
 #define MyAppName "LookAway"
 #define MyAppPublisher "Rene Schustek"

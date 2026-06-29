@@ -71,7 +71,7 @@ jobs:
           --no-build
           --logger trx
           --logger "console;verbosity=normal"
-          --results-directory ${{ github.workspace }}/test-results
+          --results-directory test-results
           --collect "XPlat Code Coverage"
 
       - name: Security-Scan (review.ps1)
@@ -85,7 +85,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: ${{ github.workspace }}/test-results/**/*
+          path: test-results/**/*
           if-no-files-found: warn
           retention-days: 14
 
@@ -94,7 +94,9 @@ jobs:
         uses: dorny/test-reporter@v2
         with:
           name: xUnit Tests
-          path: ${{ github.workspace }}/test-results/**/*.trx
+          # Relativer Forward-Slash-Glob: ein absoluter Windows-Pfad (Backslashes)
+          # bringt die Glob-Bibliothek von test-reporter dazu, keine Datei zu finden.
+          path: test-results/**/*.trx
           reporter: dotnet-trx
           fail-on-error: false
 

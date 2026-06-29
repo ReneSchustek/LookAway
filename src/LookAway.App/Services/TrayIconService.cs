@@ -201,13 +201,15 @@ internal sealed class TrayIconService : IDisposable
         return image;
     }
 
+    // ICO (mit unkomprimierten DIB-Frames), nicht PNG: H.NotifyIcon reicht den
+    // Datei-Stream an System.Drawing.Icon weiter, das nur DIB-Icons lesen kann.
     private static string GetAssetFileName(TrayIconVariant variant) => variant switch
     {
-        TrayIconVariant.Working => "tray-working.png",
-        TrayIconVariant.OnBreak => "tray-onbreak.png",
-        TrayIconVariant.Paused => "tray-paused.png",
-        TrayIconVariant.Disabled => "tray-disabled.png",
-        _ => "tray-paused.png",
+        TrayIconVariant.Working => "tray-working.ico",
+        TrayIconVariant.OnBreak => "tray-onbreak.ico",
+        TrayIconVariant.Paused => "tray-paused.ico",
+        TrayIconVariant.Disabled => "tray-disabled.ico",
+        _ => "tray-paused.ico",
     };
 
     /// <summary>

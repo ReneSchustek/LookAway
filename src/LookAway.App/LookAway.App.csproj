@@ -33,10 +33,10 @@
     <Content Include="Assets\AppIcon.ico" />
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
     <Content Include="Assets\LookAwayLogo.png" />
-    <Content Include="Assets\tray-working.png" />
-    <Content Include="Assets\tray-onbreak.png" />
-    <Content Include="Assets\tray-paused.png" />
-    <Content Include="Assets\tray-disabled.png" />
+    <Content Include="Assets\tray-working.ico" />
+    <Content Include="Assets\tray-onbreak.ico" />
+    <Content Include="Assets\tray-paused.ico" />
+    <Content Include="Assets\tray-disabled.ico" />
     <Content Include="Assets\Sounds\chime.wav" />
     <Content Include="Assets\Sounds\bell.wav" />
     <Content Include="Assets\Sounds\pop.wav" />

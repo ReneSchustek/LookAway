@@ -16,6 +16,13 @@ Sie laeuft unauffaellig im Hintergrund, bietet mehrere wissenschaftlich fundiert
 ist vollstaendig pro Windows-Benutzer konfigurierbar – fuer alle, die viel am Bildschirm arbeiten und
 ihre Augen, Haltung und Konzentration schonen moechten.
 
+## Aktuelles Release
+
+**[v1.0.2](https://github.com/ReneSchustek/LookAway/releases/latest)** ist die aktuelle Version.
+Sie bringt einen **Setup.exe-Installer** mit frei waehlbarem Speicherort, einen zuverlaessigen Start
+im portablen und im MSIX-Betrieb, den **abgedunkelten Pausen-Screen** (mit ESC beendbar) und das neue
+App-Icon. Drei Installationsvarianten stehen bereit – siehe [Installation](#installation).
+
 ## Funktionen
 
 - **7 Pausenmodelle** – Pomodoro, Modifiziertes Pomodoro, Ultradianer Rhythmus, Physical Counter,
@@ -37,22 +44,32 @@ ihre Augen, Haltung und Konzentration schonen moechten.
 
 ## Installation
 
-### Variante A: Portable (empfohlen, ohne Installation)
+Alle Artefakte liegen auf der [Releases-Seite](https://github.com/ReneSchustek/LookAway/releases/latest)
+(aktuell **v1.0.2**).
 
-1. `LookAway-Portable-vX.Y.Z.zip` von der [Releases-Seite](https://github.com/ReneSchustek/LookAway/releases/latest) herunterladen.
-2. Das Archiv in einen beliebigen Ordner entpacken.
-3. `LookAway.exe` starten. Im Portable-Modus liegen alle Daten neben der EXE – ideal fuer den
-   USB-Stick.
+### Variante A: Setup.exe (komfortabel)
 
-### Variante B: MSIX
+1. `LookAway-Setup-v1.0.2.exe` herunterladen und ausfuehren.
+2. Im Assistenten den **Speicherort frei waehlen** und „nur fuer mich" oder „fuer alle Benutzer"
+   bestimmen. LookAway landet im Startmenue (optional Desktop-Verknuepfung/Autostart) und startet ins Tray.
+
+> Hinweis: Die Setup.exe ist nicht mit einem CA-Zertifikat signiert – Windows SmartScreen kann warnen
+> („Weitere Informationen" → „Trotzdem ausfuehren").
+
+### Variante B: Portable (ohne Installation)
+
+1. `LookAway-Portable-v1.0.2.zip` herunterladen und in einen beliebigen Ordner entpacken.
+2. `LookAway.exe` starten. Im Portable-Modus liegen alle Daten neben der EXE – ideal fuer den USB-Stick.
+
+### Variante C: MSIX
 
 Das MSIX ist mit einem **selbstsignierten** Zertifikat signiert. Damit Windows die Installation
 zulaesst, muss das mitgelieferte Zertifikat einmalig als vertrauenswuerdig importiert werden:
 
-1. `LookAway-vX.Y.Z.cer` und `LookAway-vX.Y.Z-x64.msix` von der Releases-Seite herunterladen.
+1. `LookAway-v1.0.2.cer` und `LookAway-v1.0.2-x64.msix` herunterladen.
 2. In einer **Administrator**-PowerShell das Zertifikat importieren:
    ```powershell
-   Import-Certificate -FilePath .\LookAway-vX.Y.Z.cer -CertStoreLocation Cert:\LocalMachine\Root
+   Import-Certificate -FilePath .\LookAway-v1.0.2.cer -CertStoreLocation Cert:\LocalMachine\Root
    ```
 3. Doppelklick auf die `.msix` und der Installationsanweisung folgen. LookAway erscheint danach im
    Startmenue und startet ins Tray.

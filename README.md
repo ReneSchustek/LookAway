@@ -9,6 +9,8 @@
 [![CI](https://github.com/ReneSchustek/LookAway/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ReneSchustek/LookAway/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/ReneSchustek/LookAway?sort=semver)](https://github.com/ReneSchustek/LookAway/releases/latest)
 
+**Deutsch** · [English](README.en.md) · [Français](README.fr.md)
+
 </div>
 
 LookAway ist eine schlanke Windows-Tray-Anwendung, die dezent an Bildschirmpausen erinnert.

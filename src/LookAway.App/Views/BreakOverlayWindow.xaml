@@ -26,6 +26,7 @@
                 TextAlignment="Center"
                 FontSize="40"
                 FontWeight="SemiBold"
+                AutomationProperties.LiveSetting="Assertive"
                 Foreground="#FFFFFFFF" />
 
             <TextBlock

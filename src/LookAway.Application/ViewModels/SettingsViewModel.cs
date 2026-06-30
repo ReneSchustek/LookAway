@@ -236,7 +236,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public int SoundVolumeMax => Settings.MaxSoundVolumePercent;
 
     /// <summary>Wahr, wenn die aktuellen Eingaben gespeichert werden duerfen.</summary>
-    public bool CanPersist => WorkError is null && BreakError is null;
+    public bool CanPersist => WorkError is null && BreakError is null && HexColor.IsValid(BreakOverlayColor);
 
     /// <summary>Fenstertitel.</summary>
     public string Title => _localization.GetText(SettingsTextKeys.Title);
@@ -682,6 +682,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     partial void OnWorkErrorChanged(string? value) => NotifyPersistCommands();
 
     partial void OnBreakErrorChanged(string? value) => NotifyPersistCommands();
+
+    partial void OnBreakOverlayColorChanged(string value) => NotifyPersistCommands();
 
     private void NotifyPersistCommands()
     {

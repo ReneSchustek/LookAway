@@ -8,6 +8,8 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.0] – 2026-06-30
+
 ### Added
 
 - Break screen across **multiple monitors**: optionally every connected display
@@ -90,7 +92,8 @@ First complete version.
 - Autostart with Windows via the per-user Run entry
 - Distribution as a portable ZIP and an MSIX package
 
-[Unreleased]: https://github.com/ReneSchustek/LookAway/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/ReneSchustek/LookAway/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/ReneSchustek/LookAway/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/ReneSchustek/LookAway/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/ReneSchustek/LookAway/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/ReneSchustek/LookAway/releases/tag/v1.0.0

@@ -2,11 +2,9 @@
 
 [![CI](https://github.com/ReneSchustek/LookAway/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ReneSchustek/LookAway/actions/workflows/ci.yml)
 
-Eine schlanke Windows-Tray-Anwendung, die dezent an Bildschirmpausen erinnert. Mehrere wissenschaftlich fundierte Pausenmodelle, dreisprachig (Deutsch, Englisch, Franzoesisch), und vollstaendig konfigurierbar pro Windows-Benutzer.
+**Deutsch** · [English](DEVELOPMENT.en.md)
 
-> **KI-Workflow-Material:** Briefs, Rules, Memory, Reviews und Skripte liegen unter
-> `F:\Entwicklung\dotnet\_ai\LookAway\` (zentrale KI-Topologie). Die Junction
-> `_ai\` im Repo-Root verweist auf diesen Pfad und ist via `.gitignore` ausgeklammert.
+Eine schlanke Windows-Tray-Anwendung, die dezent an Bildschirmpausen erinnert. Mehrere wissenschaftlich fundierte Pausenmodelle, dreisprachig (Deutsch, Englisch, Franzoesisch), und vollstaendig konfigurierbar pro Windows-Benutzer.
 
 ## Voraussetzungen
 
@@ -314,9 +312,20 @@ LookAway prueft optional auf neue Versionen ueber die GitHub-Releases-API (BRIEF
   und Praerelease-Suffix werden abgeschnitten).
 - `UpdateSchedule` (Core) entscheidet anhand der Haeufigkeit (`OnStartup`/`Daily`/`Weekly`) und des
   letzten Pruefzeitpunkts, ob beim Start geprueft wird — schont das GitHub-Rate-Limit.
-- Einstellungen (Ueber-Tab): Aktivieren, Haeufigkeit, "Jetzt pruefen" mit Statusanzeige und
-  Download-Link. Findet die Hintergrundpruefung beim Start ein Update, erscheint im Tray der Eintrag
-  "Update herunterladen", der die Release-Seite im Browser oeffnet (kein Auto-Install).
+- Einstellungen (Ueber-Tab): Aktivieren, Haeufigkeit, "Jetzt pruefen" mit Statusanzeige sowie die
+  Option "Automatisch aktualisieren".
+- **Automatische Installation:** Findet die Pruefung ein Update, kann LookAway es selbst einspielen.
+  `UpdateInstallerService` (Application) laedt die Portable-ZIP aus den Release-Assets (nur HTTPS auf
+  GitHub-Hosts, mit Groessen-/Zip-Bomben-Limit), entpackt sie in `%LOCALAPPDATA%\LookAway\updates\<Version>`
+  und tauscht beim naechsten Start ueber einen kurzlebigen Helfer-Prozess (`--apply-update`, in
+  `UpdateProcess`/`UpdateApplyArgs`) die Programmdateien — mit Backup/Rollback, ohne `portable.flag` zu
+  uebernehmen, unter Erhalt der Benutzerdaten. Manuell loest der Tray-Eintrag "Update" denselben Ablauf
+  sofort aus.
+- **Grenzen/Sicherheit:** Der Datei-Tausch funktioniert nur, wenn der Programmordner beschreibbar ist
+  (portable und Per-User-Installation); bei einer "fuer alle Benutzer"-Installation in `Programme` faellt
+  LookAway auf das Oeffnen der Release-Seite zurueck. Echtheit/Integritaet beruhen derzeit auf HTTPS +
+  GitHub-Host-Pinning; fuer vollstaendige Authentizitaet ist Code-Signing mit einem Offline-Schluessel
+  vorgesehen (siehe `REVIEW.md`).
 
 ## Pause-Aktionen
 
@@ -374,7 +383,7 @@ veroeffentlicht sie als GitHub-Release-Artefakt (`.github/workflows/ci.yml`, Job
 ./tools/review.ps1 -Mode enterprise  # all + ERP-2026-Report-Skeleton in .ai/reviews/
 ```
 
-`enterprise` legt einen Markdown-Report nach `_ai/LookAway/rules/enterprise-review.md` an, in den der Reviewer die Bewertung eintraegt. Die Skript-Pfade gehen vom Solution-Root aus.
+`enterprise` legt ein Markdown-Report-Skelett unter `.ai/reviews/` an, in das die Bewertung eingetragen wird. Die Skript-Pfade gehen vom Solution-Root aus.
 
 ## Continuous Integration
 
@@ -396,15 +405,4 @@ Runner: `windows-latest` (zwingend wegen WinUI 3). Concurrency-Group bricht aelt
 
 ## Lizenz
 
-Proprietaer – alle Rechte vorbehalten.
-
-<!-- TRIAGE-WORKFLOW: auto-managed by triage-deploy.ps1 -->
-## Triage und Reviews
-
-- **Watcher starten:** `.\triage-watch.ps1` (bzw. `.\triage-watch-php.ps1` / `.\triage-watch-shopware.ps1`) im Projekt-Root
-- **Review on-demand:** `.\triage-review.ps1` -- laedt Projekt-Regeln aus `_ai/<Projekt>/rules/` und uebergibt sie an Ollama
-- **Status-Dateien:** `_ai/<Projekt>/triage-status.json`, `_ai/<Projekt>/triage-escalation.md`, `_ai/<Projekt>/reviews/*.md`, `_ai/<Projekt>/erp/*.md`
-
-Volle Doku: `F:\Entwicklung\_Anleitungen\allgemein\triage-workflow.md`
-Routing-Regeln: `_ai/<Projekt>/rules/ollama-delegation.md` und `_ai/<Projekt>/rules/enterprise-review.md`
-<!-- /TRIAGE-WORKFLOW -->
+Proprietaer – alle Rechte vorbehalten. Siehe [LICENSE](../LICENSE).

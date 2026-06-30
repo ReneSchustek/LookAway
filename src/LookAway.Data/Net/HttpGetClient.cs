@@ -54,6 +54,9 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
         }
     }
 
+    // Obergrenze fuer Downloads (Schutz vor riesigen/boesartigen Dateien).
+    private const long MaxDownloadBytes = 512L * 1024 * 1024;
+
     /// <inheritdoc />
     [SuppressMessage(
         "Design",
@@ -64,6 +67,13 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
         ArgumentNullException.ThrowIfNull(requestUri);
         ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
         ObjectDisposedException.ThrowIf(_disposed, this);
+
+        // Nur HTTPS — kein Klartext-Download ausfuehrbarer Inhalte.
+        if (!string.Equals(requestUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        {
+            HttpGetClientLog.DownloadRejected(_logger, requestUri.ToString());
+            return false;
+        }
 
         try
         {
@@ -78,8 +88,39 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
                 .ConfigureAwait(false);
             _ = response.EnsureSuccessStatusCode();
 
+            // Eine etwaige Weiterleitung darf nicht auf Klartext (HTTP) herabstufen.
+            Uri? finalUri = response.RequestMessage?.RequestUri;
+            if (finalUri is not null
+                && !string.Equals(finalUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            {
+                HttpGetClientLog.DownloadRejected(_logger, finalUri.ToString());
+                return false;
+            }
+
+            // Frueher Abbruch, wenn die angekuendigte Groesse das Limit sprengt.
+            if (response.Content.Headers.ContentLength is long announced && announced > MaxDownloadBytes)
+            {
+                HttpGetClientLog.DownloadTooLarge(_logger, requestUri.ToString(), announced);
+                return false;
+            }
+
             using FileStream file = new(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None);
-            await response.Content.CopyToAsync(file, linked.Token).ConfigureAwait(false);
+            using Stream source = await response.Content.ReadAsStreamAsync(linked.Token).ConfigureAwait(false);
+
+            byte[] buffer = new byte[81920];
+            long total = 0;
+            int read;
+            while ((read = await source.ReadAsync(buffer, linked.Token).ConfigureAwait(false)) > 0)
+            {
+                total += read;
+                if (total > MaxDownloadBytes)
+                {
+                    HttpGetClientLog.DownloadTooLarge(_logger, requestUri.ToString(), total);
+                    return false;
+                }
+
+                await file.WriteAsync(buffer.AsMemory(0, read), linked.Token).ConfigureAwait(false);
+            }
 
             return true;
         }
@@ -113,4 +154,10 @@ internal static partial class HttpGetClientLog
 
     [LoggerMessage(EventId = 1611, Level = LogLevel.Warning, Message = "Datei-Download von {Uri} fehlgeschlagen.")]
     public static partial void DownloadFailed(ILogger logger, Exception exception, string uri);
+
+    [LoggerMessage(EventId = 1612, Level = LogLevel.Warning, Message = "Datei-Download von {Uri} abgelehnt (kein HTTPS).")]
+    public static partial void DownloadRejected(ILogger logger, string uri);
+
+    [LoggerMessage(EventId = 1613, Level = LogLevel.Warning, Message = "Datei-Download von {Uri} abgebrochen: zu gross ({Bytes} Bytes).")]
+    public static partial void DownloadTooLarge(ILogger logger, string uri, long bytes);
 }

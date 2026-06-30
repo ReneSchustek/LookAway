@@ -8,6 +8,8 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+## [1.1.0] – 2026-06-30
+
 ### Ajouté
 
 - Écran de pause sur **plusieurs moniteurs** : pendant la pause, chaque écran
@@ -94,7 +96,8 @@ Première version complète.
 - Démarrage automatique avec Windows via l'entrée Run propre à l'utilisateur
 - Distribution sous forme de ZIP portable et de paquet MSIX
 
-[Non publié]: https://github.com/ReneSchustek/LookAway/compare/v1.0.2...HEAD
+[Non publié]: https://github.com/ReneSchustek/LookAway/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/ReneSchustek/LookAway/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/ReneSchustek/LookAway/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/ReneSchustek/LookAway/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/ReneSchustek/LookAway/releases/tag/v1.0.0

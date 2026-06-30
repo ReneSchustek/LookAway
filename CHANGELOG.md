@@ -8,6 +8,8 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveroeffentlicht]
 
+## [1.1.0] – 2026-06-30
+
 ### Hinzugefuegt
 
 - Pausen-Screen auf **mehreren Monitoren**: Auf Wunsch wird waehrend der Pause
@@ -92,7 +94,8 @@ Erste vollstaendige Version.
 - Autostart mit Windows ueber den benutzerspezifischen Run-Eintrag
 - Distribution als portable ZIP und MSIX-Paket
 
-[Unveroeffentlicht]: https://github.com/ReneSchustek/LookAway/compare/v1.0.2...HEAD
+[Unveroeffentlicht]: https://github.com/ReneSchustek/LookAway/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/ReneSchustek/LookAway/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/ReneSchustek/LookAway/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/ReneSchustek/LookAway/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/ReneSchustek/LookAway/releases/tag/v1.0.0

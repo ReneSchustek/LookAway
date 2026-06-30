@@ -78,7 +78,8 @@ public sealed class GitHubUpdateChecker : IUpdateChecker
     /// <summary>
     /// Sucht in den Release-Assets die Portable-ZIP und liefert deren direkte
     /// Download-URL. Bevorzugt einen Namen mit "portable"; faellt sonst auf das
-    /// erste <c>.zip</c>-Asset zurueck.
+    /// erste <c>.zip</c>-Asset zurueck. Akzeptiert nur vertrauenswuerdige
+    /// GitHub-HTTPS-URLs, damit kein Downgrade-/Fremdhost-Asset eingespielt wird.
     /// </summary>
     private static string? FindPackageAssetUrl(JsonElement root)
     {
@@ -92,7 +93,10 @@ public sealed class GitHubUpdateChecker : IUpdateChecker
         {
             string? name = GetString(asset, "name");
             string? url = GetString(asset, "browser_download_url");
-            if (name is null || url is null || !name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            if (name is null
+                || url is null
+                || !name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)
+                || !IsTrustedGitHubUrl(url))
             {
                 continue;
             }
@@ -105,6 +109,23 @@ public sealed class GitHubUpdateChecker : IUpdateChecker
         }
 
         return firstZip;
+    }
+
+    /// <summary>
+    /// Prueft, ob eine URL ueber HTTPS auf einen GitHub-Releasehost zeigt
+    /// (<c>github.com</c> oder <c>*.githubusercontent.com</c>).
+    /// </summary>
+    private static bool IsTrustedGitHubUrl(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri)
+            || !string.Equals(uri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        string host = uri.Host;
+        return host.Equals("github.com", StringComparison.OrdinalIgnoreCase)
+            || host.EndsWith(".githubusercontent.com", StringComparison.OrdinalIgnoreCase);
     }
 }
 

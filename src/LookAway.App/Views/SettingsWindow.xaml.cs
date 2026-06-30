@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using LookAway.Application.ViewModels;
+using LookAway.Core.Domain;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -117,10 +117,7 @@ internal sealed partial class SettingsWindow : Window
     }
 
     /// <summary>Formatiert eine Farbe als <c>#AARRGGBB</c>.</summary>
-    private static string ToHex(WinColor color)
-        => string.Create(
-            CultureInfo.InvariantCulture,
-            $"#{color.A:X2}{color.R:X2}{color.G:X2}{color.B:X2}");
+    private static string ToHex(WinColor color) => HexColor.ToHex(color.A, color.R, color.G, color.B);
 
     /// <summary>
     /// Parst <c>#RRGGBB</c>/<c>#AARRGGBB</c>; bei ungueltiger Eingabe wird ein
@@ -128,22 +125,8 @@ internal sealed partial class SettingsWindow : Window
     /// </summary>
     private static WinColor ParseColor(string hex)
     {
-        if (!string.IsNullOrEmpty(hex)
-            && hex[0] == '#'
-            && (hex.Length is 7 or 9))
-        {
-            string body = hex[1..];
-            if (uint.TryParse(body, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out uint value))
-            {
-                byte a = body.Length == 8 ? (byte)((value >> 24) & 0xFF) : (byte)0xFF;
-                byte r = (byte)((value >> 16) & 0xFF);
-                byte g = (byte)((value >> 8) & 0xFF);
-                byte b = (byte)(value & 0xFF);
-                return WinColor.FromArgb(a, r, g, b);
-            }
-        }
-
-        return WinColor.FromArgb(0xF2, 0x0F, 0x11, 0x15);
+        (byte a, byte r, byte g, byte b) = HexColor.ParseOrDefault(hex);
+        return WinColor.FromArgb(a, r, g, b);
     }
 
     private void OnCloseRequested(object? sender, EventArgs e) => Close();

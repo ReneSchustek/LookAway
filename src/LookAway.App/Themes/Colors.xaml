@@ -70,7 +70,7 @@
             <!-- Text -->
             <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="#FF102A28" />
             <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="#FF4B635E" />
-            <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#FF6B847E" />
+            <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#FF5C726C" />
 
             <!-- Linien -->
             <SolidColorBrush x:Key="DividerStrokeColorDefaultBrush" Color="#FFD5E6E1" />
@@ -110,7 +110,7 @@
 
             <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="#FF102A28" />
             <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="#FF4B635E" />
-            <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#FF6B847E" />
+            <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#FF5C726C" />
 
             <SolidColorBrush x:Key="DividerStrokeColorDefaultBrush" Color="#FFD5E6E1" />
             <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="#FFDDEDE8" />

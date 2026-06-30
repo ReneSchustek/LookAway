@@ -17,7 +17,10 @@ namespace LookAway.Application.Services;
 public sealed class UpdateInstallerService
 {
     private const string ExecutableName = "LookAway.exe";
+    private const string BackupSuffix = ".bak-update";
     private const int CopyRetries = 10;
+    private const long MaxExtractedBytes = 1024L * 1024 * 1024;
+    private const int MaxEntries = 20_000;
     private static readonly TimeSpan CopyRetryDelay = TimeSpan.FromMilliseconds(500);
 
     private readonly IHttpGetClient _httpClient;
@@ -80,7 +83,12 @@ public sealed class UpdateInstallerService
         }
 
         string stagingDir = Path.Combine(_stagingRoot, info.LatestVersion);
-        string tempZip = stagingDir + ".zip";
+
+        // Eindeutige Arbeitspfade: verhindern Kollisionen, wenn Auto- und manuelles
+        // Update parallel dasselbe Paket laden.
+        string token = Guid.NewGuid().ToString("N");
+        string tempZip = Path.Combine(_stagingRoot, $"_dl-{token}.zip");
+        string workDir = Path.Combine(_stagingRoot, $"_work-{token}");
 
         try
         {
@@ -91,20 +99,23 @@ public sealed class UpdateInstallerService
                 return null;
             }
 
+            await Task.Run(() => ExtractSafely(tempZip, workDir), cancellationToken).ConfigureAwait(false);
+            File.Delete(tempZip);
+
+            if (!File.Exists(ExecutablePathIn(workDir)))
+            {
+                UpdateInstallerLog.PackageInvalid(_logger, workDir);
+                TryDeleteDirectory(workDir);
+                return null;
+            }
+
+            // Atomar an den endgueltigen, versionsbenannten Ort versetzen.
             if (Directory.Exists(stagingDir))
             {
                 Directory.Delete(stagingDir, recursive: true);
             }
 
-            await ZipFile.ExtractToDirectoryAsync(tempZip, stagingDir, cancellationToken).ConfigureAwait(false);
-            File.Delete(tempZip);
-
-            if (!File.Exists(ExecutablePathIn(stagingDir)))
-            {
-                UpdateInstallerLog.PackageInvalid(_logger, stagingDir);
-                Directory.Delete(stagingDir, recursive: true);
-                return null;
-            }
+            Directory.Move(workDir, stagingDir);
 
             UpdateInstallerLog.Staged(_logger, info.LatestVersion, stagingDir);
             return stagingDir;
@@ -113,7 +124,52 @@ public sealed class UpdateInstallerService
         {
             UpdateInstallerLog.StageFailed(_logger, ex, info.LatestVersion);
             TryDelete(tempZip);
+            TryDeleteDirectory(workDir);
             return null;
+        }
+    }
+
+    /// <summary>
+    /// Entpackt ein ZIP sicher: erzwingt eine Obergrenze fuer Eintragszahl und
+    /// entpackte Gesamtgroesse (Schutz vor Zip-Bomben) und weist Eintraege ab, die
+    /// das Zielverzeichnis verlassen wuerden (Zip-Slip).
+    /// </summary>
+    private static void ExtractSafely(string zipPath, string destinationDir)
+    {
+        _ = Directory.CreateDirectory(destinationDir);
+        string destFull = Path.GetFullPath(destinationDir) + Path.DirectorySeparatorChar;
+
+        using ZipArchive archive = ZipFile.OpenRead(zipPath);
+
+        if (archive.Entries.Count > MaxEntries)
+        {
+            throw new InvalidOperationException($"ZIP enthaelt zu viele Eintraege ({archive.Entries.Count}).");
+        }
+
+        long totalUncompressed = 0;
+        foreach (ZipArchiveEntry entry in archive.Entries)
+        {
+            totalUncompressed += entry.Length;
+            if (totalUncompressed > MaxExtractedBytes)
+            {
+                throw new InvalidOperationException("Entpackte Gesamtgroesse ueberschreitet das Limit.");
+            }
+
+            string targetPath = Path.GetFullPath(Path.Combine(destinationDir, entry.FullName));
+            if (!targetPath.StartsWith(destFull, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"Unsicherer ZIP-Eintrag (Pfadverlassen): {entry.FullName}");
+            }
+
+            // Verzeichniseintrag (endet auf '/').
+            if (entry.FullName.EndsWith('/') || entry.FullName.EndsWith('\\'))
+            {
+                _ = Directory.CreateDirectory(targetPath);
+                continue;
+            }
+
+            _ = Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
+            entry.ExtractToFile(targetPath, overwrite: true);
         }
     }
 
@@ -178,22 +234,72 @@ public sealed class UpdateInstallerService
         ArgumentException.ThrowIfNullOrWhiteSpace(sourceDir);
         ArgumentException.ThrowIfNullOrWhiteSpace(targetDir);
 
-        foreach (string sourcePath in Directory.EnumerateFiles(sourceDir, "*", SearchOption.AllDirectories))
+        // Ueberschriebene Dateien werden zuvor gesichert, damit bei einem Fehler
+        // mitten im Tausch der vorige (lauffaehige) Stand wiederhergestellt werden
+        // kann — ein halb eingespieltes Update darf die Installation nicht zerstoeren.
+        List<string> backups = new();
+        try
         {
-            string relative = Path.GetRelativePath(sourceDir, sourcePath);
-
-            // Portable-Markierung nie uebernehmen — sie entscheidet ueber den Datenort.
-            if (string.Equals(relative, AppPaths.PortableFlagFileName, StringComparison.OrdinalIgnoreCase))
+            foreach (string sourcePath in Directory.EnumerateFiles(sourceDir, "*", SearchOption.AllDirectories))
             {
-                continue;
+                string relative = Path.GetRelativePath(sourceDir, sourcePath);
+
+                // Portable-Markierung nie uebernehmen — sie entscheidet ueber den Datenort.
+                if (string.Equals(relative, AppPaths.PortableFlagFileName, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                string targetPath = Path.Combine(targetDir, relative);
+                _ = Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
+
+                if (File.Exists(targetPath))
+                {
+                    string backupPath = targetPath + BackupSuffix;
+                    File.Copy(targetPath, backupPath, overwrite: true);
+                    backups.Add(targetPath);
+                }
+
+                CopyWithRetry(sourcePath, targetPath);
             }
 
-            string targetPath = Path.Combine(targetDir, relative);
-            _ = Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
-            CopyWithRetry(sourcePath, targetPath);
-        }
+            // Erfolg: Sicherungen entfernen.
+            foreach (string targetPath in backups)
+            {
+                TryDelete(targetPath + BackupSuffix);
+            }
 
-        UpdateInstallerLog.Applied(_logger, sourceDir, targetDir);
+            UpdateInstallerLog.Applied(_logger, sourceDir, targetDir);
+        }
+        catch
+        {
+            RollBack(backups);
+            throw;
+        }
+    }
+
+    private void RollBack(List<string> backups)
+    {
+        foreach (string targetPath in backups)
+        {
+            string backupPath = targetPath + BackupSuffix;
+            try
+            {
+                if (File.Exists(backupPath))
+                {
+                    File.Copy(backupPath, targetPath, overwrite: true);
+                    File.Delete(backupPath);
+                }
+            }
+            catch (IOException ex)
+            {
+                UpdateInstallerLog.RollbackFailed(_logger, ex, targetPath);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                UpdateInstallerLog.RollbackFailed(_logger, ex, targetPath);
+            }
+        }
     }
 
     /// <summary>Entfernt Staging-Ordner, die nicht neuer als die aktuelle Version sind.</summary>
@@ -328,4 +434,7 @@ internal static partial class UpdateInstallerLog
 
     [LoggerMessage(EventId = 1655, Level = LogLevel.Debug, Message = "Kopieren von {Target} erneut versucht (Versuch {Attempt}).")]
     public static partial void CopyRetry(ILogger logger, string target, int attempt);
+
+    [LoggerMessage(EventId = 1656, Level = LogLevel.Error, Message = "Rueckrollen von {Target} nach fehlgeschlagenem Update misslungen.")]
+    public static partial void RollbackFailed(ILogger logger, Exception exception, string target);
 }

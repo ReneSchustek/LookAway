@@ -238,7 +238,7 @@ public sealed class Settings
     /// Standardfarbe des Pausen-Overlays im ARGB-Hex-Format. Dunkel, leicht
     /// transparent (Alpha <c>F2</c>).
     /// </summary>
-    public const string DefaultBreakOverlayColor = "#F20F1115";
+    public const string DefaultBreakOverlayColor = HexColor.Default;
 
     private string _breakOverlayColor = DefaultBreakOverlayColor;
 
@@ -259,7 +259,7 @@ public sealed class Settings
         get => _breakOverlayColor;
         set
         {
-            if (!IsValidHexColor(value))
+            if (!HexColor.IsValid(value))
             {
                 throw new ArgumentException(
                     "BreakOverlayColor muss im Format #RRGGBB oder #AARRGGBB vorliegen.",
@@ -267,30 +267,6 @@ public sealed class Settings
             }
             _breakOverlayColor = value;
         }
-    }
-
-    private static bool IsValidHexColor(string? value)
-    {
-        if (string.IsNullOrEmpty(value) || value[0] != '#')
-        {
-            return false;
-        }
-
-        // Genau #RRGGBB (7) oder #AARRGGBB (9) Zeichen.
-        if (value.Length is not (7 or 9))
-        {
-            return false;
-        }
-
-        for (int i = 1; i < value.Length; i++)
-        {
-            if (!Uri.IsHexDigit(value[i]))
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /// <summary>Soll die Medienwiedergabe waehrend der Pause pausiert werden? Default: <c>false</c>.</summary>

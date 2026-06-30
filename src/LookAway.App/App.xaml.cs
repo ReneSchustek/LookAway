@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,6 +40,7 @@ using IdleDetectionService = LookAway.Application.Services.IdleDetectionService;
 using LogService = LookAway.Application.Services.LogService;
 using PauseActionService = LookAway.Application.Services.PauseActionService;
 using UpdateInstallerService = LookAway.Application.Services.UpdateInstallerService;
+using UpdateApplyArgs = LookAway.Application.Services.UpdateApplyArgs;
 using TrayStatusPresenter = LookAway.Application.Services.TrayStatusPresenter;
 using SingleInstanceLock = LookAway.Application.Services.SingleInstanceLock;
 using TimerService = LookAway.Application.Services.TimerService;
@@ -164,7 +166,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     {
         // Helfer-Modus: aus dem Staging-Ordner gestartet, um nach dem Beenden der
         // alten Instanz die Programmdateien zu ersetzen und neu zu starten.
-        if (UpdateProcess.TryParseApply(Environment.GetCommandLineArgs(), out UpdateProcess.ApplyArgs applyArgs))
+        if (UpdateApplyArgs.TryParse(Environment.GetCommandLineArgs(), out UpdateApplyArgs applyArgs))
         {
             RunUpdateApply(applyArgs);
             return;
@@ -273,9 +275,23 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             return;
         }
 
-        UpdateInfo info = await Services.GetRequiredService<IUpdateChecker>()
-            .CheckForUpdateAsync()
-            .ConfigureAwait(true);
+        UpdateInfo info;
+        try
+        {
+            info = await Services.GetRequiredService<IUpdateChecker>()
+                .CheckForUpdateAsync()
+                .ConfigureAwait(true);
+        }
+        catch (HttpRequestException ex)
+        {
+            // Routinemaessiger Offline-Start darf nicht als unbeobachteter Fehler enden.
+            AppLog.UpdateCheckPersistFailed(_logger!, ex);
+            return;
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
 
         try
         {
@@ -374,9 +390,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     {
         UpdateProcess.StartApply(
             UpdateInstallerService.ExecutablePathIn(stagedDir),
-            Environment.ProcessId,
-            stagedDir,
-            target);
+            new UpdateApplyArgs(Environment.ProcessId, stagedDir, target));
         RequestExit();
     }
 
@@ -414,9 +428,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             AppLog.ApplyingPendingUpdate(_logger!, staged);
             UpdateProcess.StartApply(
                 UpdateInstallerService.ExecutablePathIn(staged),
-                Environment.ProcessId,
-                staged,
-                target);
+                new UpdateApplyArgs(Environment.ProcessId, staged, target));
 
             // Lock freigeben und beenden, damit der Helfer die Dateien ersetzen kann.
             _instanceLock?.Dispose();
@@ -440,7 +452,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         "Design",
         "CA1031:Do not catch general exception types",
         Justification = "Der Helfer darf nicht abstuerzen; bei Fehlern wird best-effort die installierte App gestartet.")]
-    private void RunUpdateApply(UpdateProcess.ApplyArgs apply)
+    private void RunUpdateApply(UpdateApplyArgs apply)
     {
         _ = Task.Run(() =>
         {
@@ -448,17 +460,36 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             {
                 WaitForProcessExit(apply.Pid, TimeSpan.FromSeconds(30));
                 Services.GetRequiredService<UpdateInstallerService>().ApplyStagedFiles(apply.Source, apply.Target);
-                UpdateProcess.StartApp(UpdateInstallerService.ExecutablePathIn(apply.Target));
             }
             catch (Exception ex)
             {
+                // Bei Fehler hat ApplyStagedFiles auf den vorigen Stand zurueckgerollt.
                 AppLog.UpdateApplyFailed(_logger!, ex);
             }
             finally
             {
+                // In jedem Fall die installierte App starten (neuer Stand bei Erfolg,
+                // zurueckgerollter, lauffaehiger Stand bei Fehler), dann den Helfer beenden.
+                TryStartInstalledApp(apply.Target);
                 Environment.Exit(0);
             }
         });
+    }
+
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Best-effort-Neustart der App im Helfer-Prozess; ein Fehler darf den Helfer nur am Beenden nicht hindern.")]
+    private void TryStartInstalledApp(string targetDir)
+    {
+        try
+        {
+            UpdateProcess.StartApp(UpdateInstallerService.ExecutablePathIn(targetDir));
+        }
+        catch (Exception ex)
+        {
+            AppLog.UpdateApplyFailed(_logger!, ex);
+        }
     }
 
     private static void WaitForProcessExit(int pid, TimeSpan timeout)
@@ -627,6 +658,10 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         {
             // Erwartetes Ende beim Shutdown.
         }
+        catch (ObjectDisposedException)
+        {
+            // Tray/Services beim Shutdown bereits freigegeben — unkritisch.
+        }
     }
 
     private async Task ConsumeTimerEventsAsync(ITimerService timerService, CancellationToken cancellationToken)
@@ -646,9 +681,15 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
                         break;
                     case BreakCompletedEvent:
-                        // Pause regulaer vorbei: Overlay schliessen, Dimmen/Medien-Pause rueckgaengig machen.
-                        _overlayPresenter?.Close();
-                        _ = Services.GetRequiredService<PauseActionService>().EndBreakAsync(cancellationToken);
+                        // Ist das Overlay offen, ist es massgeblich fuer Ende und
+                        // Wiederherstellung (siehe OnBreakOverlayEnded) — die Engine-
+                        // Pause kann durch die Reaktionszeit etwas frueher ablaufen.
+                        // Nur ohne Overlay (z. B. ignorierte Erinnerung) hier aufraeumen.
+                        if (_overlayPresenter is not { IsOverlayOpen: true })
+                        {
+                            _ = Services.GetRequiredService<PauseActionService>().EndBreakAsync(cancellationToken);
+                        }
+
                         break;
                     default:
                         break;
@@ -658,6 +699,10 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         catch (OperationCanceledException)
         {
             // Erwartetes Ende beim Shutdown.
+        }
+        catch (ObjectDisposedException)
+        {
+            // Container/Services beim Shutdown bereits freigegeben — unkritisch.
         }
     }
 
@@ -710,15 +755,16 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         switch (result)
         {
             case ReminderResult.StartBreak:
-                // Die Pause laeuft bereits durch die Engine-Transition; Pause-Aktionen starten
-                // und den Bildschirm mit dem abdunkelnden Overlay verdecken (ESC beendet vorzeitig).
+                // Pause-Aktionen starten und den Bildschirm mit dem abdunkelnden
+                // Overlay verdecken. Das Overlay ist ab hier massgeblich fuer das
+                // Pausenende (Ablauf des Countdowns oder ESC) — siehe OnBreakOverlayEnded.
                 _ = Services.GetRequiredService<PauseActionService>().BeginBreakAsync();
                 _overlayPresenter?.Show(
                     _activeModel,
                     _activeInterval.BreakDuration,
                     _overlayColor,
                     _darkenAllScreens,
-                    OnBreakOverlayEnded);
+                    _ => OnBreakOverlayEnded());
                 break;
             case ReminderResult.Snooze:
                 timerService.Start(BreakInterval.Create(
@@ -734,18 +780,15 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     }
 
     /// <summary>
-    /// Reaktion auf das Ende der laufenden Pause aus dem Overlay. Ein regulaeres
-    /// Ende treibt die Timer-Engine selbst (<see cref="BreakCompletedEvent"/>);
-    /// ein vorzeitiges Ende per ESC nimmt die Pause-Aktionen sofort zurueck und
-    /// startet eine neue Arbeitsphase, damit die Restpause nicht weiterlaeuft.
+    /// Reaktion auf das Ende der laufenden Pause aus dem Overlay — egal ob der
+    /// Countdown ablief oder der Benutzer mit ESC beendet hat. Das Overlay ist die
+    /// massgebliche Quelle fuer das Pausenende: die Pause-Aktionen (Helligkeit/
+    /// Medien) werden zurueckgenommen und eine frische Arbeitsphase gestartet. So
+    /// bleibt nichts haengen, falls Engine-Pause und Overlay (durch die
+    /// Reaktionszeit) nicht exakt gleich lange liefen.
     /// </summary>
-    private void OnBreakOverlayEnded(BreakEndReason reason)
+    private void OnBreakOverlayEnded()
     {
-        if (reason != BreakEndReason.EndedByUser)
-        {
-            return;
-        }
-
         _ = Services.GetRequiredService<PauseActionService>().EndBreakAsync();
         if (_activeInterval is not null)
         {
@@ -878,21 +921,6 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         RegisterHotkeys(settings);
     }
 
-    private bool ShowMainWindow()
-    {
-        if (_window is null)
-        {
-            return false;
-        }
-
-        _ = _window.DispatcherQueue.TryEnqueue(() =>
-        {
-            _window.AppWindow.Show();
-            _window.Activate();
-        });
-        return true;
-    }
-
     private void RequestExit()
     {
         _logService?.LogShutdown(ShutdownReasonUserExit);
@@ -914,7 +942,9 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     private void OnActivationRequested(object? sender, EventArgs e)
     {
         AppLog.ActivationFromSecondInstance(_logger!);
-        _ = ShowMainWindow();
+        // Zweitstart oeffnet die Einstellungen — das einzige echte Fenster der
+        // Tray-App; das verborgene Hauptfenster bliebe sonst leer.
+        _ = OpenSettings();
     }
 
     private static ServiceProvider ConfigureServices()

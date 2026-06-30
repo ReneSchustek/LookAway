@@ -22,6 +22,10 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 - Modernisierte Einstellungen: Das Menue oben (Registerkarten) wurde durch ein
   ein-/ausklappbares **Seitenmenue** (NavigationView mit Hamburger-Button) ersetzt.
 - Neues helles **Mint/Teal-Theme** (augenfreundlich) fuer die gesamte Oberflaeche.
+- Nach **Standby oder Inaktivitaet** (z. B. Telefonat) startet der Arbeits-Timer
+  frisch, wenn die Abwesenheit mindestens so lang wie eine Pause war — die Augen
+  haben dann ohnehin bereits geruht. Kurze Unterbrechungen laufen wie bisher mit
+  der Restzeit weiter; eine manuelle Pause bleibt unveraendert.
 
 ## [1.0.2] – 2026-06-29
 

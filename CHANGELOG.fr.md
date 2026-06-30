@@ -23,6 +23,10 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
   **menu latéral** rétractable (NavigationView avec bouton hamburger).
 - Nouveau **thème clair menthe/sarcelle** (reposant pour les yeux) sur toute
   l'interface.
+- Après une **mise en veille ou une inactivité** (p. ex. un appel téléphonique),
+  le minuteur de travail redémarre à zéro si l'absence a duré au moins le temps
+  d'une pause — les yeux se sont alors déjà reposés. Les courtes interruptions
+  reprennent avec le temps restant comme avant ; une pause manuelle reste inchangée.
 
 ## [1.0.2] – 2026-06-29
 

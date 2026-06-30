@@ -45,6 +45,12 @@ internal static partial class TimerServiceLog
     public static partial void TimerResumed(ILogger logger, TimerState resumedState);
 
     [LoggerMessage(
+        EventId = 3022,
+        Level = LogLevel.Information,
+        Message = "Abwesenheit {AwayDuration} (aus {PausedFromState}) >= Pausenlaenge — Arbeitsphase wird neu gestartet.")]
+    public static partial void TimerRestartedAfterAway(ILogger logger, TimerState pausedFromState, TimeSpan awayDuration);
+
+    [LoggerMessage(
         EventId = 3099,
         Level = LogLevel.Critical,
         Message = "Timer-Loop ist abgestuerzt; Service wird beendet.")]

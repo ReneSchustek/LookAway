@@ -21,6 +21,10 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 - Modernised settings: the top tab strip was replaced with a collapsible
   **side menu** (NavigationView with a hamburger button).
 - New light **mint/teal theme** (eye-friendly) across the whole interface.
+- After **sleep or inactivity** (e.g. a phone call) the work timer restarts fresh
+  if you were away at least as long as a break — your eyes have already rested by
+  then. Short interruptions keep counting down the remaining time as before; a
+  manual pause is unaffected.
 
 ## [1.0.2] – 2026-06-29
 

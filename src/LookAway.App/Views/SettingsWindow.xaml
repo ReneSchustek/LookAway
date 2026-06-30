@@ -8,7 +8,9 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid x:Name="RootGrid" Padding="24" RowSpacing="16" Background="{StaticResource RcBackground}">
+    <!-- RequestedTheme=Light erzwingt die hellen Control-Templates passend zur
+         Mint/Teal-Palette, unabhaengig vom Windows-Systemmodus. -->
+    <Grid x:Name="RootGrid" RequestedTheme="Light" Background="{StaticResource RcBackground}">
         <Grid.Resources>
             <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
         </Grid.Resources>
@@ -17,154 +19,227 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <Pivot Grid.Row="0">
+        <!-- Seitenmenue (Hamburger-Button klappt es auf eine Icon-Leiste ein/aus). -->
+        <NavigationView
+            x:Name="NavView"
+            Grid.Row="0"
+            PaneDisplayMode="Left"
+            OpenPaneLength="208"
+            IsSettingsVisible="False"
+            IsBackButtonVisible="Collapsed"
+            SelectionChanged="OnNavSelectionChanged">
 
-            <!-- Allgemein -->
-            <PivotItem Header="{Binding TabGeneralHeader}">
-                <StackPanel Spacing="16">
-                    <ComboBox
-                        Header="{Binding LanguageLabel}"
-                        ItemsSource="{Binding Languages}"
-                        SelectedItem="{Binding SelectedLanguageOption, Mode=TwoWay}"
-                        DisplayMemberPath="Label"
-                        MinWidth="240" />
-                    <CheckBox
-                        Content="{Binding AutoStartLabel}"
-                        IsChecked="{Binding AutoStart, Mode=TwoWay}" />
-                    <CheckBox
-                        Content="{Binding IdlePauseLabel}"
-                        IsChecked="{Binding PauseOnIdle, Mode=TwoWay}" />
-                    <NumberBox
-                        Header="{Binding IdleThresholdLabel}"
-                        Value="{Binding IdleThresholdMinutes, Mode=TwoWay}"
-                        Minimum="{Binding IdleMinMinutes}"
-                        Maximum="{Binding IdleMaxMinutes}"
-                        IsEnabled="{Binding PauseOnIdle}"
-                        SpinButtonPlacementMode="Inline"
-                        MinWidth="160"
-                        HorizontalAlignment="Left" />
-                    <CheckBox
-                        Content="{Binding FullscreenSuppressLabel}"
-                        IsChecked="{Binding SuppressOnFullscreen, Mode=TwoWay}" />
-                </StackPanel>
-            </PivotItem>
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="{Binding TabGeneralHeader}" Tag="General" IsSelected="True">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE713;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="{Binding TabModelHeader}" Tag="Model">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE916;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="{Binding TabIntervalsHeader}" Tag="Intervals">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE121;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="{Binding TabSoundHeader}" Tag="Sound">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE767;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="{Binding TabPauseActionsHeader}" Tag="Pause">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE708;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="{Binding TabHotkeysHeader}" Tag="Hotkeys">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE765;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="{Binding Statistics.TabStatisticsHeader}" Tag="Statistics">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE9D9;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.MenuItems>
 
-            <!-- Pausenmodell -->
-            <PivotItem Header="{Binding TabModelHeader}">
-                <StackPanel Spacing="16">
-                    <ComboBox
-                        Header="{Binding ModelLabel}"
-                        ItemsSource="{Binding Models}"
-                        SelectedItem="{Binding SelectedModelOption, Mode=TwoWay}"
-                        DisplayMemberPath="Label"
-                        MinWidth="320" />
-                </StackPanel>
-            </PivotItem>
+            <NavigationView.FooterMenuItems>
+                <NavigationViewItem Content="{Binding TabAboutHeader}" Tag="About">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE946;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+            </NavigationView.FooterMenuItems>
 
-            <!-- Eigene Intervalle -->
-            <PivotItem Header="{Binding TabIntervalsHeader}">
-                <StackPanel Spacing="16">
-                    <TextBlock Text="{Binding IntervalsHint}" />
-                    <CheckBox
-                        Content="{Binding UseCustomLabel}"
-                        IsChecked="{Binding UseCustomDurations, Mode=TwoWay}" />
-                    <NumberBox
-                        Header="{Binding WorkLabel}"
-                        Value="{Binding WorkMinutes, Mode=TwoWay}"
-                        Minimum="{Binding WorkMinMinutes}"
-                        Maximum="{Binding WorkMaxMinutes}"
-                        IsEnabled="{Binding UseCustomDurations}"
-                        SpinButtonPlacementMode="Inline"
-                        MinWidth="160"
-                        HorizontalAlignment="Left" />
-                    <TextBlock Text="{Binding WorkRangeText}" FontSize="{StaticResource RcFontSizeCaption}" />
-                    <TextBlock Text="{Binding WorkError}" FontSize="{StaticResource RcFontSizeCaption}" Foreground="{StaticResource RcError}" />
-                    <NumberBox
-                        Header="{Binding BreakLabel}"
-                        Value="{Binding BreakMinutes, Mode=TwoWay}"
-                        Minimum="{Binding BreakMinMinutes}"
-                        Maximum="{Binding BreakMaxMinutes}"
-                        IsEnabled="{Binding UseCustomDurations}"
-                        SpinButtonPlacementMode="Inline"
-                        MinWidth="160"
-                        HorizontalAlignment="Left" />
-                    <TextBlock Text="{Binding BreakError}" FontSize="{StaticResource RcFontSizeCaption}" Foreground="{StaticResource RcError}" />
-                </StackPanel>
-            </PivotItem>
+            <!-- Inhaltsbereich: alle Abschnitte liegen uebereinander; nur der zur
+                 Menueauswahl passende ist sichtbar (Umschaltung im Code-Behind). -->
+            <Grid Padding="28,24,28,12">
 
-            <!-- Sound -->
-            <PivotItem Header="{Binding TabSoundHeader}">
-                <StackPanel Spacing="16">
-                    <CheckBox
-                        Content="{Binding SoundEnableLabel}"
-                        IsChecked="{Binding SoundEnabled, Mode=TwoWay}" />
-                    <ComboBox
-                        Header="{Binding SoundSelectLabel}"
-                        ItemsSource="{Binding Sounds}"
-                        SelectedItem="{Binding SelectedSoundOption, Mode=TwoWay}"
-                        DisplayMemberPath="Label"
-                        IsEnabled="{Binding SoundEnabled}"
-                        MinWidth="240" />
-                    <Slider
-                        Header="{Binding SoundVolumeLabel}"
-                        Value="{Binding SoundVolume, Mode=TwoWay}"
-                        Minimum="{Binding SoundVolumeMin}"
-                        Maximum="{Binding SoundVolumeMax}"
-                        IsEnabled="{Binding SoundEnabled}"
-                        Width="240"
-                        HorizontalAlignment="Left" />
-                    <Button Content="{Binding SoundPreviewLabel}" Command="{Binding PreviewSoundCommand}" />
-                </StackPanel>
-            </PivotItem>
+                <!-- Allgemein -->
+                <ScrollViewer x:Name="PanelGeneral">
+                    <StackPanel Spacing="16">
+                        <ComboBox
+                            Header="{Binding LanguageLabel}"
+                            ItemsSource="{Binding Languages}"
+                            SelectedItem="{Binding SelectedLanguageOption, Mode=TwoWay}"
+                            DisplayMemberPath="Label"
+                            MinWidth="240" />
+                        <CheckBox
+                            Content="{Binding AutoStartLabel}"
+                            IsChecked="{Binding AutoStart, Mode=TwoWay}" />
+                        <CheckBox
+                            Content="{Binding IdlePauseLabel}"
+                            IsChecked="{Binding PauseOnIdle, Mode=TwoWay}" />
+                        <NumberBox
+                            Header="{Binding IdleThresholdLabel}"
+                            Value="{Binding IdleThresholdMinutes, Mode=TwoWay}"
+                            Minimum="{Binding IdleMinMinutes}"
+                            Maximum="{Binding IdleMaxMinutes}"
+                            IsEnabled="{Binding PauseOnIdle}"
+                            SpinButtonPlacementMode="Inline"
+                            MinWidth="160"
+                            HorizontalAlignment="Left" />
+                        <CheckBox
+                            Content="{Binding FullscreenSuppressLabel}"
+                            IsChecked="{Binding SuppressOnFullscreen, Mode=TwoWay}" />
+                    </StackPanel>
+                </ScrollViewer>
 
-            <!-- Pause-Aktionen -->
-            <PivotItem Header="{Binding TabPauseActionsHeader}">
-                <StackPanel Spacing="16">
-                    <CheckBox Content="{Binding DimEnableLabel}" IsChecked="{Binding DimScreenDuringBreak, Mode=TwoWay}" />
-                    <Slider
-                        Header="{Binding DimBrightnessLabel}"
-                        Value="{Binding DimBrightnessPercent, Mode=TwoWay}"
-                        Minimum="{Binding DimBrightnessMin}"
-                        Maximum="{Binding DimBrightnessMax}"
-                        IsEnabled="{Binding DimScreenDuringBreak}"
-                        Width="240"
-                        HorizontalAlignment="Left" />
-                    <CheckBox Content="{Binding PauseMediaLabel}" IsChecked="{Binding PauseMediaDuringBreak, Mode=TwoWay}" />
-                    <CheckBox
-                        Content="{Binding ResumeMediaLabel}"
-                        IsChecked="{Binding ResumeMediaAfterBreak, Mode=TwoWay}"
-                        IsEnabled="{Binding PauseMediaDuringBreak}" />
-                </StackPanel>
-            </PivotItem>
+                <!-- Pausenmodell -->
+                <ScrollViewer x:Name="PanelModel" Visibility="Collapsed">
+                    <StackPanel Spacing="16">
+                        <ComboBox
+                            Header="{Binding ModelLabel}"
+                            ItemsSource="{Binding Models}"
+                            SelectedItem="{Binding SelectedModelOption, Mode=TwoWay}"
+                            DisplayMemberPath="Label"
+                            MinWidth="320" />
+                    </StackPanel>
+                </ScrollViewer>
 
-            <!-- Hotkeys -->
-            <PivotItem Header="{Binding TabHotkeysHeader}">
-                <StackPanel Spacing="16">
-                    <CheckBox Content="{Binding HotkeysEnableLabel}" IsChecked="{Binding HotkeysEnabled, Mode=TwoWay}" />
-                    <Grid ColumnSpacing="16" RowSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding HotkeyStartBreakLabel}" />
-                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding HotkeyStartBreakText}" FontWeight="SemiBold" />
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding HotkeySkipOrSnoozeLabel}" />
-                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding HotkeySkipOrSnoozeText}" FontWeight="SemiBold" />
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding HotkeyToggleDndLabel}" />
-                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding HotkeyToggleDndText}" FontWeight="SemiBold" />
-                    </Grid>
-                    <Button Content="{Binding HotkeysResetLabel}" Command="{Binding ResetHotkeysCommand}" HorizontalAlignment="Left" />
-                </StackPanel>
-            </PivotItem>
+                <!-- Eigene Intervalle -->
+                <ScrollViewer x:Name="PanelIntervals" Visibility="Collapsed">
+                    <StackPanel Spacing="16">
+                        <TextBlock Text="{Binding IntervalsHint}" TextWrapping="Wrap" />
+                        <CheckBox
+                            Content="{Binding UseCustomLabel}"
+                            IsChecked="{Binding UseCustomDurations, Mode=TwoWay}" />
+                        <NumberBox
+                            Header="{Binding WorkLabel}"
+                            Value="{Binding WorkMinutes, Mode=TwoWay}"
+                            Minimum="{Binding WorkMinMinutes}"
+                            Maximum="{Binding WorkMaxMinutes}"
+                            IsEnabled="{Binding UseCustomDurations}"
+                            SpinButtonPlacementMode="Inline"
+                            MinWidth="160"
+                            HorizontalAlignment="Left" />
+                        <TextBlock Text="{Binding WorkRangeText}" FontSize="{StaticResource RcFontSizeCaption}" />
+                        <TextBlock Text="{Binding WorkError}" FontSize="{StaticResource RcFontSizeCaption}" Foreground="{StaticResource RcError}" />
+                        <NumberBox
+                            Header="{Binding BreakLabel}"
+                            Value="{Binding BreakMinutes, Mode=TwoWay}"
+                            Minimum="{Binding BreakMinMinutes}"
+                            Maximum="{Binding BreakMaxMinutes}"
+                            IsEnabled="{Binding UseCustomDurations}"
+                            SpinButtonPlacementMode="Inline"
+                            MinWidth="160"
+                            HorizontalAlignment="Left" />
+                        <TextBlock Text="{Binding BreakError}" FontSize="{StaticResource RcFontSizeCaption}" Foreground="{StaticResource RcError}" />
+                    </StackPanel>
+                </ScrollViewer>
 
-            <!-- Statistik -->
-            <PivotItem Header="{Binding Statistics.TabStatisticsHeader}">
-                <ScrollViewer>
+                <!-- Sound -->
+                <ScrollViewer x:Name="PanelSound" Visibility="Collapsed">
+                    <StackPanel Spacing="16">
+                        <CheckBox
+                            Content="{Binding SoundEnableLabel}"
+                            IsChecked="{Binding SoundEnabled, Mode=TwoWay}" />
+                        <ComboBox
+                            Header="{Binding SoundSelectLabel}"
+                            ItemsSource="{Binding Sounds}"
+                            SelectedItem="{Binding SelectedSoundOption, Mode=TwoWay}"
+                            DisplayMemberPath="Label"
+                            IsEnabled="{Binding SoundEnabled}"
+                            MinWidth="240" />
+                        <Slider
+                            Header="{Binding SoundVolumeLabel}"
+                            Value="{Binding SoundVolume, Mode=TwoWay}"
+                            Minimum="{Binding SoundVolumeMin}"
+                            Maximum="{Binding SoundVolumeMax}"
+                            IsEnabled="{Binding SoundEnabled}"
+                            Width="240"
+                            HorizontalAlignment="Left" />
+                        <Button Content="{Binding SoundPreviewLabel}" Command="{Binding PreviewSoundCommand}" />
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Pause (Aktionen, Bildschirme, Farbe) -->
+                <ScrollViewer x:Name="PanelPause" Visibility="Collapsed">
+                    <StackPanel Spacing="16">
+                        <CheckBox Content="{Binding DimEnableLabel}" IsChecked="{Binding DimScreenDuringBreak, Mode=TwoWay}" />
+                        <Slider
+                            Header="{Binding DimBrightnessLabel}"
+                            Value="{Binding DimBrightnessPercent, Mode=TwoWay}"
+                            Minimum="{Binding DimBrightnessMin}"
+                            Maximum="{Binding DimBrightnessMax}"
+                            IsEnabled="{Binding DimScreenDuringBreak}"
+                            Width="240"
+                            HorizontalAlignment="Left" />
+                        <CheckBox Content="{Binding PauseMediaLabel}" IsChecked="{Binding PauseMediaDuringBreak, Mode=TwoWay}" />
+                        <CheckBox
+                            Content="{Binding ResumeMediaLabel}"
+                            IsChecked="{Binding ResumeMediaAfterBreak, Mode=TwoWay}"
+                            IsEnabled="{Binding PauseMediaDuringBreak}" />
+
+                        <Border Style="{StaticResource RcDividerStyle}" Margin="0,4,0,0" Padding="0,8,0,0" />
+
+                        <CheckBox Content="{Binding DarkenAllScreensLabel}" IsChecked="{Binding DarkenAllScreens, Mode=TwoWay}" />
+
+                        <TextBlock Text="{Binding OverlayColorLabel}" FontWeight="SemiBold" Margin="0,4,0,0" />
+                        <TextBlock Text="{Binding OverlayColorHint}" FontSize="{StaticResource RcFontSizeCaption}" Foreground="{StaticResource RcTextSecondary}" TextWrapping="Wrap" />
+                        <ColorPicker
+                            x:Name="OverlayColorPicker"
+                            IsAlphaEnabled="True"
+                            IsColorSliderVisible="True"
+                            IsColorChannelTextInputVisible="False"
+                            IsHexInputVisible="True"
+                            ColorSpectrumShape="Box"
+                            ColorChanged="OnOverlayColorChanged"
+                            HorizontalAlignment="Left" />
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Hotkeys -->
+                <ScrollViewer x:Name="PanelHotkeys" Visibility="Collapsed">
+                    <StackPanel Spacing="16">
+                        <CheckBox Content="{Binding HotkeysEnableLabel}" IsChecked="{Binding HotkeysEnabled, Mode=TwoWay}" />
+                        <Grid ColumnSpacing="16" RowSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding HotkeyStartBreakLabel}" />
+                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding HotkeyStartBreakText}" FontWeight="SemiBold" />
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding HotkeySkipOrSnoozeLabel}" />
+                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding HotkeySkipOrSnoozeText}" FontWeight="SemiBold" />
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding HotkeyToggleDndLabel}" />
+                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding HotkeyToggleDndText}" FontWeight="SemiBold" />
+                        </Grid>
+                        <Button Content="{Binding HotkeysResetLabel}" Command="{Binding ResetHotkeysCommand}" HorizontalAlignment="Left" />
+                    </StackPanel>
+                </ScrollViewer>
+
+                <!-- Statistik -->
+                <ScrollViewer x:Name="PanelStatistics" Visibility="Collapsed">
                     <StackPanel Spacing="16">
                         <TextBlock Text="{Binding Statistics.TodayHeader}" Style="{StaticResource RcH3TextStyle}" />
                         <StackPanel Orientation="Horizontal" Spacing="32">
@@ -221,50 +296,58 @@
                         <Button Content="{Binding Statistics.ExportLabel}" Command="{Binding Statistics.ExportCsvCommand}" HorizontalAlignment="Left" />
                     </StackPanel>
                 </ScrollViewer>
-            </PivotItem>
 
-            <!-- Ueber LookAway -->
-            <PivotItem Header="{Binding TabAboutHeader}">
-                <StackPanel Spacing="12">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Text="{Binding AboutVersionLabel}" FontWeight="SemiBold" />
-                        <TextBlock Text="{Binding Version}" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Text="{Binding LicenseLabel}" FontWeight="SemiBold" />
-                        <TextBlock Text="{Binding LicenseText}" />
-                    </StackPanel>
-                    <HyperlinkButton Content="{Binding DocsLabel}" NavigateUri="{Binding DocsUri}" />
+                <!-- Ueber LookAway -->
+                <ScrollViewer x:Name="PanelAbout" Visibility="Collapsed">
+                    <StackPanel Spacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{Binding AboutVersionLabel}" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding Version}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="{Binding LicenseLabel}" FontWeight="SemiBold" />
+                            <TextBlock Text="{Binding LicenseText}" />
+                        </StackPanel>
+                        <HyperlinkButton Content="{Binding DocsLabel}" NavigateUri="{Binding DocsUri}" />
 
-                    <Border Style="{StaticResource RcDividerStyle}" Margin="0,8,0,0" Padding="0,8,0,0" />
-                    <CheckBox Content="{Binding UpdateEnableLabel}" IsChecked="{Binding UpdateCheckEnabled, Mode=TwoWay}" />
-                    <ComboBox
-                        Header="{Binding UpdateFrequencyLabel}"
-                        ItemsSource="{Binding UpdateFrequencies}"
-                        SelectedItem="{Binding SelectedFrequencyOption, Mode=TwoWay}"
-                        DisplayMemberPath="Label"
-                        IsEnabled="{Binding UpdateCheckEnabled}"
-                        MinWidth="200" />
-                    <StackPanel Orientation="Horizontal" Spacing="12">
-                        <Button Content="{Binding UpdateCheckNowLabel}" Command="{Binding CheckForUpdatesCommand}" />
-                        <TextBlock Text="{Binding UpdateStatusText}" VerticalAlignment="Center" />
+                        <Border Style="{StaticResource RcDividerStyle}" Margin="0,8,0,0" Padding="0,8,0,0" />
+                        <CheckBox Content="{Binding UpdateEnableLabel}" IsChecked="{Binding UpdateCheckEnabled, Mode=TwoWay}" />
+                        <ComboBox
+                            Header="{Binding UpdateFrequencyLabel}"
+                            ItemsSource="{Binding UpdateFrequencies}"
+                            SelectedItem="{Binding SelectedFrequencyOption, Mode=TwoWay}"
+                            DisplayMemberPath="Label"
+                            IsEnabled="{Binding UpdateCheckEnabled}"
+                            MinWidth="200" />
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <Button Content="{Binding UpdateCheckNowLabel}" Command="{Binding CheckForUpdatesCommand}" />
+                            <TextBlock Text="{Binding UpdateStatusText}" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <HyperlinkButton
+                            Content="{Binding UpdateDownloadLabel}"
+                            NavigateUri="{Binding DownloadUri}"
+                            Visibility="{Binding IsDownloadAvailable, Converter={StaticResource BoolToVisibility}}" />
                     </StackPanel>
-                    <HyperlinkButton
-                        Content="{Binding UpdateDownloadLabel}"
-                        NavigateUri="{Binding DownloadUri}"
-                        Visibility="{Binding IsDownloadAvailable, Converter={StaticResource BoolToVisibility}}" />
-                </StackPanel>
-            </PivotItem>
-        </Pivot>
+                </ScrollViewer>
 
-        <StackPanel
+            </Grid>
+        </NavigationView>
+
+        <!-- Aktionsleiste: immer sichtbar am unteren Rand. -->
+        <Border
             Grid.Row="1"
-            Orientation="Horizontal"
-            Spacing="12"
-            HorizontalAlignment="Right">
-            <Button Content="{Binding ApplyLabel}" Command="{Binding ApplyCommand}" />
-            <Button Content="{Binding SaveLabel}" Command="{Binding SaveCommand}" Style="{StaticResource RcPrimaryButtonStyle}" />
-            <Button Content="{Binding CancelLabel}" Command="{Binding CancelCommand}" />
-        </StackPanel>
+            Background="{StaticResource RcPaneBackground}"
+            BorderBrush="{StaticResource RcDivider}"
+            BorderThickness="0,1,0,0"
+            Padding="24,12">
+            <StackPanel
+                Orientation="Horizontal"
+                Spacing="12"
+                HorizontalAlignment="Right">
+                <Button Content="{Binding ApplyLabel}" Command="{Binding ApplyCommand}" />
+                <Button Content="{Binding SaveLabel}" Command="{Binding SaveCommand}" Style="{StaticResource RcPrimaryButtonStyle}" />
+                <Button Content="{Binding CancelLabel}" Command="{Binding CancelCommand}" />
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>

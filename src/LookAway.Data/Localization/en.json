@@ -48,6 +48,9 @@
   "Settings.PauseActions.DimBrightness": "Brightness during the break (%)",
   "Settings.PauseActions.PauseMedia": "Pause media playback",
   "Settings.PauseActions.ResumeMedia": "Resume media after the break",
+  "Settings.PauseActions.DarkenAllScreens": "Darken all screens (multiple monitors)",
+  "Settings.PauseActions.OverlayColor": "Break screen colour",
+  "Settings.PauseActions.OverlayColorHint": "Use the opacity (alpha) slider to set how much the screen shows through.",
 
   "Settings.Language.Label": "Language",
   "Settings.AutoStart.Label": "Start with Windows",

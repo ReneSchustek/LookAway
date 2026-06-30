@@ -93,6 +93,8 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     private int _soundVolume;
     private DateTimeOffset _reminderShownAt;
     private bool _manualDnd;
+    private string _overlayColor = Settings.DefaultBreakOverlayColor;
+    private bool _darkenAllScreens = true;
     private Uri? _updateDownloadUrl;
 
     /// <summary>
@@ -499,6 +501,9 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         service.DimBrightnessPercent = settings.DimBrightnessPercent;
         service.PauseMediaEnabled = settings.PauseMediaDuringBreak;
         service.ResumeMediaAfterBreak = settings.ResumeMediaAfterBreak;
+
+        _overlayColor = settings.BreakOverlayColor;
+        _darkenAllScreens = settings.DarkenAllScreens;
     }
 
     private void ShowBreakReminder()
@@ -534,7 +539,12 @@ public partial class App : global::Microsoft.UI.Xaml.Application
                 // Die Pause laeuft bereits durch die Engine-Transition; Pause-Aktionen starten
                 // und den Bildschirm mit dem abdunkelnden Overlay verdecken (ESC beendet vorzeitig).
                 _ = Services.GetRequiredService<PauseActionService>().BeginBreakAsync();
-                _overlayPresenter?.Show(_activeModel, _activeInterval.BreakDuration, OnBreakOverlayEnded);
+                _overlayPresenter?.Show(
+                    _activeModel,
+                    _activeInterval.BreakDuration,
+                    _overlayColor,
+                    _darkenAllScreens,
+                    OnBreakOverlayEnded);
                 break;
             case ReminderResult.Snooze:
                 timerService.Start(BreakInterval.Create(

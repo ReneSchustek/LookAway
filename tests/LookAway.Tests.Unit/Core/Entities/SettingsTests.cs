@@ -119,4 +119,49 @@ public sealed class SettingsTests
         settings.AutoStart = false;
         Assert.False(settings.AutoStart);
     }
+
+    [Fact]
+    public void OverlayDefaults_AreSetOnFreshInstance()
+    {
+        Settings settings = new();
+
+        Assert.True(settings.DarkenAllScreens);
+        Assert.Equal(Settings.DefaultBreakOverlayColor, settings.BreakOverlayColor);
+    }
+
+    [Theory]
+    [InlineData("#000000")]
+    [InlineData("#FFFFFF")]
+    [InlineData("#F20F1115")]
+    [InlineData("#abcdef")]
+    public void BreakOverlayColor_AcceptsValidHex(string color)
+    {
+        Settings settings = new() { BreakOverlayColor = color };
+        Assert.Equal(color, settings.BreakOverlayColor);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("F20F1115")]
+    [InlineData("#FFF")]
+    [InlineData("#12345")]
+    [InlineData("#GGGGGG")]
+    [InlineData("#F20F11150")]
+    public void BreakOverlayColor_ThrowsOnInvalidHex(string color)
+    {
+        Settings settings = new();
+
+        _ = Assert.Throws<ArgumentException>(
+            () => settings.BreakOverlayColor = color);
+    }
+
+    [Fact]
+    public void DarkenAllScreens_CanBeToggled()
+    {
+        Settings settings = new() { DarkenAllScreens = false };
+        Assert.False(settings.DarkenAllScreens);
+
+        settings.DarkenAllScreens = true;
+        Assert.True(settings.DarkenAllScreens);
+    }
 }

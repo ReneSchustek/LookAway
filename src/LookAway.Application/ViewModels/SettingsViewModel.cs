@@ -115,6 +115,12 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _resumeMediaAfterBreak;
 
+    [ObservableProperty]
+    private bool _darkenAllScreens;
+
+    [ObservableProperty]
+    private string _breakOverlayColor = Settings.DefaultBreakOverlayColor;
+
     /// <summary>
     /// Erzeugt das ViewModel mit seinen Abhaengigkeiten.
     /// </summary>
@@ -376,6 +382,15 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Beschriftung "Medien fortsetzen".</summary>
     public string ResumeMediaLabel => _localization.GetText(SettingsTextKeys.PauseActionsResumeMedia);
 
+    /// <summary>Beschriftung "Alle Bildschirme abdunkeln".</summary>
+    public string DarkenAllScreensLabel => _localization.GetText(SettingsTextKeys.PauseActionsDarkenAllScreens);
+
+    /// <summary>Beschriftung des Overlay-Farbwaehlers.</summary>
+    public string OverlayColorLabel => _localization.GetText(SettingsTextKeys.PauseActionsOverlayColor);
+
+    /// <summary>Hinweistext zum Overlay-Farbwaehler (Transparenz).</summary>
+    public string OverlayColorHint => _localization.GetText(SettingsTextKeys.PauseActionsOverlayColorHint);
+
     /// <summary>Untere Grenze der Pause-Helligkeit.</summary>
     public int DimBrightnessMin => Settings.MinDimBrightnessPercent;
 
@@ -421,6 +436,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             DimBrightnessPercent = settings.DimBrightnessPercent;
             PauseMediaDuringBreak = settings.PauseMediaDuringBreak;
             ResumeMediaAfterBreak = settings.ResumeMediaAfterBreak;
+            DarkenAllScreens = settings.DarkenAllScreens;
+            BreakOverlayColor = settings.BreakOverlayColor;
 
             LoadDurations(settings);
         }
@@ -552,6 +569,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         settings.DimBrightnessPercent = Math.Clamp(DimBrightnessPercent, DimBrightnessMin, DimBrightnessMax);
         settings.PauseMediaDuringBreak = PauseMediaDuringBreak;
         settings.ResumeMediaAfterBreak = ResumeMediaAfterBreak;
+        settings.DarkenAllScreens = DarkenAllScreens;
+        settings.BreakOverlayColor = BreakOverlayColor;
 
         await _settingsRepository.SaveAsync(settings).ConfigureAwait(true);
 

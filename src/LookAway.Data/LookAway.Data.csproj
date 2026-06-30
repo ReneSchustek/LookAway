@@ -20,7 +20,10 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <!-- Windows-SDK-TFM: liefert die WinRT-Projektionen (Windows.Media.Control fuer
+         die SMTC-Mediensteuerung) und buendelt alle Windows-Adapter in dieser Schicht. -->
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.17763.0</SupportedOSPlatformVersion>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <!-- LibraryImport-Source-Generator (P/Invoke fuer Idle-/Vollbild-Erkennung)

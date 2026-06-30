@@ -1,6 +1,6 @@
-using LookAway.Application.Services;
+using LookAway.Data.Services;
 
-namespace LookAway.Tests.Unit.Application.Services;
+namespace LookAway.Tests.Integration.Data;
 
 /// <summary>
 /// Tests für den <see cref="SingleInstanceLock"/>. Da der Mutex

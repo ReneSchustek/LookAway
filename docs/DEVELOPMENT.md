@@ -145,7 +145,7 @@ LookAway läuft als Hintergrund-Anwendung mit Tray-Icon (kein Hauptfenster im Vo
 
 Status-Anzeige: das Icon spiegelt den Timer-Zustand wider (Arbeit/Pause/pausiert/DND), ein Tooltip zeigt live Restzeit und aktives Modell. Die UI-freie Übersetzung Zustand → Icon-Variante + Tooltip liegt im `TrayStatusPresenter` (Application) und ist ohne Tray-Control testbar; der `TrayIconService` pollt den `ITimerService` im Sekundentakt über einen `DispatcherQueueTimer` und tauscht die Icon-Variante (`tray-working/onbreak/paused/disabled.ico`) nur bei Zustandswechsel. Der Timer wird beim App-Start mit dem konfigurierten Modell (`BreakModelRegistry.GetEffective`) gestartet.
 
-Single-Instance-Sperre via `SingleInstanceLock` (Application):
+Single-Instance-Sperre via `ISingleInstanceLock` (Core) → `SingleInstanceLock` (Data):
 
 - Mutex im `Local\`-Namespace pro Windows-Benutzer (`Local\LookAway-{userName}`)
 - Zweite Instanz erkennt die laufende, signalisiert sie über einen `EventWaitHandle` (`Local\LookAway-Activate-{userName}`) und beendet sich
@@ -332,10 +332,10 @@ LookAway prüft optional auf neue Versionen über die GitHub-Releases-API (Stand
 
 Optional verstärkt LookAway den Pausencharakter (beide opt-in und reversibel):
 
-- **Bildschirm dimmen:** `IScreenDimmer` (Core) → `WindowsScreenDimmer` (App) senkt die Helligkeit
+- **Bildschirm dimmen:** `IScreenDimmer` (Core) → `WindowsScreenDimmer` (Data) senkt die Helligkeit
   DDC/CI-fähiger Monitore (Dxva2) und stellt sie am Pausenende wieder her. Auf Hardware ohne DDC/CI
   (viele Notebooks) bleibt der Aufruf wirkungslos; Fehler werden geschluckt und geloggt.
-- **Medien pausieren:** `IMediaController` (Core) → `WindowsMediaController` (App) pausiert über die
+- **Medien pausieren:** `IMediaController` (Core) → `WindowsMediaController` (Data) pausiert über die
   SMTC-API alle laufenden Wiedergabe-Sessions und setzt am Pausenende nur die zuvor laufenden fort.
 - Die UI-freie `PauseActionService` (Application, getestet) koordiniert beides anhand der Einstellungen
   (`BeginBreakAsync`/`EndBreakAsync`); die App ruft sie beim Pausenbeginn (gewählte Pause) und beim

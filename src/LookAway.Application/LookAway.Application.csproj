@@ -16,11 +16,10 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <!-- net10.0-windows wegen Windows-spezifischer APIs (z. B.
-         EventWaitHandle.OpenExisting im SingleInstanceLock). LookAway
-         ist eine Windows-Desktop-Anwendung; Cross-Platform-Tauglichkeit
-         der Application-Schicht ist nicht Ziel. -->
-    <TargetFramework>net10.0-windows</TargetFramework>
+    <!-- Plattformneutral: die Application-Schicht spricht nur Core-Interfaces an;
+         Windows-spezifische Adapter (SingleInstanceLock, Registry, P/Invoke, SMTC)
+         liegen vollständig in der Data-Schicht. -->
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>

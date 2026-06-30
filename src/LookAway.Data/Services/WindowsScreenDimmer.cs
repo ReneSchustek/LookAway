@@ -1,18 +1,16 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using LookAway.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 
-namespace LookAway.Services;
+namespace LookAway.Data.Services;
 
 /// <summary>
 /// Dimmt DDC/CI-fähige Monitore über die Win32-Helligkeitssteuerung (Dxva2).
 /// Auf Hardware ohne DDC/CI (z. B. viele Notebooks) bleibt der Aufruf
 /// wirkungslos — Fehler werden geschluckt und geloggt.
 /// </summary>
-internal sealed partial class WindowsScreenDimmer : IScreenDimmer, IDisposable
+public sealed partial class WindowsScreenDimmer : IScreenDimmer, IDisposable
 {
     private readonly ILogger<WindowsScreenDimmer> _logger;
     private readonly List<MonitorBrightness> _dimmed = new();

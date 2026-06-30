@@ -1,9 +1,7 @@
-using System;
 using System.Globalization;
-using System.Threading;
-using System.Threading.Tasks;
+using LookAway.Core.Interfaces;
 
-namespace LookAway.Application.Services;
+namespace LookAway.Data.Services;
 
 /// <summary>
 /// Stellt sicher, dass pro Windows-Benutzer nur eine LookAway-Instanz
@@ -12,7 +10,7 @@ namespace LookAway.Application.Services;
 /// minimaler IPC, damit eine Zweit-Instanz die laufende Instanz benachrichtigen
 /// kann (z. B. um das Settings-Fenster anzuzeigen).
 /// </summary>
-public sealed class SingleInstanceLock : IDisposable
+public sealed class SingleInstanceLock : ISingleInstanceLock
 {
     /// <summary>Wird gefeuert, wenn eine Zweit-Instanz signalisiert hat.</summary>
     public event EventHandler? ActivationRequested;

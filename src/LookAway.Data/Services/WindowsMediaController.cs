@@ -1,20 +1,16 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Threading;
-using System.Threading.Tasks;
 using LookAway.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 using Windows.Media.Control;
 
-namespace LookAway.Services;
+namespace LookAway.Data.Services;
 
 /// <summary>
 /// Pausiert und reaktiviert die System-Medienwiedergabe über die SMTC-API
 /// (<see cref="GlobalSystemMediaTransportControlsSessionManager"/>).
 /// Fehlt die API oder eine Session, bleibt der Aufruf wirkungslos.
 /// </summary>
-internal sealed class WindowsMediaController : IMediaController
+public sealed class WindowsMediaController : IMediaController
 {
     private readonly ILogger<WindowsMediaController> _logger;
     private readonly List<string> _pausedSources = new();

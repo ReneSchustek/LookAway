@@ -138,6 +138,32 @@ public sealed class TimerService : ITimerService, IDisposable
     }
 
     /// <inheritdoc />
+    public void RestoreWorking(BreakInterval interval, TimeSpan workRemaining)
+    {
+        ArgumentNullException.ThrowIfNull(interval);
+        ThrowIfDisposed();
+
+        lock (_lock)
+        {
+            // Restzeit auf einen gültigen Bereich begrenzen: nie negativ und nie
+            // länger als eine volle Arbeitsphase (Schutz vor manipulierten/alten Werten).
+            TimeSpan remaining = workRemaining < TimeSpan.Zero
+                ? TimeSpan.Zero
+                : (workRemaining > interval.WorkDuration ? interval.WorkDuration : workRemaining);
+
+            _interval = interval;
+            _phaseDuration = remaining;
+            _phaseStartUtc = _clock.UtcNow;
+            _state = TimerState.Working;
+            _pausedBySystem = false;
+            _pausedRemaining = TimeSpan.Zero;
+
+            TimerServiceLog.TimerRestored(_logger, remaining, interval.BreakDuration);
+            EnsureLoopStarted();
+        }
+    }
+
+    /// <inheritdoc />
     public void Stop()
     {
         ThrowIfDisposed();

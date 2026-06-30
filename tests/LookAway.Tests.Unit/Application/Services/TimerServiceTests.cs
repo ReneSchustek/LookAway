@@ -65,6 +65,40 @@ public sealed class TimerServiceTests
     }
 
     [Fact]
+    public void RestoreWorking_SetztVerbleibendeArbeitszeitUndZustand()
+    {
+        (TimerService service, _, _) = CreateService();
+        try
+        {
+            service.RestoreWorking(ClassicPomodoro, TimeSpan.FromMinutes(7));
+
+            Assert.Equal(TimerState.Working, service.State);
+            Assert.Equal(ClassicPomodoro, service.CurrentInterval);
+            Assert.Equal(TimeSpan.FromMinutes(7), service.Remaining);
+        }
+        finally
+        {
+            service.Dispose();
+        }
+    }
+
+    [Fact]
+    public void RestoreWorking_BegrenztRestzeitAufVolleArbeitsdauer()
+    {
+        (TimerService service, _, _) = CreateService();
+        try
+        {
+            service.RestoreWorking(ClassicPomodoro, TimeSpan.FromMinutes(999));
+
+            Assert.Equal(TimeSpan.FromMinutes(25), service.Remaining);
+        }
+        finally
+        {
+            service.Dispose();
+        }
+    }
+
+    [Fact]
     public void Tick_BeforeWorkDurationElapsed_StaysWorking()
     {
         (TimerService service, FakeClock clock, _) = CreateService();

@@ -577,12 +577,63 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             Services.GetRequiredService<FullscreenDetectionService>(),
             Services.GetRequiredService<ILogger<BreakCoordinator>>());
 
-        _coordinator.ApplySchedule(settings);
+        // Innerhalb derselben Windows-Sitzung (z. B. nach einer Aktualisierung) den
+        // Countdown fortsetzen statt zurückzusetzen; bei einem Windows-Neustart
+        // (neue Sitzung) startet er regulär neu.
+        _coordinator.ApplySchedule(settings, LoadResumeRemaining(settings));
 
         StartDetectionLoop(settings);
         _ = ConsumeTimerEventsAsync(timerService, _detectionCts!.Token);
 
         RegisterHotkeys(settings);
+    }
+
+    /// <summary>
+    /// Liefert die fortzusetzende Restarbeitszeit, wenn eine Momentaufnahme aus
+    /// <em>derselben</em> Windows-Sitzung und zum aktuellen Pausenmodell vorliegt;
+    /// sonst <c>null</c> (regulärer Start mit voller Arbeitsdauer). Die Momentaufnahme
+    /// wird in jedem Fall verbraucht (einmalige Verwendung).
+    /// </summary>
+    private TimeSpan? LoadResumeRemaining(Settings settings)
+    {
+        ITimerStateStore store = Services.GetRequiredService<ITimerStateStore>();
+        TimerSnapshot? snapshot = store.Load();
+        if (snapshot is null)
+        {
+            return null;
+        }
+
+        store.Clear();
+
+        DateTimeOffset currentMarker = SessionMarker.Compute(
+            Services.GetRequiredService<IClock>().UtcNow,
+            Environment.TickCount64);
+
+        bool sameSession = SessionMarker.IsSameSession(snapshot.SessionMarker, currentMarker);
+        return sameSession
+            && snapshot.Model == settings.BreakModel
+            && snapshot.WorkRemaining > TimeSpan.Zero
+            ? snapshot.WorkRemaining
+            : null;
+    }
+
+    /// <summary>
+    /// Sichert beim Beenden den laufenden Arbeits-Countdown samt Sitzungsmarke, damit
+    /// ihn ein Neustart in derselben Sitzung fortsetzen kann. Nur während einer
+    /// Arbeitsphase sinnvoll; in Pause/Idle wird nichts gesichert.
+    /// </summary>
+    private void PersistTimerSnapshot()
+    {
+        if (_coordinator is not { IsWorking: true })
+        {
+            return;
+        }
+
+        DateTimeOffset marker = SessionMarker.Compute(
+            Services.GetRequiredService<IClock>().UtcNow,
+            Environment.TickCount64);
+        Services.GetRequiredService<ITimerStateStore>().Save(
+            new TimerSnapshot(_coordinator.ActiveModel, _coordinator.WorkRemaining, marker));
     }
 
     private void RegisterHotkeys(Settings settings)
@@ -798,6 +849,11 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     private void RequestExit()
     {
         _logService?.LogShutdown(ShutdownReasonUserExit);
+
+        // Vor dem Freigeben der Dienste: laufenden Countdown sichern, damit ein
+        // Neustart in derselben Sitzung (z. B. Aktualisierung) ihn fortsetzt.
+        PersistTimerSnapshot();
+
         _detectionCts?.Cancel();
         _detectionCts?.Dispose();
         _detectionCts = null;
@@ -848,6 +904,10 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _ = services.AddSingleton<ICrashReporter>(_ => new CrashReporter(crashDirectory));
         _ = services.AddSingleton<LogService>();
         _ = services.AddSingleton<ISettingsRepository, JsonSettingsRepository>();
+
+        // Timer-Momentaufnahme: setzt den Countdown nach einem Neustart in derselben
+        // Windows-Sitzung (z. B. Aktualisierung) fort.
+        _ = services.AddSingleton<ITimerStateStore, JsonTimerStateStore>();
 
         // Lokalisierung: Deutsch ist die Referenzsprache.
         _ = services.AddSingleton<ILocalizationService>(_ => new JsonLocalizationService(Language.German));

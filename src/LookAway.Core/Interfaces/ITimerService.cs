@@ -40,6 +40,19 @@ public interface ITimerService
     /// <param name="interval">Aktiv zu nutzendes Intervall.</param>
     void Start(BreakInterval interval);
 
+    /// <summary>
+    /// Setzt eine Arbeitsphase mit einer bereits verstrichenen Restzeit fort,
+    /// statt die volle Arbeitsdauer neu zu beginnen. Dient dem nahtlosen Fortsetzen
+    /// nach einem Prozess-Neustart innerhalb derselben Windows-Sitzung
+    /// (z. B. einer Aktualisierung).
+    /// </summary>
+    /// <param name="interval">Aktiv zu nutzendes Intervall.</param>
+    /// <param name="workRemaining">
+    /// Verbleibende Arbeitszeit bis zur nächsten Pause; wird auf
+    /// <c>[0, Arbeitsdauer]</c> begrenzt.
+    /// </param>
+    void RestoreWorking(BreakInterval interval, TimeSpan workRemaining);
+
     /// <summary>Beendet den Timer und kehrt in den Idle-Zustand zurück.</summary>
     void Stop();
 

@@ -80,17 +80,45 @@ public sealed class BreakCoordinator
     /// <summary>Manuelles Nicht-stören aktiv? (Nur für Tests/Diagnose.)</summary>
     public bool IsManualDndActive => _manualDnd;
 
+    /// <summary>Aktuell aktives Pausenmodell.</summary>
+    public BreakModel ActiveModel => _model;
+
+    /// <summary>Läuft gerade eine Arbeitsphase (für die Momentaufnahme beim Beenden)?</summary>
+    public bool IsWorking => _timer.State == TimerState.Working;
+
+    /// <summary>Verbleibende Arbeitszeit der laufenden Phase.</summary>
+    public TimeSpan WorkRemaining => _timer.Remaining;
+
     /// <summary>
     /// Übernimmt die Einstellungen: Modell/Intervall, Sound, Pause-Aktionen und
-    /// Overlay-Optionen werden gesetzt, das Tray aktualisiert und der Timer mit dem
-    /// effektiven Intervall (neu) gestartet.
+    /// Overlay-Optionen werden gesetzt und das Tray aktualisiert. Der Timer wird nur
+    /// dann (neu) gestartet, wenn sich das effektive Intervall geändert hat oder er
+    /// noch nicht läuft — bloßes Speichern unveränderter Intervalle setzt den
+    /// laufenden Countdown also nicht zurück.
     /// </summary>
     /// <param name="settings">Aktuelle Benutzerkonfiguration.</param>
-    public void ApplySchedule(Settings settings)
+    /// <param name="resumeWorkRemaining">
+    /// Wenn gesetzt und der Timer noch nicht läuft: verbleibende Arbeitszeit, mit der
+    /// der Countdown fortgesetzt wird (nahtloser Neustart in derselben Sitzung, z. B.
+    /// nach einer Aktualisierung), statt auf die volle Arbeitsdauer zurückzusetzen.
+    /// </param>
+    public void ApplySchedule(Settings settings, TimeSpan? resumeWorkRemaining = null)
     {
         ArgumentNullException.ThrowIfNull(settings);
 
         BreakInterval interval = BreakModelRegistry.GetEffective(settings.BreakModel, settings.CustomDurations);
+
+        // Den laufenden Countdown nur dann (neu) starten, wenn sich das effektive
+        // Intervall (Arbeits-/Pausendauer) tatsächlich geändert hat oder der Timer
+        // noch nicht läuft. So setzt das bloße Speichern unveränderter Intervalle —
+        // etwa von Sprache, Ton, Overlay-Farbe oder Update-Häufigkeit — den Timer
+        // NICHT zurück. (Die Rücksetzung nach Standby/Bildschirm-Aus bleibt davon
+        // unberührt; sie läuft über den Power-/Idle-Pfad des TimerService.)
+        bool intervalUnchanged = _interval is not null
+            && _timer.State != TimerState.Idle
+            && _interval.WorkDuration == interval.WorkDuration
+            && _interval.BreakDuration == interval.BreakDuration;
+
         _model = settings.BreakModel;
         _interval = interval;
 
@@ -107,7 +135,18 @@ public sealed class BreakCoordinator
         _darkenAllScreens = settings.DarkenAllScreens;
 
         _tray.SetActiveModel(settings.BreakModel);
-        _timer.Start(interval);
+
+        if (resumeWorkRemaining is { } remaining && _timer.State == TimerState.Idle)
+        {
+            // Nahtloser Neustart innerhalb derselben Windows-Sitzung (z. B. nach einer
+            // Aktualisierung): mit der gemerkten Restzeit fortsetzen statt auf die volle
+            // Arbeitsdauer zurückzusetzen.
+            _timer.RestoreWorking(interval, remaining);
+        }
+        else if (!intervalUnchanged)
+        {
+            _timer.Start(interval);
+        }
     }
 
     /// <summary>Verarbeitet ein Timer-Ereignis (Pause fällig / Pause beendet).</summary>

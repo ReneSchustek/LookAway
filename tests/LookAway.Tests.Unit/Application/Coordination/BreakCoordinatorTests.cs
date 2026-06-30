@@ -25,9 +25,10 @@ public sealed class BreakCoordinatorTests
         FakeReminderPresenter Reminder,
         FakeBreakOverlayPresenter Overlay,
         FakeTrayController Tray,
-        FakeBreakHistoryRepository History);
+        FakeBreakHistoryRepository History,
+        FakeClock Clock);
 
-    private static void Run(Action<Harness> body, Settings? settings = null)
+    private static void Run(Action<Harness> body, Settings? settings = null, bool applyInitialSchedule = true)
     {
         FakeClock clock = new(Start);
         using FakePowerModeWatcher power = new();
@@ -51,8 +52,12 @@ public sealed class BreakCoordinatorTests
             fullscreen,
             NullLogger<BreakCoordinator>.Instance);
 
-        coordinator.ApplySchedule(settings ?? new Settings());
-        body(new Harness(coordinator, timer, reminder, overlay, tray, history));
+        if (applyInitialSchedule)
+        {
+            coordinator.ApplySchedule(settings ?? new Settings());
+        }
+
+        body(new Harness(coordinator, timer, reminder, overlay, tray, history, clock));
     }
 
     private static IReadOnlyList<BreakSession> Sessions(Harness h)
@@ -161,4 +166,45 @@ public sealed class BreakCoordinatorTests
 
         Assert.Equal(0, h.Reminder.ShowCount);
     });
+
+    [Fact]
+    public void ApplySchedule_MitUnveraendertemIntervall_SetztDenTimerNichtZurueck() => Run(h =>
+    {
+        TimeSpan voll = h.Timer.Remaining;
+        h.Clock.Advance(TimeSpan.FromMinutes(10));
+        TimeSpan nachAblauf = h.Timer.Remaining;
+
+        // Erneutes Anwenden derselben Einstellungen (z. B. nach Speichern einer
+        // unabhängigen Option) darf den laufenden Countdown nicht zurücksetzen.
+        h.Coordinator.ApplySchedule(new Settings());
+
+        Assert.True(h.Timer.Remaining <= nachAblauf + TimeSpan.FromSeconds(1));
+        Assert.True(h.Timer.Remaining < voll);
+    });
+
+    [Fact]
+    public void ApplySchedule_BeiModellwechsel_StartetDenTimerNeu() => Run(h =>
+    {
+        h.Clock.Advance(TimeSpan.FromMinutes(10));
+
+        // Anderes Modell -> anderes Intervall -> bewusster Neustart auf volle Arbeitsdauer.
+        h.Coordinator.ApplySchedule(new Settings { BreakModel = BreakModel.Ultradian });
+
+        BreakInterval ultra = BreakModelRegistry.GetEffective(BreakModel.Ultradian, null);
+        Assert.True(h.Timer.Remaining > ultra.WorkDuration - TimeSpan.FromSeconds(2));
+        Assert.Equal(BreakModel.Ultradian, h.Tray.ActiveModel);
+    });
+
+    [Fact]
+    public void ApplySchedule_MitResume_SetztDenCountdownFortStattZurueckzusetzen() => Run(
+        h =>
+        {
+            // Frischer Coordinator (Timer noch Idle): Wiederherstellung nach Neustart
+            // in derselben Sitzung setzt mit der Restzeit fort statt auf voller Dauer.
+            h.Coordinator.ApplySchedule(new Settings(), TimeSpan.FromMinutes(8));
+
+            Assert.Equal(TimerState.Working, h.Timer.State);
+            Assert.Equal(TimeSpan.FromMinutes(8), h.Timer.Remaining);
+        },
+        applyInitialSchedule: false);
 }

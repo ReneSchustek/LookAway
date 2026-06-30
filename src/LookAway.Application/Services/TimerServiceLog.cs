@@ -21,6 +21,12 @@ internal static partial class TimerServiceLog
     public static partial void TimerStopped(ILogger logger);
 
     [LoggerMessage(
+        EventId = 3003,
+        Level = LogLevel.Information,
+        Message = "Timer fortgesetzt (Neustart in derselben Sitzung): Restarbeit {WorkRemaining}, Pause {BreakDuration}.")]
+    public static partial void TimerRestored(ILogger logger, TimeSpan workRemaining, TimeSpan breakDuration);
+
+    [LoggerMessage(
         EventId = 3010,
         Level = LogLevel.Information,
         Message = "Pause fällig nach {WorkDuration}.")]

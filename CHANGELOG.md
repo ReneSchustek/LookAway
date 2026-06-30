@@ -8,6 +8,29 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+## [1.2.1] – 2026-06-30
+
+### Behoben
+
+- **Timer wird nicht mehr unnötig zurückgesetzt:** Das Speichern unveränderter
+  Einstellungen (Sprache, Ton, Overlay-Farbe, Update-Häufigkeit …) startet den
+  laufenden Arbeits-Countdown nicht mehr neu. Zudem überdauert der Countdown einen
+  Neustart **innerhalb derselben Windows-Sitzung** (z. B. eine Aktualisierung) und
+  läuft dort weiter, statt von vorn zu beginnen. Ein Windows-Neustart (neue Sitzung)
+  setzt regulär zurück; der Reset nach Standby/Bildschirm-Aus bleibt unverändert.
+
+### Hinzugefügt
+
+- **Ein-Klick-Installation:** „Auf Updates prüfen" bietet bei einem gefundenen Paket
+  jetzt direkt einen **„Jetzt installieren"**-Button. Das Update wird geladen,
+  signaturgeprüft und beim nächsten Start eingespielt — kein Umweg mehr über die
+  GitHub-Release-Seite (die als manueller Ausweg sichtbar bleibt).
+
+### Geändert
+
+- Interner Qualitäts-Feinschliff: vollständiges Kommentar-/Prinzipien-Audit aller
+  Schichten, toter Code entfernt, durchgängig korrekte Umlaute auch in Projekt-Kommentaren.
+
 ## [1.2.0] – 2026-06-30
 
 ### Hinzugefügt

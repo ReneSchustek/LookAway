@@ -8,6 +8,32 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+## [1.2.1] – 2026-06-30
+
+### Corrigé
+
+- **Le minuteur n'est plus réinitialisé inutilement :** enregistrer des réglages sans
+  rapport (langue, son, couleur de l'overlay, fréquence des mises à jour …) ne
+  redémarre plus le compte à rebours de travail en cours. Le compte à rebours survit
+  également à un redémarrage **au sein de la même session Windows** (p. ex. une mise à
+  jour) et reprend là où il s'était arrêté au lieu de repartir de zéro. Un redémarrage
+  de Windows (nouvelle session) le réinitialise normalement ; la réinitialisation après
+  veille/écran éteint reste inchangée.
+
+### Ajouté
+
+- **Installation en un clic :** lorsque « Vérifier les mises à jour » trouve un paquet,
+  un bouton **« Installer maintenant »** est désormais proposé directement. La mise à
+  jour est téléchargée, sa signature vérifiée et elle est appliquée au prochain
+  démarrage — plus de détour par la page de version GitHub (qui reste visible comme
+  solution manuelle).
+
+### Modifié
+
+- Finitions internes de qualité : audit complet des commentaires/principes sur toutes
+  les couches, code mort supprimé, trémas corrects et cohérents jusque dans les
+  commentaires des fichiers projet.
+
 ## [1.2.0] – 2026-06-30
 
 ### Ajouté

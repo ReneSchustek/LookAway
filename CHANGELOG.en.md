@@ -8,6 +8,29 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.1] – 2026-06-30
+
+### Fixed
+
+- **The timer is no longer reset unnecessarily:** saving unrelated settings
+  (language, sound, overlay colour, update frequency …) no longer restarts the
+  running work countdown. The countdown also survives a restart **within the same
+  Windows session** (e.g. an update) and continues where it left off instead of
+  starting over. A Windows restart (new session) resets it as expected; the reset
+  after standby/screen-off is unchanged.
+
+### Added
+
+- **One-click install:** when "Check for updates" finds a package, it now offers an
+  **"Install now"** button directly. The update is downloaded, signature-verified
+  and applied on next start — no detour via the GitHub release page (which remains
+  visible as a manual fallback).
+
+### Changed
+
+- Internal quality polish: full comment/principles audit across all layers, dead code
+  removed, consistent correct umlauts including project-file comments.
+
 ## [1.2.0] – 2026-06-30
 
 ### Added

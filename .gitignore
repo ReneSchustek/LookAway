@@ -7,6 +7,7 @@
 # ============================================================
 
 # ============================================================
+# Lokale Werkzeug-/Vorlagendateien (nicht versionieren)
 # ============================================================
 .gitignore-template
 
@@ -94,6 +95,7 @@ $RECYCLE.BIN/
 # Rider
 .idea/
 
+# Lokale Hilfs-/Arbeitsverzeichnisse (nicht versionieren)
 
 
 # MSIX-Build-Artefakte

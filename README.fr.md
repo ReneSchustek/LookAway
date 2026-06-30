@@ -21,11 +21,14 @@ et leur concentration.
 
 ## Version actuelle
 
-**[v1.0.2](https://github.com/ReneSchustek/LookAway/releases/latest)** est la version actuelle.
-Elle apporte un **installateur Setup.exe** avec un emplacement d'installation librement choisi, un
-démarrage fiable en mode portable comme en mode MSIX, l'**écran de pause assombri** (fermable avec
-ÉCHAP) et la nouvelle icône d'application. Trois variantes d'installation sont disponibles — voir
-[Installation](#installation).
+**[v1.1.1](https://github.com/ReneSchustek/LookAway/releases/latest)** est la version actuelle. Points
+forts de la série 1.1 :
+
+- **Écran de pause sur plusieurs moniteurs** – chaque écran peut être assombri.
+- **Couleur de pause librement configurable**, transparence comprise.
+- **Menu latéral moderne** dans les paramètres et un thème clair menthe/sarcelle reposant pour les yeux.
+- **Mise à jour automatique** – LookAway télécharge et installe lui-même les nouvelles versions
+  (vérifiées par version et empreinte de fichier).
 
 ## Fonctionnalités
 
@@ -33,15 +36,18 @@ démarrage fiable en mode portable comme en mode MSIX, l'**écran de pause assom
   pauses courtes, basé sur les tâches et la recommandation légale
 - **Pause automatique et Ne pas déranger** – met en pause en cas d'inactivité et supprime les rappels
   pendant les applications plein écran (présentations, films, jeux)
+- **Réinitialisation après une absence** – après une mise en veille ou une longue inactivité (p. ex. un
+  appel), le minuteur de travail redémarre à zéro, les yeux s'étant déjà reposés
+- **Écran de pause assombri** – une surimpression plein écran apaisante masque l'écran pendant la
+  pause, affiche le compte à rebours et l'objectif d'exercice, et se ferme à tout moment avec
+  **ÉCHAP** ; en option sur **tous les moniteurs** et dans une **couleur librement choisie**
+- **Actions de pause** – assombrir l'écran (DDC/CI) et mettre en pause la lecture multimédia
+- **Mises à jour automatiques** – vérification optionnelle via l'API des versions GitHub ; sur demande,
+  LookAway télécharge et installe lui-même les nouvelles versions (voir [Mises à jour](#mises-à-jour))
 - **Trilingue** – allemand, anglais, français, commutable à chaud
 - **Statistiques et export CSV** – pauses par jour, semaine et année, exportables
 - **Raccourcis globaux** – démarrer une pause, ignorer, basculer Ne pas déranger – depuis partout
 - **Son optionnel** – un signal discret lors du rappel (au choix parmi trois sons)
-- **Écran de pause assombri** – une surimpression plein écran apaisante masque l'écran pendant la
-  pause, affiche le compte à rebours et l'objectif d'exercice, et peut être terminée à tout moment
-  avec **ÉCHAP**
-- **Actions de pause** – assombrir l'écran (DDC/CI) et mettre en pause la lecture multimédia pendant
-  la pause
 - **Démarrage automatique** – démarre au besoin automatiquement avec Windows
 
 ## Prérequis
@@ -50,37 +56,33 @@ démarrage fiable en mode portable comme en mode MSIX, l'**écran de pause assom
 
 ## Installation
 
-Tous les artefacts se trouvent sur la
-[page des versions](https://github.com/ReneSchustek/LookAway/releases/latest) (actuellement **v1.0.2**).
+L'application prête à l'emploi est publiée sous forme de **ZIP portable** sur la
+[page des versions](https://github.com/ReneSchustek/LookAway/releases/latest).
 
-### Variante A : Setup.exe (confortable)
+### Portable (recommandé)
 
-1. Téléchargez et exécutez `LookAway-Setup-v1.0.2.exe`.
-2. Dans l'assistant, **choisissez librement l'emplacement** et décidez entre « pour moi uniquement »
-   ou « pour tous les utilisateurs ». LookAway est ajouté au menu Démarrer (raccourci bureau/démarrage
-   automatique en option) et démarre dans la zone de notification.
+1. Téléchargez `LookAway-Portable-<version>.zip` depuis la page des versions et décompressez-le dans un
+   dossier quelconque.
+2. Lancez `LookAway.exe`. En mode portable, toutes les données se trouvent à côté de l'EXE – idéal pour
+   une clé USB.
 
-> Remarque : la Setup.exe n'est pas signée avec un certificat d'autorité – Windows SmartScreen peut
-> avertir (« Informations complémentaires » → « Exécuter quand même »).
+> Remarque : les builds ne sont pas signés avec un certificat d'autorité – Windows SmartScreen peut
+> avertir au premier lancement (« Informations complémentaires » → « Exécuter quand même »).
 
-### Variante B : portable (sans installation)
+### Setup.exe ou MSIX (en option, à compiler soi-même)
 
-1. Téléchargez `LookAway-Portable-v1.0.2.zip` et décompressez-le dans un dossier quelconque.
-2. Lancez `LookAway.exe`. En mode portable, toutes les données se trouvent à côté de l'EXE – idéal
-   pour une clé USB.
+Un **installateur Setup.exe** pratique (Inno Setup, emplacement librement choisi, entrée au menu
+Démarrer, démarrage automatique en option) et un **paquet MSIX** peuvent être générés localement – la
+publication automatique ne contient volontairement que le ZIP portable :
 
-### Variante C : MSIX
+```powershell
+# Setup.exe (nécessite Inno Setup) :
+tools\publish-setup.ps1 -Version <version>
 
-Le MSIX est signé avec un certificat **auto-signé**. Pour que Windows autorise l'installation, le
-certificat fourni doit être approuvé une seule fois :
-
-1. Téléchargez `LookAway-v1.0.2.cer` et `LookAway-v1.0.2-x64.msix`.
-2. Dans une PowerShell **administrateur**, importez le certificat :
-   ```powershell
-   Import-Certificate -FilePath .\LookAway-v1.0.2.cer -CertStoreLocation Cert:\LocalMachine\Root
-   ```
-3. Double-cliquez sur le `.msix` et suivez l'invite d'installation. LookAway apparaît ensuite dans le
-   menu Démarrer et démarre dans la zone de notification.
+# Paquet MSIX :
+msbuild src\LookAway.App\LookAway.App.csproj -p:Configuration=Release -p:Platform=x64 `
+  -p:WindowsPackageType=MSIX -p:GenerateAppxPackageOnBuild=true
+```
 
 ## Premiers pas
 
@@ -91,8 +93,24 @@ l'icône ouvre le menu, un double-clic ouvre les paramètres.
 ## Configuration
 
 Toutes les options se trouvent dans la fenêtre des paramètres (menu de la zone de notification →
-« Paramètres… ») : langue, démarrage automatique, modèle de pause, intervalles personnalisés, son,
-actions de pause, raccourcis, statistiques et vérification des mises à jour.
+« Paramètres… ») dans le menu latéral repliable : général, modèle de pause, intervalles personnalisés,
+son, pause (avec assombrissement et sélecteur de couleur), raccourcis, statistiques et À propos (avec
+les options de mise à jour).
+
+## Mises à jour
+
+LookAway peut se maintenir à jour tout seul :
+
+- Lorsque la vérification est active et qu'une nouvelle version est disponible, l'entrée « Update »
+  apparaît dans la zone de notification.
+- Un clic télécharge le nouveau ZIP portable, remplace les fichiers du programme après la fermeture et
+  redémarre.
+- Avec l'option **« Mettre à jour automatiquement »**, cela se fait en arrière-plan et s'applique au
+  prochain démarrage, sans intervention.
+- Avant l'application, la version et le SHA-256 du fichier téléchargé sont vérifiés ; le téléchargement
+  se fait uniquement via HTTPS depuis GitHub. Le remplacement automatique fonctionne pour les
+  installations portables et par utilisateur (pour « tous les utilisateurs », LookAway ouvre plutôt la
+  page de version).
 
 ## Modèles de pause
 
@@ -130,8 +148,8 @@ LookAway est sobre en données et fonctionne entièrement en local :
 
 ## Captures d'écran
 
-Les captures d'écran actuelles (icône de la zone de notification, rappel de pause, paramètres,
-statistiques) se trouvent sous [`docs/screenshots/`](docs/screenshots/).
+Les captures d'écran de l'interface (icône de la zone de notification, rappel de pause, paramètres,
+statistiques) sont rassemblées sous [`docs/screenshots/`](docs/screenshots/).
 
 ## Journal des modifications
 

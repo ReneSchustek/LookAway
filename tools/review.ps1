@@ -5,8 +5,8 @@
     Report-Skeleton.
 
 .DESCRIPTION
-    Wird vom Solution-Root oder aus tools/ aufgerufen. Aktiviert den im
-    geforderten Review-Workflow ohne Cloud-Round-Trips.
+    Wird vom Solution-Root oder aus tools/ aufgerufen. Buendelt die lokalen
+    Qualitaets-Checks ohne Cloud-Round-Trips.
 
     Modi:
       build       - dotnet build (TreatWarningsAsErrors greift global)

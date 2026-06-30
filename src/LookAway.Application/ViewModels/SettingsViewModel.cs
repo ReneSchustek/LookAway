@@ -349,14 +349,14 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Beschriftung des Zurücksetzen-Buttons.</summary>
     public string HotkeysResetLabel => _localization.GetText(SettingsTextKeys.HotkeysReset);
 
-    /// <summary>Anzeigetext des "Pause starten"-Hotkeys.</summary>
-    public string HotkeyStartBreakText => _hotkeyStartBreak.ToString();
+    /// <summary>Anzeigetext des "Pause starten"-Hotkeys (lokalisiert).</summary>
+    public string HotkeyStartBreakText => HotkeyTextKeys.Format(_hotkeyStartBreak, _localization);
 
-    /// <summary>Anzeigetext des "Überspringen/Snooze"-Hotkeys.</summary>
-    public string HotkeySkipOrSnoozeText => _hotkeySkipOrSnooze.ToString();
+    /// <summary>Anzeigetext des "Überspringen/Snooze"-Hotkeys (lokalisiert).</summary>
+    public string HotkeySkipOrSnoozeText => HotkeyTextKeys.Format(_hotkeySkipOrSnooze, _localization);
 
-    /// <summary>Anzeigetext des "DND umschalten"-Hotkeys.</summary>
-    public string HotkeyToggleDndText => _hotkeyToggleDnd.ToString();
+    /// <summary>Anzeigetext des "DND umschalten"-Hotkeys (lokalisiert).</summary>
+    public string HotkeyToggleDndText => HotkeyTextKeys.Format(_hotkeyToggleDnd, _localization);
 
     /// <summary>Beschriftung "Auf Updates prüfen".</summary>
     public string UpdateEnableLabel => _localization.GetText(SettingsTextKeys.UpdateEnableLabel);

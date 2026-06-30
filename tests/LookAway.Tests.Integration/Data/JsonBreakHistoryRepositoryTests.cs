@@ -66,6 +66,21 @@ public sealed class JsonBreakHistoryRepositoryTests : IDisposable
         _ = Assert.Single(all);
     }
 
+    [Fact]
+    public async Task LoadAll_mit_beschädigter_Datei_sichert_Inhalt_und_startet_leer()
+    {
+        const string corrupt = "[ this is : not json ::: }";
+        await File.WriteAllTextAsync(_filePath, corrupt);
+        using JsonBreakHistoryRepository repository = CreateRepository();
+
+        IReadOnlyList<BreakSession> all = await repository.LoadAllAsync();
+
+        Assert.Empty(all);
+        string backupPath = _filePath + ".corrupt";
+        Assert.True(File.Exists(backupPath));
+        Assert.Equal(corrupt, await File.ReadAllTextAsync(backupPath));
+    }
+
     public void Dispose()
     {
         try

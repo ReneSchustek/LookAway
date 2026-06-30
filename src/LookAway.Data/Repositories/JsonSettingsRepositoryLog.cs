@@ -54,6 +54,12 @@ internal static partial class JsonSettingsRepositoryLog
     public static partial void SettingsFileInvalidValues(ILogger logger, Exception exception, string settingsPath);
 
     [LoggerMessage(
+        EventId = 2014,
+        Level = LogLevel.Information,
+        Message = "Beschädigte Einstellungen unter {BackupPath} gesichert.")]
+    public static partial void SettingsBackedUp(ILogger logger, string backupPath);
+
+    [LoggerMessage(
         EventId = 2020,
         Level = LogLevel.Error,
         Message = "Keine Leseberechtigung für Einstellungsdatei {SettingsPath}.")]

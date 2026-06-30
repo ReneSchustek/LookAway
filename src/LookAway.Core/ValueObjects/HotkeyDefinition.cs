@@ -14,39 +14,72 @@ public readonly record struct HotkeyDefinition(HotkeyModifiers Modifiers, int Vi
     public bool HasKey => Modifiers != HotkeyModifiers.None && VirtualKey != 0;
 
     /// <summary>
-    /// Liefert eine lesbare Darstellung, z. B. <c>"Strg+Alt+P"</c>.
+    /// Sprachneutrale Beschriftung der Taste ohne Modifikatoren (z. B. <c>"P"</c>,
+    /// <c>"F1"</c>); leer, wenn keine Taste gesetzt ist.
     /// </summary>
-    /// <returns>Die Tastenkombination als Text.</returns>
-    public override string ToString()
+    public string KeyLabel => VirtualKey == 0 ? string.Empty : KeyName(VirtualKey);
+
+    /// <summary>
+    /// Setzt die lesbare Tastenkombination aus den Modifikatornamen und der Taste
+    /// zusammen, z. B. <c>"Strg+Alt+P"</c>. Die Modifikatornamen liefert
+    /// <paramref name="modifierName"/>, sodass die Darstellung sprachabhängig
+    /// gerendert werden kann.
+    /// </summary>
+    /// <param name="modifierName">
+    /// Liefert den Anzeigenamen eines einzelnen Modifikator-Flags
+    /// (<see cref="HotkeyModifiers.Control"/>/<see cref="HotkeyModifiers.Alt"/>/
+    /// <see cref="HotkeyModifiers.Shift"/>/<see cref="HotkeyModifiers.Win"/>).
+    /// </param>
+    /// <returns>Die Tastenkombination als Text; <c>"—"</c>, wenn nichts gesetzt ist.</returns>
+    public string Format(Func<HotkeyModifiers, string> modifierName)
     {
+        ArgumentNullException.ThrowIfNull(modifierName);
+
         List<string> parts = new();
         if (Modifiers.HasFlag(HotkeyModifiers.Control))
         {
-            parts.Add("Strg");
+            parts.Add(modifierName(HotkeyModifiers.Control));
         }
 
         if (Modifiers.HasFlag(HotkeyModifiers.Alt))
         {
-            parts.Add("Alt");
+            parts.Add(modifierName(HotkeyModifiers.Alt));
         }
 
         if (Modifiers.HasFlag(HotkeyModifiers.Shift))
         {
-            parts.Add("Umschalt");
+            parts.Add(modifierName(HotkeyModifiers.Shift));
         }
 
         if (Modifiers.HasFlag(HotkeyModifiers.Win))
         {
-            parts.Add("Win");
+            parts.Add(modifierName(HotkeyModifiers.Win));
         }
 
-        if (VirtualKey != 0)
+        string key = KeyLabel;
+        if (key.Length != 0)
         {
-            parts.Add(KeyName(VirtualKey));
+            parts.Add(key);
         }
 
         return parts.Count == 0 ? "—" : string.Join("+", parts);
     }
+
+    /// <summary>
+    /// Liefert eine lesbare Darstellung mit deutschen Modifikatornamen, z. B.
+    /// <c>"Strg+Alt+P"</c>. Dient als sprachneutraler Rückfall (Logging/Diagnose);
+    /// die Oberfläche rendert die Kombination lokalisiert über
+    /// <see cref="Format(Func{HotkeyModifiers, string})"/>.
+    /// </summary>
+    /// <returns>Die Tastenkombination als Text.</returns>
+    public override string ToString() => Format(static modifier => modifier switch
+    {
+        HotkeyModifiers.Control => "Strg",
+        HotkeyModifiers.Alt => "Alt",
+        HotkeyModifiers.Shift => "Umschalt",
+        HotkeyModifiers.Win => "Win",
+        _ => string.Empty,
+    });
 
     private static string KeyName(int virtualKey) => virtualKey switch
     {

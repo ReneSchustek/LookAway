@@ -29,6 +29,10 @@
   "Settings.Hotkeys.SkipOrSnooze": "Überspringen / Snooze",
   "Settings.Hotkeys.ToggleDnd": "Nicht stören umschalten",
   "Settings.Hotkeys.Reset": "Standard wiederherstellen",
+  "Hotkey.Modifier.Control": "Strg",
+  "Hotkey.Modifier.Alt": "Alt",
+  "Hotkey.Modifier.Shift": "Umschalt",
+  "Hotkey.Modifier.Win": "Win",
 
   "Settings.Update.EnableLabel": "Auf Updates prüfen",
   "Settings.Update.AutoLabel": "Automatisch aktualisieren",

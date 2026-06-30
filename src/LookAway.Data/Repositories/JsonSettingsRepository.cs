@@ -10,19 +10,12 @@ namespace LookAway.Data.Repositories;
 /// Persistiert die Benutzerkonfiguration als JSON-Datei pro Windows-Benutzer.
 /// </summary>
 /// <remarks>
-/// Schreibvorgänge sind atomar (Schreiben in eine Temp-Datei + Rename) und
-/// werden über einen Semaphor serialisiert, damit parallele Schreiber das
-/// Zielfile nicht beschädigen. Lesezugriffe öffnen die Datei mit
-/// <see cref="FileShare.Read"/> | <see cref="FileShare.Delete"/>, damit ein
-/// parallel laufender atomarer Rename nicht durch ein Reader-Handle blockiert
-/// wird. So können Lese- und Schreibzugriffe parallel erfolgen, ohne dass
-/// das Zielfile inkonsistent oder die Operation per Exception abbricht.
+/// Die gemeinsamen Datei-Primitive (atomares Schreiben, tolerantes Lesen,
+/// Serialisierung, Sicherung beschädigter Inhalte) liefert <see cref="JsonFileStore"/>.
 /// </remarks>
 public sealed class JsonSettingsRepository : ISettingsRepository, IDisposable
 {
     private const string SettingsFileName = "settings.json";
-    private const string TempFileSuffix = ".tmp";
-    private const int FileBufferSize = 4096;
 
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
@@ -32,9 +25,8 @@ public sealed class JsonSettingsRepository : ISettingsRepository, IDisposable
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    private readonly string _filePath;
+    private readonly JsonFileStore _store;
     private readonly ILogger<JsonSettingsRepository> _logger;
-    private readonly SemaphoreSlim _writeLock = new(1, 1);
     private bool _disposed;
 
     /// <summary>
@@ -58,7 +50,7 @@ public sealed class JsonSettingsRepository : ISettingsRepository, IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         ArgumentNullException.ThrowIfNull(logger);
 
-        _filePath = filePath;
+        _store = new JsonFileStore(filePath);
         _logger = logger;
     }
 
@@ -74,47 +66,31 @@ public sealed class JsonSettingsRepository : ISettingsRepository, IDisposable
     {
         ThrowIfDisposed();
 
-        string json;
+        string? json;
         try
         {
-            FileStream stream = new(
-                _filePath,
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.Read | FileShare.Delete,
-                FileBufferSize,
-                FileOptions.Asynchronous | FileOptions.SequentialScan);
-
-            await using (stream.ConfigureAwait(false))
-            {
-                using StreamReader reader = new(stream);
-                json = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-            }
-        }
-        catch (FileNotFoundException)
-        {
-            JsonSettingsRepositoryLog.NoSettingsFile(_logger, _filePath);
-            return CreateFirstRunDefaults();
-        }
-        catch (DirectoryNotFoundException)
-        {
-            JsonSettingsRepositoryLog.NoSettingsFile(_logger, _filePath);
-            return CreateFirstRunDefaults();
+            json = await _store.ReadAllTextOrNullAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (UnauthorizedAccessException ex)
         {
-            JsonSettingsRepositoryLog.ReadAccessDenied(_logger, ex, _filePath);
+            JsonSettingsRepositoryLog.ReadAccessDenied(_logger, ex, _store.FilePath);
             throw;
         }
         catch (IOException ex)
         {
-            JsonSettingsRepositoryLog.ReadIoError(_logger, ex, _filePath);
+            JsonSettingsRepositoryLog.ReadIoError(_logger, ex, _store.FilePath);
             throw;
+        }
+
+        if (json is null)
+        {
+            JsonSettingsRepositoryLog.NoSettingsFile(_logger, _store.FilePath);
+            return CreateFirstRunDefaults();
         }
 
         if (string.IsNullOrWhiteSpace(json))
         {
-            JsonSettingsRepositoryLog.SettingsFileEmpty(_logger, _filePath);
+            JsonSettingsRepositoryLog.SettingsFileEmpty(_logger, _store.FilePath);
             return CreateFirstRunDefaults();
         }
 
@@ -123,22 +99,24 @@ public sealed class JsonSettingsRepository : ISettingsRepository, IDisposable
             Settings? settings = JsonSerializer.Deserialize<Settings>(json, SerializerOptions);
             if (settings is null)
             {
-                JsonSettingsRepositoryLog.SettingsFileJsonNull(_logger, _filePath);
+                JsonSettingsRepositoryLog.SettingsFileJsonNull(_logger, _store.FilePath);
                 return CreateFirstRunDefaults();
             }
 
-            JsonSettingsRepositoryLog.SettingsLoaded(_logger, _filePath);
+            JsonSettingsRepositoryLog.SettingsLoaded(_logger, _store.FilePath);
             return settings;
         }
         catch (JsonException ex)
         {
-            JsonSettingsRepositoryLog.SettingsFileCorrupted(_logger, ex, _filePath);
+            JsonSettingsRepositoryLog.SettingsFileCorrupted(_logger, ex, _store.FilePath);
+            await BackUpCorruptAsync(json, cancellationToken).ConfigureAwait(false);
             return CreateFirstRunDefaults();
         }
         catch (ArgumentException ex)
         {
             // Validierung in Settern hat einen ungültigen Wert in der Datei erkannt.
-            JsonSettingsRepositoryLog.SettingsFileInvalidValues(_logger, ex, _filePath);
+            JsonSettingsRepositoryLog.SettingsFileInvalidValues(_logger, ex, _store.FilePath);
+            await BackUpCorruptAsync(json, cancellationToken).ConfigureAwait(false);
             return CreateFirstRunDefaults();
         }
     }
@@ -149,54 +127,30 @@ public sealed class JsonSettingsRepository : ISettingsRepository, IDisposable
         ArgumentNullException.ThrowIfNull(settings);
         ThrowIfDisposed();
 
-        await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        byte[] payload = JsonSerializer.SerializeToUtf8Bytes(settings, SerializerOptions);
+
         try
         {
-            string? directory = Path.GetDirectoryName(_filePath);
-            if (!string.IsNullOrEmpty(directory))
-            {
-                _ = Directory.CreateDirectory(directory);
-            }
+            await _store.RunExclusiveAsync(
+                ct => _store.WriteBytesAtomicAsync(payload, ct),
+                cancellationToken).ConfigureAwait(false);
 
-            string tempPath = _filePath + TempFileSuffix;
-            byte[] payload = JsonSerializer.SerializeToUtf8Bytes(settings, SerializerOptions);
-
-            FileStream tempStream = new(
-                tempPath,
-                FileMode.Create,
-                FileAccess.Write,
-                FileShare.None,
-                FileBufferSize,
-                FileOptions.Asynchronous | FileOptions.WriteThrough);
-
-            await using (tempStream.ConfigureAwait(false))
-            {
-                await tempStream.WriteAsync(payload, cancellationToken).ConfigureAwait(false);
-                await tempStream.FlushAsync(cancellationToken).ConfigureAwait(false);
-            }
-
-            await AtomicFile.ReplaceWithRetryAsync(tempPath, _filePath, cancellationToken).ConfigureAwait(false);
-
-            JsonSettingsRepositoryLog.SettingsSaved(_logger, _filePath);
+            JsonSettingsRepositoryLog.SettingsSaved(_logger, _store.FilePath);
         }
         catch (UnauthorizedAccessException ex)
         {
-            JsonSettingsRepositoryLog.WriteAccessDenied(_logger, ex, _filePath);
+            JsonSettingsRepositoryLog.WriteAccessDenied(_logger, ex, _store.FilePath);
             throw;
         }
         catch (IOException ex)
         {
-            JsonSettingsRepositoryLog.WriteIoError(_logger, ex, _filePath);
+            JsonSettingsRepositoryLog.WriteIoError(_logger, ex, _store.FilePath);
             throw;
-        }
-        finally
-        {
-            _ = _writeLock.Release();
         }
     }
 
     /// <summary>
-    /// Gibt den Schreib-Semaphor frei.
+    /// Gibt die Datei-Ressourcen frei.
     /// </summary>
     public void Dispose()
     {
@@ -205,11 +159,19 @@ public sealed class JsonSettingsRepository : ISettingsRepository, IDisposable
             return;
         }
 
-        _writeLock.Dispose();
+        _store.Dispose();
         _disposed = true;
     }
 
     private static Settings CreateFirstRunDefaults() => new() { IsFirstRun = true };
+
+    private async Task BackUpCorruptAsync(string content, CancellationToken cancellationToken)
+    {
+        if (await _store.TryWriteCorruptBackupAsync(content, cancellationToken).ConfigureAwait(false))
+        {
+            JsonSettingsRepositoryLog.SettingsBackedUp(_logger, _store.CorruptBackupPath);
+        }
+    }
 
     private void ThrowIfDisposed()
     {

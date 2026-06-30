@@ -84,4 +84,27 @@ public sealed class HotkeyTests
 
         Assert.Equal("Strg+Alt+P", definition.ToString());
     }
+
+    [Fact]
+    public void Format_nutzt_die_übergebenen_Modifikatornamen()
+    {
+        HotkeyDefinition definition = new(HotkeyModifiers.Control | HotkeyModifiers.Shift, VkP);
+
+        string text = definition.Format(modifier => modifier switch
+        {
+            HotkeyModifiers.Control => "Ctrl",
+            HotkeyModifiers.Shift => "Shift",
+            _ => "?",
+        });
+
+        Assert.Equal("Ctrl+Shift+P", text);
+    }
+
+    [Fact]
+    public void KeyLabel_ist_leer_ohne_Taste()
+    {
+        HotkeyDefinition definition = new(HotkeyModifiers.Control, 0);
+
+        Assert.Equal(string.Empty, definition.KeyLabel);
+    }
 }

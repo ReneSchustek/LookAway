@@ -29,6 +29,10 @@
   "Settings.Hotkeys.SkipOrSnooze": "Ignorer / reporter",
   "Settings.Hotkeys.ToggleDnd": "Basculer Ne pas déranger",
   "Settings.Hotkeys.Reset": "Restaurer les valeurs par défaut",
+  "Hotkey.Modifier.Control": "Ctrl",
+  "Hotkey.Modifier.Alt": "Alt",
+  "Hotkey.Modifier.Shift": "Maj",
+  "Hotkey.Modifier.Win": "Win",
 
   "Settings.Update.EnableLabel": "Rechercher les mises à jour",
   "Settings.Update.AutoLabel": "Mettre à jour automatiquement",

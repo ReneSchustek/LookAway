@@ -11,15 +11,13 @@ namespace LookAway.Data.Repositories;
 /// </summary>
 /// <remarks>
 /// Append-only: jede neue Sitzung wird der bestehenden Liste hinzugefügt und das
-/// gesamte Array atomar (Temp-Datei + Rename) zurückgeschrieben. Schreibvorgänge
-/// sind über einen Semaphor serialisiert; Lesezugriffe öffnen die Datei mit
-/// <see cref="FileShare.Delete"/>, damit ein paralleler Rename nicht blockiert.
+/// gesamte Array atomar zurückgeschrieben. Die gemeinsamen Datei-Primitive liefert
+/// <see cref="JsonFileStore"/>; Lese-/Schreibvorgänge eines Append-Zyklus laufen
+/// unter dessen Schreib-Semaphor.
 /// </remarks>
 public sealed class JsonBreakHistoryRepository : IBreakHistoryRepository, IDisposable
 {
     private const string HistoryFileName = "history.json";
-    private const string TempFileSuffix = ".tmp";
-    private const int FileBufferSize = 4096;
 
     private static readonly JsonSerializerOptions SerializerOptions = new()
     {
@@ -28,9 +26,8 @@ public sealed class JsonBreakHistoryRepository : IBreakHistoryRepository, IDispo
         Converters = { new JsonStringEnumConverter() },
     };
 
-    private readonly string _filePath;
+    private readonly JsonFileStore _store;
     private readonly ILogger<JsonBreakHistoryRepository> _logger;
-    private readonly SemaphoreSlim _writeLock = new(1, 1);
     private bool _disposed;
 
     /// <summary>
@@ -53,7 +50,7 @@ public sealed class JsonBreakHistoryRepository : IBreakHistoryRepository, IDispo
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         ArgumentNullException.ThrowIfNull(logger);
 
-        _filePath = filePath;
+        _store = new JsonFileStore(filePath);
         _logger = logger;
     }
 
@@ -67,18 +64,16 @@ public sealed class JsonBreakHistoryRepository : IBreakHistoryRepository, IDispo
         ArgumentNullException.ThrowIfNull(session);
         ThrowIfDisposed();
 
-        await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            List<BreakSession> sessions = await ReadUnlockedAsync(cancellationToken).ConfigureAwait(false);
-            sessions.Add(session);
-            await WriteUnlockedAsync(sessions, cancellationToken).ConfigureAwait(false);
-            JsonBreakHistoryRepositoryLog.SessionAppended(_logger, _filePath);
-        }
-        finally
-        {
-            _ = _writeLock.Release();
-        }
+        await _store.RunExclusiveAsync(
+            async ct =>
+            {
+                List<BreakSession> sessions = await ReadUnlockedAsync(ct).ConfigureAwait(false);
+                sessions.Add(session);
+                await WriteUnlockedAsync(sessions, ct).ConfigureAwait(false);
+            },
+            cancellationToken).ConfigureAwait(false);
+
+        JsonBreakHistoryRepositoryLog.SessionAppended(_logger, _store.FilePath);
     }
 
     /// <inheritdoc />
@@ -93,65 +88,42 @@ public sealed class JsonBreakHistoryRepository : IBreakHistoryRepository, IDispo
     {
         ThrowIfDisposed();
 
-        await _writeLock.WaitAsync(cancellationToken).ConfigureAwait(false);
-        try
-        {
-            List<BreakSession> sessions = await ReadUnlockedAsync(cancellationToken).ConfigureAwait(false);
-            int before = sessions.Count;
-            List<BreakSession> kept = sessions.FindAll(session => session.StartedAt >= cutoff);
-
-            if (kept.Count == before)
+        return await _store.RunExclusiveAsync(
+            async ct =>
             {
-                return 0;
-            }
+                List<BreakSession> sessions = await ReadUnlockedAsync(ct).ConfigureAwait(false);
+                int before = sessions.Count;
+                List<BreakSession> kept = sessions.FindAll(session => session.StartedAt >= cutoff);
 
-            await WriteUnlockedAsync(kept, cancellationToken).ConfigureAwait(false);
-            int removed = before - kept.Count;
-            JsonBreakHistoryRepositoryLog.HistoryPurged(_logger, removed, _filePath);
-            return removed;
-        }
-        finally
-        {
-            _ = _writeLock.Release();
-        }
+                if (kept.Count == before)
+                {
+                    return 0;
+                }
+
+                await WriteUnlockedAsync(kept, ct).ConfigureAwait(false);
+                int removed = before - kept.Count;
+                JsonBreakHistoryRepositoryLog.HistoryPurged(_logger, removed, _store.FilePath);
+                return removed;
+            },
+            cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<List<BreakSession>> ReadUnlockedAsync(CancellationToken cancellationToken)
     {
-        string json;
+        string? json;
         try
         {
-            FileStream stream = new(
-                _filePath,
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.Read | FileShare.Delete,
-                FileBufferSize,
-                FileOptions.Asynchronous | FileOptions.SequentialScan);
-
-            await using (stream.ConfigureAwait(false))
-            {
-                using StreamReader reader = new(stream);
-                json = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-            }
-        }
-        catch (FileNotFoundException)
-        {
-            return new List<BreakSession>();
-        }
-        catch (DirectoryNotFoundException)
-        {
-            return new List<BreakSession>();
+            json = await _store.ReadAllTextOrNullAsync(cancellationToken).ConfigureAwait(false);
         }
         catch (UnauthorizedAccessException ex)
         {
             // Historie ist nicht startkritisch — bei Zugriffsfehler leer behandeln.
-            JsonBreakHistoryRepositoryLog.HistoryReadFailed(_logger, ex, _filePath);
+            JsonBreakHistoryRepositoryLog.HistoryReadFailed(_logger, ex, _store.FilePath);
             return new List<BreakSession>();
         }
         catch (IOException ex)
         {
-            JsonBreakHistoryRepositoryLog.HistoryReadFailed(_logger, ex, _filePath);
+            JsonBreakHistoryRepositoryLog.HistoryReadFailed(_logger, ex, _store.FilePath);
             return new List<BreakSession>();
         }
 
@@ -168,45 +140,33 @@ public sealed class JsonBreakHistoryRepository : IBreakHistoryRepository, IDispo
         catch (JsonException ex)
         {
             // Beschädigte Historie soll die App nicht blockieren — leer starten.
-            JsonBreakHistoryRepositoryLog.HistoryCorrupted(_logger, ex, _filePath);
+            JsonBreakHistoryRepositoryLog.HistoryCorrupted(_logger, ex, _store.FilePath);
+            await BackUpCorruptAsync(json, cancellationToken).ConfigureAwait(false);
             return new List<BreakSession>();
         }
         catch (ArgumentException ex)
         {
-            JsonBreakHistoryRepositoryLog.HistoryCorrupted(_logger, ex, _filePath);
+            JsonBreakHistoryRepositoryLog.HistoryCorrupted(_logger, ex, _store.FilePath);
+            await BackUpCorruptAsync(json, cancellationToken).ConfigureAwait(false);
             return new List<BreakSession>();
         }
     }
 
     private async Task WriteUnlockedAsync(List<BreakSession> sessions, CancellationToken cancellationToken)
     {
-        string? directory = Path.GetDirectoryName(_filePath);
-        if (!string.IsNullOrEmpty(directory))
-        {
-            _ = Directory.CreateDirectory(directory);
-        }
-
-        string tempPath = _filePath + TempFileSuffix;
         byte[] payload = JsonSerializer.SerializeToUtf8Bytes(sessions, SerializerOptions);
-
-        FileStream tempStream = new(
-            tempPath,
-            FileMode.Create,
-            FileAccess.Write,
-            FileShare.None,
-            FileBufferSize,
-            FileOptions.Asynchronous | FileOptions.WriteThrough);
-
-        await using (tempStream.ConfigureAwait(false))
-        {
-            await tempStream.WriteAsync(payload, cancellationToken).ConfigureAwait(false);
-            await tempStream.FlushAsync(cancellationToken).ConfigureAwait(false);
-        }
-
-        await AtomicFile.ReplaceWithRetryAsync(tempPath, _filePath, cancellationToken).ConfigureAwait(false);
+        await _store.WriteBytesAtomicAsync(payload, cancellationToken).ConfigureAwait(false);
     }
 
-    /// <summary>Gibt den Schreib-Semaphor frei.</summary>
+    private async Task BackUpCorruptAsync(string content, CancellationToken cancellationToken)
+    {
+        if (await _store.TryWriteCorruptBackupAsync(content, cancellationToken).ConfigureAwait(false))
+        {
+            JsonBreakHistoryRepositoryLog.HistoryBackedUp(_logger, _store.CorruptBackupPath);
+        }
+    }
+
+    /// <summary>Gibt die Datei-Ressourcen frei.</summary>
     public void Dispose()
     {
         if (_disposed)
@@ -214,7 +174,7 @@ public sealed class JsonBreakHistoryRepository : IBreakHistoryRepository, IDispo
             return;
         }
 
-        _writeLock.Dispose();
+        _store.Dispose();
         _disposed = true;
     }
 
@@ -237,4 +197,7 @@ internal static partial class JsonBreakHistoryRepositoryLog
 
     [LoggerMessage(EventId = 1403, Level = LogLevel.Warning, Message = "Historie {Path} konnte nicht gelesen werden — sie wird leer behandelt.")]
     public static partial void HistoryReadFailed(ILogger logger, Exception exception, string path);
+
+    [LoggerMessage(EventId = 1404, Level = LogLevel.Information, Message = "Beschädigte Historie unter {BackupPath} gesichert.")]
+    public static partial void HistoryBackedUp(ILogger logger, string backupPath);
 }

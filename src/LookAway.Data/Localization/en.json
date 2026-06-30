@@ -29,6 +29,10 @@
   "Settings.Hotkeys.SkipOrSnooze": "Skip / snooze",
   "Settings.Hotkeys.ToggleDnd": "Toggle do not disturb",
   "Settings.Hotkeys.Reset": "Restore defaults",
+  "Hotkey.Modifier.Control": "Ctrl",
+  "Hotkey.Modifier.Alt": "Alt",
+  "Hotkey.Modifier.Shift": "Shift",
+  "Hotkey.Modifier.Win": "Win",
 
   "Settings.Update.EnableLabel": "Check for updates",
   "Settings.Update.AutoLabel": "Update automatically",

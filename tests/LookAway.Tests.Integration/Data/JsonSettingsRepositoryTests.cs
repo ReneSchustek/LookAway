@@ -131,6 +131,34 @@ public sealed class JsonSettingsRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task LoadAsync_WithCorruptedJson_BacksUpOriginalContent()
+    {
+        const string corrupt = "{ this is : not json ::: }";
+        await File.WriteAllTextAsync(_settingsFilePath, corrupt);
+        using JsonSettingsRepository repo = CreateRepository();
+
+        _ = await repo.LoadAsync();
+
+        string backupPath = _settingsFilePath + ".corrupt";
+        Assert.True(File.Exists(backupPath));
+        Assert.Equal(corrupt, await File.ReadAllTextAsync(backupPath));
+    }
+
+    [Fact]
+    public async Task LoadAsync_WithInvalidValues_BacksUpOriginalContent()
+    {
+        const string invalid = """{"language":"Klingon","breakModel":"ClassicPomodoro","autoStart":false}""";
+        await File.WriteAllTextAsync(_settingsFilePath, invalid);
+        using JsonSettingsRepository repo = CreateRepository();
+
+        _ = await repo.LoadAsync();
+
+        string backupPath = _settingsFilePath + ".corrupt";
+        Assert.True(File.Exists(backupPath));
+        Assert.Equal(invalid, await File.ReadAllTextAsync(backupPath));
+    }
+
+    [Fact]
     public async Task LoadAsync_WithEmptyFile_ReturnsDefaults()
     {
         await File.WriteAllTextAsync(_settingsFilePath, string.Empty);

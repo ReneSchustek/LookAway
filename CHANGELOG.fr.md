@@ -8,6 +8,34 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+## [1.2.0] – 2026-06-30
+
+### Ajouté
+
+- **Authenticité des mises à jour (signature de release) :** les paquets sont
+  vérifiés contre une signature détachée **ECDSA P-256 / SHA-256** avant toute
+  extraction ou application (asset `*.sig` contre la clé publique embarquée,
+  fail-closed). Un canal de publication compromis ne peut pas forger de signature
+  valide sans la clé privée conservée hors ligne. Outils
+  `tools/new-signing-key.ps1` et `tools/sign-release.ps1` ; la CI signe via le
+  secret `LOOKAWAY_SIGNING_KEY`.
+
+### Modifié
+
+- **Pureté des couches :** le verrou d'instance unique passe derrière l'interface
+  Core `ISingleInstanceLock` et rejoint, avec les adaptateurs Windows
+  (`WindowsScreenDimmer`, `WindowsMediaController`), la couche Data ;
+  `LookAway.Application` devient neutre vis-à-vis de la plateforme (`net10.0`).
+- Les deux dépôts JSON partagent un `JsonFileStore` commun ; les fichiers
+  `settings.json`/`history.json` corrompus sont sauvegardés en `*.corrupt` avant
+  remplacement.
+- Les libellés de raccourcis sont localisés via `ILocalizationService` (Strg/Ctrl,
+  Umschalt/Shift/Maj) ; `SettingsViewModel` scindé par préoccupation (raccourcis/mises à jour).
+
+### Corrigé
+
+- Trémas corrects et cohérents (ä/ö/ü/ß) dans les commentaires, textes et noms de tests.
+
 ## [1.1.1] – 2026-06-30
 
 ### Corrigé

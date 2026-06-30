@@ -8,6 +8,32 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+## [1.2.0] – 2026-06-30
+
+### Hinzugefügt
+
+- **Echtheit von Updates (Release-Signatur):** Update-Pakete werden vor dem
+  Entpacken/Einspielen gegen eine losgelöste **ECDSA-P-256/SHA-256-Signatur**
+  geprüft (`*.sig`-Asset gegen eingebetteten öffentlichen Schlüssel, fail-closed).
+  Ein übernommener Release-Kanal kann ohne den offline gehaltenen privaten Schlüssel
+  keine gültige Signatur erzeugen. Werkzeuge `tools/new-signing-key.ps1` und
+  `tools/sign-release.ps1`; die CI signiert mit dem Secret `LOOKAWAY_SIGNING_KEY`.
+
+### Geändert
+
+- **Schichtreinheit:** Single-Instance-Sperre hinter das Core-Interface
+  `ISingleInstanceLock` gelegt und samt der Windows-Adapter
+  (`WindowsScreenDimmer`, `WindowsMediaController`) in die Data-Schicht verschoben;
+  `LookAway.Application` ist dadurch plattformneutral (`net10.0`).
+- Beide JSON-Repositories nutzen einen gemeinsamen `JsonFileStore`; beschädigte
+  `settings.json`/`history.json` werden vor dem Ersetzen als `*.corrupt` gesichert.
+- Hotkey-Anzeige wird über `ILocalizationService` lokalisiert (Strg/Ctrl, Umschalt/
+  Shift/Maj); `SettingsViewModel` nach Belang (Hotkeys/Updates) aufgeteilt.
+
+### Behoben
+
+- Durchgängig korrekte Umlaute (ä/ö/ü/ß) in Kommentaren, Texten und Test-Namen.
+
 ## [1.1.1] – 2026-06-30
 
 ### Behoben

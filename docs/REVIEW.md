@@ -115,12 +115,17 @@ environment-dependent items remain.
    auto-defaults to the protective `StartBreak` after its 30 s timeout and already
    offers a Snooze action, so the WCAG 2.2.1 concern is met without an extra
    control.
+2. **Release signing (✔).** Update authenticity is now enforced by a detached
+   **ECDSA P-256 / SHA-256** signature: the maintainer signs each portable ZIP with
+   an **offline** private key (`tools/sign-release.ps1`); the app ships only the
+   embedded public key (`ReleaseSignatureVerifier.DefaultPublicKeySpkiBase64`) and
+   verifies the downloaded package against the downloaded `*.sig` **before** anything
+   is extracted or applied (fail-closed). A compromised release channel cannot forge
+   a valid signature without the offline key. No certificate authority is required;
+   `tools/new-signing-key.ps1` generates/rotates the key pair, and CI signs
+   automatically when the `LOOKAWAY_SIGNING_KEY` secret is present.
 
 ### Remaining (environment-dependent)
 
-2. **Code signing for true update authenticity.** Current controls (HTTPS + host
-   pinning + SHA-256 verify before apply) defend against MITM/corruption but not a
-   compromised release. Full authenticity requires Authenticode/Ed25519 signing
-   with an **offline** key and verification before apply — needs a signing certificate.
 7b. **Screenshots.** Real product screenshots for the README require running the
    packaged WinUI app on a desktop session; tracked for a manual capture pass.

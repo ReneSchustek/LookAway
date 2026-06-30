@@ -131,8 +131,32 @@ jobs:
         shell: pwsh
         run: ./tools/publish.ps1 -Version ${{ steps.version.outputs.value }}
 
+      - name: Portable-Paket signieren (falls Schlüssel hinterlegt)
+        # Signiert das ZIP mit dem offline gehaltenen Release-Schlüssel, sofern er als
+        # Repository-Secret LOOKAWAY_SIGNING_KEY (privates PKCS#8-PEM) hinterlegt ist.
+        # Ohne Secret bleibt das Paket unsigniert; der Auto-Updater weist es dann ab
+        # (fail-closed). Alternative ohne Secret: lokal mit tools/sign-release.ps1
+        # signieren und die .sig-Datei manuell an das Release anhängen.
+        shell: pwsh
+        env:
+          SIGNING_KEY: ${{ secrets.LOOKAWAY_SIGNING_KEY }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:SIGNING_KEY)) {
+            Write-Host 'Kein Signaturschlüssel hinterlegt — Paket bleibt unsigniert.'
+            exit 0
+          }
+          $keyPath = Join-Path $env:RUNNER_TEMP 'lookaway-signing-key.pem'
+          Set-Content -LiteralPath $keyPath -Value $env:SIGNING_KEY -NoNewline
+          try {
+            ./tools/sign-release.ps1 -PackagePath "dist/LookAway-Portable-v${{ steps.version.outputs.value }}.zip" -KeyPath $keyPath
+          }
+          finally {
+            Remove-Item -LiteralPath $keyPath -Force -ErrorAction SilentlyContinue
+          }
+
       - name: Release veröffentlichen
         uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         with:
-          files: dist/LookAway-Portable-v${{ steps.version.outputs.value }}.zip
+          # Der Glob '...zip*' lädt das Paket und – falls vorhanden – die '.sig' mit hoch.
+          files: dist/LookAway-Portable-v${{ steps.version.outputs.value }}.zip*
           generate_release_notes: true

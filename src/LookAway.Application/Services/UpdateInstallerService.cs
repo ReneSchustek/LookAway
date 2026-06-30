@@ -37,12 +37,13 @@ public sealed class UpdateInstallerService
     private readonly IHttpGetClient _httpClient;
     private readonly ILogger<UpdateInstallerService> _logger;
     private readonly string _stagingRoot;
+    private readonly ReleaseSignatureVerifier _signatureVerifier;
 
     /// <summary>Erzeugt den Dienst.</summary>
     /// <param name="httpClient">HTTP-Zugriff für den Paket-Download.</param>
     /// <param name="logger">Logger.</param>
     public UpdateInstallerService(IHttpGetClient httpClient, ILogger<UpdateInstallerService> logger)
-        : this(httpClient, logger, DefaultStagingRoot())
+        : this(httpClient, logger, DefaultStagingRoot(), new ReleaseSignatureVerifier())
     {
     }
 
@@ -51,14 +52,30 @@ public sealed class UpdateInstallerService
     /// <param name="logger">Logger.</param>
     /// <param name="stagingRoot">Wurzelordner für entpackte Update-Pakete.</param>
     public UpdateInstallerService(IHttpGetClient httpClient, ILogger<UpdateInstallerService> logger, string stagingRoot)
+        : this(httpClient, logger, stagingRoot, new ReleaseSignatureVerifier())
+    {
+    }
+
+    /// <summary>Konstruktor mit explizitem Staging-Pfad und Signaturprüfer (für Tests).</summary>
+    /// <param name="httpClient">HTTP-Zugriff für den Paket-Download.</param>
+    /// <param name="logger">Logger.</param>
+    /// <param name="stagingRoot">Wurzelordner für entpackte Update-Pakete.</param>
+    /// <param name="signatureVerifier">Prüfer der losgelösten Paket-Signatur.</param>
+    public UpdateInstallerService(
+        IHttpGetClient httpClient,
+        ILogger<UpdateInstallerService> logger,
+        string stagingRoot,
+        ReleaseSignatureVerifier signatureVerifier)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentException.ThrowIfNullOrWhiteSpace(stagingRoot);
+        ArgumentNullException.ThrowIfNull(signatureVerifier);
 
         _httpClient = httpClient;
         _logger = logger;
         _stagingRoot = stagingRoot;
+        _signatureVerifier = signatureVerifier;
     }
 
     /// <summary>Wurzelordner, unter dem Update-Pakete je Version entpackt werden.</summary>
@@ -99,6 +116,7 @@ public sealed class UpdateInstallerService
         // Update parallel dasselbe Paket laden.
         string token = Guid.NewGuid().ToString("N");
         string tempZip = Path.Combine(_stagingRoot, $"_dl-{token}.zip");
+        string tempSig = Path.Combine(_stagingRoot, $"_dl-{token}.sig");
         string workDir = Path.Combine(_stagingRoot, $"_work-{token}");
 
         try
@@ -109,6 +127,15 @@ public sealed class UpdateInstallerService
             {
                 // DownloadFileAsync meldet Misserfolg ohne zu werfen — die evtl.
                 // angelegte Teildatei hier selbst aufräumen (catch greift nicht).
+                TryDelete(tempZip);
+                return null;
+            }
+
+            // Echtheit prüfen, bevor irgendetwas entpackt oder eingespielt wird:
+            // ohne losgelöste Signatur, die unter dem eingebetteten Schlüssel zum
+            // heruntergeladenen Paket passt, wird das Update abgewiesen (fail-closed).
+            if (!await VerifyPackageSignatureAsync(info, tempZip, tempSig, cancellationToken).ConfigureAwait(false))
+            {
                 TryDelete(tempZip);
                 return null;
             }
@@ -139,9 +166,39 @@ public sealed class UpdateInstallerService
         {
             UpdateInstallerLog.StageFailed(_logger, ex, info.LatestVersion);
             TryDelete(tempZip);
+            TryDelete(tempSig);
             TryDeleteDirectory(workDir);
             return null;
         }
+    }
+
+    /// <summary>
+    /// Lädt die losgelöste Signatur und prüft sie gegen das heruntergeladene Paket.
+    /// Liefert nur <see langword="true"/>, wenn eine Signatur-URL vorliegt, sie
+    /// geladen werden konnte und die Signatur unter dem eingebetteten Schlüssel zur
+    /// Datei passt. Die Signaturdatei wird anschließend entfernt.
+    /// </summary>
+    private async Task<bool> VerifyPackageSignatureAsync(UpdateInfo info, string packagePath, string signaturePath, CancellationToken cancellationToken)
+    {
+        if (info.SignatureUrl is null
+            || !await _httpClient.DownloadFileAsync(info.SignatureUrl, signaturePath, cancellationToken).ConfigureAwait(false))
+        {
+            UpdateInstallerLog.SignatureMissing(_logger, info.LatestVersion);
+            TryDelete(signaturePath);
+            return false;
+        }
+
+        byte[] signature = await File.ReadAllBytesAsync(signaturePath, cancellationToken).ConfigureAwait(false);
+        TryDelete(signaturePath);
+
+        if (!_signatureVerifier.VerifyFile(packagePath, signature))
+        {
+            UpdateInstallerLog.SignatureInvalid(_logger, info.LatestVersion);
+            return false;
+        }
+
+        UpdateInstallerLog.SignatureVerified(_logger, info.LatestVersion);
+        return true;
     }
 
     /// <summary>
@@ -481,4 +538,13 @@ internal static partial class UpdateInstallerLog
 
     [LoggerMessage(EventId = 1657, Level = LogLevel.Warning, Message = "Ausstehendes Update in {Directory} abgelehnt: Datei-Hash stimmt nicht mit dem vermerkten überein.")]
     public static partial void HashMismatch(ILogger logger, string directory);
+
+    [LoggerMessage(EventId = 1658, Level = LogLevel.Warning, Message = "Update {Version} abgelehnt: keine losgelöste Signatur vorhanden oder ladbar.")]
+    public static partial void SignatureMissing(ILogger logger, string version);
+
+    [LoggerMessage(EventId = 1659, Level = LogLevel.Error, Message = "Update {Version} abgelehnt: Signatur passt nicht zum Paket (eingebetteter Schlüssel).")]
+    public static partial void SignatureInvalid(ILogger logger, string version);
+
+    [LoggerMessage(EventId = 1660, Level = LogLevel.Information, Message = "Update {Version}: Paket-Signatur erfolgreich geprüft.")]
+    public static partial void SignatureVerified(ILogger logger, string version);
 }

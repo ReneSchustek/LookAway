@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Security.Cryptography;
 using LookAway.Application.Services;
 using LookAway.Core.ValueObjects;
 using LookAway.Tests.Unit.Fakes;
@@ -8,21 +9,37 @@ namespace LookAway.Tests.Unit.Application.Services;
 
 /// <summary>
 /// Tests für den <see cref="UpdateInstallerService"/>: Download/Entpacken in den
-/// Staging-Ordner, Erkennung ausstehender Updates und der Datei-Tausch (inkl.
-/// Auslassen der Portable-Markierung und Erhalt von Benutzerdaten).
+/// Staging-Ordner inklusive Echtheitsprüfung der losgelösten Paket-Signatur,
+/// Erkennung ausstehender Updates und der Datei-Tausch (inkl. Auslassen der
+/// Portable-Markierung und Erhalt von Benutzerdaten).
 /// </summary>
+/// <remarks>
+/// Da der Installer Pakete seit der Signatur-Härtung nur mit gültiger Signatur
+/// einspielt (fail-closed), erzeugt die Testklasse ein eigenes ECDSA-Schlüsselpaar:
+/// die Tests signieren ihre Testpakete damit und geben dem Dienst einen
+/// <see cref="ReleaseSignatureVerifier"/> mit dem zugehörigen öffentlichen Schlüssel.
+/// </remarks>
 public sealed class UpdateInstallerServiceTests : IDisposable
 {
+    private const string PackageUrl = "https://example.com/p.zip";
+    private const string SignatureUrl = "https://example.com/p.zip.sig";
+
     private readonly string _root;
+    private readonly ECDsa _signingKey;
+    private readonly ReleaseSignatureVerifier _verifier;
 
     public UpdateInstallerServiceTests()
     {
         _root = Path.Combine(Path.GetTempPath(), "lookaway-update-tests", Guid.NewGuid().ToString("N"));
         _ = Directory.CreateDirectory(_root);
+
+        _signingKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        _verifier = new ReleaseSignatureVerifier(Convert.ToBase64String(_signingKey.ExportSubjectPublicKeyInfo()));
     }
 
     public void Dispose()
     {
+        _signingKey.Dispose();
         try
         {
             if (Directory.Exists(_root))
@@ -36,8 +53,31 @@ public sealed class UpdateInstallerServiceTests : IDisposable
         }
     }
 
+    // Signiert die Paketbytes mit dem Testschlüssel (gleiches Verfahren wie die echte Signatur).
+    private byte[] Sign(byte[] data) => _signingKey.SignData(data, HashAlgorithmName.SHA256);
+
+    // Dienst ohne Download-Inhalt (für Datei-/Staging-Tests, die nicht herunterladen).
     private UpdateInstallerService CreateService(string stagingRoot, byte[]? package = null)
-        => new(new FakeHttpGetClient(fileContent: package), NullLogger<UpdateInstallerService>.Instance, stagingRoot);
+        => new(new FakeHttpGetClient(fileContent: package), NullLogger<UpdateInstallerService>.Instance, stagingRoot, _verifier);
+
+    // Dienst, der Paket und passende Signatur über die jeweiligen URLs ausliefert.
+    private UpdateInstallerService CreateSigningService(string stagingRoot, byte[] package)
+    {
+        Dictionary<string, byte[]> files = new(StringComparer.Ordinal)
+        {
+            [PackageUrl] = package,
+            [SignatureUrl] = Sign(package),
+        };
+        return new UpdateInstallerService(
+            new FakeHttpGetClient(files),
+            NullLogger<UpdateInstallerService>.Instance,
+            stagingRoot,
+            _verifier);
+    }
+
+    // UpdateInfo mit Paket- und Signatur-URL (Standardfall einer signierten Release).
+    private static UpdateInfo SignedInfo()
+        => UpdateInfo.Create(new Version(1, 0, 0), "v1.5.0", null, null, PackageUrl, SignatureUrl);
 
     private static byte[] BuildPackageZip()
     {
@@ -75,13 +115,12 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task DownloadAndStage_entpackt_Paket_in_Versionsordner()
+    public async Task DownloadAndStage_entpackt_signiertes_Paket_in_Versionsordner()
     {
         string stagingRoot = Path.Combine(_root, "staging");
-        UpdateInstallerService service = CreateService(stagingRoot, BuildPackageZip());
-        UpdateInfo info = UpdateInfo.Create(new Version(1, 0, 0), "v1.5.0", null, null, "https://example.com/p.zip");
+        UpdateInstallerService service = CreateSigningService(stagingRoot, BuildPackageZip());
 
-        StagedUpdate? staged = await service.DownloadAndStageAsync(info);
+        StagedUpdate? staged = await service.DownloadAndStageAsync(SignedInfo());
 
         Assert.NotNull(staged);
         Assert.True(File.Exists(Path.Combine(staged!.Directory, "LookAway.exe")));
@@ -103,13 +142,44 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task DownloadAndStage_ohne_Signatur_URL_liefert_null()
+    {
+        // Paket vorhanden, aber keine Signatur-URL: fail-closed -> kein Update.
+        string stagingRoot = Path.Combine(_root, "staging");
+        UpdateInstallerService service = CreateSigningService(stagingRoot, BuildPackageZip());
+        UpdateInfo info = UpdateInfo.Create(new Version(1, 0, 0), "v1.5.0", null, null, PackageUrl, signatureAddress: null);
+
+        Assert.Null(await service.DownloadAndStageAsync(info));
+        Assert.False(Directory.Exists(Path.Combine(stagingRoot, "1.5.0")));
+    }
+
+    [Fact]
+    public async Task DownloadAndStage_lehnt_ungültige_Signatur_ab()
+    {
+        // Signatur passt nicht zum Paket (über andere Bytes erzeugt) -> Abweisung.
+        string stagingRoot = Path.Combine(_root, "staging");
+        Dictionary<string, byte[]> files = new(StringComparer.Ordinal)
+        {
+            [PackageUrl] = BuildPackageZip(),
+            [SignatureUrl] = Sign(new byte[] { 1, 2, 3, 4 }),
+        };
+        UpdateInstallerService service = new(
+            new FakeHttpGetClient(files),
+            NullLogger<UpdateInstallerService>.Instance,
+            stagingRoot,
+            _verifier);
+
+        Assert.Null(await service.DownloadAndStageAsync(SignedInfo()));
+        Assert.False(Directory.Exists(Path.Combine(stagingRoot, "1.5.0")));
+    }
+
+    [Fact]
     public async Task DownloadAndStage_bei_Download_Fehler_liefert_null()
     {
         // FakeHttpGetClient ohne Inhalt -> DownloadFileAsync meldet Misserfolg.
         UpdateInstallerService service = CreateService(Path.Combine(_root, "staging"), package: null);
-        UpdateInfo info = UpdateInfo.Create(new Version(1, 0, 0), "v1.5.0", null, null, "https://example.com/p.zip");
 
-        Assert.Null(await service.DownloadAndStageAsync(info));
+        Assert.Null(await service.DownloadAndStageAsync(SignedInfo()));
     }
 
     [Fact]
@@ -117,10 +187,9 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     {
         byte[] zipWithoutExe = BuildZip(("readme.txt", "hallo"));
         string stagingRoot = Path.Combine(_root, "staging");
-        UpdateInstallerService service = CreateService(stagingRoot, zipWithoutExe);
-        UpdateInfo info = UpdateInfo.Create(new Version(1, 0, 0), "v1.5.0", null, null, "https://example.com/p.zip");
+        UpdateInstallerService service = CreateSigningService(stagingRoot, zipWithoutExe);
 
-        Assert.Null(await service.DownloadAndStageAsync(info));
+        Assert.Null(await service.DownloadAndStageAsync(SignedInfo()));
         Assert.False(Directory.Exists(Path.Combine(stagingRoot, "1.5.0")));
     }
 
@@ -129,10 +198,9 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     {
         byte[] zipSlip = BuildZip(("../escape.exe", "böse"), ("LookAway.exe", "x"));
         string stagingRoot = Path.Combine(_root, "staging");
-        UpdateInstallerService service = CreateService(stagingRoot, zipSlip);
-        UpdateInfo info = UpdateInfo.Create(new Version(1, 0, 0), "v1.5.0", null, null, "https://example.com/p.zip");
+        UpdateInstallerService service = CreateSigningService(stagingRoot, zipSlip);
 
-        Assert.Null(await service.DownloadAndStageAsync(info));
+        Assert.Null(await service.DownloadAndStageAsync(SignedInfo()));
         // Kein Ausbruch aus dem Staging-Wurzelverzeichnis.
         Assert.False(File.Exists(Path.Combine(_root, "escape.exe")));
     }

@@ -322,11 +322,21 @@ LookAway prüft optional auf neue Versionen über die GitHub-Releases-API (Stand
   übernehmen, unter Erhalt der Benutzerdaten. Vor dem Einspielen werden Version und SHA-256 der
   heruntergeladenen Datei gegen den vermerkten Wert geprüft. Manuell löst der Tray-Eintrag "Update"
   denselben Ablauf sofort aus.
-- **Grenzen/Sicherheit:** Der Datei-Tausch funktioniert nur, wenn der Programmordner beschreibbar ist
+- **Echtheit (Release-Signatur):** Vor dem Entpacken/Einspielen wird das Paket gegen eine losgelöste
+  **ECDSA-P-256/SHA-256-Signatur** geprüft (`ReleaseSignatureVerifier`, fail-closed): Der Updater lädt
+  zusätzlich zum ZIP die `*.sig` aus den Release-Assets und verifiziert sie gegen den fest eingebetteten
+  öffentlichen Schlüssel. Ohne gültige, zur Datei passende Signatur wird das Update abgewiesen — ein
+  übernommener Release-Kanal kann ohne den privaten Schlüssel keine gültige Signatur erzeugen. Der private
+  Schlüssel wird **offline** gehalten (nie im Repo). Werkzeuge: `tools/new-signing-key.ps1` erzeugt/rotiert
+  das Schlüsselpaar (öffentlichen Teil in `ReleaseSignatureVerifier.DefaultPublicKeySpkiBase64` eintragen),
+  `tools/sign-release.ps1` signiert ein Paket. Die CI signiert automatisch, wenn das Secret
+  `LOOKAWAY_SIGNING_KEY` (privates PEM) gesetzt ist; sonst bleibt das Paket unsigniert und muss lokal
+  signiert werden.
+- **Grenzen:** Der Datei-Tausch funktioniert nur, wenn der Programmordner beschreibbar ist
   (portable und Per-User-Installation); bei einer "für alle Benutzer"-Installation in `Programme` fällt
-  LookAway auf das Öffnen der Release-Seite zurück. Echtheit/Integrität beruhen derzeit auf HTTPS +
-  GitHub-Host-Pinning und dem Hash-Abgleich; für vollständige Authentizität ist Code-Signing mit einem
-  Offline-Schlüssel vorgesehen (siehe `REVIEW.md`).
+  LookAway auf das Öffnen der Release-Seite zurück. Zusätzlich zur Signatur sichern HTTPS +
+  GitHub-Host-Pinning den Transport und der SHA-256-Abgleich das beim nächsten Start einzuspielende
+  Staging-Verzeichnis.
 
 ## Pause-Aktionen
 

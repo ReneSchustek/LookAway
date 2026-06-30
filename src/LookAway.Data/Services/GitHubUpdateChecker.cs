@@ -54,8 +54,9 @@ public sealed class GitHubUpdateChecker : IUpdateChecker
             string? htmlUrl = GetString(root, "html_url");
             string? body = GetString(root, "body");
             string? packageUrl = FindPackageAssetUrl(root);
+            string? signatureUrl = FindSignatureAssetUrl(root);
 
-            UpdateInfo info = UpdateInfo.Create(_currentVersion, tag, htmlUrl, body, packageUrl);
+            UpdateInfo info = UpdateInfo.Create(_currentVersion, tag, htmlUrl, body, packageUrl, signatureUrl);
             if (info.IsUpdateAvailable)
             {
                 GitHubUpdateCheckerLog.UpdateAvailable(_logger, info.LatestVersion);
@@ -109,6 +110,34 @@ public sealed class GitHubUpdateChecker : IUpdateChecker
         }
 
         return firstZip;
+    }
+
+    /// <summary>
+    /// Sucht in den Release-Assets die losgelöste Signatur (Name endet auf
+    /// <c>.sig</c>) und liefert deren direkte Download-URL. Akzeptiert nur
+    /// vertrauenswürdige GitHub-HTTPS-URLs.
+    /// </summary>
+    private static string? FindSignatureAssetUrl(JsonElement root)
+    {
+        if (!root.TryGetProperty("assets", out JsonElement assets) || assets.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        foreach (JsonElement asset in assets.EnumerateArray())
+        {
+            string? name = GetString(asset, "name");
+            string? url = GetString(asset, "browser_download_url");
+            if (name is not null
+                && url is not null
+                && name.EndsWith(".sig", StringComparison.OrdinalIgnoreCase)
+                && IsTrustedGitHubUrl(url))
+            {
+                return url;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>

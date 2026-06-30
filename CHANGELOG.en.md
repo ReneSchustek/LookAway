@@ -8,6 +8,32 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.0] – 2026-06-30
+
+### Added
+
+- **Update authenticity (release signing):** update packages are verified against a
+  detached **ECDSA P-256 / SHA-256** signature before extraction or apply (`*.sig`
+  asset against the embedded public key, fail-closed). A compromised release channel
+  cannot forge a valid signature without the offline private key. Tools
+  `tools/new-signing-key.ps1` and `tools/sign-release.ps1`; CI signs via the
+  `LOOKAWAY_SIGNING_KEY` secret.
+
+### Changed
+
+- **Layer purity:** the single-instance lock now sits behind the Core interface
+  `ISingleInstanceLock` and, together with the Windows adapters
+  (`WindowsScreenDimmer`, `WindowsMediaController`), moved into the Data layer;
+  `LookAway.Application` is now platform-neutral (`net10.0`).
+- Both JSON repositories share a common `JsonFileStore`; corrupt
+  `settings.json`/`history.json` are backed up as `*.corrupt` before being replaced.
+- Hotkey labels are localised via `ILocalizationService` (Strg/Ctrl, Umschalt/
+  Shift/Maj); `SettingsViewModel` split by concern (hotkeys/updates).
+
+### Fixed
+
+- Consistent correct umlauts (ä/ö/ü/ß) across comments, text and test names.
+
 ## [1.1.1] – 2026-06-30
 
 ### Fixed

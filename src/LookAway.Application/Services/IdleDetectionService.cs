@@ -23,6 +23,7 @@ public sealed class IdleDetectionService
     private readonly ITimerService _timerService;
     private readonly ILogger<IdleDetectionService> _logger;
     private bool _pausedByIdle;
+    private TimeSpan _awayWhilePaused;
 
     /// <summary>
     /// Erzeugt den Dienst mit Inaktivitaets-Quelle, Timer und Logger.
@@ -79,6 +80,7 @@ public sealed class IdleDetectionService
         {
             _timerService.Pause();
             _pausedByIdle = true;
+            _awayWhilePaused = idleTime;
             IdleDetectionLog.PausedDueToIdle(_logger, (int)idleTime.TotalSeconds);
         }
     }
@@ -94,17 +96,23 @@ public sealed class IdleDetectionService
 
         if (idleTime < Threshold)
         {
-            _timerService.Resume();
+            // War der Nutzer mindestens eine Pausenlaenge weg, startet der Timer
+            // eine frische Arbeitsphase (die Augen haben bereits geruht).
+            _timerService.ResumeAfterAway(_awayWhilePaused);
             _pausedByIdle = false;
             IdleDetectionLog.ResumedAfterIdle(_logger);
+            return;
         }
+
+        // Noch immer inaktiv — laengste beobachtete Abwesenheit fortschreiben.
+        _awayWhilePaused = idleTime;
     }
 
     private void ResumeIfPausedByIdle()
     {
         if (_pausedByIdle && _timerService.State == TimerState.Paused)
         {
-            _timerService.Resume();
+            _timerService.ResumeAfterAway(_awayWhilePaused);
         }
         _pausedByIdle = false;
     }

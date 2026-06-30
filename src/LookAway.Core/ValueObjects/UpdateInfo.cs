@@ -6,11 +6,12 @@ namespace LookAway.Core.ValueObjects;
 /// </summary>
 public sealed class UpdateInfo
 {
-    private UpdateInfo(bool isUpdateAvailable, string latestVersion, Uri? downloadUrl, string releaseNotes)
+    private UpdateInfo(bool isUpdateAvailable, string latestVersion, Uri? downloadUrl, Uri? packageUrl, string releaseNotes)
     {
         IsUpdateAvailable = isUpdateAvailable;
         LatestVersion = latestVersion;
         DownloadUrl = downloadUrl;
+        PackageUrl = packageUrl;
         ReleaseNotes = releaseNotes;
     }
 
@@ -23,6 +24,12 @@ public sealed class UpdateInfo
     /// <summary>URL zur Release-Seite, falls vorhanden.</summary>
     public Uri? DownloadUrl { get; }
 
+    /// <summary>
+    /// Direkte Download-URL des Installationspakets (Portable-ZIP) aus den
+    /// Release-Assets, falls vorhanden. Grundlage fuer die automatische Aktualisierung.
+    /// </summary>
+    public Uri? PackageUrl { get; }
+
     /// <summary>Release-Notes (Plaintext/Markdown), ggf. leer.</summary>
     public string ReleaseNotes { get; }
 
@@ -31,7 +38,7 @@ public sealed class UpdateInfo
     public static UpdateInfo NoUpdate(Version current)
     {
         ArgumentNullException.ThrowIfNull(current);
-        return new UpdateInfo(false, current.ToString(), downloadUrl: null, releaseNotes: string.Empty);
+        return new UpdateInfo(false, current.ToString(), downloadUrl: null, packageUrl: null, releaseNotes: string.Empty);
     }
 
     /// <summary>
@@ -41,11 +48,12 @@ public sealed class UpdateInfo
     /// <param name="tagName">Tag der Release (z. B. <c>"v1.2.0"</c>).</param>
     /// <param name="htmlAddress">Adresse der Release-Seite (Roh-String aus der API).</param>
     /// <param name="releaseNotes">Release-Notes.</param>
+    /// <param name="packageAddress">Direkte Download-URL des Installationspakets (Portable-ZIP), optional.</param>
     /// <returns>
     /// Ein <see cref="UpdateInfo"/>; <see cref="IsUpdateAvailable"/> ist nur dann
     /// <c>true</c>, wenn das Tag eine hoehere Version als <paramref name="current"/> ergibt.
     /// </returns>
-    public static UpdateInfo Create(Version current, string? tagName, string? htmlAddress, string? releaseNotes)
+    public static UpdateInfo Create(Version current, string? tagName, string? htmlAddress, string? releaseNotes, string? packageAddress = null)
     {
         ArgumentNullException.ThrowIfNull(current);
 
@@ -55,12 +63,14 @@ public sealed class UpdateInfo
         }
 
         Uri? downloadUrl = Uri.TryCreate(htmlAddress, UriKind.Absolute, out Uri? uri) ? uri : null;
+        Uri? packageUrl = Uri.TryCreate(packageAddress, UriKind.Absolute, out Uri? pkg) ? pkg : null;
         bool isNewer = latest > current;
 
         return new UpdateInfo(
             isNewer,
             latest.ToString(),
             downloadUrl,
+            packageUrl,
             releaseNotes ?? string.Empty);
     }
 

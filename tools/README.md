@@ -14,8 +14,8 @@ powershell tools/install-gitleaks.ps1
 Lokaler Aufruf:
 
 ```powershell
-powershell _ai/_global/scripts/secret-scan.ps1
-powershell _ai/_global/scripts/secret-scan.ps1 -History
+tools/gitleaks.exe detect --source . --no-banner
+tools/gitleaks.exe detect --source . --log-opts="--all" --no-banner   # inkl. History
 ```
 
 Die CI braucht das Binary nicht: Der Security-Scan laeuft ueber das

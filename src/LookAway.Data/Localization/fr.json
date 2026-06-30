@@ -31,6 +31,8 @@
   "Settings.Hotkeys.Reset": "Restaurer les valeurs par défaut",
 
   "Settings.Update.EnableLabel": "Rechercher les mises à jour",
+  "Settings.Update.AutoLabel": "Mettre à jour automatiquement",
+  "Settings.Update.AutoHint": "La dernière version est téléchargée en arrière-plan et installée automatiquement au prochain démarrage.",
   "Settings.Update.FrequencyLabel": "Fréquence",
   "Settings.Update.CheckNow": "Vérifier maintenant",
   "Settings.Update.UpToDate": "LookAway est à jour.",
@@ -48,6 +50,9 @@
   "Settings.PauseActions.DimBrightness": "Luminosité pendant la pause (%)",
   "Settings.PauseActions.PauseMedia": "Mettre les médias en pause",
   "Settings.PauseActions.ResumeMedia": "Reprendre les médias après la pause",
+  "Settings.PauseActions.DarkenAllScreens": "Assombrir tous les écrans (plusieurs moniteurs)",
+  "Settings.PauseActions.OverlayColor": "Couleur de l'écran de pause",
+  "Settings.PauseActions.OverlayColorHint": "Le curseur d'opacité (alpha) détermine la transparence de l'écran.",
 
   "Settings.Language.Label": "Langue",
   "Settings.AutoStart.Label": "Démarrer avec Windows",

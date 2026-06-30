@@ -94,6 +94,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private bool _updateCheckEnabled;
 
     [ObservableProperty]
+    private bool _autoUpdate;
+
+    [ObservableProperty]
     private SettingsOption<UpdateCheckFrequency>? _selectedFrequencyOption;
 
     [ObservableProperty]
@@ -114,6 +117,12 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private bool _resumeMediaAfterBreak;
+
+    [ObservableProperty]
+    private bool _darkenAllScreens;
+
+    [ObservableProperty]
+    private string _breakOverlayColor = Settings.DefaultBreakOverlayColor;
 
     /// <summary>
     /// Erzeugt das ViewModel mit seinen Abhaengigkeiten.
@@ -227,7 +236,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public int SoundVolumeMax => Settings.MaxSoundVolumePercent;
 
     /// <summary>Wahr, wenn die aktuellen Eingaben gespeichert werden duerfen.</summary>
-    public bool CanPersist => WorkError is null && BreakError is null;
+    public bool CanPersist => WorkError is null && BreakError is null && HexColor.IsValid(BreakOverlayColor);
 
     /// <summary>Fenstertitel.</summary>
     public string Title => _localization.GetText(SettingsTextKeys.Title);
@@ -352,6 +361,12 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Beschriftung "Auf Updates pruefen".</summary>
     public string UpdateEnableLabel => _localization.GetText(SettingsTextKeys.UpdateEnableLabel);
 
+    /// <summary>Beschriftung der Auto-Update-Option.</summary>
+    public string AutoUpdateLabel => _localization.GetText(SettingsTextKeys.UpdateAutoLabel);
+
+    /// <summary>Hinweistext zur Auto-Update-Option.</summary>
+    public string AutoUpdateHint => _localization.GetText(SettingsTextKeys.UpdateAutoHint);
+
     /// <summary>Beschriftung der Pruef-Haeufigkeit.</summary>
     public string UpdateFrequencyLabel => _localization.GetText(SettingsTextKeys.UpdateFrequencyLabel);
 
@@ -375,6 +390,15 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     /// <summary>Beschriftung "Medien fortsetzen".</summary>
     public string ResumeMediaLabel => _localization.GetText(SettingsTextKeys.PauseActionsResumeMedia);
+
+    /// <summary>Beschriftung "Alle Bildschirme abdunkeln".</summary>
+    public string DarkenAllScreensLabel => _localization.GetText(SettingsTextKeys.PauseActionsDarkenAllScreens);
+
+    /// <summary>Beschriftung des Overlay-Farbwaehlers.</summary>
+    public string OverlayColorLabel => _localization.GetText(SettingsTextKeys.PauseActionsOverlayColor);
+
+    /// <summary>Hinweistext zum Overlay-Farbwaehler (Transparenz).</summary>
+    public string OverlayColorHint => _localization.GetText(SettingsTextKeys.PauseActionsOverlayColorHint);
 
     /// <summary>Untere Grenze der Pause-Helligkeit.</summary>
     public int DimBrightnessMin => Settings.MinDimBrightnessPercent;
@@ -415,12 +439,15 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             _hotkeyToggleDnd = settings.HotkeyToggleDnd;
 
             UpdateCheckEnabled = settings.UpdateCheckEnabled;
+            AutoUpdate = settings.AutoUpdate;
             SelectFrequency(settings.UpdateCheckFrequency);
 
             DimScreenDuringBreak = settings.DimScreenDuringBreak;
             DimBrightnessPercent = settings.DimBrightnessPercent;
             PauseMediaDuringBreak = settings.PauseMediaDuringBreak;
             ResumeMediaAfterBreak = settings.ResumeMediaAfterBreak;
+            DarkenAllScreens = settings.DarkenAllScreens;
+            BreakOverlayColor = settings.BreakOverlayColor;
 
             LoadDurations(settings);
         }
@@ -547,11 +574,14 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         settings.HotkeySkipOrSnooze = _hotkeySkipOrSnooze;
         settings.HotkeyToggleDnd = _hotkeyToggleDnd;
         settings.UpdateCheckEnabled = UpdateCheckEnabled;
+        settings.AutoUpdate = AutoUpdate;
         settings.UpdateCheckFrequency = SelectedFrequency;
         settings.DimScreenDuringBreak = DimScreenDuringBreak;
         settings.DimBrightnessPercent = Math.Clamp(DimBrightnessPercent, DimBrightnessMin, DimBrightnessMax);
         settings.PauseMediaDuringBreak = PauseMediaDuringBreak;
         settings.ResumeMediaAfterBreak = ResumeMediaAfterBreak;
+        settings.DarkenAllScreens = DarkenAllScreens;
+        settings.BreakOverlayColor = BreakOverlayColor;
 
         await _settingsRepository.SaveAsync(settings).ConfigureAwait(true);
 
@@ -652,6 +682,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     partial void OnWorkErrorChanged(string? value) => NotifyPersistCommands();
 
     partial void OnBreakErrorChanged(string? value) => NotifyPersistCommands();
+
+    partial void OnBreakOverlayColorChanged(string value) => NotifyPersistCommands();
 
     private void NotifyPersistCommands()
     {

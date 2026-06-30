@@ -7,23 +7,35 @@
          damit die Standard-Visual-States (Hover/Pressed) erhalten bleiben. -->
     <Style x:Key="RcButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
         <Setter Property="FontFamily" Value="{StaticResource RcFontFamily}" />
-        <Setter Property="CornerRadius" Value="6" />
-        <Setter Property="Padding" Value="16,6" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Padding" Value="18,8" />
     </Style>
 
     <!-- Implizit: alle Buttons erben den Basis-Stil. -->
     <Style TargetType="Button" BasedOn="{StaticResource RcButtonStyle}" />
 
-    <!-- Primaer-Aktion: voller Indigo-Akzent (Speichern, Fertig, Pause starten). -->
+    <!-- Primaer-Aktion: voller Teal-Akzent (Speichern, Fertig, Pause starten). -->
     <Style x:Key="RcPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource RcButtonStyle}">
         <Setter Property="Background" Value="{StaticResource RcAccent}" />
         <Setter Property="Foreground" Value="{StaticResource RcAccentForeground}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="BorderThickness" Value="0" />
     </Style>
 
     <!-- Dezente Trennlinie (1 px). -->
     <Style x:Key="RcDividerStyle" TargetType="Border">
         <Setter Property="BorderBrush" Value="{StaticResource RcDivider}" />
         <Setter Property="BorderThickness" Value="0,1,0,0" />
+    </Style>
+
+    <!-- Karte: weisse Flaeche mit feinem Rahmen und abgerundeten Ecken fuer eine
+         moderne, klar gegliederte Optik auf dem leicht getoenten Hintergrund. -->
+    <Style x:Key="RcCardStyle" TargetType="Border">
+        <Setter Property="Background" Value="{StaticResource RcCardBackground}" />
+        <Setter Property="BorderBrush" Value="{StaticResource RcDivider}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="22" />
     </Style>
 
 </ResourceDictionary>

@@ -8,6 +8,21 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.1] – 2026-06-30
+
+### Fixed
+
+- In-app license display (About) now correctly shows **MIT** instead of "Proprietary".
+- **Security:** a pending update is verified by version **and the SHA-256 of its
+  executable** before being applied — a folder merely planted under
+  `%LOCALAPPDATA%\…\updates\` is no longer executed. The zip-bomb guard now limits
+  the **actually written** bytes instead of the size declared in the ZIP.
+- No more duplicate break reminders when the timer and a user action fire at the
+  same time (display now runs thread-safely on the UI thread).
+- Robustness: the timer loop captures its cancellation token locally, overlay
+  visibility is `volatile`, aborted partial downloads are cleaned up, and
+  colliding log event IDs were reassigned.
+
 ## [1.1.0] – 2026-06-30
 
 ### Added

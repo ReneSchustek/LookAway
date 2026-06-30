@@ -41,6 +41,7 @@ using LogService = LookAway.Application.Services.LogService;
 using PauseActionService = LookAway.Application.Services.PauseActionService;
 using UpdateInstallerService = LookAway.Application.Services.UpdateInstallerService;
 using UpdateApplyArgs = LookAway.Application.Services.UpdateApplyArgs;
+using StagedUpdate = LookAway.Application.Services.StagedUpdate;
 using TrayStatusPresenter = LookAway.Application.Services.TrayStatusPresenter;
 using SingleInstanceLock = LookAway.Application.Services.SingleInstanceLock;
 using TimerService = LookAway.Application.Services.TimerService;
@@ -315,12 +316,12 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             _updateDownloadUrl = info.DownloadUrl;
             _trayIcon?.SetUpdateAvailable(true);
 
-            // Auto-Update: Paket im Hintergrund herunterladen und entpacken; das
-            // eigentliche Einspielen erfolgt beim naechsten Start.
+            // Auto-Update: Paket im Hintergrund herunterladen, entpacken und Version
+            // + Datei-Hash vermerken; das eigentliche Einspielen erfolgt beim
+            // naechsten Start nur fuer genau dieses (verifizierte) Paket.
             if (settings.AutoUpdate && info.PackageUrl is not null)
             {
-                _ = Services.GetRequiredService<UpdateInstallerService>()
-                    .DownloadAndStageAsync(info);
+                _ = AutoStageUpdateAsync(info);
             }
         }
     }
@@ -368,7 +369,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
                 return;
             }
 
-            string? staged = await Services.GetRequiredService<UpdateInstallerService>()
+            StagedUpdate? staged = await Services.GetRequiredService<UpdateInstallerService>()
                 .DownloadAndStageAsync(info)
                 .ConfigureAwait(true);
             if (staged is null)
@@ -377,12 +378,43 @@ public partial class App : global::Microsoft.UI.Xaml.Application
                 return;
             }
 
-            RelaunchToApply(staged, target);
+            // Vom Nutzer angestossen und gerade frisch geladen -> direkt einspielen.
+            RelaunchToApply(staged.Directory, target);
         }
         catch (Exception ex)
         {
             AppLog.UpdateApplyFailed(_logger!, ex);
             OpenUpdatePage();
+        }
+    }
+
+    // Laedt/entpackt das Update im Hintergrund und vermerkt Version + Datei-Hash in
+    // den Einstellungen, damit es beim naechsten Start verifiziert eingespielt wird.
+    private async Task AutoStageUpdateAsync(UpdateInfo info)
+    {
+        StagedUpdate? staged = await Services.GetRequiredService<UpdateInstallerService>()
+            .DownloadAndStageAsync(info)
+            .ConfigureAwait(true);
+        if (staged is null)
+        {
+            return;
+        }
+
+        try
+        {
+            ISettingsRepository repository = Services.GetRequiredService<ISettingsRepository>();
+            Settings settings = await repository.LoadAsync().ConfigureAwait(true);
+            settings.PendingUpdateVersion = staged.Version;
+            settings.PendingUpdateSha256 = staged.ExecutableSha256;
+            await repository.SaveAsync(settings).ConfigureAwait(true);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            AppLog.UpdateCheckPersistFailed(_logger!, ex);
+        }
+        catch (IOException ex)
+        {
+            AppLog.UpdateCheckPersistFailed(_logger!, ex);
         }
     }
 
@@ -411,7 +443,13 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             Version current = ParseVersion(GetVersion());
             string target = AppContext.BaseDirectory;
 
-            string? staged = installer.FindPendingUpdateDirectory(current);
+            // Nur ein Update einspielen, das diese Installation selbst vermerkt hat
+            // (Version + Datei-Hash) — nie einen einfach untergeschobenen Ordner.
+            Settings settings = Services.GetRequiredService<ISettingsRepository>()
+                .LoadAsync().GetAwaiter().GetResult();
+
+            string? staged = installer.FindVerifiedPendingUpdateDirectory(
+                current, settings.PendingUpdateVersion, settings.PendingUpdateSha256);
             if (staged is null)
             {
                 installer.CleanObsolete(current);
@@ -725,7 +763,23 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _darkenAllScreens = settings.DarkenAllScreens;
     }
 
+    // Kann aus Hintergrund-Threads (Timer-/Detection-Loop) und vom UI-Thread
+    // (Tray/Hotkey) kommen. Auf den UI-Thread marshallen, damit die "bereits
+    // offen"-Pruefung und das Anzeigen single-threaded laufen und keine zwei
+    // Erinnerungsfenster entstehen koennen.
     private void ShowBreakReminder()
+    {
+        DispatcherQueue? dispatcher = _window?.DispatcherQueue;
+        if (dispatcher is null)
+        {
+            ShowBreakReminderCore();
+            return;
+        }
+
+        _ = dispatcher.TryEnqueue(ShowBreakReminderCore);
+    }
+
+    private void ShowBreakReminderCore()
     {
         if (_reminderPresenter is null || _reminderPresenter.IsReminderOpen || _manualDnd)
         {

@@ -8,6 +8,23 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+## [1.1.1] – 2026-06-30
+
+### Corrigé
+
+- L'affichage de la licence dans l'application (À propos) indique désormais
+  correctement **MIT** au lieu de « Propriétaire ».
+- **Sécurité :** une mise à jour en attente est vérifiée par sa version **et le
+  SHA-256 de son exécutable** avant d'être appliquée — un dossier simplement déposé
+  sous `%LOCALAPPDATA%\…\updates\` n'est plus exécuté. La protection contre les
+  bombes zip limite désormais les octets **réellement écrits** au lieu de la taille
+  déclarée dans l'archive.
+- Plus de double rappel de pause lorsque le minuteur et une action utilisateur se
+  déclenchent en même temps (l'affichage s'exécute de façon thread-safe sur le fil UI).
+- Robustesse : le minuteur capture son jeton d'annulation localement, la visibilité
+  de la superposition est `volatile`, les téléchargements partiels interrompus sont
+  nettoyés et les ID d'événements de journal en collision ont été réattribués.
+
 ## [1.1.0] – 2026-06-30
 
 ### Ajouté
@@ -96,7 +113,8 @@ Première version complète.
 - Démarrage automatique avec Windows via l'entrée Run propre à l'utilisateur
 - Distribution sous forme de ZIP portable et de paquet MSIX
 
-[Non publié]: https://github.com/ReneSchustek/LookAway/compare/v1.1.0...HEAD
+[Non publié]: https://github.com/ReneSchustek/LookAway/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/ReneSchustek/LookAway/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/ReneSchustek/LookAway/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/ReneSchustek/LookAway/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/ReneSchustek/LookAway/compare/v1.0.0...v1.0.1

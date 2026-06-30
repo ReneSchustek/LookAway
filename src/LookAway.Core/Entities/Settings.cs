@@ -203,6 +203,21 @@ public sealed class Settings
     /// <summary>Zeitpunkt der letzten Update-Pruefung; <c>null</c>, wenn nie geprueft.</summary>
     public DateTimeOffset? LastUpdateCheck { get; set; }
 
+    /// <summary>
+    /// Version eines vom Programm selbst heruntergeladenen, noch einzuspielenden
+    /// Updates; <c>null</c>, wenn keines aussteht. Dient zusammen mit
+    /// <see cref="PendingUpdateSha256"/> als vertrauenswuerdiger Nachweis, dass ein
+    /// Staging-Ordner tatsaechlich von dieser Installation stammt (Schutz vor
+    /// untergeschobenen Ordnern).
+    /// </summary>
+    public string? PendingUpdateVersion { get; set; }
+
+    /// <summary>
+    /// SHA-256 (Hex) der heruntergeladenen Programmdatei des ausstehenden Updates;
+    /// wird vor dem Einspielen mit der gestagten Datei verglichen.
+    /// </summary>
+    public string? PendingUpdateSha256 { get; set; }
+
     /// <summary>Untergrenze der Pause-Helligkeit in Prozent.</summary>
     public const int MinDimBrightnessPercent = 10;
 

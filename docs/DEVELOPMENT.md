@@ -312,20 +312,21 @@ LookAway prueft optional auf neue Versionen ueber die GitHub-Releases-API (BRIEF
   und Praerelease-Suffix werden abgeschnitten).
 - `UpdateSchedule` (Core) entscheidet anhand der Haeufigkeit (`OnStartup`/`Daily`/`Weekly`) und des
   letzten Pruefzeitpunkts, ob beim Start geprueft wird — schont das GitHub-Rate-Limit.
-- Einstellungen (Ueber-Tab): Aktivieren, Haeufigkeit, "Jetzt pruefen" mit Statusanzeige sowie die
+- Einstellungen (Über-Tab): Aktivieren, Häufigkeit, "Jetzt prüfen" mit Statusanzeige sowie die
   Option "Automatisch aktualisieren".
-- **Automatische Installation:** Findet die Pruefung ein Update, kann LookAway es selbst einspielen.
-  `UpdateInstallerService` (Application) laedt die Portable-ZIP aus den Release-Assets (nur HTTPS auf
-  GitHub-Hosts, mit Groessen-/Zip-Bomben-Limit), entpackt sie in `%LOCALAPPDATA%\LookAway\updates\<Version>`
-  und tauscht beim naechsten Start ueber einen kurzlebigen Helfer-Prozess (`--apply-update`, in
+- **Automatische Installation:** Findet die Prüfung ein Update, kann LookAway es selbst einspielen.
+  `UpdateInstallerService` (Application) lädt die Portable-ZIP aus den Release-Assets (nur HTTPS auf
+  GitHub-Hosts, mit Größen-/Zip-Bomben-Limit), entpackt sie in `%LOCALAPPDATA%\LookAway\updates\<Version>`
+  und tauscht beim nächsten Start über einen kurzlebigen Helfer-Prozess (`--apply-update`, in
   `UpdateProcess`/`UpdateApplyArgs`) die Programmdateien — mit Backup/Rollback, ohne `portable.flag` zu
-  uebernehmen, unter Erhalt der Benutzerdaten. Manuell loest der Tray-Eintrag "Update" denselben Ablauf
-  sofort aus.
+  übernehmen, unter Erhalt der Benutzerdaten. Vor dem Einspielen werden Version und SHA-256 der
+  heruntergeladenen Datei gegen den vermerkten Wert geprüft. Manuell löst der Tray-Eintrag "Update"
+  denselben Ablauf sofort aus.
 - **Grenzen/Sicherheit:** Der Datei-Tausch funktioniert nur, wenn der Programmordner beschreibbar ist
-  (portable und Per-User-Installation); bei einer "fuer alle Benutzer"-Installation in `Programme` faellt
-  LookAway auf das Oeffnen der Release-Seite zurueck. Echtheit/Integritaet beruhen derzeit auf HTTPS +
-  GitHub-Host-Pinning; fuer vollstaendige Authentizitaet ist Code-Signing mit einem Offline-Schluessel
-  vorgesehen (siehe `REVIEW.md`).
+  (portable und Per-User-Installation); bei einer "für alle Benutzer"-Installation in `Programme` fällt
+  LookAway auf das Öffnen der Release-Seite zurück. Echtheit/Integrität beruhen derzeit auf HTTPS +
+  GitHub-Host-Pinning und dem Hash-Abgleich; für vollständige Authentizität ist Code-Signing mit einem
+  Offline-Schlüssel vorgesehen (siehe `REVIEW.md`).
 
 ## Pause-Aktionen
 

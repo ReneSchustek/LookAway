@@ -13,19 +13,19 @@ namespace LookAway.Data.Services;
 internal static partial class RegistryAutoStartServiceLog
 {
     [LoggerMessage(
-        EventId = 3001,
+        EventId = 3050,
         Level = LogLevel.Information,
         Message = "Autostart-Eintrag {ValueName} geschrieben.")]
     public static partial void Enabled(ILogger logger, string valueName);
 
     [LoggerMessage(
-        EventId = 3002,
+        EventId = 3051,
         Level = LogLevel.Information,
         Message = "Autostart-Eintrag {ValueName} entfernt.")]
     public static partial void Disabled(ILogger logger, string valueName);
 
     [LoggerMessage(
-        EventId = 3003,
+        EventId = 3052,
         Level = LogLevel.Debug,
         Message = "Autostart-Eintrag {ValueName} ist bereits aktuell; kein Schreibvorgang noetig.")]
     public static partial void AlreadyCurrent(ILogger logger, string valueName);

@@ -101,6 +101,22 @@ public sealed class GitHubUpdateCheckerTests
     }
 
     [Fact]
+    public async Task CheckForUpdate_akzeptiert_githubusercontent_Host()
+    {
+        const string json = """
+        {
+          "tag_name": "v2.0.0", "html_url": "https://github.com/x", "body": "",
+          "assets": [ { "name": "LookAway-Portable-v2.0.0.zip", "browser_download_url": "https://objects.githubusercontent.com/abc/p.zip" } ]
+        }
+        """;
+        GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
+
+        UpdateInfo info = await checker.CheckForUpdateAsync();
+
+        Assert.Equal("https://objects.githubusercontent.com/abc/p.zip", info.PackageUrl!.ToString());
+    }
+
+    [Fact]
     public async Task CheckForUpdate_ignoriert_NichtZip_Assets()
     {
         const string json = """

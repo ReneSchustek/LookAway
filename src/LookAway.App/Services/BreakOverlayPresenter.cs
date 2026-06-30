@@ -24,7 +24,6 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
     private readonly ILocalizationService _localization;
     private readonly List<Views.BreakOverlayWindow> _windows = new();
     private DispatcherQueueTimer? _countdownTimer;
-    private BreakOverlayViewModel? _viewModel;
     // Wird auf dem UI-Thread gesetzt, aber vom Timer-Consumer-Thread gelesen
     // (BreakCompletedEvent-Gate) — daher volatile für korrekte Sichtbarkeit.
     private volatile bool _isOverlayOpen;
@@ -61,7 +60,6 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
         {
             string hintKey = BreakModelRegistry.GetHintKey(model);
             BreakOverlayViewModel viewModel = new(hintKey, breakDuration);
-            _viewModel = viewModel;
             viewModel.Ended += (_, e) =>
             {
                 BreakEndReason reason = e.Reason;
@@ -122,7 +120,6 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
     {
         _countdownTimer?.Stop();
         _countdownTimer = null;
-        _viewModel = null;
 
         foreach (Views.BreakOverlayWindow window in _windows)
         {

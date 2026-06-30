@@ -1,4 +1,5 @@
 using System.Globalization;
+using LookAway.Application.Localization;
 using LookAway.Core.Enums;
 
 namespace LookAway.Application.ViewModels;
@@ -16,11 +17,13 @@ namespace LookAway.Application.ViewModels;
 /// </remarks>
 public sealed class BreakOverlayViewModel
 {
+    // Einzige Quelle der Wahrheit für diese Schlüssel ist OverlayTextKeys; hier nur
+    // als bequemer Alias für die bindende View gespiegelt (kein zweites Literal).
     /// <summary>Lokalisierungs-Schlüssel des Overlay-Titels.</summary>
-    public const string TitleKey = "Overlay.Title";
+    public const string TitleKey = OverlayTextKeys.Title;
 
     /// <summary>Lokalisierungs-Schlüssel des ESC-Hinweises.</summary>
-    public const string EndHintKey = "Overlay.EndHint";
+    public const string EndHintKey = OverlayTextKeys.EndHint;
 
     private bool _ended;
 

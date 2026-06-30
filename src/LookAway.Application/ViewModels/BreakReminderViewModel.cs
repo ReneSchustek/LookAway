@@ -1,3 +1,4 @@
+using LookAway.Application.Localization;
 using LookAway.Core.Enums;
 
 namespace LookAway.Application.ViewModels;
@@ -20,8 +21,9 @@ public sealed class BreakReminderViewModel
     /// <summary>Verschiebedauer in Minuten bei "Snooze".</summary>
     public const int SnoozeMinutes = 5;
 
+    // Einzige Quelle der Wahrheit ist ReminderTextKeys; hier nur als Alias gespiegelt.
     /// <summary>Lokalisierungs-Schlüssel des Titels.</summary>
-    public const string TitleKey = "Reminder.Title";
+    public const string TitleKey = ReminderTextKeys.Title;
 
     private bool _completed;
 

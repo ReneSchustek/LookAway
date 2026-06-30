@@ -12,6 +12,9 @@ public sealed record CustomDurations
     /// <summary>Maximale Arbeitsdauer in Minuten (8 Stunden).</summary>
     public const int MaxWorkMinutes = 480;
 
+    /// <summary>Minimale Pausendauer in Minuten (entspricht dem Domänen-Minimum von <see cref="BreakInterval.MinBreakDuration"/>).</summary>
+    public const int MinBreakMinutes = 1;
+
     /// <summary>Maximale Pausendauer in Minuten (2 Stunden).</summary>
     public const int MaxBreakMinutes = 120;
 
@@ -38,19 +41,19 @@ public sealed record CustomDurations
     }
 
     /// <summary>
-    /// Pausendauer in Minuten. Gültig: 1 bis <see cref="MaxBreakMinutes"/>.
+    /// Pausendauer in Minuten. Gültig: <see cref="MinBreakMinutes"/> bis <see cref="MaxBreakMinutes"/>.
     /// </summary>
     public required int BreakMinutes
     {
         get => _breakMinutes;
         init
         {
-            if (value is < 1 or > MaxBreakMinutes)
+            if (value is < MinBreakMinutes or > MaxBreakMinutes)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(value),
                     value,
-                    $"BreakMinutes muss zwischen 1 und {MaxBreakMinutes} liegen.");
+                    $"BreakMinutes muss zwischen {MinBreakMinutes} und {MaxBreakMinutes} liegen.");
             }
             _breakMinutes = value;
         }

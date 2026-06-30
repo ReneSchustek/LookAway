@@ -33,7 +33,7 @@ internal sealed class TrayIconService : ITrayController, IDisposable
     private readonly ILocalizationService _localization;
     private readonly ILogger<TrayIconService> _logger;
     private readonly DispatcherQueue _dispatcher;
-    private readonly Func<bool> _showSettingsHandler;
+    private readonly Action _showSettingsHandler;
     private readonly Action _exitHandler;
     private readonly Action _updateDownloadHandler;
     private readonly Action _startBreakHandler;
@@ -70,7 +70,7 @@ internal sealed class TrayIconService : ITrayController, IDisposable
         ILocalizationService localization,
         DispatcherQueue dispatcher,
         ILogger<TrayIconService> logger,
-        Func<bool> showSettingsHandler,
+        Action showSettingsHandler,
         Action exitHandler,
         Action updateDownloadHandler,
         Action startBreakHandler)
@@ -351,7 +351,7 @@ internal sealed class TrayIconService : ITrayController, IDisposable
     private void OnSettingsRequested()
     {
         TrayIconLog.SettingsRequested(_logger);
-        _ = _showSettingsHandler();
+        _showSettingsHandler();
     }
 
     private void OnStartBreakNow()
@@ -377,7 +377,7 @@ internal sealed class TrayIconService : ITrayController, IDisposable
     private void OnAboutRequested()
     {
         TrayIconLog.AboutRequested(_logger);
-        _ = _showSettingsHandler();
+        _showSettingsHandler();
     }
 
     private void OnExitRequested()
@@ -392,12 +392,17 @@ internal sealed class TrayIconService : ITrayController, IDisposable
 
         public DelegateCommand(Action action) => _action = action;
 
-        public event EventHandler? CanExecuteChanged;
+        // Diese Tray-Befehle sind immer ausführbar; die Ausführbarkeit ändert sich nie.
+        // Das von ICommand geforderte Event bleibt daher bewusst ohne Auslösung (leere
+        // add/remove-Implementierung statt eines ungenutzten Feld-Events).
+        public event EventHandler? CanExecuteChanged
+        {
+            add { }
+            remove { }
+        }
 
         public bool CanExecute(object? parameter) => true;
 
         public void Execute(object? parameter) => _action();
-
-        public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
     }
 }

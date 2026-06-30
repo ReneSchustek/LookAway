@@ -44,7 +44,7 @@ public sealed class AutoStartCoordinator
 
     /// <summary>
     /// Wendet eine Benutzeränderung an: aktualisiert zuerst die Registry und
-    /// persistiert anschliessend die Einstellung. Schlägt die Registry-
+    /// persistiert anschließend die Einstellung. Schlägt die Registry-
     /// Operation fehl, wird nichts gespeichert (kein inkonsistenter Zustand).
     /// </summary>
     /// <param name="enabled">Gewünschter Autostart-Zustand.</param>

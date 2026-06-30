@@ -91,6 +91,8 @@ public static class HexColor
     /// <param name="b">Blau.</param>
     /// <returns><c>true</c>, wenn dunkler Text besser lesbar ist.</returns>
     public static bool IsLight(byte r, byte g, byte b)
+        // 0.5 ist der gewählte Mittelpunkt der normierten Luminanz [0,1] als
+        // Hell/Dunkel-Grenze (eine frei justierbare Heuristik, KEIN WCAG-Kontrastverhältnis).
         => RelativeLuminance(r, g, b) > 0.5;
 
     private static double RelativeLuminance(byte r, byte g, byte b)

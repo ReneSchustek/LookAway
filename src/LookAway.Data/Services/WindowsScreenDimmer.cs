@@ -141,10 +141,15 @@ public sealed partial class WindowsScreenDimmer : IScreenDimmer, IDisposable
     {
         public nint hPhysicalMonitor;
 
+        // 128 = Win32-Konstante PHYSICAL_MONITOR_DESCRIPTION_SIZE.
         [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
         public string szPhysicalMonitorDescription;
     }
 
+    // Bewusst klassisches [DllImport] statt des sonst genutzten source-generierten
+    // [LibraryImport]: Der LibraryImport-Generator deckt das Delegate-Marshalling des
+    // MonitorEnumProc-Callbacks (EnumDisplayMonitors) und das ByValTStr-Inline-String-Feld
+    // in PHYSICAL_MONITOR nicht sauber ab — daher hier der klassische Marshaller.
     [DllImport("user32.dll")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern bool EnumDisplayMonitors(nint hdc, nint lprcClip, MonitorEnumProc lpfnEnum, nint dwData);

@@ -91,9 +91,11 @@ public sealed class CrashReporter : ICrashReporter
             }
             catch (UnauthorizedAccessException)
             {
+                // wie oben: bewusst geschluckt
             }
             catch (NotSupportedException)
             {
+                // wie oben: bewusst geschluckt
             }
         }
     }
@@ -163,9 +165,11 @@ public sealed class CrashReporter : ICrashReporter
             }
             catch (IOException)
             {
+                // Bestätigungsvermerk ist unkritisch — Schreibfehler bewusst geschluckt.
             }
             catch (UnauthorizedAccessException)
             {
+                // wie oben: bewusst geschluckt
             }
         }
     }

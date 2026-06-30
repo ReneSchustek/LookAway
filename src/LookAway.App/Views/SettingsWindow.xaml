@@ -390,8 +390,8 @@
                                 <TextBlock Text="{Binding AutoUpdateHint}" Style="{StaticResource RcSecondaryTextStyle}" TextWrapping="Wrap" />
                                 <StackPanel Orientation="Horizontal" Spacing="12">
                                     <Button Content="{Binding UpdateCheckNowLabel}" Command="{Binding CheckForUpdatesCommand}" />
-                                    <!-- Ein-Klick-Installation: laedt das Paket und spielt es beim Neustart ein.
-                                         Nur sichtbar, wenn die Pruefung ein installierbares Paket gefunden hat. -->
+                                    <!-- Ein-Klick-Installation: lädt das Paket und spielt es beim Neustart ein.
+                                         Nur sichtbar, wenn die Prüfung ein installierbares Paket gefunden hat. -->
                                     <Button
                                         Content="{Binding UpdateInstallNowLabel}"
                                         Command="{Binding InstallUpdateCommand}"
@@ -399,8 +399,8 @@
                                         Visibility="{Binding IsUpdateInstallable, Converter={StaticResource BoolToVisibility}}" />
                                     <TextBlock Text="{Binding UpdateStatusText}" VerticalAlignment="Center" Foreground="{StaticResource RcTextSecondary}" />
                                 </StackPanel>
-                                <!-- Manueller Ausweg (Release-Seite) fuer Faelle ohne Auto-Tausch,
-                                     z. B. eine "fuer alle Benutzer"-Installation in Programme. -->
+                                <!-- Manueller Ausweg (Release-Seite) für Fälle ohne Auto-Tausch,
+                                     z. B. eine "für alle Benutzer"-Installation in Programme. -->
                                 <HyperlinkButton
                                     Content="{Binding UpdateDownloadLabel}"
                                     NavigateUri="{Binding DownloadUri}"

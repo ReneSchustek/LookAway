@@ -29,10 +29,17 @@ public sealed class UpdateInstallerService : IUpdateInstaller
 {
     private const string ExecutableName = "LookAway.exe";
     private const string BackupSuffix = ".bak-update";
+
+    // 10 Versuche × 500 ms = bis zu ~5 s Wartezeit, damit die zu ersetzende, gerade
+    // beendete Vorgänger-Instanz ihre Programmdateien sicher freigibt (Virenscanner/OS).
     private const int CopyRetries = 10;
+    private static readonly TimeSpan CopyRetryDelay = TimeSpan.FromMilliseconds(500);
+
+    // Großzügige Obergrenzen als Zip-Bomben-Schutz, die ein reales Portable-Paket
+    // (self-contained, einige hundert MB / einige tausend Dateien) nie erreicht:
+    // 1 GiB entpackte Gesamtgröße und 20 000 Einträge.
     private const long MaxExtractedBytes = 1024L * 1024 * 1024;
     private const int MaxEntries = 20_000;
-    private static readonly TimeSpan CopyRetryDelay = TimeSpan.FromMilliseconds(500);
 
     private readonly IHttpGetClient _httpClient;
     private readonly ILogger<UpdateInstallerService> _logger;

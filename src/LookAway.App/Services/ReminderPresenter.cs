@@ -18,7 +18,10 @@ internal sealed class ReminderPresenter : IReminderPresenter
 {
     private readonly DispatcherQueue _dispatcher;
     private readonly ILocalizationService _localization;
-    private bool _isReminderOpen;
+    // Wird vom Timer-Consumer-Thread gesetzt/gelesen (Show/IsReminderOpen) und im
+    // UI-Thread zurückgesetzt (Completed-Handler) — daher volatile für korrekte
+    // Sichtbarkeit über Threads hinweg (analog zu BreakOverlayPresenter._isOverlayOpen).
+    private volatile bool _isReminderOpen;
 
     /// <summary>
     /// Erzeugt den Presenter mit dem UI-Dispatcher und der Lokalisierung.

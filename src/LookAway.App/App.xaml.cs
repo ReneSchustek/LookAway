@@ -131,7 +131,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
-        Justification = "Letzte Diagnose-Chance für Startfehler: jede Ausnahme wird in eine Datei geschrieben und anschliessend weitergereicht.")]
+        Justification = "Letzte Diagnose-Chance für Startfehler: jede Ausnahme wird in eine Datei geschrieben und anschließend weitergereicht.")]
     private static void WriteStartupError(Exception exception)
     {
         try
@@ -807,11 +807,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         }
     }
 
-    private bool OpenSettings()
-    {
-        _settingsPresenter?.Show();
-        return true;
-    }
+    private void OpenSettings() => _settingsPresenter?.Show();
 
     private SettingsViewModel CreateSettingsViewModel() => new(
         Services.GetRequiredService<ISettingsRepository>(),
@@ -876,7 +872,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         AppLog.ActivationFromSecondInstance(_logger!);
         // Zweitstart öffnet die Einstellungen — das einzige echte Fenster der
         // Tray-App; das verborgene Hauptfenster bliebe sonst leer.
-        _ = OpenSettings();
+        OpenSettings();
     }
 
     private static ServiceProvider ConfigureServices()

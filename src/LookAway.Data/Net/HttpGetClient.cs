@@ -57,6 +57,10 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
     // Obergrenze für Downloads (Schutz vor riesigen/bösartigen Dateien).
     private const long MaxDownloadBytes = 512L * 1024 * 1024;
 
+    // 80-KB-Lesepuffer beim Streamen in die Datei — entspricht der internen
+    // Standard-Puffergröße von Stream.CopyTo und ist ein bewährter Kompromiss.
+    private const int DownloadBufferSize = 81920;
+
     /// <inheritdoc />
     [SuppressMessage(
         "Design",
@@ -107,7 +111,7 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
             using FileStream file = new(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None);
             using Stream source = await response.Content.ReadAsStreamAsync(linked.Token).ConfigureAwait(false);
 
-            byte[] buffer = new byte[81920];
+            byte[] buffer = new byte[DownloadBufferSize];
             long total = 0;
             int read;
             while ((read = await source.ReadAsync(buffer, linked.Token).ConfigureAwait(false)) > 0)

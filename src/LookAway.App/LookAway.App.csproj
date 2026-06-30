@@ -14,8 +14,8 @@
     <UseWinUI>true</UseWinUI>
     <WinUISDKReferences>false</WinUISDKReferences>
     <Nullable>enable</Nullable>
-    <!-- Standardmaessig unpackaged (Tray-App ohne MSIX-Registrierung): F5/Run und
-         die portable Variante laufen ohne Deploy. Fuer ein MSIX-Paket explizit
+    <!-- Standardmäßig unpackaged (Tray-App ohne MSIX-Registrierung): F5/Run und
+         die portable Variante laufen ohne Deploy. Für ein MSIX-Paket explizit
          mit -p:WindowsPackageType=MSIX bauen. -->
     <WindowsPackageType Condition="'$(WindowsPackageType)' == ''">None</WindowsPackageType>
     <!-- MSIX-Tooling (und damit der Deploy-Zwang in Visual Studio, DEP1560) nur im
@@ -26,8 +26,8 @@
   <!-- WinAppSDK-self-contained-Publish (verteilbares EXE/Setup ohne installierte
        Runtime) zieht die generierte Datei UndockedRegFreeWinRT-AutoInitializer.cs
        aus dem WindowsAppSDK-Paket herein, die CA5392 verletzt. Da das Fremd-/
-       Generat-Code ausserhalb unserer .editorconfig (NuGet-Cache) ist und nur in
-       diesem Modus kompiliert wird, wird CA5392 ausschliesslich hier unterdrueckt;
+       Generat-Code außerhalb unserer .editorconfig (NuGet-Cache) ist und nur in
+       diesem Modus kompiliert wird, wird CA5392 ausschließlich hier unterdrückt;
        normale Builds bleiben streng. -->
   <PropertyGroup Condition="'$(WindowsAppSDKSelfContained)' == 'true'">
     <NoWarn>$(NoWarn);CA5392</NoWarn>
@@ -46,7 +46,7 @@
     </ItemGroup>
   </Target>
 
-  <!-- Assets, die zur Laufzeit ueber echte Dateipfade geladen werden
+  <!-- Assets, die zur Laufzeit über echte Dateipfade geladen werden
        (AppWindow.SetIcon -> Assets\AppIcon.ico; H.NotifyIcon -> Assets\tray-*.ico;
        Sounds), liegen beim unpackaged-Publish sonst nur in der PRI und fehlen als
        lose Dateien -> DirectoryNotFoundException. Daher den Assets-Baum lose mit

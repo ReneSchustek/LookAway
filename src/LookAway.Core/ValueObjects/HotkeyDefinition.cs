@@ -81,11 +81,14 @@ public readonly record struct HotkeyDefinition(HotkeyModifiers Modifiers, int Vi
         _ => string.Empty,
     });
 
+    // Win32-VK-Code von VK_F1; daraus wird die Funktionstastennummer abgeleitet (VK_F1 -> "F1").
+    private const int VkF1 = 0x70;
+
     private static string KeyName(int virtualKey) => virtualKey switch
     {
-        >= 0x41 and <= 0x5A => ((char)virtualKey).ToString(),       // A–Z
-        >= 0x30 and <= 0x39 => ((char)virtualKey).ToString(),       // 0–9
-        >= 0x70 and <= 0x7B => "F" + (virtualKey - 0x6F),           // F1–F12
+        >= 0x41 and <= 0x5A => ((char)virtualKey).ToString(),         // A–Z
+        >= 0x30 and <= 0x39 => ((char)virtualKey).ToString(),         // 0–9
+        >= VkF1 and <= 0x7B => "F" + (virtualKey - VkF1 + 1),         // F1–F12
         _ => "VK" + virtualKey,
     };
 }

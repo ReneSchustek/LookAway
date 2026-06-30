@@ -61,6 +61,25 @@ v1.1.0, and the deliberately deferred roadmap.
 - 33 new tests (HexColor, UpdateApplyArgs, ResumeAfterAway, updater failure paths,
   GitHub asset selection incl. host rejection).
 
+## Fixed in v1.1.1 (post-release re-review)
+
+A second gapless review after v1.1.0 confirmed all v1.1.0 fixes and i18n alignment,
+and surfaced these — now fixed:
+
+- **In-app license** (About) said "Proprietary" — corrected to **MIT** (de/en/fr).
+- **Security (was the top open item):** the startup auto-apply no longer trusts an
+  arbitrary folder under `%LOCALAPPDATA%\…\updates\`. The app records the staged
+  version + **SHA-256** it downloaded and only applies a staged folder whose hash
+  matches (`FindVerifiedPendingUpdateDirectory`). The zip-bomb guard now counts
+  **bytes actually written** instead of the ZIP's declared sizes.
+- **Duplicate break reminders** when timer + user action fired together — display
+  now marshals to the UI thread (single-threaded open-guard).
+- Robustness: timer loop captures its cancellation token locally; overlay
+  visibility flag is `volatile`; aborted partial downloads are cleaned up;
+  colliding log event IDs reassigned.
+- Tests: +18 (HexColor edge, zip-slip, hash-verify, HTTPS reject, githubusercontent
+  host, SettingsViewModel invalid-colour + new-property round-trip). **361 total.**
+
 ## Deferred roadmap (documented, not yet done)
 
 These are larger or environment-dependent and are intentionally tracked rather

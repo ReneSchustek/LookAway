@@ -2,99 +2,116 @@
 
 **Deutsch** · [English](CHANGELOG.en.md) · [Français](CHANGELOG.fr.md)
 
-Alle nennenswerten Aenderungen an LookAway werden hier dokumentiert.
+Alle nennenswerten Änderungen an LookAway werden hier dokumentiert.
 Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
-## [Unveroeffentlicht]
+## [Unveröffentlicht]
+
+## [1.1.1] – 2026-06-30
+
+### Behoben
+
+- In-App-Lizenzanzeige (Über-Bereich) zeigt nun korrekt **MIT** statt „Proprietär".
+- **Sicherheit:** Ein ausstehendes Update wird vor dem Einspielen über Version
+  **und SHA-256 der Programmdatei** verifiziert — ein einfach untergeschobener
+  Ordner unter `%LOCALAPPDATA%\…\updates\` wird nicht mehr ausgeführt. Der
+  Zip-Bomben-Schutz begrenzt jetzt die **tatsächlich geschriebenen** Bytes statt
+  der im ZIP angegebenen Größe.
+- Keine doppelten Pausen-Erinnerungen mehr, wenn Timer und Benutzeraktion
+  gleichzeitig auslösen (die Anzeige läuft thread-sicher auf dem UI-Thread).
+- Robustheit: Der Timer-Loop nutzt ein lokal festgehaltenes Abbruch-Token,
+  die Overlay-Sichtbarkeit ist `volatile`, abgebrochene Teil-Downloads werden
+  aufgeräumt, kollidierende Log-Event-IDs wurden neu vergeben.
 
 ## [1.1.0] – 2026-06-30
 
-### Hinzugefuegt
+### Hinzugefügt
 
-- Pausen-Screen auf **mehreren Monitoren**: Auf Wunsch wird waehrend der Pause
+- Pausen-Screen auf **mehreren Monitoren**: Auf Wunsch wird während der Pause
   jeder angeschlossene Bildschirm mit einem eigenen Overlay abgedeckt (Option
-  „Alle Bildschirme abdunkeln", Standard: an). Funktioniert unabhaengig von
+  „Alle Bildschirme abdunkeln", Standard: an). Funktioniert unabhängig von
   DDC/CI — also auch auf Notebooks.
-- **Frei waehlbare Farbe des Pausen-Screens** inklusive Transparenz (Deckkraft-/
-  Alpha-Regler) ueber einen Farbwaehler in den Einstellungen.
-- **Automatische Aktualisierung**: Ist eine neue Version verfuegbar, kann LookAway
+- **Frei wählbare Farbe des Pausen-Screens** inklusive Transparenz (Deckkraft-/
+  Alpha-Regler) über einen Farbwähler in den Einstellungen.
+- **Automatische Aktualisierung**: Ist eine neue Version verfügbar, kann LookAway
   sie selbst installieren — das neue Portable-Paket wird heruntergeladen, die
   Programmdateien werden nach dem Beenden ausgetauscht und die App startet neu.
-  Neue Einstellung **„Automatisch aktualisieren"**: laedt die neueste Version im
-  Hintergrund und installiert sie beim naechsten Start ohne Zutun. Ohne diese
-  Option genuegt ein Klick auf den Tray-Eintrag „Update".
+  Neue Einstellung **„Automatisch aktualisieren"**: lädt die neueste Version im
+  Hintergrund und installiert sie beim nächsten Start ohne Zutun. Ohne diese
+  Option genügt ein Klick auf den Tray-Eintrag „Update".
 
-### Geaendert
+### Geändert
 
-- Modernisierte Einstellungen: Das Menue oben (Registerkarten) wurde durch ein
-  ein-/ausklappbares **Seitenmenue** (NavigationView mit Hamburger-Button) ersetzt.
-- Neues helles **Mint/Teal-Theme** (augenfreundlich) fuer die gesamte Oberflaeche.
-- Nach **Standby oder Inaktivitaet** (z. B. Telefonat) startet der Arbeits-Timer
+- Modernisierte Einstellungen: Das Menü oben (Registerkarten) wurde durch ein
+  ein-/ausklappbares **Seitenmenü** (NavigationView mit Hamburger-Button) ersetzt.
+- Neues helles **Mint/Teal-Theme** (augenfreundlich) für die gesamte Oberfläche.
+- Nach **Standby oder Inaktivität** (z. B. Telefonat) startet der Arbeits-Timer
   frisch, wenn die Abwesenheit mindestens so lang wie eine Pause war — die Augen
   haben dann ohnehin bereits geruht. Kurze Unterbrechungen laufen wie bisher mit
-  der Restzeit weiter; eine manuelle Pause bleibt unveraendert.
-- Der Tray-Eintrag „Update" oeffnet nicht mehr nur die Release-Seite, sondern
-  laedt die neue Version herunter und installiert sie automatisch.
+  der Restzeit weiter; eine manuelle Pause bleibt unverändert.
+- Der Tray-Eintrag „Update" öffnet nicht mehr nur die Release-Seite, sondern
+  lädt die neue Version herunter und installiert sie automatisch.
 
 ## [1.0.2] – 2026-06-29
 
 ### Behoben
 
 - Startabsturz im unpackaged-Betrieb behoben: Das Tray-Icon wurde als PNG an
-  H.NotifyIcon uebergeben und warf eine Ausnahme; jetzt als DIB-ICO. Zudem
+  H.NotifyIcon übergeben und warf eine Ausnahme; jetzt als DIB-ICO. Zudem
   fehlten beim Publish der Ressourcen-Index (PRI) und lose Asset-Dateien
   (XamlParseException / DirectoryNotFoundException) — die App startet nun
-  zuverlaessig. Portable-ZIP und MSIX sind damit erstmals voll lauffaehig.
+  zuverlässig. Portable-ZIP und MSIX sind damit erstmals voll lauffähig.
 
-### Hinzugefuegt
+### Hinzugefügt
 
-- Setup.exe-Installer (Inno Setup): frei waehlbarer Speicherort, Installation
-  fuer den aktuellen oder alle Benutzer, Startmenue-/optionale Desktop-Verknuepfung,
+- Setup.exe-Installer (Inno Setup): frei wählbarer Speicherort, Installation
+  für den aktuellen oder alle Benutzer, Startmenü-/optionale Desktop-Verknüpfung,
   optionaler Autostart und Uninstaller. Self-contained — keine vorinstallierte
-  .NET-/Windows-App-SDK-Runtime noetig.
+  .NET-/Windows-App-SDK-Runtime nötig.
 
-### Geaendert
+### Geändert
 
-- Verteilbare Builds sind self-contained (Windows App SDK), CI-Pipeline gehaertet
-  (gruener Lauf, SHA-gepinnte Actions, node24) und die Git-Historie bereinigt.
+- Verteilbare Builds sind self-contained (Windows App SDK), CI-Pipeline gehärtet
+  (grüner Lauf, SHA-gepinnte Actions, node24) und die Git-Historie bereinigt.
 
 ## [1.0.1] – 2026-06-29
 
-### Hinzugefuegt
+### Hinzugefügt
 
-- Abgedunkelter Vollbild-Pausen-Screen: verdeckt waehrend der Pause den Bildschirm, zeigt den
-  Countdown und das Uebungs-Ziel und laesst sich mit **ESC** vorzeitig beenden
+- Abgedunkelter Vollbild-Pausen-Screen: verdeckt während der Pause den Bildschirm, zeigt den
+  Countdown und das Übungs-Ziel und lässt sich mit **ESC** vorzeitig beenden
 - EXE-Anwendungsicon (Explorer, Taskleiste, Alt+Tab) aus dem LookAway-Logo
 
-### Geaendert
+### Geändert
 
 - Kachel- und Store-Logos (MSIX) aus dem LookAway-Logo neu erzeugt
 
 ## [1.0.0] – 2026-06-28
 
-Erste vollstaendige Version.
+Erste vollständige Version.
 
-### Hinzugefuegt
+### Hinzugefügt
 
 - Tray-Anwendung mit Single-Instance-Sperre und Status-Icon samt Live-Tooltip
 - Timer-Engine mit sieben Pausenmodellen und Sleep-resilientem Zustand
-- Pause-Erinnerung als dezentes Overlay-Fenster (Pause starten / verschieben / ueberspringen)
-- Auto-Pause bei Inaktivitaet und Nicht-stoeren-Modus bei Vollbild-Apps
+- Pause-Erinnerung als dezentes Overlay-Fenster (Pause starten / verschieben / überspringen)
+- Auto-Pause bei Inaktivität und Nicht-stören-Modus bei Vollbild-Apps
 - Einstellungsfenster (Allgemein, Pausenmodell, eigene Intervalle, Sound, Pause-Aktionen,
-  Hotkeys, Statistik, Update, Ueber)
-- First-Run-Wizard fuer die Erstkonfiguration
-- Dreisprachigkeit (Deutsch, Englisch, Franzoesisch) mit Laufzeit-Sprachwechsel
+  Hotkeys, Statistik, Update, Über)
+- First-Run-Wizard für die Erstkonfiguration
+- Dreisprachigkeit (Deutsch, Englisch, Französisch) mit Laufzeit-Sprachwechsel
 - Zentrales Theme (Farbpalette, Typografie, Button-Styles)
-- Optionaler Erinnerungston mit Auswahl, Lautstaerke und Vorhoeren
+- Optionaler Erinnerungston mit Auswahl, Lautstärke und Vorhören
 - Statistiken (heute, Woche, Jahr) mit CSV-Export
-- Globale Hotkeys fuer Pause, Snooze und Nicht stoeren
-- Update-Pruefung ueber die GitHub-Releases-API
+- Globale Hotkeys für Pause, Snooze und Nicht stören
+- Update-Prüfung über die GitHub-Releases-API
 - Pause-Aktionen: Bildschirm dimmen und Medienwiedergabe pausieren
-- Autostart mit Windows ueber den benutzerspezifischen Run-Eintrag
+- Autostart mit Windows über den benutzerspezifischen Run-Eintrag
 - Distribution als portable ZIP und MSIX-Paket
 
-[Unveroeffentlicht]: https://github.com/ReneSchustek/LookAway/compare/v1.1.0...HEAD
+[Unveröffentlicht]: https://github.com/ReneSchustek/LookAway/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/ReneSchustek/LookAway/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/ReneSchustek/LookAway/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/ReneSchustek/LookAway/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/ReneSchustek/LookAway/compare/v1.0.0...v1.0.1

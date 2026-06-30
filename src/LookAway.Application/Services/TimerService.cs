@@ -428,7 +428,10 @@ public sealed class TimerService : ITimerService, IDisposable
 
         _loopCts?.Dispose();
         _loopCts = new CancellationTokenSource();
-        _loopTask = Task.Run(() => RunLoopAsync(_loopCts.Token));
+        // Token lokal festhalten: ein zwischenzeitliches Stop()+Start() darf den
+        // gerade gestarteten Loop nicht mit dem Token einer neuen CTS laufen lassen.
+        CancellationToken token = _loopCts.Token;
+        _loopTask = Task.Run(() => RunLoopAsync(token));
     }
 
     private void StopLoop()

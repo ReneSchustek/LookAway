@@ -59,11 +59,16 @@ internal sealed class InMemorySettingsRepository : ISettingsRepository
         HotkeyToggleDnd = source.HotkeyToggleDnd,
         UpdateCheckEnabled = source.UpdateCheckEnabled,
         UpdateCheckFrequency = source.UpdateCheckFrequency,
+        AutoUpdate = source.AutoUpdate,
         LastUpdateCheck = source.LastUpdateCheck,
+        PendingUpdateVersion = source.PendingUpdateVersion,
+        PendingUpdateSha256 = source.PendingUpdateSha256,
         DimScreenDuringBreak = source.DimScreenDuringBreak,
         DimBrightnessPercent = source.DimBrightnessPercent,
         PauseMediaDuringBreak = source.PauseMediaDuringBreak,
         ResumeMediaAfterBreak = source.ResumeMediaAfterBreak,
+        DarkenAllScreens = source.DarkenAllScreens,
+        BreakOverlayColor = source.BreakOverlayColor,
         IsFirstRun = source.IsFirstRun,
     };
 }

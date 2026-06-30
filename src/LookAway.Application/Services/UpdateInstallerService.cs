@@ -1,11 +1,22 @@
 using System.Diagnostics.CodeAnalysis;
 using System.IO.Compression;
+using System.Security.Cryptography;
 using LookAway.Core.Domain;
 using LookAway.Core.Interfaces;
 using LookAway.Core.ValueObjects;
 using Microsoft.Extensions.Logging;
 
 namespace LookAway.Application.Services;
+
+/// <summary>
+/// Ergebnis eines erfolgreichen Downloads/Entpackens: der Staging-Ordner, die
+/// Version und der SHA-256 der entpackten Programmdatei. Der Hash wird in den
+/// Einstellungen vermerkt und vor dem Einspielen erneut geprueft.
+/// </summary>
+/// <param name="Directory">Staging-Ordner mit den neuen Dateien.</param>
+/// <param name="Version">Versionszeichenkette des Updates.</param>
+/// <param name="ExecutableSha256">SHA-256 (Hex) der entpackten <c>LookAway.exe</c>.</param>
+public sealed record StagedUpdate(string Directory, string Version, string ExecutableSha256);
 
 /// <summary>
 /// Verwaltet die automatische Aktualisierung ueber die Portable-ZIP eines
@@ -68,12 +79,12 @@ public sealed class UpdateInstallerService
     /// </summary>
     /// <param name="info">Die zu installierende Aktualisierung (mit <see cref="UpdateInfo.PackageUrl"/>).</param>
     /// <param name="cancellationToken">Abbruch-Token.</param>
-    /// <returns>Pfad des Staging-Ordners bei Erfolg, sonst <c>null</c>.</returns>
+    /// <returns>Staging-Ordner, Version und Datei-Hash bei Erfolg, sonst <c>null</c>.</returns>
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
         Justification = "Die Aktualisierung ist unkritisch: Download-/Entpackfehler werden geloggt und als Misserfolg behandelt, damit die laufende App nie abstuerzt.")]
-    public async Task<string?> DownloadAndStageAsync(UpdateInfo info, CancellationToken cancellationToken = default)
+    public async Task<StagedUpdate?> DownloadAndStageAsync(UpdateInfo info, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(info);
 
@@ -96,6 +107,9 @@ public sealed class UpdateInstallerService
 
             if (!await _httpClient.DownloadFileAsync(info.PackageUrl, tempZip, cancellationToken).ConfigureAwait(false))
             {
+                // DownloadFileAsync meldet Misserfolg ohne zu werfen — die evtl.
+                // angelegte Teildatei hier selbst aufraeumen (catch greift nicht).
+                TryDelete(tempZip);
                 return null;
             }
 
@@ -117,8 +131,9 @@ public sealed class UpdateInstallerService
 
             Directory.Move(workDir, stagingDir);
 
+            string sha = ComputeFileHash(ExecutablePathIn(stagingDir));
             UpdateInstallerLog.Staged(_logger, info.LatestVersion, stagingDir);
-            return stagingDir;
+            return new StagedUpdate(stagingDir, info.LatestVersion, sha);
         }
         catch (Exception ex)
         {
@@ -146,15 +161,9 @@ public sealed class UpdateInstallerService
             throw new InvalidOperationException($"ZIP enthaelt zu viele Eintraege ({archive.Entries.Count}).");
         }
 
-        long totalUncompressed = 0;
+        long totalWritten = 0;
         foreach (ZipArchiveEntry entry in archive.Entries)
         {
-            totalUncompressed += entry.Length;
-            if (totalUncompressed > MaxExtractedBytes)
-            {
-                throw new InvalidOperationException("Entpackte Gesamtgroesse ueberschreitet das Limit.");
-            }
-
             string targetPath = Path.GetFullPath(Path.Combine(destinationDir, entry.FullName));
             if (!targetPath.StartsWith(destFull, StringComparison.Ordinal))
             {
@@ -169,56 +178,88 @@ public sealed class UpdateInstallerService
             }
 
             _ = Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
-            entry.ExtractToFile(targetPath, overwrite: true);
+
+            // Auf tatsaechlich geschriebene Bytes begrenzen statt auf die im ZIP
+            // deklarierte (manipulierbare) Groesse zu vertrauen — Schutz vor Zip-Bomben.
+            using Stream source = entry.Open();
+            using FileStream destination = File.Create(targetPath);
+            byte[] buffer = new byte[81920];
+            int read;
+            while ((read = source.Read(buffer, 0, buffer.Length)) > 0)
+            {
+                totalWritten += read;
+                if (totalWritten > MaxExtractedBytes)
+                {
+                    throw new InvalidOperationException("Entpackte Gesamtgroesse ueberschreitet das Limit.");
+                }
+
+                destination.Write(buffer, 0, read);
+            }
         }
     }
 
     /// <summary>
-    /// Sucht ein bereits entpacktes, neueres Paket als die aktuell laufende Version.
+    /// Liefert den Staging-Ordner eines ausstehenden Updates, aber nur wenn er zur
+    /// vermerkten Version gehoert, neuer als die aktuelle Version ist und der Hash
+    /// der entpackten Programmdatei mit dem vermerkten uebereinstimmt. Schuetzt
+    /// davor, einen untergeschobenen Ordner einzuspielen.
     /// </summary>
     /// <param name="current">Aktuell laufende Version.</param>
-    /// <returns>Staging-Ordner der hoechsten neueren Version, oder <c>null</c>.</returns>
+    /// <param name="expectedVersion">Vermerkte Version des ausstehenden Updates.</param>
+    /// <param name="expectedSha256">Vermerkter SHA-256 der Programmdatei.</param>
+    /// <returns>Staging-Ordner, oder <c>null</c>, wenn keiner sicher passt.</returns>
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
         Justification = "Das Suchen ist unkritisch: jeder Datei-/Zugriffsfehler wird geloggt und als 'kein Update' behandelt.")]
-    public string? FindPendingUpdateDirectory(Version current)
+    public string? FindVerifiedPendingUpdateDirectory(Version current, string? expectedVersion, string? expectedSha256)
     {
         ArgumentNullException.ThrowIfNull(current);
 
+        // Nur ein Update einspielen, das diese Installation selbst vermerkt hat
+        // (Version + Datei-Hash). Untergeschobene Ordner ohne passenden Eintrag
+        // werden ignoriert.
+        if (string.IsNullOrWhiteSpace(expectedVersion)
+            || string.IsNullOrWhiteSpace(expectedSha256)
+            || !Version.TryParse(expectedVersion, out Version? version)
+            || version <= current)
+        {
+            return null;
+        }
+
         try
         {
-            if (!Directory.Exists(_stagingRoot))
+            string dir = Path.Combine(_stagingRoot, expectedVersion);
+            string exe = ExecutablePathIn(dir);
+            if (!File.Exists(exe))
             {
                 return null;
             }
 
-            string? bestDir = null;
-            Version? bestVersion = null;
-
-            foreach (string dir in Directory.EnumerateDirectories(_stagingRoot))
+            string actual = ComputeFileHash(exe);
+            if (!string.Equals(actual, expectedSha256, StringComparison.OrdinalIgnoreCase))
             {
-                if (!Version.TryParse(Path.GetFileName(dir), out Version? version)
-                    || version <= current
-                    || !File.Exists(ExecutablePathIn(dir)))
-                {
-                    continue;
-                }
-
-                if (bestVersion is null || version > bestVersion)
-                {
-                    bestVersion = version;
-                    bestDir = dir;
-                }
+                UpdateInstallerLog.HashMismatch(_logger, dir);
+                return null;
             }
 
-            return bestDir;
+            return dir;
         }
         catch (Exception ex)
         {
             UpdateInstallerLog.ScanFailed(_logger, ex);
             return null;
         }
+    }
+
+    /// <summary>Berechnet den SHA-256 (Hex, Kleinbuchstaben) einer Datei.</summary>
+    /// <param name="path">Dateipfad.</param>
+    /// <returns>Hex-Hash.</returns>
+    public static string ComputeFileHash(string path)
+    {
+        using FileStream stream = File.OpenRead(path);
+        byte[] hash = SHA256.HashData(stream);
+        return Convert.ToHexStringLower(hash);
     }
 
     /// <summary>
@@ -437,4 +478,7 @@ internal static partial class UpdateInstallerLog
 
     [LoggerMessage(EventId = 1656, Level = LogLevel.Error, Message = "Rueckrollen von {Target} nach fehlgeschlagenem Update misslungen.")]
     public static partial void RollbackFailed(ILogger logger, Exception exception, string target);
+
+    [LoggerMessage(EventId = 1657, Level = LogLevel.Warning, Message = "Ausstehendes Update in {Directory} abgelehnt: Datei-Hash stimmt nicht mit dem vermerkten ueberein.")]
+    public static partial void HashMismatch(ILogger logger, string directory);
 }

@@ -194,6 +194,54 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
+    public async Task Ungueltige_Overlayfarbe_blockiert_das_Speichern()
+    {
+        using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _);
+        await viewModel.LoadAsync();
+
+        viewModel.BreakOverlayColor = "kein-hex";
+
+        Assert.False(viewModel.CanPersist);
+        Assert.False(viewModel.SaveCommand.CanExecute(null));
+        Assert.False(viewModel.ApplyCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task Overlay_und_Update_Einstellungen_werden_geladen_und_gespeichert()
+    {
+        Settings stored = new()
+        {
+            DarkenAllScreens = false,
+            BreakOverlayColor = "#80123456",
+            DimScreenDuringBreak = true,
+            DimBrightnessPercent = 50,
+            PauseMediaDuringBreak = true,
+            AutoUpdate = true,
+            UpdateCheckEnabled = false,
+        };
+        SettingsViewModel viewModel = CreateViewModel(out InMemorySettingsRepository repository, out _, out _, stored);
+        await viewModel.LoadAsync();
+
+        Assert.False(viewModel.DarkenAllScreens);
+        Assert.Equal("#80123456", viewModel.BreakOverlayColor);
+        Assert.True(viewModel.DimScreenDuringBreak);
+        Assert.Equal(50, viewModel.DimBrightnessPercent);
+        Assert.True(viewModel.AutoUpdate);
+        Assert.False(viewModel.UpdateCheckEnabled);
+
+        viewModel.DarkenAllScreens = true;
+        viewModel.BreakOverlayColor = "#FF222222";
+        viewModel.AutoUpdate = false;
+        await viewModel.SaveCommand.ExecuteAsync(null);
+
+        Settings saved = await repository.LoadAsync();
+        Assert.True(saved.DarkenAllScreens);
+        Assert.Equal("#FF222222", saved.BreakOverlayColor);
+        Assert.False(saved.AutoUpdate);
+        viewModel.Dispose();
+    }
+
+    [Fact]
     public async Task Gueltige_Arbeitsdauer_erlaubt_das_Speichern()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _);

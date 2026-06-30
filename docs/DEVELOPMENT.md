@@ -404,4 +404,4 @@ Runner: `windows-latest` (zwingend wegen WinUI 3). Concurrency-Group bricht aelt
 
 ## Lizenz
 
-Proprietaer – alle Rechte vorbehalten. Siehe [LICENSE](../LICENSE).
+MIT-Lizenz – siehe [LICENSE](../LICENSE).

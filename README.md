@@ -137,4 +137,4 @@ beschrieben.
 
 ## Lizenz
 
-Proprietaer – alle Rechte vorbehalten.
+MIT-Lizenz – siehe [LICENSE](LICENSE).

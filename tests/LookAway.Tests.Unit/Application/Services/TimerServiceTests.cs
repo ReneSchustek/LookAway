@@ -357,6 +357,93 @@ public sealed class TimerServiceTests
     }
 
     [Fact]
+    public async Task ResumeAfterAway_ShortAway_ResumesRemainingTime()
+    {
+        (TimerService service, FakeClock clock, _) = CreateService();
+        try
+        {
+            service.Start(ClassicPomodoro);
+            clock.Advance(TimeSpan.FromMinutes(10));
+            service.Pause();
+            _ = await ReadEventAsync<TimerPausedEvent>(service);
+
+            // 2 min Abwesenheit < 5 min Pause -> Restzeit (15 min) laeuft weiter.
+            service.ResumeAfterAway(TimeSpan.FromMinutes(2));
+
+            Assert.Equal(TimerState.Working, service.State);
+            Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
+        }
+        finally
+        {
+            service.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task ResumeAfterAway_LongAway_RestartsFullWorkPhase()
+    {
+        (TimerService service, FakeClock clock, _) = CreateService();
+        try
+        {
+            service.Start(ClassicPomodoro);
+            clock.Advance(TimeSpan.FromMinutes(10));
+            service.Pause();
+            _ = await ReadEventAsync<TimerPausedEvent>(service);
+
+            // 5 min Abwesenheit >= 5 min Pause -> frische Arbeitsphase (25 min).
+            service.ResumeAfterAway(TimeSpan.FromMinutes(5));
+
+            Assert.Equal(TimerState.Working, service.State);
+            Assert.Equal(TimeSpan.FromMinutes(25), service.Remaining);
+        }
+        finally
+        {
+            service.Dispose();
+        }
+    }
+
+    [Fact]
+    public void ResumeAfterAway_WhenPausedBySystem_IsNoOp()
+    {
+        (TimerService service, FakeClock clock, FakePowerModeWatcher power) = CreateService();
+        try
+        {
+            service.Start(ClassicPomodoro);
+            clock.Advance(TimeSpan.FromMinutes(10));
+            power.RaiseSuspending(); // System-Pause
+
+            service.ResumeAfterAway(TimeSpan.FromMinutes(30));
+
+            // System-Pausen werden ueber den Power-Resume-Pfad behandelt, nicht hier.
+            Assert.Equal(TimerState.Paused, service.State);
+        }
+        finally
+        {
+            service.Dispose();
+        }
+    }
+
+    [Fact]
+    public void ResumeAfterAway_WhenNotPaused_IsNoOp()
+    {
+        (TimerService service, FakeClock clock, _) = CreateService();
+        try
+        {
+            service.Start(ClassicPomodoro);
+            clock.Advance(TimeSpan.FromMinutes(10));
+
+            service.ResumeAfterAway(TimeSpan.FromMinutes(30));
+
+            Assert.Equal(TimerState.Working, service.State);
+            Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
+        }
+        finally
+        {
+            service.Dispose();
+        }
+    }
+
+    [Fact]
     public async Task Stop_FromWorkingState_ResetsToIdleAndEmitsStopEvent()
     {
         (TimerService service, _, _) = CreateService();

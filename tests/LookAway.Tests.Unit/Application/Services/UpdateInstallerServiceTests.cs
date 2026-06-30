@@ -53,6 +53,20 @@ public sealed class UpdateInstallerServiceTests : IDisposable
         return memory.ToArray();
     }
 
+    private static byte[] BuildZip(params (string Name, string Content)[] entries)
+    {
+        using MemoryStream memory = new();
+        using (ZipArchive archive = new(memory, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach ((string name, string content) in entries)
+            {
+                WriteEntry(archive, name, content);
+            }
+        }
+
+        return memory.ToArray();
+    }
+
     private static void WriteEntry(ZipArchive archive, string name, string content)
     {
         ZipArchiveEntry entry = archive.CreateEntry(name);
@@ -84,6 +98,28 @@ public sealed class UpdateInstallerServiceTests : IDisposable
         string? staged = await service.DownloadAndStageAsync(info);
 
         Assert.Null(staged);
+    }
+
+    [Fact]
+    public async Task DownloadAndStage_bei_Download_Fehler_liefert_null()
+    {
+        // FakeHttpGetClient ohne Inhalt -> DownloadFileAsync meldet Misserfolg.
+        UpdateInstallerService service = CreateService(Path.Combine(_root, "staging"), package: null);
+        UpdateInfo info = UpdateInfo.Create(new Version(1, 0, 0), "v1.5.0", null, null, "https://example.com/p.zip");
+
+        Assert.Null(await service.DownloadAndStageAsync(info));
+    }
+
+    [Fact]
+    public async Task DownloadAndStage_bei_Paket_ohne_EXE_liefert_null_und_raeumt_auf()
+    {
+        byte[] zipWithoutExe = BuildZip(("readme.txt", "hallo"));
+        string stagingRoot = Path.Combine(_root, "staging");
+        UpdateInstallerService service = CreateService(stagingRoot, zipWithoutExe);
+        UpdateInfo info = UpdateInfo.Create(new Version(1, 0, 0), "v1.5.0", null, null, "https://example.com/p.zip");
+
+        Assert.Null(await service.DownloadAndStageAsync(info));
+        Assert.False(Directory.Exists(Path.Combine(stagingRoot, "1.5.0")));
     }
 
     [Fact]

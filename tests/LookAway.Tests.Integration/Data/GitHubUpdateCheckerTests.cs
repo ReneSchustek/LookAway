@@ -63,6 +63,60 @@ public sealed class GitHubUpdateCheckerTests
     }
 
     [Fact]
+    public async Task CheckForUpdate_faellt_auf_erste_ZIP_zurueck_wenn_keine_Portable()
+    {
+        const string json = """
+        {
+          "tag_name": "v2.0.0", "html_url": "https://github.com/x", "body": "",
+          "assets": [
+            { "name": "LookAway-v2.0.0.zip", "browser_download_url": "https://github.com/x/a.zip" },
+            { "name": "extra-v2.0.0.zip", "browser_download_url": "https://github.com/x/b.zip" }
+          ]
+        }
+        """;
+        GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
+
+        UpdateInfo info = await checker.CheckForUpdateAsync();
+
+        Assert.Equal("https://github.com/x/a.zip", info.PackageUrl!.ToString());
+    }
+
+    [Fact]
+    public async Task CheckForUpdate_lehnt_Nicht_GitHub_und_HTTP_Assets_ab()
+    {
+        const string json = """
+        {
+          "tag_name": "v2.0.0", "html_url": "https://github.com/x", "body": "",
+          "assets": [
+            { "name": "evil-portable.zip", "browser_download_url": "https://evil.example.com/p.zip" },
+            { "name": "plain-portable.zip", "browser_download_url": "http://github.com/x/p.zip" }
+          ]
+        }
+        """;
+        GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
+
+        UpdateInfo info = await checker.CheckForUpdateAsync();
+
+        Assert.Null(info.PackageUrl);
+    }
+
+    [Fact]
+    public async Task CheckForUpdate_ignoriert_NichtZip_Assets()
+    {
+        const string json = """
+        {
+          "tag_name": "v2.0.0", "html_url": "https://github.com/x", "body": "",
+          "assets": [ { "name": "LookAway-Setup.exe", "browser_download_url": "https://github.com/x/s.exe" } ]
+        }
+        """;
+        GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
+
+        UpdateInfo info = await checker.CheckForUpdateAsync();
+
+        Assert.Null(info.PackageUrl);
+    }
+
+    [Fact]
     public async Task CheckForUpdate_ohne_Assets_hat_keine_Paket_URL()
     {
         const string json = """{ "tag_name": "v2.0.0", "html_url": "https://github.com/x", "body": "" }""";

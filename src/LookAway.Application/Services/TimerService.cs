@@ -41,7 +41,8 @@ public sealed class TimerService : ITimerService, IDisposable
 
     private CancellationTokenSource? _loopCts;
     private Task? _loopTask;
-    private bool _disposed;
+    // Wird vom Hintergrund-Loop und von Power-Events ausserhalb des Locks gelesen.
+    private volatile bool _disposed;
 
     /// <summary>Erzeugt einen <see cref="TimerService"/> mit Default-Tickintervall.</summary>
     public TimerService(IClock clock, IPowerModeWatcher powerWatcher, ILogger<TimerService> logger)

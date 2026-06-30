@@ -31,7 +31,7 @@
 
             <NavigationView.PaneHeader>
                 <StackPanel Orientation="Horizontal" Spacing="10" Padding="4,10,4,10">
-                    <Image Source="ms-appx:///Assets/LookAwayLogo.png" Width="26" Height="26" VerticalAlignment="Center" />
+                    <Image Source="ms-appx:///Assets/LookAwayLogo.png" Width="26" Height="26" VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw" />
                     <TextBlock
                         Text="LookAway"
                         FontSize="19"
@@ -240,6 +240,7 @@
                                 <TextBlock Text="{Binding OverlayColorHint}" Foreground="{StaticResource RcTextSecondary}" TextWrapping="Wrap" />
                                 <ColorPicker
                                     x:Name="OverlayColorPicker"
+                                    AutomationProperties.Name="{Binding OverlayColorLabel}"
                                     IsAlphaEnabled="True"
                                     IsColorSliderVisible="True"
                                     IsColorChannelTextInputVisible="False"

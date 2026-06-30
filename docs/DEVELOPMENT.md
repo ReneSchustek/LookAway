@@ -2,8 +2,9 @@
 
 [![CI](https://github.com/ReneSchustek/LookAway/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ReneSchustek/LookAway/actions/workflows/ci.yml)
 
-Eine schlanke Windows-Tray-Anwendung, die dezent an Bildschirmpausen erinnert. Mehrere wissenschaftlich fundierte Pausenmodelle, dreisprachig (Deutsch, Englisch, Franzoesisch), und vollstaendig konfigurierbar pro Windows-Benutzer.
+**Deutsch** · [English](DEVELOPMENT.en.md)
 
+Eine schlanke Windows-Tray-Anwendung, die dezent an Bildschirmpausen erinnert. Mehrere wissenschaftlich fundierte Pausenmodelle, dreisprachig (Deutsch, Englisch, Franzoesisch), und vollstaendig konfigurierbar pro Windows-Benutzer.
 
 ## Voraussetzungen
 
@@ -311,9 +312,20 @@ LookAway prueft optional auf neue Versionen ueber die GitHub-Releases-API (Stand
   und Praerelease-Suffix werden abgeschnitten).
 - `UpdateSchedule` (Core) entscheidet anhand der Haeufigkeit (`OnStartup`/`Daily`/`Weekly`) und des
   letzten Pruefzeitpunkts, ob beim Start geprueft wird — schont das GitHub-Rate-Limit.
-- Einstellungen (Ueber-Tab): Aktivieren, Haeufigkeit, "Jetzt pruefen" mit Statusanzeige und
-  Download-Link. Findet die Hintergrundpruefung beim Start ein Update, erscheint im Tray der Eintrag
-  "Update herunterladen", der die Release-Seite im Browser oeffnet (kein Auto-Install).
+- Einstellungen (Ueber-Tab): Aktivieren, Haeufigkeit, "Jetzt pruefen" mit Statusanzeige sowie die
+  Option "Automatisch aktualisieren".
+- **Automatische Installation:** Findet die Pruefung ein Update, kann LookAway es selbst einspielen.
+  `UpdateInstallerService` (Application) laedt die Portable-ZIP aus den Release-Assets (nur HTTPS auf
+  GitHub-Hosts, mit Groessen-/Zip-Bomben-Limit), entpackt sie in `%LOCALAPPDATA%\LookAway\updates\<Version>`
+  und tauscht beim naechsten Start ueber einen kurzlebigen Helfer-Prozess (`--apply-update`, in
+  `UpdateProcess`/`UpdateApplyArgs`) die Programmdateien — mit Backup/Rollback, ohne `portable.flag` zu
+  uebernehmen, unter Erhalt der Benutzerdaten. Manuell loest der Tray-Eintrag "Update" denselben Ablauf
+  sofort aus.
+- **Grenzen/Sicherheit:** Der Datei-Tausch funktioniert nur, wenn der Programmordner beschreibbar ist
+  (portable und Per-User-Installation); bei einer "fuer alle Benutzer"-Installation in `Programme` faellt
+  LookAway auf das Oeffnen der Release-Seite zurueck. Echtheit/Integritaet beruhen derzeit auf HTTPS +
+  GitHub-Host-Pinning; fuer vollstaendige Authentizitaet ist Code-Signing mit einem Offline-Schluessel
+  vorgesehen (siehe `REVIEW.md`).
 
 ## Pause-Aktionen
 
@@ -370,6 +382,7 @@ veroeffentlicht sie als GitHub-Release-Artefakt (`.github/workflows/ci.yml`, Job
 ./tools/review.ps1 -Mode all         # Build + Tests + Security
 ```
 
+`enterprise` legt ein Markdown-Report-Skelett unter `.ai/reviews/` an, in das die Bewertung eingetragen wird. Die Skript-Pfade gehen vom Solution-Root aus.
 
 ## Continuous Integration
 
@@ -391,12 +404,4 @@ Runner: `windows-latest` (zwingend wegen WinUI 3). Concurrency-Group bricht aelt
 
 ## Lizenz
 
-Proprietaer – alle Rechte vorbehalten.
-
-<!-- TRIAGE-WORKFLOW: auto-managed by triage-deploy.ps1 -->
-## Triage und Reviews
-
-- **Watcher starten:** `.\triage-watch.ps1` (bzw. `.\triage-watch-php.ps1` / `.\triage-watch-shopware.ps1`) im Projekt-Root
-
-Volle Doku: `F:\Entwicklung\_Anleitungen\allgemein\triage-workflow.md`
-<!-- /TRIAGE-WORKFLOW -->
+Proprietaer – alle Rechte vorbehalten. Siehe [LICENSE](../LICENSE).

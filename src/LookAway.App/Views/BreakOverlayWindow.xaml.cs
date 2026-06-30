@@ -39,6 +39,11 @@ internal sealed partial class BreakOverlayWindow : Window
 
         Title = "LookAway";
         RootGrid.Background = new SolidColorBrush(background);
+
+        // Textfarbe an die gewaehlte Overlay-Farbe anpassen: auf hellen Farben
+        // dunkler Text, sonst heller — damit der Inhalt immer lesbar bleibt.
+        ApplyReadableForeground(background);
+
         TitleText.Text = localization.GetText(OverlayTextKeys.Title);
         HintText.Text = localization.GetText(viewModel.HintKey);
         EndHintText.Text = localization.GetText(OverlayTextKeys.EndHint);
@@ -66,6 +71,20 @@ internal sealed partial class BreakOverlayWindow : Window
 
     /// <summary>Aktualisiert die angezeigte Restzeit aus dem ViewModel.</summary>
     public void RefreshCountdown() => CountdownText.Text = _viewModel.RemainingDisplay;
+
+    private void ApplyReadableForeground(WinColor background)
+    {
+        bool light = Core.Domain.HexColor.IsLight(background.R, background.G, background.B);
+
+        SolidColorBrush primary = new(light ? WinColor.FromArgb(0xFF, 0x0B, 0x1F, 0x1C) : WinColor.FromArgb(0xFF, 0xFF, 0xFF, 0xFF));
+        SolidColorBrush secondary = new(light ? WinColor.FromArgb(0xFF, 0x33, 0x4A, 0x45) : WinColor.FromArgb(0xFF, 0xE5, 0xE7, 0xEB));
+        SolidColorBrush tertiary = new(light ? WinColor.FromArgb(0xFF, 0x52, 0x70, 0x6A) : WinColor.FromArgb(0xFF, 0x9C, 0xA3, 0xAF));
+
+        TitleText.Foreground = primary;
+        CountdownText.Foreground = primary;
+        HintText.Foreground = secondary;
+        EndHintText.Foreground = tertiary;
+    }
 
     /// <summary>
     /// Schliesst das Overlay von aussen (regulaeres Pausenende oder weil ein

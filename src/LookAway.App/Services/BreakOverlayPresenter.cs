@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using LookAway.Application.ViewModels;
 using LookAway.Core.Domain;
 using LookAway.Core.Enums;
@@ -96,7 +95,8 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
                 onEnded(reason);
             };
 
-            WinColor background = ParseColor(overlayColorHex);
+            (byte a, byte r, byte g, byte b) = HexColor.ParseOrDefault(overlayColorHex);
+            WinColor background = WinColor.FromArgb(a, r, g, b);
 
             // Auf Wunsch jeden Monitor abdecken; sonst nur den Hauptbildschirm.
             IReadOnlyList<DisplayArea> areas = allScreens
@@ -155,30 +155,5 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
         }
 
         _windows.Clear();
-    }
-
-    /// <summary>
-    /// Parst eine Hex-Farbe (<c>#RRGGBB</c> oder <c>#AARRGGBB</c>). Bei
-    /// ungueltiger Eingabe wird die dunkle Standardfarbe verwendet.
-    /// </summary>
-    private static WinColor ParseColor(string hex)
-    {
-        if (!string.IsNullOrEmpty(hex)
-            && hex[0] == '#'
-            && (hex.Length is 7 or 9))
-        {
-            string body = hex[1..];
-            if (uint.TryParse(body, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out uint value))
-            {
-                byte a = body.Length == 8 ? (byte)((value >> 24) & 0xFF) : (byte)0xFF;
-                byte r = (byte)((value >> 16) & 0xFF);
-                byte g = (byte)((value >> 8) & 0xFF);
-                byte b = (byte)(value & 0xFF);
-                return WinColor.FromArgb(a, r, g, b);
-            }
-        }
-
-        // Fallback: dunkles, leicht transparentes Standard-Overlay (#F20F1115).
-        return WinColor.FromArgb(0xF2, 0x0F, 0x11, 0x15);
     }
 }

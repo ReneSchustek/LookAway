@@ -48,4 +48,14 @@ public interface ITimerService
 
     /// <summary>Setzt einen pausierten Timer fort.</summary>
     void Resume();
+
+    /// <summary>
+    /// Setzt den Timer nach einer automatischen Abwesenheit (z. B. Inaktivitaet)
+    /// fort. War die Abwesenheit mindestens so lang wie eine Pause, wird
+    /// stattdessen eine frische Arbeitsphase gestartet — der Nutzer hat in dieser
+    /// Zeit ohnehin nicht auf den Bildschirm geschaut, die Augen haben also bereits
+    /// pausiert. Betrifft nur automatische Pausen, keine Benutzer-Pausen.
+    /// </summary>
+    /// <param name="awayDuration">Gesamtdauer der Abwesenheit vom Bildschirm.</param>
+    void ResumeAfterAway(TimeSpan awayDuration);
 }

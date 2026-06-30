@@ -37,6 +37,7 @@ public sealed class TimerService : ITimerService, IDisposable
     private TimeSpan _pausedRemaining;
     private TimerState _previousStateBeforePause;
     private bool _pausedBySystem;
+    private DateTimeOffset _pauseStartUtc;
 
     private CancellationTokenSource? _loopCts;
     private Task? _loopTask;
@@ -188,6 +189,22 @@ public sealed class TimerService : ITimerService, IDisposable
         }
     }
 
+    /// <inheritdoc />
+    public void ResumeAfterAway(TimeSpan awayDuration)
+    {
+        ThrowIfDisposed();
+
+        lock (_lock)
+        {
+            // Betrifft nur automatische Pausen (Idle). System-Pausen werden ueber
+            // den Power-Resume-Pfad behandelt; Benutzer-Pausen ueber Resume().
+            if (_state == TimerState.Paused && !_pausedBySystem)
+            {
+                ResumeOrRestart(awayDuration);
+            }
+        }
+    }
+
     /// <summary>
     /// Wertet eine eventuelle Phasen-Beendigung aus und erzeugt die
     /// entsprechenden Events. Wird sowohl vom Hintergrund-Loop als auch
@@ -279,6 +296,7 @@ public sealed class TimerService : ITimerService, IDisposable
         _pausedRemaining = ComputeRemaining();
         _previousStateBeforePause = _state;
         _pausedBySystem = bySystem;
+        _pauseStartUtc = _clock.UtcNow;
         _state = TimerState.Paused;
 
         TimerServiceLog.TimerPaused(_logger, _previousStateBeforePause, bySystem, _pausedRemaining);
@@ -302,6 +320,50 @@ public sealed class TimerService : ITimerService, IDisposable
         {
             EnqueueEvent(new WorkResumedEvent { Timestamp = _clock.UtcNow });
         }
+    }
+
+    /// <summary>
+    /// Entscheidet beim Fortsetzen, ob die Restzeit weiterlaeuft oder eine frische
+    /// Arbeitsphase beginnt: War die Abwesenheit mindestens so lang wie eine Pause,
+    /// haben die Augen bereits geruht — dann wird neu gestartet.
+    /// </summary>
+    private void ResumeOrRestart(TimeSpan awayDuration)
+    {
+        if (_interval is not null && awayDuration >= _interval.BreakDuration)
+        {
+            TimerServiceLog.TimerRestartedAfterAway(_logger, _previousStateBeforePause, awayDuration);
+            RestartWorkingPhase();
+        }
+        else
+        {
+            ResumeInternal();
+            // Falls die Restzeit waehrend der Abwesenheit abgelaufen waere,
+            // sofort den naechsten Phasenuebergang ausfuehren.
+            EvaluatePhase();
+        }
+    }
+
+    /// <summary>
+    /// Beginnt eine frische Arbeitsphase mit voller Arbeitsdauer. Lag die
+    /// Abwesenheit in einer Pause, wird zuvor das regulaere Pausenende signalisiert
+    /// (damit Overlay/Helligkeit/Medien sauber zurueckgesetzt werden).
+    /// </summary>
+    private void RestartWorkingPhase()
+    {
+        _pausedBySystem = false;
+        _pausedRemaining = TimeSpan.Zero;
+
+        if (_previousStateBeforePause == TimerState.OnBreak)
+        {
+            TransitionToWorking();
+            return;
+        }
+
+        BreakInterval interval = _interval!;
+        _state = TimerState.Working;
+        _phaseStartUtc = _clock.UtcNow;
+        _phaseDuration = interval.WorkDuration;
+        EnqueueEvent(new WorkResumedEvent { Timestamp = _clock.UtcNow });
     }
 
     private TimeSpan ComputeRemaining()
@@ -347,10 +409,9 @@ public sealed class TimerService : ITimerService, IDisposable
         {
             if (_state == TimerState.Paused && _pausedBySystem)
             {
-                ResumeInternal();
-                // Falls die Restzeit waehrend des Sleep abgelaufen waere,
-                // sofort den naechsten Phasenuebergang ausfuehren.
-                EvaluatePhase();
+                // Sleep zaehlt als Abwesenheit: War der Rechner mindestens eine
+                // Pausenlaenge im Standby, beginnt eine frische Arbeitsphase.
+                ResumeOrRestart(_clock.UtcNow - _pauseStartUtc);
             }
         }
     }

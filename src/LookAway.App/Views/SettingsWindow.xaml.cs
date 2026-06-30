@@ -23,8 +23,8 @@ namespace LookAway.Views;
 /// </summary>
 internal sealed partial class SettingsWindow : Window
 {
-    private const int WindowWidth = 760;
-    private const int WindowHeight = 640;
+    private const int WindowWidth = 840;
+    private const int WindowHeight = 680;
 
     private static readonly string[] CsvFileExtensions = { ".csv" };
 

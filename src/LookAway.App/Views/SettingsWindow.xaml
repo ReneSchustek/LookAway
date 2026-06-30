@@ -9,7 +9,7 @@
     mc:Ignorable="d">
 
     <!-- RequestedTheme=Light erzwingt die hellen Control-Templates passend zur
-         Mint/Teal-Palette, unabhaengig vom Windows-Systemmodus. -->
+         Teal-Palette, unabhaengig vom Windows-Systemmodus. -->
     <Grid x:Name="RootGrid" RequestedTheme="Light" Background="{StaticResource RcBackground}">
         <Grid.Resources>
             <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
@@ -24,10 +24,22 @@
             x:Name="NavView"
             Grid.Row="0"
             PaneDisplayMode="Left"
-            OpenPaneLength="208"
+            OpenPaneLength="220"
             IsSettingsVisible="False"
             IsBackButtonVisible="Collapsed"
             SelectionChanged="OnNavSelectionChanged">
+
+            <NavigationView.PaneHeader>
+                <StackPanel Orientation="Horizontal" Spacing="10" Padding="4,10,4,10">
+                    <Image Source="ms-appx:///Assets/LookAwayLogo.png" Width="26" Height="26" VerticalAlignment="Center" />
+                    <TextBlock
+                        Text="LookAway"
+                        FontSize="19"
+                        FontWeight="SemiBold"
+                        VerticalAlignment="Center"
+                        Foreground="{StaticResource RcAccent}" />
+                </StackPanel>
+            </NavigationView.PaneHeader>
 
             <NavigationView.MenuItems>
                 <NavigationViewItem Content="{Binding TabGeneralHeader}" Tag="General" IsSelected="True">
@@ -76,266 +88,315 @@
             </NavigationView.FooterMenuItems>
 
             <!-- Inhaltsbereich: alle Abschnitte liegen uebereinander; nur der zur
-                 Menueauswahl passende ist sichtbar (Umschaltung im Code-Behind). -->
-            <Grid Padding="28,24,28,12">
+                 Menueauswahl passende ist sichtbar (Umschaltung im Code-Behind).
+                 Jeder Abschnitt: Titel + Karte. -->
+            <Grid Padding="32,28,32,16">
 
                 <!-- Allgemein -->
                 <ScrollViewer x:Name="PanelGeneral">
-                    <StackPanel Spacing="16">
-                        <ComboBox
-                            Header="{Binding LanguageLabel}"
-                            ItemsSource="{Binding Languages}"
-                            SelectedItem="{Binding SelectedLanguageOption, Mode=TwoWay}"
-                            DisplayMemberPath="Label"
-                            MinWidth="240" />
-                        <CheckBox
-                            Content="{Binding AutoStartLabel}"
-                            IsChecked="{Binding AutoStart, Mode=TwoWay}" />
-                        <CheckBox
-                            Content="{Binding IdlePauseLabel}"
-                            IsChecked="{Binding PauseOnIdle, Mode=TwoWay}" />
-                        <NumberBox
-                            Header="{Binding IdleThresholdLabel}"
-                            Value="{Binding IdleThresholdMinutes, Mode=TwoWay}"
-                            Minimum="{Binding IdleMinMinutes}"
-                            Maximum="{Binding IdleMaxMinutes}"
-                            IsEnabled="{Binding PauseOnIdle}"
-                            SpinButtonPlacementMode="Inline"
-                            MinWidth="160"
-                            HorizontalAlignment="Left" />
-                        <CheckBox
-                            Content="{Binding FullscreenSuppressLabel}"
-                            IsChecked="{Binding SuppressOnFullscreen, Mode=TwoWay}" />
+                    <StackPanel Spacing="12" MaxWidth="660" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding TabGeneralHeader}" Style="{StaticResource RcSectionHeaderStyle}" />
+                        <Border Style="{StaticResource RcCardStyle}">
+                            <StackPanel Spacing="16">
+                                <ComboBox
+                                    Header="{Binding LanguageLabel}"
+                                    ItemsSource="{Binding Languages}"
+                                    SelectedItem="{Binding SelectedLanguageOption, Mode=TwoWay}"
+                                    DisplayMemberPath="Label"
+                                    MinWidth="240" />
+                                <CheckBox
+                                    Content="{Binding AutoStartLabel}"
+                                    IsChecked="{Binding AutoStart, Mode=TwoWay}" />
+                                <CheckBox
+                                    Content="{Binding IdlePauseLabel}"
+                                    IsChecked="{Binding PauseOnIdle, Mode=TwoWay}" />
+                                <NumberBox
+                                    Header="{Binding IdleThresholdLabel}"
+                                    Value="{Binding IdleThresholdMinutes, Mode=TwoWay}"
+                                    Minimum="{Binding IdleMinMinutes}"
+                                    Maximum="{Binding IdleMaxMinutes}"
+                                    IsEnabled="{Binding PauseOnIdle}"
+                                    SpinButtonPlacementMode="Inline"
+                                    MinWidth="160"
+                                    HorizontalAlignment="Left" />
+                                <CheckBox
+                                    Content="{Binding FullscreenSuppressLabel}"
+                                    IsChecked="{Binding SuppressOnFullscreen, Mode=TwoWay}" />
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
 
                 <!-- Pausenmodell -->
                 <ScrollViewer x:Name="PanelModel" Visibility="Collapsed">
-                    <StackPanel Spacing="16">
-                        <ComboBox
-                            Header="{Binding ModelLabel}"
-                            ItemsSource="{Binding Models}"
-                            SelectedItem="{Binding SelectedModelOption, Mode=TwoWay}"
-                            DisplayMemberPath="Label"
-                            MinWidth="320" />
+                    <StackPanel Spacing="12" MaxWidth="660" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding TabModelHeader}" Style="{StaticResource RcSectionHeaderStyle}" />
+                        <Border Style="{StaticResource RcCardStyle}">
+                            <StackPanel Spacing="16">
+                                <ComboBox
+                                    Header="{Binding ModelLabel}"
+                                    ItemsSource="{Binding Models}"
+                                    SelectedItem="{Binding SelectedModelOption, Mode=TwoWay}"
+                                    DisplayMemberPath="Label"
+                                    MinWidth="320" />
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
 
                 <!-- Eigene Intervalle -->
                 <ScrollViewer x:Name="PanelIntervals" Visibility="Collapsed">
-                    <StackPanel Spacing="16">
-                        <TextBlock Text="{Binding IntervalsHint}" TextWrapping="Wrap" />
-                        <CheckBox
-                            Content="{Binding UseCustomLabel}"
-                            IsChecked="{Binding UseCustomDurations, Mode=TwoWay}" />
-                        <NumberBox
-                            Header="{Binding WorkLabel}"
-                            Value="{Binding WorkMinutes, Mode=TwoWay}"
-                            Minimum="{Binding WorkMinMinutes}"
-                            Maximum="{Binding WorkMaxMinutes}"
-                            IsEnabled="{Binding UseCustomDurations}"
-                            SpinButtonPlacementMode="Inline"
-                            MinWidth="160"
-                            HorizontalAlignment="Left" />
-                        <TextBlock Text="{Binding WorkRangeText}" FontSize="{StaticResource RcFontSizeCaption}" />
-                        <TextBlock Text="{Binding WorkError}" FontSize="{StaticResource RcFontSizeCaption}" Foreground="{StaticResource RcError}" />
-                        <NumberBox
-                            Header="{Binding BreakLabel}"
-                            Value="{Binding BreakMinutes, Mode=TwoWay}"
-                            Minimum="{Binding BreakMinMinutes}"
-                            Maximum="{Binding BreakMaxMinutes}"
-                            IsEnabled="{Binding UseCustomDurations}"
-                            SpinButtonPlacementMode="Inline"
-                            MinWidth="160"
-                            HorizontalAlignment="Left" />
-                        <TextBlock Text="{Binding BreakError}" FontSize="{StaticResource RcFontSizeCaption}" Foreground="{StaticResource RcError}" />
+                    <StackPanel Spacing="12" MaxWidth="660" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding TabIntervalsHeader}" Style="{StaticResource RcSectionHeaderStyle}" />
+                        <Border Style="{StaticResource RcCardStyle}">
+                            <StackPanel Spacing="16">
+                                <TextBlock Text="{Binding IntervalsHint}" Foreground="{StaticResource RcTextSecondary}" TextWrapping="Wrap" />
+                                <CheckBox
+                                    Content="{Binding UseCustomLabel}"
+                                    IsChecked="{Binding UseCustomDurations, Mode=TwoWay}" />
+                                <NumberBox
+                                    Header="{Binding WorkLabel}"
+                                    Value="{Binding WorkMinutes, Mode=TwoWay}"
+                                    Minimum="{Binding WorkMinMinutes}"
+                                    Maximum="{Binding WorkMaxMinutes}"
+                                    IsEnabled="{Binding UseCustomDurations}"
+                                    SpinButtonPlacementMode="Inline"
+                                    MinWidth="160"
+                                    HorizontalAlignment="Left" />
+                                <TextBlock Text="{Binding WorkRangeText}" Style="{StaticResource RcSecondaryTextStyle}" />
+                                <TextBlock Text="{Binding WorkError}" FontSize="{StaticResource RcFontSizeCaption}" Foreground="{StaticResource RcError}" />
+                                <NumberBox
+                                    Header="{Binding BreakLabel}"
+                                    Value="{Binding BreakMinutes, Mode=TwoWay}"
+                                    Minimum="{Binding BreakMinMinutes}"
+                                    Maximum="{Binding BreakMaxMinutes}"
+                                    IsEnabled="{Binding UseCustomDurations}"
+                                    SpinButtonPlacementMode="Inline"
+                                    MinWidth="160"
+                                    HorizontalAlignment="Left" />
+                                <TextBlock Text="{Binding BreakError}" FontSize="{StaticResource RcFontSizeCaption}" Foreground="{StaticResource RcError}" />
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
 
                 <!-- Sound -->
                 <ScrollViewer x:Name="PanelSound" Visibility="Collapsed">
-                    <StackPanel Spacing="16">
-                        <CheckBox
-                            Content="{Binding SoundEnableLabel}"
-                            IsChecked="{Binding SoundEnabled, Mode=TwoWay}" />
-                        <ComboBox
-                            Header="{Binding SoundSelectLabel}"
-                            ItemsSource="{Binding Sounds}"
-                            SelectedItem="{Binding SelectedSoundOption, Mode=TwoWay}"
-                            DisplayMemberPath="Label"
-                            IsEnabled="{Binding SoundEnabled}"
-                            MinWidth="240" />
-                        <Slider
-                            Header="{Binding SoundVolumeLabel}"
-                            Value="{Binding SoundVolume, Mode=TwoWay}"
-                            Minimum="{Binding SoundVolumeMin}"
-                            Maximum="{Binding SoundVolumeMax}"
-                            IsEnabled="{Binding SoundEnabled}"
-                            Width="240"
-                            HorizontalAlignment="Left" />
-                        <Button Content="{Binding SoundPreviewLabel}" Command="{Binding PreviewSoundCommand}" />
+                    <StackPanel Spacing="12" MaxWidth="660" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding TabSoundHeader}" Style="{StaticResource RcSectionHeaderStyle}" />
+                        <Border Style="{StaticResource RcCardStyle}">
+                            <StackPanel Spacing="16">
+                                <CheckBox
+                                    Content="{Binding SoundEnableLabel}"
+                                    IsChecked="{Binding SoundEnabled, Mode=TwoWay}" />
+                                <ComboBox
+                                    Header="{Binding SoundSelectLabel}"
+                                    ItemsSource="{Binding Sounds}"
+                                    SelectedItem="{Binding SelectedSoundOption, Mode=TwoWay}"
+                                    DisplayMemberPath="Label"
+                                    IsEnabled="{Binding SoundEnabled}"
+                                    MinWidth="240" />
+                                <Slider
+                                    Header="{Binding SoundVolumeLabel}"
+                                    Value="{Binding SoundVolume, Mode=TwoWay}"
+                                    Minimum="{Binding SoundVolumeMin}"
+                                    Maximum="{Binding SoundVolumeMax}"
+                                    IsEnabled="{Binding SoundEnabled}"
+                                    Width="240"
+                                    HorizontalAlignment="Left" />
+                                <Button Content="{Binding SoundPreviewLabel}" Command="{Binding PreviewSoundCommand}" />
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
 
                 <!-- Pause (Aktionen, Bildschirme, Farbe) -->
                 <ScrollViewer x:Name="PanelPause" Visibility="Collapsed">
-                    <StackPanel Spacing="16">
-                        <CheckBox Content="{Binding DimEnableLabel}" IsChecked="{Binding DimScreenDuringBreak, Mode=TwoWay}" />
-                        <Slider
-                            Header="{Binding DimBrightnessLabel}"
-                            Value="{Binding DimBrightnessPercent, Mode=TwoWay}"
-                            Minimum="{Binding DimBrightnessMin}"
-                            Maximum="{Binding DimBrightnessMax}"
-                            IsEnabled="{Binding DimScreenDuringBreak}"
-                            Width="240"
-                            HorizontalAlignment="Left" />
-                        <CheckBox Content="{Binding PauseMediaLabel}" IsChecked="{Binding PauseMediaDuringBreak, Mode=TwoWay}" />
-                        <CheckBox
-                            Content="{Binding ResumeMediaLabel}"
-                            IsChecked="{Binding ResumeMediaAfterBreak, Mode=TwoWay}"
-                            IsEnabled="{Binding PauseMediaDuringBreak}" />
+                    <StackPanel Spacing="12" MaxWidth="660" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding TabPauseActionsHeader}" Style="{StaticResource RcSectionHeaderStyle}" />
+                        <Border Style="{StaticResource RcCardStyle}">
+                            <StackPanel Spacing="16">
+                                <CheckBox Content="{Binding DimEnableLabel}" IsChecked="{Binding DimScreenDuringBreak, Mode=TwoWay}" />
+                                <Slider
+                                    Header="{Binding DimBrightnessLabel}"
+                                    Value="{Binding DimBrightnessPercent, Mode=TwoWay}"
+                                    Minimum="{Binding DimBrightnessMin}"
+                                    Maximum="{Binding DimBrightnessMax}"
+                                    IsEnabled="{Binding DimScreenDuringBreak}"
+                                    Width="240"
+                                    HorizontalAlignment="Left" />
+                                <CheckBox Content="{Binding PauseMediaLabel}" IsChecked="{Binding PauseMediaDuringBreak, Mode=TwoWay}" />
+                                <CheckBox
+                                    Content="{Binding ResumeMediaLabel}"
+                                    IsChecked="{Binding ResumeMediaAfterBreak, Mode=TwoWay}"
+                                    IsEnabled="{Binding PauseMediaDuringBreak}" />
+                                <CheckBox Content="{Binding DarkenAllScreensLabel}" IsChecked="{Binding DarkenAllScreens, Mode=TwoWay}" />
+                            </StackPanel>
+                        </Border>
 
-                        <Border Style="{StaticResource RcDividerStyle}" Margin="0,4,0,0" Padding="0,8,0,0" />
-
-                        <CheckBox Content="{Binding DarkenAllScreensLabel}" IsChecked="{Binding DarkenAllScreens, Mode=TwoWay}" />
-
-                        <TextBlock Text="{Binding OverlayColorLabel}" FontWeight="SemiBold" Margin="0,4,0,0" />
-                        <TextBlock Text="{Binding OverlayColorHint}" FontSize="{StaticResource RcFontSizeCaption}" Foreground="{StaticResource RcTextSecondary}" TextWrapping="Wrap" />
-                        <ColorPicker
-                            x:Name="OverlayColorPicker"
-                            IsAlphaEnabled="True"
-                            IsColorSliderVisible="True"
-                            IsColorChannelTextInputVisible="False"
-                            IsHexInputVisible="True"
-                            ColorSpectrumShape="Box"
-                            ColorChanged="OnOverlayColorChanged"
-                            HorizontalAlignment="Left" />
+                        <TextBlock Text="{Binding OverlayColorLabel}" Style="{StaticResource RcSectionHeaderStyle}" Margin="2,8,0,4" />
+                        <Border Style="{StaticResource RcCardStyle}">
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="{Binding OverlayColorHint}" Foreground="{StaticResource RcTextSecondary}" TextWrapping="Wrap" />
+                                <ColorPicker
+                                    x:Name="OverlayColorPicker"
+                                    IsAlphaEnabled="True"
+                                    IsColorSliderVisible="True"
+                                    IsColorChannelTextInputVisible="False"
+                                    IsHexInputVisible="True"
+                                    ColorSpectrumShape="Box"
+                                    ColorChanged="OnOverlayColorChanged"
+                                    HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
 
                 <!-- Hotkeys -->
                 <ScrollViewer x:Name="PanelHotkeys" Visibility="Collapsed">
-                    <StackPanel Spacing="16">
-                        <CheckBox Content="{Binding HotkeysEnableLabel}" IsChecked="{Binding HotkeysEnabled, Mode=TwoWay}" />
-                        <Grid ColumnSpacing="16" RowSpacing="8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding HotkeyStartBreakLabel}" />
-                            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding HotkeyStartBreakText}" FontWeight="SemiBold" />
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding HotkeySkipOrSnoozeLabel}" />
-                            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding HotkeySkipOrSnoozeText}" FontWeight="SemiBold" />
-                            <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding HotkeyToggleDndLabel}" />
-                            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding HotkeyToggleDndText}" FontWeight="SemiBold" />
-                        </Grid>
-                        <Button Content="{Binding HotkeysResetLabel}" Command="{Binding ResetHotkeysCommand}" HorizontalAlignment="Left" />
+                    <StackPanel Spacing="12" MaxWidth="660" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding TabHotkeysHeader}" Style="{StaticResource RcSectionHeaderStyle}" />
+                        <Border Style="{StaticResource RcCardStyle}">
+                            <StackPanel Spacing="16">
+                                <CheckBox Content="{Binding HotkeysEnableLabel}" IsChecked="{Binding HotkeysEnabled, Mode=TwoWay}" />
+                                <Grid ColumnSpacing="16" RowSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding HotkeyStartBreakLabel}" />
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding HotkeyStartBreakText}" FontWeight="SemiBold" Foreground="{StaticResource RcAccent}" />
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding HotkeySkipOrSnoozeLabel}" />
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding HotkeySkipOrSnoozeText}" FontWeight="SemiBold" Foreground="{StaticResource RcAccent}" />
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding HotkeyToggleDndLabel}" />
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding HotkeyToggleDndText}" FontWeight="SemiBold" Foreground="{StaticResource RcAccent}" />
+                                </Grid>
+                                <Button Content="{Binding HotkeysResetLabel}" Command="{Binding ResetHotkeysCommand}" HorizontalAlignment="Left" />
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
 
                 <!-- Statistik -->
                 <ScrollViewer x:Name="PanelStatistics" Visibility="Collapsed">
-                    <StackPanel Spacing="16">
-                        <TextBlock Text="{Binding Statistics.TodayHeader}" Style="{StaticResource RcH3TextStyle}" />
-                        <StackPanel Orientation="Horizontal" Spacing="32">
-                            <StackPanel>
-                                <TextBlock Text="{Binding Statistics.BreaksLabel}" FontSize="{StaticResource RcFontSizeCaption}" />
-                                <TextBlock Text="{Binding Statistics.TodayCount}" Style="{StaticResource RcH1TextStyle}" />
-                            </StackPanel>
-                            <StackPanel>
-                                <TextBlock Text="{Binding Statistics.BreakTimeLabel}" FontSize="{StaticResource RcFontSizeCaption}" />
-                                <TextBlock Text="{Binding Statistics.TodayBreakTime}" Style="{StaticResource RcH1TextStyle}" />
-                            </StackPanel>
-                            <StackPanel>
-                                <TextBlock Text="{Binding Statistics.SkippedLabel}" FontSize="{StaticResource RcFontSizeCaption}" />
-                                <TextBlock Text="{Binding Statistics.TodaySkipped}" Style="{StaticResource RcH1TextStyle}" />
-                            </StackPanel>
-                        </StackPanel>
+                    <StackPanel Spacing="12" MaxWidth="660" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding Statistics.TabStatisticsHeader}" Style="{StaticResource RcSectionHeaderStyle}" />
 
-                        <TextBlock Text="{Binding Statistics.WeekHeader}" Style="{StaticResource RcH3TextStyle}" />
-                        <ItemsControl ItemsSource="{Binding Statistics.WeekBars}" Height="120">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Width="36" VerticalAlignment="Bottom" Spacing="2">
-                                        <TextBlock Text="{Binding Count}" FontSize="{StaticResource RcFontSizeCaption}" HorizontalAlignment="Center" />
-                                        <Border Width="22" Height="{Binding BarHeight}" CornerRadius="3" HorizontalAlignment="Center" Background="{StaticResource RcAccent}" />
-                                        <TextBlock Text="{Binding Label}" FontSize="{StaticResource RcFontSizeCaption}" HorizontalAlignment="Center" />
+                        <Border Style="{StaticResource RcCardStyle}">
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="{Binding Statistics.TodayHeader}" Style="{StaticResource RcH3TextStyle}" />
+                                <StackPanel Orientation="Horizontal" Spacing="36">
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Statistics.TodayCount}" Style="{StaticResource RcH1TextStyle}" Foreground="{StaticResource RcAccent}" />
+                                        <TextBlock Text="{Binding Statistics.BreaksLabel}" Style="{StaticResource RcSecondaryTextStyle}" />
                                     </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-
-                        <TextBlock Text="{Binding Statistics.YearHeader}" Style="{StaticResource RcH3TextStyle}" />
-                        <ItemsControl ItemsSource="{Binding Statistics.YearBars}" Height="120">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Bottom" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Width="30" VerticalAlignment="Bottom" Spacing="2">
-                                        <TextBlock Text="{Binding Count}" FontSize="{StaticResource RcFontSizeCaption}" HorizontalAlignment="Center" />
-                                        <Border Width="18" Height="{Binding BarHeight}" CornerRadius="3" HorizontalAlignment="Center" Background="{StaticResource RcAccent}" />
-                                        <TextBlock Text="{Binding Label}" FontSize="{StaticResource RcFontSizeCaption}" HorizontalAlignment="Center" />
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Statistics.TodayBreakTime}" Style="{StaticResource RcH1TextStyle}" Foreground="{StaticResource RcAccent}" />
+                                        <TextBlock Text="{Binding Statistics.BreakTimeLabel}" Style="{StaticResource RcSecondaryTextStyle}" />
                                     </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding Statistics.TodaySkipped}" Style="{StaticResource RcH1TextStyle}" Foreground="{StaticResource RcAccent}" />
+                                        <TextBlock Text="{Binding Statistics.SkippedLabel}" Style="{StaticResource RcSecondaryTextStyle}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
 
-                        <Button Content="{Binding Statistics.ExportLabel}" Command="{Binding Statistics.ExportCsvCommand}" HorizontalAlignment="Left" />
+                        <Border Style="{StaticResource RcCardStyle}">
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="{Binding Statistics.WeekHeader}" Style="{StaticResource RcH3TextStyle}" />
+                                <ItemsControl ItemsSource="{Binding Statistics.WeekBars}" Height="120">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Width="36" VerticalAlignment="Bottom" Spacing="2">
+                                                <TextBlock Text="{Binding Count}" Style="{StaticResource RcSecondaryTextStyle}" HorizontalAlignment="Center" />
+                                                <Border Width="22" Height="{Binding BarHeight}" CornerRadius="4" HorizontalAlignment="Center" Background="{StaticResource RcAccent}" />
+                                                <TextBlock Text="{Binding Label}" Style="{StaticResource RcSecondaryTextStyle}" HorizontalAlignment="Center" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Style="{StaticResource RcCardStyle}">
+                            <StackPanel Spacing="12">
+                                <TextBlock Text="{Binding Statistics.YearHeader}" Style="{StaticResource RcH3TextStyle}" />
+                                <ItemsControl ItemsSource="{Binding Statistics.YearBars}" Height="120">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Bottom" />
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Width="30" VerticalAlignment="Bottom" Spacing="2">
+                                                <TextBlock Text="{Binding Count}" Style="{StaticResource RcSecondaryTextStyle}" HorizontalAlignment="Center" />
+                                                <Border Width="18" Height="{Binding BarHeight}" CornerRadius="4" HorizontalAlignment="Center" Background="{StaticResource RcAccent}" />
+                                                <TextBlock Text="{Binding Label}" Style="{StaticResource RcSecondaryTextStyle}" HorizontalAlignment="Center" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <Button Content="{Binding Statistics.ExportLabel}" Command="{Binding Statistics.ExportCsvCommand}" HorizontalAlignment="Left" Margin="0,4,0,0" />
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
 
                 <!-- Ueber LookAway -->
                 <ScrollViewer x:Name="PanelAbout" Visibility="Collapsed">
-                    <StackPanel Spacing="12">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="{Binding AboutVersionLabel}" FontWeight="SemiBold" />
-                            <TextBlock Text="{Binding Version}" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Text="{Binding LicenseLabel}" FontWeight="SemiBold" />
-                            <TextBlock Text="{Binding LicenseText}" />
-                        </StackPanel>
-                        <HyperlinkButton Content="{Binding DocsLabel}" NavigateUri="{Binding DocsUri}" />
+                    <StackPanel Spacing="12" MaxWidth="660" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding TabAboutHeader}" Style="{StaticResource RcSectionHeaderStyle}" />
+                        <Border Style="{StaticResource RcCardStyle}">
+                            <StackPanel Spacing="12">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="{Binding AboutVersionLabel}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding Version}" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="{Binding LicenseLabel}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding LicenseText}" />
+                                </StackPanel>
+                                <HyperlinkButton Content="{Binding DocsLabel}" NavigateUri="{Binding DocsUri}" Padding="0,4" />
+                            </StackPanel>
+                        </Border>
 
-                        <Border Style="{StaticResource RcDividerStyle}" Margin="0,8,0,0" Padding="0,8,0,0" />
-                        <CheckBox Content="{Binding UpdateEnableLabel}" IsChecked="{Binding UpdateCheckEnabled, Mode=TwoWay}" />
-                        <ComboBox
-                            Header="{Binding UpdateFrequencyLabel}"
-                            ItemsSource="{Binding UpdateFrequencies}"
-                            SelectedItem="{Binding SelectedFrequencyOption, Mode=TwoWay}"
-                            DisplayMemberPath="Label"
-                            IsEnabled="{Binding UpdateCheckEnabled}"
-                            MinWidth="200" />
-                        <CheckBox
-                            Content="{Binding AutoUpdateLabel}"
-                            IsChecked="{Binding AutoUpdate, Mode=TwoWay}"
-                            IsEnabled="{Binding UpdateCheckEnabled}" />
-                        <TextBlock
-                            Text="{Binding AutoUpdateHint}"
-                            FontSize="{StaticResource RcFontSizeCaption}"
-                            Foreground="{StaticResource RcTextSecondary}"
-                            TextWrapping="Wrap" />
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <Button Content="{Binding UpdateCheckNowLabel}" Command="{Binding CheckForUpdatesCommand}" />
-                            <TextBlock Text="{Binding UpdateStatusText}" VerticalAlignment="Center" />
-                        </StackPanel>
-                        <HyperlinkButton
-                            Content="{Binding UpdateDownloadLabel}"
-                            NavigateUri="{Binding DownloadUri}"
-                            Visibility="{Binding IsDownloadAvailable, Converter={StaticResource BoolToVisibility}}" />
+                        <Border Style="{StaticResource RcCardStyle}">
+                            <StackPanel Spacing="12">
+                                <CheckBox Content="{Binding UpdateEnableLabel}" IsChecked="{Binding UpdateCheckEnabled, Mode=TwoWay}" />
+                                <ComboBox
+                                    Header="{Binding UpdateFrequencyLabel}"
+                                    ItemsSource="{Binding UpdateFrequencies}"
+                                    SelectedItem="{Binding SelectedFrequencyOption, Mode=TwoWay}"
+                                    DisplayMemberPath="Label"
+                                    IsEnabled="{Binding UpdateCheckEnabled}"
+                                    MinWidth="200" />
+                                <CheckBox
+                                    Content="{Binding AutoUpdateLabel}"
+                                    IsChecked="{Binding AutoUpdate, Mode=TwoWay}"
+                                    IsEnabled="{Binding UpdateCheckEnabled}" />
+                                <TextBlock Text="{Binding AutoUpdateHint}" Style="{StaticResource RcSecondaryTextStyle}" TextWrapping="Wrap" />
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <Button Content="{Binding UpdateCheckNowLabel}" Command="{Binding CheckForUpdatesCommand}" />
+                                    <TextBlock Text="{Binding UpdateStatusText}" VerticalAlignment="Center" Foreground="{StaticResource RcTextSecondary}" />
+                                </StackPanel>
+                                <HyperlinkButton
+                                    Content="{Binding UpdateDownloadLabel}"
+                                    NavigateUri="{Binding DownloadUri}"
+                                    Visibility="{Binding IsDownloadAvailable, Converter={StaticResource BoolToVisibility}}" />
+                            </StackPanel>
+                        </Border>
                     </StackPanel>
                 </ScrollViewer>
 
@@ -348,7 +409,7 @@
             Background="{StaticResource RcPaneBackground}"
             BorderBrush="{StaticResource RcDivider}"
             BorderThickness="0,1,0,0"
-            Padding="24,12">
+            Padding="32,14">
             <StackPanel
                 Orientation="Horizontal"
                 Spacing="12"

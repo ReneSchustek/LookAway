@@ -13,4 +13,14 @@ public interface IHttpGetClient
     /// <param name="cancellationToken">Abbruch-Token.</param>
     /// <returns>Der Antworttext, oder <c>null</c> bei einem Fehler.</returns>
     Task<string?> GetStringAsync(Uri requestUri, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Laedt den Inhalt der URL in eine Datei. Folgt Weiterleitungen (z. B. von
+    /// GitHub-Release-Assets) und ueberschreibt eine bestehende Zieldatei.
+    /// </summary>
+    /// <param name="requestUri">Abzurufende URL.</param>
+    /// <param name="destinationPath">Zielpfad der Datei.</param>
+    /// <param name="cancellationToken">Abbruch-Token.</param>
+    /// <returns><c>true</c> bei Erfolg, sonst <c>false</c>.</returns>
+    Task<bool> DownloadFileAsync(Uri requestUri, string destinationPath, CancellationToken cancellationToken = default);
 }

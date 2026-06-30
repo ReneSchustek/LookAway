@@ -164,4 +164,14 @@ public sealed class SettingsTests
         settings.DarkenAllScreens = true;
         Assert.True(settings.DarkenAllScreens);
     }
+
+    [Fact]
+    public void AutoUpdate_DefaultsToFalseAndCanBeToggled()
+    {
+        Settings settings = new();
+        Assert.False(settings.AutoUpdate);
+
+        settings.AutoUpdate = true;
+        Assert.True(settings.AutoUpdate);
+    }
 }

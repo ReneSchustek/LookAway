@@ -194,6 +194,12 @@ public sealed class Settings
         }
     }
 
+    /// <summary>
+    /// Soll die neueste Version automatisch im Hintergrund heruntergeladen und
+    /// beim naechsten Start installiert werden? Default: <c>false</c>.
+    /// </summary>
+    public bool AutoUpdate { get; set; }
+
     /// <summary>Zeitpunkt der letzten Update-Pruefung; <c>null</c>, wenn nie geprueft.</summary>
     public DateTimeOffset? LastUpdateCheck { get; set; }
 

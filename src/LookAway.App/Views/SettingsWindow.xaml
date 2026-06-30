@@ -319,6 +319,15 @@
                             DisplayMemberPath="Label"
                             IsEnabled="{Binding UpdateCheckEnabled}"
                             MinWidth="200" />
+                        <CheckBox
+                            Content="{Binding AutoUpdateLabel}"
+                            IsChecked="{Binding AutoUpdate, Mode=TwoWay}"
+                            IsEnabled="{Binding UpdateCheckEnabled}" />
+                        <TextBlock
+                            Text="{Binding AutoUpdateHint}"
+                            FontSize="{StaticResource RcFontSizeCaption}"
+                            Foreground="{StaticResource RcTextSecondary}"
+                            TextWrapping="Wrap" />
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <Button Content="{Binding UpdateCheckNowLabel}" Command="{Binding CheckForUpdatesCommand}" />
                             <TextBlock Text="{Binding UpdateStatusText}" VerticalAlignment="Center" />

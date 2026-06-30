@@ -53,8 +53,9 @@ public sealed class GitHubUpdateChecker : IUpdateChecker
             string? tag = GetString(root, "tag_name");
             string? htmlUrl = GetString(root, "html_url");
             string? body = GetString(root, "body");
+            string? packageUrl = FindPackageAssetUrl(root);
 
-            UpdateInfo info = UpdateInfo.Create(_currentVersion, tag, htmlUrl, body);
+            UpdateInfo info = UpdateInfo.Create(_currentVersion, tag, htmlUrl, body, packageUrl);
             if (info.IsUpdateAvailable)
             {
                 GitHubUpdateCheckerLog.UpdateAvailable(_logger, info.LatestVersion);
@@ -73,6 +74,38 @@ public sealed class GitHubUpdateChecker : IUpdateChecker
         => root.TryGetProperty(propertyName, out JsonElement value) && value.ValueKind == JsonValueKind.String
             ? value.GetString()
             : null;
+
+    /// <summary>
+    /// Sucht in den Release-Assets die Portable-ZIP und liefert deren direkte
+    /// Download-URL. Bevorzugt einen Namen mit "portable"; faellt sonst auf das
+    /// erste <c>.zip</c>-Asset zurueck.
+    /// </summary>
+    private static string? FindPackageAssetUrl(JsonElement root)
+    {
+        if (!root.TryGetProperty("assets", out JsonElement assets) || assets.ValueKind != JsonValueKind.Array)
+        {
+            return null;
+        }
+
+        string? firstZip = null;
+        foreach (JsonElement asset in assets.EnumerateArray())
+        {
+            string? name = GetString(asset, "name");
+            string? url = GetString(asset, "browser_download_url");
+            if (name is null || url is null || !name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            firstZip ??= url;
+            if (name.Contains("portable", StringComparison.OrdinalIgnoreCase))
+            {
+                return url;
+            }
+        }
+
+        return firstZip;
+    }
 }
 
 /// <summary>

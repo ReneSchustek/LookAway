@@ -16,6 +16,12 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
   DDC/CI — also auch auf Notebooks.
 - **Frei waehlbare Farbe des Pausen-Screens** inklusive Transparenz (Deckkraft-/
   Alpha-Regler) ueber einen Farbwaehler in den Einstellungen.
+- **Automatische Aktualisierung**: Ist eine neue Version verfuegbar, kann LookAway
+  sie selbst installieren — das neue Portable-Paket wird heruntergeladen, die
+  Programmdateien werden nach dem Beenden ausgetauscht und die App startet neu.
+  Neue Einstellung **„Automatisch aktualisieren"**: laedt die neueste Version im
+  Hintergrund und installiert sie beim naechsten Start ohne Zutun. Ohne diese
+  Option genuegt ein Klick auf den Tray-Eintrag „Update".
 
 ### Geaendert
 
@@ -26,6 +32,8 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
   frisch, wenn die Abwesenheit mindestens so lang wie eine Pause war — die Augen
   haben dann ohnehin bereits geruht. Kurze Unterbrechungen laufen wie bisher mit
   der Restzeit weiter; eine manuelle Pause bleibt unveraendert.
+- Der Tray-Eintrag „Update" oeffnet nicht mehr nur die Release-Seite, sondern
+  laedt die neue Version herunter und installiert sie automatisch.
 
 ## [1.0.2] – 2026-06-29
 

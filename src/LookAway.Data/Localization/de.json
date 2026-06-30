@@ -31,6 +31,8 @@
   "Settings.Hotkeys.Reset": "Standard wiederherstellen",
 
   "Settings.Update.EnableLabel": "Auf Updates prüfen",
+  "Settings.Update.AutoLabel": "Automatisch aktualisieren",
+  "Settings.Update.AutoHint": "Die neueste Version wird im Hintergrund geladen und beim nächsten Start automatisch installiert.",
   "Settings.Update.FrequencyLabel": "Häufigkeit",
   "Settings.Update.CheckNow": "Jetzt prüfen",
   "Settings.Update.UpToDate": "LookAway ist aktuell.",

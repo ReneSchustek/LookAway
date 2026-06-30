@@ -6,21 +6,12 @@ using Microsoft.UI.Dispatching;
 namespace LookAway.Services;
 
 /// <summary>
-/// Öffnet das Settings-Fenster. Stellt sicher, dass nie zwei Fenster
-/// gleichzeitig offen sind: ein zweiter Aufruf aktiviert das bestehende.
-/// </summary>
-internal interface ISettingsPresenter
-{
-    /// <summary>Zeigt das Settings-Fenster (oder aktiviert das bereits offene).</summary>
-    void Show();
-}
-
-/// <summary>
-/// WinUI-Implementierung von <see cref="ISettingsPresenter"/>: erzeugt das
-/// <see cref="Views.SettingsWindow"/> samt ViewModel auf dem UI-Thread und
+/// Öffnet das Settings-Fenster und stellt sicher, dass nie zwei Fenster
+/// gleichzeitig offen sind: ein zweiter Aufruf aktiviert das bestehende. Erzeugt
+/// das <see cref="Views.SettingsWindow"/> samt ViewModel auf dem UI-Thread und
 /// reicht angewendete Einstellungen an einen Callback weiter (Live-Übernahme).
 /// </summary>
-internal sealed class SettingsPresenter : ISettingsPresenter
+internal sealed class SettingsPresenter
 {
     private readonly DispatcherQueue _dispatcher;
     private readonly Func<SettingsViewModel> _viewModelFactory;
@@ -47,7 +38,7 @@ internal sealed class SettingsPresenter : ISettingsPresenter
         _onSettingsApplied = onSettingsApplied;
     }
 
-    /// <inheritdoc />
+    /// <summary>Zeigt das Settings-Fenster (oder aktiviert das bereits offene).</summary>
     public void Show() => _ = _dispatcher.TryEnqueue(() => _ = OpenWindowAsync());
 
     private async Task OpenWindowAsync()

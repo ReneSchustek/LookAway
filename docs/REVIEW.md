@@ -80,29 +80,47 @@ and surfaced these — now fixed:
 - Tests: +18 (HexColor edge, zip-slip, hash-verify, HTTPS reject, githubusercontent
   host, SettingsViewModel invalid-colour + new-property round-trip). **361 total.**
 
-## Deferred roadmap (documented, not yet done)
+## Roadmap status
 
-These are larger or environment-dependent and are intentionally tracked rather
-than rushed:
+The originally deferred roadmap has since been worked off; only the two genuinely
+environment-dependent items remain.
 
-1. **Extract an application coordinator (highest-value refactor).** The break
-   workflow (timer-event → reminder → overlay → history) lives in `App.xaml.cs`,
-   the one untestable assembly. Move it to a testable `Application` coordinator so
-   the core behaviour gains the testable seam every other layer already has.
+### Done
+
+1. **Application coordinator (✔).** The break workflow (timer-event → reminder →
+   overlay → history) moved out of `App.xaml.cs` into a testable
+   `Application/Coordination/BreakCoordinator` behind presenter abstractions
+   (`IReminderPresenter`/`IBreakOverlayPresenter`/`ITrayController`), covered by
+   `BreakCoordinatorTests`.
+3. **Layer purity (✔).** `ISingleInstanceLock` (Core) introduced; `SingleInstanceLock`
+   moved to Data — the only thing forcing the Windows TFM, so `LookAway.Application`
+   now targets plain `net10.0`. `WindowsScreenDimmer` and `WindowsMediaController`
+   moved from App to Data (all Windows adapters live in Data; Data targets the
+   Windows SDK TFM for the WinRT/SMTC projections).
+4. **`SettingsViewModel` split + repo dedup (✔).** The hotkey and update concerns
+   were extracted into `SettingsViewModel.Hotkeys.cs` / `SettingsViewModel.Updates.cs`
+   partials; the two JSON repositories now share a `JsonFileStore` (atomic write,
+   tolerant read, write-serialisation, corrupt-backup). Full child-view-model
+   composition was deliberately not pursued: it would rebind dozens of XAML
+   properties (runtime-only risk the test suite can't catch) for marginal gain.
+5. **Localised hotkey labels (✔).** `HotkeyDefinition.Format(...)` + `KeyLabel`
+   render modifiers via `HotkeyTextKeys.Format`/`ILocalizationService`
+   (Strg/Ctrl, Umschalt/Shift/Maj); modifier keys added to de/en/fr. `ToString()`
+   stays as a culture-neutral fallback.
+6. **Corrupt-file backup (✔).** `settings.json`/`history.json` are copied to a
+   `*.corrupt` sidecar before defaults replace them on a parse failure
+   (`JsonFileStore.TryWriteCorruptBackupAsync`), with tests in both repositories.
+7. **Polish (partly ✔).** Removed the unused `ISettingsPresenter` interface;
+   README version references already link to `/releases/latest`. The reminder
+   auto-defaults to the protective `StartBreak` after its 30 s timeout and already
+   offers a Snooze action, so the WCAG 2.2.1 concern is met without an extra
+   control.
+
+### Remaining (environment-dependent)
+
 2. **Code signing for true update authenticity.** Current controls (HTTPS + host
-   pinning) defend against MITM/corruption but not a compromised release. Full
-   authenticity requires Authenticode/Ed25519 signing with an **offline** key and
-   verification before apply. Requires a signing certificate.
-3. **Layer-purity tidy-ups.** Move `SingleInstanceLock` behind a Core interface
-   into Data (lets `Application` drop the `-windows` TFM); move `WindowsScreenDimmer`
-   / `WindowsMediaController` from App to Data for adapter consistency.
-4. **`SettingsViewModel` is large** — split per concern (hotkeys, updates) like the
-   composed `Statistics` view model; **dedupe the two JSON repositories** behind a
-   small `JsonFileStore`.
-5. **Localised hotkey labels.** `HotkeyDefinition.ToString()` emits German modifier
-   names ("Strg"); render via `ILocalizationService` so EN/FR are correct.
-6. **Corrupt-file backup.** Back up `settings.json`/`history.json` before
-   overwriting on parse failure instead of silently replacing.
-7. **Polish:** remove unused presenter interfaces / dead members; refresh README
-   version references (link to `/releases/latest`); add real screenshots; consider
-   a "snooze/extend" affordance on the auto-dismissing reminder (WCAG 2.2.1).
+   pinning + SHA-256 verify before apply) defend against MITM/corruption but not a
+   compromised release. Full authenticity requires Authenticode/Ed25519 signing
+   with an **offline** key and verification before apply — needs a signing certificate.
+7b. **Screenshots.** Real product screenshots for the README require running the
+   packaged WinUI app on a desktop session; tracked for a manual capture pass.

@@ -86,26 +86,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _hotkeysEnabled;
 
-    private HotkeyDefinition _hotkeyStartBreak = HotkeyDefaults.StartBreak;
-    private HotkeyDefinition _hotkeySkipOrSnooze = HotkeyDefaults.SkipOrSnooze;
-    private HotkeyDefinition _hotkeyToggleDnd = HotkeyDefaults.ToggleDnd;
-
-    [ObservableProperty]
-    private bool _updateCheckEnabled;
-
-    [ObservableProperty]
-    private bool _autoUpdate;
-
-    [ObservableProperty]
-    private SettingsOption<UpdateCheckFrequency>? _selectedFrequencyOption;
-
-    [ObservableProperty]
-    private string _updateStatusText = string.Empty;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsDownloadAvailable))]
-    private Uri? _downloadUri;
-
     [ObservableProperty]
     private bool _dimScreenDuringBreak;
 
@@ -189,15 +169,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     /// <summary>Auswählbare Erinnerungstöne mit lokalisierter Beschriftung.</summary>
     public IReadOnlyList<SettingsOption<SoundType>> Sounds { get; }
-
-    /// <summary>Auswählbare Update-Prüf-Häufigkeiten mit lokalisierter Beschriftung.</summary>
-    public IReadOnlyList<SettingsOption<UpdateCheckFrequency>> UpdateFrequencies { get; }
-
-    /// <summary>Die aktuell gewählte Prüf-Häufigkeit.</summary>
-    public UpdateCheckFrequency SelectedFrequency => SelectedFrequencyOption?.Value ?? UpdateCheckFrequency.Weekly;
-
-    /// <summary>Wahr, wenn ein Download-Link vorliegt.</summary>
-    public bool IsDownloadAvailable => DownloadUri is not null;
 
     /// <summary>Untere Grenze der Arbeitsdauer (Minuten) für das aktive Modell.</summary>
     public int WorkMinMinutes { get; private set; } = (int)BreakInterval.MinWorkDuration.TotalMinutes;
@@ -331,51 +302,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Beschriftung des Vorhör-Buttons.</summary>
     public string SoundPreviewLabel => _localization.GetText(SettingsTextKeys.SoundPreviewButton);
 
-    /// <summary>Tab-Überschrift "Hotkeys".</summary>
-    public string TabHotkeysHeader => _localization.GetText(SettingsTextKeys.TabHotkeys);
-
-    /// <summary>Beschriftung der Hotkey-aktivieren-Option.</summary>
-    public string HotkeysEnableLabel => _localization.GetText(SettingsTextKeys.HotkeysEnableLabel);
-
-    /// <summary>Beschriftung der Aktion "Pause starten".</summary>
-    public string HotkeyStartBreakLabel => _localization.GetText(SettingsTextKeys.HotkeyStartBreak);
-
-    /// <summary>Beschriftung der Aktion "Überspringen/Snooze".</summary>
-    public string HotkeySkipOrSnoozeLabel => _localization.GetText(SettingsTextKeys.HotkeySkipOrSnooze);
-
-    /// <summary>Beschriftung der Aktion "DND umschalten".</summary>
-    public string HotkeyToggleDndLabel => _localization.GetText(SettingsTextKeys.HotkeyToggleDnd);
-
-    /// <summary>Beschriftung des Zurücksetzen-Buttons.</summary>
-    public string HotkeysResetLabel => _localization.GetText(SettingsTextKeys.HotkeysReset);
-
-    /// <summary>Anzeigetext des "Pause starten"-Hotkeys (lokalisiert).</summary>
-    public string HotkeyStartBreakText => HotkeyTextKeys.Format(_hotkeyStartBreak, _localization);
-
-    /// <summary>Anzeigetext des "Überspringen/Snooze"-Hotkeys (lokalisiert).</summary>
-    public string HotkeySkipOrSnoozeText => HotkeyTextKeys.Format(_hotkeySkipOrSnooze, _localization);
-
-    /// <summary>Anzeigetext des "DND umschalten"-Hotkeys (lokalisiert).</summary>
-    public string HotkeyToggleDndText => HotkeyTextKeys.Format(_hotkeyToggleDnd, _localization);
-
-    /// <summary>Beschriftung "Auf Updates prüfen".</summary>
-    public string UpdateEnableLabel => _localization.GetText(SettingsTextKeys.UpdateEnableLabel);
-
-    /// <summary>Beschriftung der Auto-Update-Option.</summary>
-    public string AutoUpdateLabel => _localization.GetText(SettingsTextKeys.UpdateAutoLabel);
-
-    /// <summary>Hinweistext zur Auto-Update-Option.</summary>
-    public string AutoUpdateHint => _localization.GetText(SettingsTextKeys.UpdateAutoHint);
-
-    /// <summary>Beschriftung der Prüf-Häufigkeit.</summary>
-    public string UpdateFrequencyLabel => _localization.GetText(SettingsTextKeys.UpdateFrequencyLabel);
-
-    /// <summary>Beschriftung des "Jetzt prüfen"-Buttons.</summary>
-    public string UpdateCheckNowLabel => _localization.GetText(SettingsTextKeys.UpdateCheckNow);
-
-    /// <summary>Download-Link-Text.</summary>
-    public string UpdateDownloadLabel => _localization.GetText(SettingsTextKeys.UpdateDownload);
-
     /// <summary>Tab-Überschrift "Pause-Aktionen".</summary>
     public string TabPauseActionsHeader => _localization.GetText(SettingsTextKeys.TabPauseActions);
 
@@ -477,11 +403,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public void SelectSound(SoundType soundType)
         => SelectedSoundOption = Sounds.First(option => option.Value == soundType);
 
-    /// <summary>Wählt die Prüf-Häufigkeit anhand ihres Werts (UI/Test-Hilfe).</summary>
-    /// <param name="frequency">Zu wählende Häufigkeit.</param>
-    public void SelectFrequency(UpdateCheckFrequency frequency)
-        => SelectedFrequencyOption = UpdateFrequencies.First(option => option.Value == frequency);
-
     private void LoadDurations(Settings settings)
     {
         if (settings.CustomDurations is { } custom)
@@ -506,44 +427,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     [RelayCommand]
     private void PreviewSound() => _soundService.Play(SelectedSound, SoundVolume);
-
-    [RelayCommand]
-    private async Task CheckForUpdatesAsync(CancellationToken cancellationToken)
-    {
-        UpdateStatusText = _localization.GetText(SettingsTextKeys.UpdateChecking);
-        DownloadUri = null;
-
-        UpdateInfo info = await _updateChecker.CheckForUpdateAsync(cancellationToken).ConfigureAwait(true);
-
-        // Letzten Prüfzeitpunkt persistieren.
-        Settings settings = await _settingsRepository.LoadAsync(cancellationToken).ConfigureAwait(true);
-        settings.LastUpdateCheck = DateTimeOffset.UtcNow;
-        await _settingsRepository.SaveAsync(settings, cancellationToken).ConfigureAwait(true);
-
-        if (info.IsUpdateAvailable)
-        {
-            UpdateStatusText = string.Format(
-                CultureInfo.CurrentCulture,
-                _localization.GetText(SettingsTextKeys.UpdateAvailable),
-                info.LatestVersion);
-            DownloadUri = info.DownloadUrl;
-        }
-        else
-        {
-            UpdateStatusText = _localization.GetText(SettingsTextKeys.UpdateUpToDate);
-        }
-    }
-
-    [RelayCommand]
-    private void ResetHotkeys()
-    {
-        _hotkeyStartBreak = HotkeyDefaults.StartBreak;
-        _hotkeySkipOrSnooze = HotkeyDefaults.SkipOrSnooze;
-        _hotkeyToggleDnd = HotkeyDefaults.ToggleDnd;
-        OnPropertyChanged(nameof(HotkeyStartBreakText));
-        OnPropertyChanged(nameof(HotkeySkipOrSnoozeText));
-        OnPropertyChanged(nameof(HotkeyToggleDndText));
-    }
 
     [RelayCommand]
     private void Cancel()
@@ -739,13 +622,6 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             .Select(sound => new SettingsOption<SoundType>(
                 sound,
                 () => _localization.GetText(SettingsTextKeys.ForSound(sound))))
-            .ToList();
-
-    private List<SettingsOption<UpdateCheckFrequency>> BuildFrequencyOptions()
-        => Enum.GetValues<UpdateCheckFrequency>()
-            .Select(frequency => new SettingsOption<UpdateCheckFrequency>(
-                frequency,
-                () => _localization.GetText(SettingsTextKeys.ForFrequency(frequency))))
             .ToList();
 
     /// <summary>Meldet den Sprachwechsel-Handler ab.</summary>

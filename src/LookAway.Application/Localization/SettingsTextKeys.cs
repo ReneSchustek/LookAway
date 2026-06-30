@@ -95,6 +95,18 @@ public static class SettingsTextKeys
     /// <summary>Download-Link-Text.</summary>
     public const string UpdateDownload = "Settings.Update.Download";
 
+    /// <summary>Beschriftung des "Jetzt installieren"-Buttons.</summary>
+    public const string UpdateInstallNow = "Settings.Update.InstallNow";
+
+    /// <summary>Status "wird heruntergeladen/vorbereitet".</summary>
+    public const string UpdateStaging = "Settings.Update.Staging";
+
+    /// <summary>Status "bereit, wird beim Neustart installiert".</summary>
+    public const string UpdateReady = "Settings.Update.Ready";
+
+    /// <summary>Status "Installation fehlgeschlagen".</summary>
+    public const string UpdateInstallFailed = "Settings.Update.InstallFailed";
+
     /// <summary>Tab "Pause-Aktionen".</summary>
     public const string TabPauseActions = "Settings.Tab.PauseActions";
 

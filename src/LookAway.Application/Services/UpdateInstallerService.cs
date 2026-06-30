@@ -25,7 +25,7 @@ public sealed record StagedUpdate(string Directory, string Version, string Execu
 /// Programmdateien. Die reine Datei-/Versionslogik ist hier gekapselt; das
 /// Beenden/Neustarten der Prozesse steuert die App-Schicht.
 /// </summary>
-public sealed class UpdateInstallerService
+public sealed class UpdateInstallerService : IUpdateInstaller
 {
     private const string ExecutableName = "LookAway.exe";
     private const string BackupSuffix = ".bak-update";

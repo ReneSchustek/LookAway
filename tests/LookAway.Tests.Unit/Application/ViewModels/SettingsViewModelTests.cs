@@ -3,6 +3,7 @@ using LookAway.Application.Statistics;
 using LookAway.Application.ViewModels;
 using LookAway.Core.Entities;
 using LookAway.Core.Enums;
+using LookAway.Core.Interfaces;
 using LookAway.Core.ValueObjects;
 using LookAway.Tests.Unit.Fakes;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -55,9 +56,94 @@ public sealed class SettingsViewModelTests
             localization,
             sound,
             new FakeUpdateChecker(),
+            new FakeUpdateInstaller(),
             statistics,
             NullLogger<SettingsViewModel>.Instance,
             TestVersion);
+    }
+
+    // Variante mit gezielt vorgegebenem Update-Checker/-Installer für die Update-Tests.
+    private static SettingsViewModel CreateViewModelWithUpdates(
+        IUpdateChecker checker,
+        IUpdateInstaller installer,
+        out InMemorySettingsRepository repository)
+    {
+        repository = new InMemorySettingsRepository(null);
+        FakeLocalizationService localization = new();
+        AutoStartCoordinator coordinator = new(
+            new FakeAutoStartService(),
+            repository,
+            NullLogger<AutoStartCoordinator>.Instance);
+        FakeBreakHistoryRepository history = new();
+        FakeClock clock = new(new DateTimeOffset(2026, 6, 28, 12, 0, 0, TimeSpan.Zero));
+        StatisticsViewModel statistics = new(
+            new StatisticsService(history, clock),
+            history,
+            new CsvExporter(),
+            localization);
+
+        return new SettingsViewModel(
+            repository,
+            coordinator,
+            localization,
+            new FakeSoundService(),
+            checker,
+            installer,
+            statistics,
+            NullLogger<SettingsViewModel>.Instance,
+            TestVersion);
+    }
+
+    [Fact]
+    public async Task CheckForUpdates_mit_verfuegbarem_Paket_bietet_Installation_an()
+    {
+        UpdateInfo info = UpdateInfo.Create(
+            new Version(1, 0, 0), "v2.0.0", "https://example.com/r", null,
+            "https://example.com/p.zip", "https://example.com/p.zip.sig");
+        using SettingsViewModel viewModel = CreateViewModelWithUpdates(
+            new FakeUpdateChecker(info), new FakeUpdateInstaller(), out _);
+
+        await viewModel.CheckForUpdatesCommand.ExecuteAsync(null);
+
+        Assert.True(viewModel.IsUpdateInstallable);
+    }
+
+    [Fact]
+    public async Task InstallUpdate_staged_und_vermerkt_die_ausstehende_Version()
+    {
+        UpdateInfo info = UpdateInfo.Create(
+            new Version(1, 0, 0), "v2.0.0", null, null,
+            "https://example.com/p.zip", "https://example.com/p.zip.sig");
+        StagedUpdate staged = new("C:/staging/2.0.0", "2.0.0", "abc123");
+        FakeUpdateInstaller installer = new(staged);
+        using SettingsViewModel viewModel = CreateViewModelWithUpdates(
+            new FakeUpdateChecker(info), installer, out InMemorySettingsRepository repository);
+
+        await viewModel.CheckForUpdatesCommand.ExecuteAsync(null);
+        await viewModel.InstallUpdateCommand.ExecuteAsync(null);
+
+        Assert.Equal(1, installer.StageCallCount);
+        Settings saved = await repository.LoadAsync();
+        Assert.Equal("2.0.0", saved.PendingUpdateVersion);
+        Assert.Equal("abc123", saved.PendingUpdateSha256);
+        // Nach erfolgreichem Staging ist der Button ausgeblendet (kein Doppelklick).
+        Assert.False(viewModel.IsUpdateInstallable);
+    }
+
+    [Fact]
+    public async Task InstallUpdate_bei_Fehlschlag_bietet_erneut_an()
+    {
+        UpdateInfo info = UpdateInfo.Create(
+            new Version(1, 0, 0), "v2.0.0", null, null,
+            "https://example.com/p.zip", "https://example.com/p.zip.sig");
+        // Installer ohne Ergebnis -> Staging schlägt fehl.
+        using SettingsViewModel viewModel = CreateViewModelWithUpdates(
+            new FakeUpdateChecker(info), new FakeUpdateInstaller(result: null), out _);
+
+        await viewModel.CheckForUpdatesCommand.ExecuteAsync(null);
+        await viewModel.InstallUpdateCommand.ExecuteAsync(null);
+
+        Assert.True(viewModel.IsUpdateInstallable);
     }
 
     [Fact]

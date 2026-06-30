@@ -41,6 +41,7 @@ using LogService = LookAway.Application.Services.LogService;
 using PauseActionService = LookAway.Application.Services.PauseActionService;
 using BreakCoordinator = LookAway.Application.Coordination.BreakCoordinator;
 using UpdateInstallerService = LookAway.Application.Services.UpdateInstallerService;
+using IUpdateInstaller = LookAway.Application.Services.IUpdateInstaller;
 using UpdateApplyArgs = LookAway.Application.Services.UpdateApplyArgs;
 using StagedUpdate = LookAway.Application.Services.StagedUpdate;
 using TrayStatusPresenter = LookAway.Application.Services.TrayStatusPresenter;
@@ -818,6 +819,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         Services.GetRequiredService<ILocalizationService>(),
         Services.GetRequiredService<ISoundService>(),
         Services.GetRequiredService<IUpdateChecker>(),
+        Services.GetRequiredService<IUpdateInstaller>(),
         CreateStatisticsViewModel(),
         Services.GetRequiredService<ILogger<SettingsViewModel>>(),
         GetVersion());
@@ -938,6 +940,8 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _ = services.AddSingleton<UpdateInstallerService>(sp => new UpdateInstallerService(
             sp.GetRequiredService<IHttpGetClient>(),
             sp.GetRequiredService<ILogger<UpdateInstallerService>>()));
+        // Schmale Sicht für das Settings-ViewModel (Ein-Klick-Installation).
+        _ = services.AddSingleton<IUpdateInstaller>(sp => sp.GetRequiredService<UpdateInstallerService>());
 
         // Autostart
         _ = services.AddSingleton<IAutoStartService, RegistryAutoStartService>();

@@ -31,6 +31,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private readonly ILocalizationService _localization;
     private readonly ISoundService _soundService;
     private readonly IUpdateChecker _updateChecker;
+    private readonly IUpdateInstaller _updateInstaller;
     private readonly ILogger<SettingsViewModel> _logger;
     private readonly string _applicationVersion;
 
@@ -112,6 +113,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <param name="localization">Liefert Texte und steuert den Sprachwechsel.</param>
     /// <param name="soundService">Spielt den Erinnerungston für die Vorschau.</param>
     /// <param name="updateChecker">Prüft auf Updates.</param>
+    /// <param name="updateInstaller">Lädt und stellt ein gefundenes Update bereit (Ein-Klick-Installation).</param>
     /// <param name="statistics">Statistik-ViewModel (komponiert).</param>
     /// <param name="logger">Logger.</param>
     /// <param name="applicationVersion">Anzuzeigende Versionsnummer (Über-Bereich).</param>
@@ -121,6 +123,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         ILocalizationService localization,
         ISoundService soundService,
         IUpdateChecker updateChecker,
+        IUpdateInstaller updateInstaller,
         StatisticsViewModel statistics,
         ILogger<SettingsViewModel> logger,
         string applicationVersion)
@@ -130,6 +133,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(localization);
         ArgumentNullException.ThrowIfNull(soundService);
         ArgumentNullException.ThrowIfNull(updateChecker);
+        ArgumentNullException.ThrowIfNull(updateInstaller);
         ArgumentNullException.ThrowIfNull(statistics);
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentException.ThrowIfNullOrWhiteSpace(applicationVersion);
@@ -139,6 +143,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _localization = localization;
         _soundService = soundService;
         _updateChecker = updateChecker;
+        _updateInstaller = updateInstaller;
         Statistics = statistics;
         _logger = logger;
         _applicationVersion = applicationVersion;

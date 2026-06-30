@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Data.Services;
 
 /// <summary>
-/// Source-generierte Logging-Methoden fuer den
+/// Source-generierte Logging-Methoden für den
 /// <see cref="RegistryAutoStartService"/>.
 /// </summary>
 /// <remarks>
@@ -27,6 +27,6 @@ internal static partial class RegistryAutoStartServiceLog
     [LoggerMessage(
         EventId = 3052,
         Level = LogLevel.Debug,
-        Message = "Autostart-Eintrag {ValueName} ist bereits aktuell; kein Schreibvorgang noetig.")]
+        Message = "Autostart-Eintrag {ValueName} ist bereits aktuell; kein Schreibvorgang nötig.")]
     public static partial void AlreadyCurrent(ILogger logger, string valueName);
 }

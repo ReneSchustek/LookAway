@@ -3,7 +3,7 @@ using LookAway.Data.Logging;
 namespace LookAway.Tests.Integration.Data.Logging;
 
 /// <summary>
-/// Tests fuer den <see cref="LogMessageSanitizer"/>: stellt sicher, dass
+/// Tests für den <see cref="LogMessageSanitizer"/>: stellt sicher, dass
 /// benutzerspezifische Pfade und der Benutzername durch generische
 /// Platzhalter ersetzt werden.
 /// </summary>

@@ -14,7 +14,7 @@
     <!-- Implizit: alle Buttons erben den Basis-Stil. -->
     <Style TargetType="Button" BasedOn="{StaticResource RcButtonStyle}" />
 
-    <!-- Primaer-Aktion: voller Teal-Akzent (Speichern, Fertig, Pause starten). -->
+    <!-- Primär-Aktion: voller Teal-Akzent (Speichern, Fertig, Pause starten). -->
     <Style x:Key="RcPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource RcButtonStyle}">
         <Setter Property="Background" Value="{StaticResource RcAccent}" />
         <Setter Property="Foreground" Value="{StaticResource RcAccentForeground}" />
@@ -28,8 +28,8 @@
         <Setter Property="BorderThickness" Value="0,1,0,0" />
     </Style>
 
-    <!-- Karte: weisse Flaeche mit feinem Rahmen und abgerundeten Ecken fuer eine
-         moderne, klar gegliederte Optik auf dem leicht getoenten Hintergrund. -->
+    <!-- Karte: weisse Fläche mit feinem Rahmen und abgerundeten Ecken für eine
+         moderne, klar gegliederte Optik auf dem leicht getönten Hintergrund. -->
     <Style x:Key="RcCardStyle" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource RcCardBackground}" />
         <Setter Property="BorderBrush" Value="{StaticResource RcDivider}" />

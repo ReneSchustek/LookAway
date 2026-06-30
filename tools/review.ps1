@@ -1,17 +1,17 @@
 #requires -Version 7
 <#
 .SYNOPSIS
-    Lokale Review-Pipeline fuer LookAway: Build, Tests, Security-Scan und
+    Lokale Review-Pipeline für LookAway: Build, Tests, Security-Scan und
     Report-Skeleton.
 
 .DESCRIPTION
-    Wird vom Solution-Root oder aus tools/ aufgerufen. Buendelt die lokalen
-    Qualitaets-Checks ohne Cloud-Round-Trips.
+    Wird vom Solution-Root oder aus tools/ aufgerufen. Bündelt die lokalen
+    Qualitäts-Checks ohne Cloud-Round-Trips.
 
     Modi:
       build       - dotnet build (TreatWarningsAsErrors greift global)
       test        - build + dotnet test
-      security    - sucht nach Secret-Mustern und gefaehrlichen Aufrufen
+      security    - sucht nach Secret-Mustern und gefährlichen Aufrufen
       all         - build + test + security
 
 .PARAMETER Mode
@@ -65,7 +65,7 @@ function Invoke-Tests {
 }
 
 function Invoke-Security {
-    Write-Section 'Security-Scan (Secrets und gefaehrliche Patterns)'
+    Write-Section 'Security-Scan (Secrets und gefährliche Patterns)'
 
     $patterns = @(
         @{ Name = 'API-Key';            Pattern = '(api[_-]?key|secret[_-]?key)\s*=\s*["''][^"'']{8,}["'']' },
@@ -100,7 +100,7 @@ function Invoke-Security {
     }
 
     if ($hits.Count -eq 0) {
-        Write-Host 'Keine verdaechtigen Patterns gefunden.' -ForegroundColor Green
+        Write-Host 'Keine verdächtigen Patterns gefunden.' -ForegroundColor Green
     }
     else {
         $hits | Format-Table Pattern, File, Line, Snippet -AutoSize | Out-String | Write-Host
@@ -123,7 +123,7 @@ function New-EnterpriseReportSkeleton {
 
     $secCount = if ($SecurityHits) { $SecurityHits.Count } else { 0 }
     $secSummary = if ($secCount -eq 0) {
-        'Keine verdaechtigen Patterns durch automatischen Scan gefunden.'
+        'Keine verdächtigen Patterns durch automatischen Scan gefunden.'
     }
     else {
         "Automatischer Scan hat $secCount Treffer gefunden — siehe Tabelle unten."
@@ -148,11 +148,11 @@ function New-EnterpriseReportSkeleton {
 <3-5 Zeilen — was ist der Stand>
 
 ## Vorabscans (review.ps1)
-- Build mit ``TreatWarningsAsErrors``: gruen (siehe Konsole)
-- Tests: gruen (siehe Konsole)
+- Build mit ``TreatWarningsAsErrors``: grün (siehe Konsole)
+- Tests: grün (siehe Konsole)
 - Security: $secSummary
 $hitsTable
-## Saeulen-Audit
+## Säulen-Audit
 
 ### Resilienz
 - **Befund:** ...
@@ -185,7 +185,7 @@ $hitsTable
 
 ## Production-Readiness-Score: **% — Ampel**
 
-## Top-3 Massnahmen vor GO
+## Top-3 Maßnahmen vor GO
 
 1. ...
 2. ...
@@ -212,7 +212,7 @@ $hitsTable
 | CoC | ? |  |
 | TDD | ? |  |
 | Guard Clauses | ? |  |
-| Aussagekraeftige Namen | ? |  |
+| Aussagekräftige Namen | ? |  |
 | Stepdown Rule | ? |  |
 "@
 

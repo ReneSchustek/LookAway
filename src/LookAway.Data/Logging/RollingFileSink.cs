@@ -5,13 +5,13 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Data.Logging;
 
 /// <summary>
-/// Schreibt strukturierte Log-Eintraege in eine tagesbasierte Datei und
-/// raeumt aeltere Dateien gemaess Retention auf.
+/// Schreibt strukturierte Log-Einträge in eine tagesbasierte Datei und
+/// räumt ältere Dateien gemäß Retention auf.
 /// </summary>
 /// <remarks>
-/// Schreibvorgaenge sind durch ein Lock serialisiert. IO-Fehler werden
+/// Schreibvorgänge sind durch ein Lock serialisiert. IO-Fehler werden
 /// geschluckt — Logging darf die Anwendung nicht zum Absturz bringen.
-/// Das Aufraeumen alter Dateien laeuft maximal einmal pro Tag, getriggert
+/// Das Aufräumen alter Dateien läuft maximal einmal pro Tag, getriggert
 /// durch den ersten Schreibvorgang am neuen Tag.
 /// </remarks>
 public sealed class RollingFileSink : IDisposable
@@ -30,9 +30,9 @@ public sealed class RollingFileSink : IDisposable
     /// <summary>
     /// Erzeugt einen Sink, der in <paramref name="directory"/> schreibt.
     /// </summary>
-    /// <param name="directory">Zielverzeichnis fuer die Log-Dateien.</param>
+    /// <param name="directory">Zielverzeichnis für die Log-Dateien.</param>
     /// <param name="retentionDays">Wie viele Tage Historie behalten werden (Default 7).</param>
-    /// <param name="sanitizer">Sanitizer fuer Benutzerpfade. Wenn <c>null</c>, wird ein Default angelegt.</param>
+    /// <param name="sanitizer">Sanitizer für Benutzerpfade. Wenn <c>null</c>, wird ein Default angelegt.</param>
     public RollingFileSink(string directory, int retentionDays = 7, LogMessageSanitizer? sanitizer = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(directory);
@@ -95,14 +95,14 @@ public sealed class RollingFileSink : IDisposable
             }
             catch (UnauthorizedAccessException)
             {
-                // Keine Schreibrechte: gleiche Begruendung.
+                // Keine Schreibrechte: gleiche Begründung.
             }
         }
     }
 
     /// <summary>
-    /// Erzwingt einen Retention-Lauf unabhaengig vom Tageswechsel.
-    /// Vorgesehen fuer Tests und manuelle Aufraeumvorgaenge.
+    /// Erzwingt einen Retention-Lauf unabhängig vom Tageswechsel.
+    /// Vorgesehen für Tests und manuelle Aufräumvorgänge.
     /// </summary>
     public void PruneNow()
     {

@@ -1,16 +1,16 @@
 namespace LookAway.Core.Enums;
 
 /// <summary>
-/// Haeufigkeit der Update-Pruefung.
+/// Häufigkeit der Update-Prüfung.
 /// </summary>
 public enum UpdateCheckFrequency
 {
     /// <summary>Bei jedem App-Start.</summary>
     OnStartup,
 
-    /// <summary>Hoechstens einmal taeglich.</summary>
+    /// <summary>Höchstens einmal täglich.</summary>
     Daily,
 
-    /// <summary>Hoechstens einmal woechentlich.</summary>
+    /// <summary>Höchstens einmal wöchentlich.</summary>
     Weekly,
 }

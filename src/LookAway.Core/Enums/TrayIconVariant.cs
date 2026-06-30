@@ -6,10 +6,10 @@ namespace LookAway.Core.Enums;
 /// </summary>
 public enum TrayIconVariant
 {
-    /// <summary>Arbeitsphase laeuft (Standard, Indigo).</summary>
+    /// <summary>Arbeitsphase läuft (Standard, Indigo).</summary>
     Working,
 
-    /// <summary>Pause aktiv (gruener Akzent).</summary>
+    /// <summary>Pause aktiv (grüner Akzent).</summary>
     OnBreak,
 
     /// <summary>Timer manuell pausiert oder gestoppt (Grau).</summary>

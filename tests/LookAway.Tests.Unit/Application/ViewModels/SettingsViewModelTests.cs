@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace LookAway.Tests.Unit.Application.ViewModels;
 
 /// <summary>
-/// Tests fuer das UI-freie <see cref="SettingsViewModel"/>: Laden,
+/// Tests für das UI-freie <see cref="SettingsViewModel"/>: Laden,
 /// Validieren, Persistieren, Sprachvorschau und Autostart-Synchronisation.
 /// </summary>
 public sealed class SettingsViewModelTests
@@ -61,7 +61,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task LoadAsync_uebernimmt_die_persistierten_Werte()
+    public async Task LoadAsync_übernimmt_die_persistierten_Werte()
     {
         Settings stored = new()
         {
@@ -80,7 +80,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task LoadAsync_uebernimmt_benutzerdefinierte_Dauern()
+    public async Task LoadAsync_übernimmt_benutzerdefinierte_Dauern()
     {
         Settings stored = new()
         {
@@ -97,7 +97,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Save_schreibt_die_geaenderten_Werte_ins_Repository()
+    public async Task Save_schreibt_die_geänderten_Werte_ins_Repository()
     {
         using SettingsViewModel viewModel = CreateViewModel(out InMemorySettingsRepository repository, out _, out _);
         await viewModel.LoadAsync();
@@ -113,7 +113,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Save_loest_CloseRequested_aus()
+    public async Task Save_löst_CloseRequested_aus()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _);
         await viewModel.LoadAsync();
@@ -126,7 +126,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Apply_speichert_ohne_zu_schliessen_und_meldet_die_Einstellungen()
+    public async Task Apply_speichert_ohne_zu_schließen_und_meldet_die_Einstellungen()
     {
         using SettingsViewModel viewModel = CreateViewModel(out InMemorySettingsRepository repository, out _, out _);
         await viewModel.LoadAsync();
@@ -145,7 +145,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Cancel_verwirft_Aenderungen_und_stellt_die_Sprache_wieder_her()
+    public async Task Cancel_verwirft_Änderungen_und_stellt_die_Sprache_wieder_her()
     {
         using SettingsViewModel viewModel = CreateViewModel(
             out InMemorySettingsRepository repository,
@@ -180,7 +180,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Ungueltige_Arbeitsdauer_blockiert_das_Speichern()
+    public async Task Ungültige_Arbeitsdauer_blockiert_das_Speichern()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _);
         await viewModel.LoadAsync();
@@ -194,7 +194,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Ungueltige_Overlayfarbe_blockiert_das_Speichern()
+    public async Task Ungültige_Overlayfarbe_blockiert_das_Speichern()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _);
         await viewModel.LoadAsync();
@@ -242,7 +242,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Gueltige_Arbeitsdauer_erlaubt_das_Speichern()
+    public async Task Gültige_Arbeitsdauer_erlaubt_das_Speichern()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _);
         await viewModel.LoadAsync();
@@ -257,7 +257,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Ohne_eigene_Dauern_wird_CustomDurations_geloescht()
+    public async Task Ohne_eigene_Dauern_wird_CustomDurations_gelöscht()
     {
         Settings stored = new()
         {
@@ -304,7 +304,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Modellwechsel_setzt_die_Dauern_auf_die_Vorgaben_zurueck()
+    public async Task Modellwechsel_setzt_die_Dauern_auf_die_Vorgaben_zurück()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _);
         await viewModel.LoadAsync();
@@ -343,7 +343,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Vorhoeren_spielt_den_gewaehlten_Ton_mit_der_Lautstaerke()
+    public async Task Vorhören_spielt_den_gewählten_Ton_mit_der_Lautstärke()
     {
         using SettingsViewModel viewModel = CreateViewModel(
             out _, out _, out _, out FakeSoundService sound);

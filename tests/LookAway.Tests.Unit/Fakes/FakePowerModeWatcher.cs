@@ -3,8 +3,8 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Tests.Unit.Fakes;
 
 /// <summary>
-/// Test-Fake fuer <see cref="IPowerModeWatcher"/>. <see cref="RaiseSuspending"/>
-/// und <see cref="RaiseResuming"/> erlauben deterministisches Ausloesen
+/// Test-Fake für <see cref="IPowerModeWatcher"/>. <see cref="RaiseSuspending"/>
+/// und <see cref="RaiseResuming"/> erlauben deterministisches Auslösen
 /// der Plattform-Events.
 /// </summary>
 internal sealed class FakePowerModeWatcher : IPowerModeWatcher

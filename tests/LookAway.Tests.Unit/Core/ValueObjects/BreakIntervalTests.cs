@@ -3,7 +3,7 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Tests.Unit.Core.ValueObjects;
 
 /// <summary>
-/// Tests fuer das <see cref="BreakInterval"/>-ValueObject: Wertebereiche,
+/// Tests für das <see cref="BreakInterval"/>-ValueObject: Wertebereiche,
 /// Querbedingung <c>MaxLimit ≥ WorkDuration</c> und Value-Equality.
 /// </summary>
 public sealed class BreakIntervalTests

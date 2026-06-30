@@ -268,6 +268,6 @@ internal static partial class BreakCoordinatorLog
     [LoggerMessage(
         EventId = 1300,
         Level = LogLevel.Warning,
-        Message = "Pausen-Historie konnte nicht geschrieben werden — Statistik bleibt unveraendert.")]
+        Message = "Pausen-Historie konnte nicht geschrieben werden — Statistik bleibt unverändert.")]
     public static partial void HistoryWriteFailed(ILogger logger, Exception exception);
 }

@@ -3,18 +3,18 @@ using LookAway.Core.Enums;
 namespace LookAway.Core.Interfaces;
 
 /// <summary>
-/// Spielt dezente Erinnerungstoene ab. Die Lautstaerke wird pro
-/// Wiedergabe gesetzt und veraendert die System-Lautstaerke nicht.
+/// Spielt dezente Erinnerungstöne ab. Die Lautstärke wird pro
+/// Wiedergabe gesetzt und verändert die System-Lautstärke nicht.
 /// </summary>
 public interface ISoundService
 {
     /// <summary>
-    /// Spielt den angegebenen Ton mit der gewuenschten Lautstaerke. Eine bereits
-    /// laufende Wiedergabe wird zuvor gestoppt (keine Ueberlappung). Fehler
-    /// (z. B. fehlendes Audiogeraet) werden geschluckt — die App soll dadurch
-    /// nie abstuerzen.
+    /// Spielt den angegebenen Ton mit der gewünschten Lautstärke. Eine bereits
+    /// laufende Wiedergabe wird zuvor gestoppt (keine Überlappung). Fehler
+    /// (z. B. fehlendes Audiogerät) werden geschluckt — die App soll dadurch
+    /// nie abstürzen.
     /// </summary>
     /// <param name="soundType">Abzuspielender Ton.</param>
-    /// <param name="volumePercent">Lautstaerke in Prozent (0–100).</param>
+    /// <param name="volumePercent">Lautstärke in Prozent (0–100).</param>
     void Play(SoundType soundType, int volumePercent);
 }

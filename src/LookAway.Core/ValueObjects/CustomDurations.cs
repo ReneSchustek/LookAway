@@ -1,12 +1,12 @@
 namespace LookAway.Core.ValueObjects;
 
 /// <summary>
-/// Optionale Benutzer-Ueberschreibung der Arbeits- und Pausendauer in Minuten.
-/// Gilt zusaetzlich zu den Defaults des aktiven Pausenmodells.
+/// Optionale Benutzer-Überschreibung der Arbeits- und Pausendauer in Minuten.
+/// Gilt zusätzlich zu den Defaults des aktiven Pausenmodells.
 /// </summary>
 public sealed record CustomDurations
 {
-    /// <summary>Minimale Arbeitsdauer in Minuten (entspricht dem Domaenen-Minimum von <see cref="BreakInterval.MinWorkDuration"/>).</summary>
+    /// <summary>Minimale Arbeitsdauer in Minuten (entspricht dem Domänen-Minimum von <see cref="BreakInterval.MinWorkDuration"/>).</summary>
     public const int MinWorkMinutes = 5;
 
     /// <summary>Maximale Arbeitsdauer in Minuten (8 Stunden).</summary>
@@ -19,7 +19,7 @@ public sealed record CustomDurations
     private int _breakMinutes;
 
     /// <summary>
-    /// Arbeitsdauer in Minuten. Gueltig: <see cref="MinWorkMinutes"/> bis <see cref="MaxWorkMinutes"/>.
+    /// Arbeitsdauer in Minuten. Gültig: <see cref="MinWorkMinutes"/> bis <see cref="MaxWorkMinutes"/>.
     /// </summary>
     public required int WorkMinutes
     {
@@ -38,7 +38,7 @@ public sealed record CustomDurations
     }
 
     /// <summary>
-    /// Pausendauer in Minuten. Gueltig: 1 bis <see cref="MaxBreakMinutes"/>.
+    /// Pausendauer in Minuten. Gültig: 1 bis <see cref="MaxBreakMinutes"/>.
     /// </summary>
     public required int BreakMinutes
     {

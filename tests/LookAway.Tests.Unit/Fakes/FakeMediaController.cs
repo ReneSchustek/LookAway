@@ -2,7 +2,7 @@ using LookAway.Core.Interfaces;
 
 namespace LookAway.Tests.Unit.Fakes;
 
-/// <summary>Test-Fake fuer <see cref="IMediaController"/>: zaehlt die Aufrufe.</summary>
+/// <summary>Test-Fake für <see cref="IMediaController"/>: zählt die Aufrufe.</summary>
 internal sealed class FakeMediaController : IMediaController
 {
     /// <summary>Anzahl der <see cref="PauseAllAsync"/>-Aufrufe.</summary>

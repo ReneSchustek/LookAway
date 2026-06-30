@@ -3,7 +3,7 @@ using LookAway.Core.Enums;
 namespace LookAway.Application.Localization;
 
 /// <summary>
-/// Sprachneutrale Schluessel der Settings-Oberflaeche. Die zugehoerigen Texte
+/// Sprachneutrale Schlüssel der Settings-Oberfläche. Die zugehörigen Texte
 /// liegen in den eingebetteten Sprachtabellen der Data-Schicht.
 /// </summary>
 public static class SettingsTextKeys
@@ -20,7 +20,7 @@ public static class SettingsTextKeys
     /// <summary>Tab "Eigene Intervalle".</summary>
     public const string TabIntervals = "Settings.Tab.Intervals";
 
-    /// <summary>Tab "Ueber LookAway".</summary>
+    /// <summary>Tab "Über LookAway".</summary>
     public const string TabAbout = "Settings.Tab.About";
 
     /// <summary>Tab "Sound".</summary>
@@ -44,7 +44,7 @@ public static class SettingsTextKeys
     /// <summary>Statistik-Beschriftung "Pausenzeit".</summary>
     public const string StatisticsBreakTime = "Statistics.BreakTime";
 
-    /// <summary>Statistik-Beschriftung "Uebersprungen".</summary>
+    /// <summary>Statistik-Beschriftung "Übersprungen".</summary>
     public const string StatisticsSkipped = "Statistics.Skipped";
 
     /// <summary>Statistik-Export-Button.</summary>
@@ -59,16 +59,16 @@ public static class SettingsTextKeys
     /// <summary>Beschriftung der Aktion "Pause starten".</summary>
     public const string HotkeyStartBreak = "Settings.Hotkeys.StartBreak";
 
-    /// <summary>Beschriftung der Aktion "Ueberspringen/Snooze".</summary>
+    /// <summary>Beschriftung der Aktion "Überspringen/Snooze".</summary>
     public const string HotkeySkipOrSnooze = "Settings.Hotkeys.SkipOrSnooze";
 
     /// <summary>Beschriftung der Aktion "DND umschalten".</summary>
     public const string HotkeyToggleDnd = "Settings.Hotkeys.ToggleDnd";
 
-    /// <summary>Beschriftung des Zuruecksetzen-Buttons.</summary>
+    /// <summary>Beschriftung des Zurücksetzen-Buttons.</summary>
     public const string HotkeysReset = "Settings.Hotkeys.Reset";
 
-    /// <summary>Beschriftung "Auf Updates pruefen".</summary>
+    /// <summary>Beschriftung "Auf Updates prüfen".</summary>
     public const string UpdateEnableLabel = "Settings.Update.EnableLabel";
 
     /// <summary>Beschriftung "Automatisch aktualisieren".</summary>
@@ -77,19 +77,19 @@ public static class SettingsTextKeys
     /// <summary>Hinweistext zur Auto-Update-Option.</summary>
     public const string UpdateAutoHint = "Settings.Update.AutoHint";
 
-    /// <summary>Beschriftung der Pruef-Haeufigkeit.</summary>
+    /// <summary>Beschriftung der Prüf-Häufigkeit.</summary>
     public const string UpdateFrequencyLabel = "Settings.Update.FrequencyLabel";
 
-    /// <summary>Beschriftung des "Jetzt pruefen"-Buttons.</summary>
+    /// <summary>Beschriftung des "Jetzt prüfen"-Buttons.</summary>
     public const string UpdateCheckNow = "Settings.Update.CheckNow";
 
     /// <summary>Status "auf dem neuesten Stand".</summary>
     public const string UpdateUpToDate = "Settings.Update.UpToDate";
 
-    /// <summary>Status "Update verfuegbar" (Formatstring {0}).</summary>
+    /// <summary>Status "Update verfügbar" (Formatstring {0}).</summary>
     public const string UpdateAvailable = "Settings.Update.Available";
 
-    /// <summary>Status "wird geprueft".</summary>
+    /// <summary>Status "wird geprüft".</summary>
     public const string UpdateChecking = "Settings.Update.Checking";
 
     /// <summary>Download-Link-Text.</summary>
@@ -113,17 +113,17 @@ public static class SettingsTextKeys
     /// <summary>Beschriftung "Alle Bildschirme abdunkeln".</summary>
     public const string PauseActionsDarkenAllScreens = "Settings.PauseActions.DarkenAllScreens";
 
-    /// <summary>Beschriftung des Overlay-Farbwaehlers.</summary>
+    /// <summary>Beschriftung des Overlay-Farbwählers.</summary>
     public const string PauseActionsOverlayColor = "Settings.PauseActions.OverlayColor";
 
-    /// <summary>Hinweistext zum Overlay-Farbwaehler (Transparenz).</summary>
+    /// <summary>Hinweistext zum Overlay-Farbwähler (Transparenz).</summary>
     public const string PauseActionsOverlayColorHint = "Settings.PauseActions.OverlayColorHint";
 
     /// <summary>
-    /// Liefert den Anzeigenamen-Schluessel einer Pruef-Haeufigkeit.
+    /// Liefert den Anzeigenamen-Schlüssel einer Prüf-Häufigkeit.
     /// </summary>
-    /// <param name="frequency">Haeufigkeit.</param>
-    /// <returns>Schluessel der Form <c>"Settings.Update.Frequency.&lt;Name&gt;"</c>.</returns>
+    /// <param name="frequency">Häufigkeit.</param>
+    /// <returns>Schlüssel der Form <c>"Settings.Update.Frequency.&lt;Name&gt;"</c>.</returns>
     public static string ForFrequency(UpdateCheckFrequency frequency) => "Settings.Update.Frequency." + frequency;
 
     /// <summary>Beschriftung "Ton abspielen".</summary>
@@ -132,10 +132,10 @@ public static class SettingsTextKeys
     /// <summary>Beschriftung der Ton-Auswahl.</summary>
     public const string SoundSelectLabel = "Settings.Sound.SelectLabel";
 
-    /// <summary>Beschriftung der Lautstaerke.</summary>
+    /// <summary>Beschriftung der Lautstärke.</summary>
     public const string SoundVolumeLabel = "Settings.Sound.VolumeLabel";
 
-    /// <summary>Beschriftung des Vorhoer-Buttons.</summary>
+    /// <summary>Beschriftung des Vorhör-Buttons.</summary>
     public const string SoundPreviewButton = "Settings.Sound.PreviewButton";
 
     /// <summary>Beschriftung des Sprach-Dropdowns.</summary>
@@ -147,7 +147,7 @@ public static class SettingsTextKeys
     /// <summary>Beschriftung der Auto-Pause-Checkbox.</summary>
     public const string IdlePauseLabel = "Settings.Idle.PauseLabel";
 
-    /// <summary>Beschriftung der Inaktivitaetsschwelle.</summary>
+    /// <summary>Beschriftung der Inaktivitätsschwelle.</summary>
     public const string IdleThresholdLabel = "Settings.Idle.ThresholdLabel";
 
     /// <summary>Beschriftung der DND-Checkbox.</summary>
@@ -202,23 +202,23 @@ public static class SettingsTextKeys
     public const string ButtonApply = "Settings.Button.Apply";
 
     /// <summary>
-    /// Liefert den Anzeigenamen-Schluessel eines Pausenmodells.
+    /// Liefert den Anzeigenamen-Schlüssel eines Pausenmodells.
     /// </summary>
     /// <param name="model">Pausenmodell.</param>
-    /// <returns>Schluessel der Form <c>"Settings.Model.&lt;Name&gt;"</c>.</returns>
+    /// <returns>Schlüssel der Form <c>"Settings.Model.&lt;Name&gt;"</c>.</returns>
     public static string ForModel(BreakModel model) => "Settings.Model." + model;
 
     /// <summary>
-    /// Liefert den Anzeigenamen-Schluessel eines Erinnerungstons.
+    /// Liefert den Anzeigenamen-Schlüssel eines Erinnerungstons.
     /// </summary>
     /// <param name="soundType">Ton-Typ.</param>
-    /// <returns>Schluessel der Form <c>"Settings.Sound.&lt;Name&gt;"</c>.</returns>
+    /// <returns>Schlüssel der Form <c>"Settings.Sound.&lt;Name&gt;"</c>.</returns>
     public static string ForSound(SoundType soundType) => "Settings.Sound." + soundType;
 
     /// <summary>
-    /// Liefert den Anzeigenamen-Schluessel einer Sprache.
+    /// Liefert den Anzeigenamen-Schlüssel einer Sprache.
     /// </summary>
     /// <param name="language">Sprache.</param>
-    /// <returns>Schluessel der Form <c>"Language.&lt;Name&gt;"</c>.</returns>
+    /// <returns>Schlüssel der Form <c>"Language.&lt;Name&gt;"</c>.</returns>
     public static string ForLanguage(Language language) => "Language." + language;
 }

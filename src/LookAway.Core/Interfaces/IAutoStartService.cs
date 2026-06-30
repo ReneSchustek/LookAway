@@ -1,7 +1,7 @@
 namespace LookAway.Core.Interfaces;
 
 /// <summary>
-/// Abstraktion ueber den benutzerspezifischen Windows-Autostart. Implementierungen
+/// Abstraktion über den benutzerspezifischen Windows-Autostart. Implementierungen
 /// tragen die Anwendung so ein, dass sie beim Login des aktuellen Benutzers
 /// automatisch gestartet wird — ohne Administrator-Rechte.
 /// </summary>
@@ -10,12 +10,12 @@ namespace LookAway.Core.Interfaces;
 /// (Windows-Registry, <c>HKEY_CURRENT_USER</c>) ist eine schnelle, lokale
 /// Operation ohne IO-Wartezeiten. Fehler werden als
 /// <see cref="LookAway.Core.Exceptions.AutoStartException"/> signalisiert, damit
-/// Aufrufer sie gezielt behandeln koennen.
+/// Aufrufer sie gezielt behandeln können.
 /// </remarks>
 public interface IAutoStartService
 {
     /// <summary>
-    /// Prueft, ob der Autostart-Eintrag fuer den aktuellen Benutzer vorhanden ist.
+    /// Prüft, ob der Autostart-Eintrag für den aktuellen Benutzer vorhanden ist.
     /// </summary>
     /// <returns><c>true</c>, wenn ein Eintrag existiert; sonst <c>false</c>.</returns>
     /// <exception cref="LookAway.Core.Exceptions.AutoStartException">
@@ -24,7 +24,7 @@ public interface IAutoStartService
     bool IsEnabled();
 
     /// <summary>
-    /// Traegt die Anwendung mit ihrem aktuellen Pfad in den Autostart ein.
+    /// Trägt die Anwendung mit ihrem aktuellen Pfad in den Autostart ein.
     /// Idempotent: ein bereits korrekter Eintrag wird nicht erneut geschrieben;
     /// ein veralteter Pfad (Anwendung verschoben) wird korrigiert.
     /// </summary>

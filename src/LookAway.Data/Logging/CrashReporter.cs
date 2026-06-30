@@ -8,11 +8,11 @@ namespace LookAway.Data.Logging;
 
 /// <summary>
 /// Schreibt unbehandelte Exceptions als JSON-Dateien in
-/// <c>logs\crashes\</c>. Erkennt beim naechsten Start, ob noch ungelesene
+/// <c>logs\crashes\</c>. Erkennt beim nächsten Start, ob noch ungelesene
 /// Crash-Berichte existieren.
 /// </summary>
 /// <remarks>
-/// Saemtliche Schreib-Operationen sind in Try/Catch-Blocks gekapselt:
+/// Sämtliche Schreib-Operationen sind in Try/Catch-Blocks gekapselt:
 /// Ein Folgefehler beim Schreiben des Crash-Berichts darf den ohnehin
 /// laufenden Crash-Pfad nicht erneut werfen.
 /// </remarks>
@@ -25,8 +25,8 @@ public sealed class CrashReporter : ICrashReporter
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        // Crash-Berichte sind lokale Dateien — kein HTML-Encoding noetig.
-        // So bleibt z. B. der Sanitizer-Platzhalter <user> unveraendert.
+        // Crash-Berichte sind lokale Dateien — kein HTML-Encoding nötig.
+        // So bleibt z. B. der Sanitizer-Platzhalter <user> unverändert.
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
@@ -37,7 +37,7 @@ public sealed class CrashReporter : ICrashReporter
     /// <summary>
     /// Erzeugt einen CrashReporter, der in das angegebene Verzeichnis schreibt.
     /// </summary>
-    /// <param name="crashDirectory">Zielverzeichnis fuer Crash-Dateien.</param>
+    /// <param name="crashDirectory">Zielverzeichnis für Crash-Dateien.</param>
     /// <param name="sanitizer">Optionaler Sanitizer; <c>null</c> erzeugt einen Default.</param>
     public CrashReporter(string crashDirectory, LogMessageSanitizer? sanitizer = null)
     {
@@ -77,7 +77,7 @@ public sealed class CrashReporter : ICrashReporter
                 File.WriteAllText(filePath, json);
 
                 // Beim Erzeugen eines neuen Berichts ein vorhandenes
-                // Acknowledged-Marker-File entfernen, damit der naechste
+                // Acknowledged-Marker-File entfernen, damit der nächste
                 // Start den neuen Crash erkennt.
                 string ackPath = Path.Combine(_crashDirectory, AcknowledgedFileName);
                 if (File.Exists(ackPath))
@@ -172,7 +172,7 @@ public sealed class CrashReporter : ICrashReporter
 }
 
 /// <summary>
-/// Datensatz fuer eine einzelne Crash-Datei.
+/// Datensatz für eine einzelne Crash-Datei.
 /// </summary>
 internal sealed record CrashReport(
     DateTimeOffset Timestamp,
@@ -185,7 +185,7 @@ internal sealed record CrashReport(
     string RuntimeVersion);
 
 /// <summary>
-/// Kleine Indirection, damit OS-/Runtime-Infos im Test ueberschreibbar bleiben,
+/// Kleine Indirection, damit OS-/Runtime-Infos im Test überschreibbar bleiben,
 /// ohne <see cref="System.Runtime.InteropServices.RuntimeInformation"/> zu mocken.
 /// </summary>
 internal static class RuntimeInformationSafe

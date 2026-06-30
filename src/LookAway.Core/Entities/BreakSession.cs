@@ -5,7 +5,7 @@ namespace LookAway.Core.Entities;
 
 /// <summary>
 /// Aufgezeichnete Pause-Erinnerung mit Zeitraum, Modell und Ergebnis.
-/// Unveraenderlich; die Invarianten werden im Konstruktor geprueft.
+/// Unveränderlich; die Invarianten werden im Konstruktor geprüft.
 /// </summary>
 public sealed class BreakSession
 {

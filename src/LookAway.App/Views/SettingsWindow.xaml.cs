@@ -16,9 +16,9 @@ using WinColor = Windows.UI.Color;
 namespace LookAway.Views;
 
 /// <summary>
-/// Settings-Fenster mit Seitenmenue (<see cref="NavigationView"/>). Bindet an das
+/// Settings-Fenster mit Seitenmenü (<see cref="NavigationView"/>). Bindet an das
 /// UI-freie <see cref="SettingsViewModel"/>; die gesamte Lade-, Validierungs- und
-/// Persistenzlogik liegt dort. Die Auswahl im Menue blendet den passenden
+/// Persistenzlogik liegt dort. Die Auswahl im Menü blendet den passenden
 /// Abschnitt ein.
 /// </summary>
 internal sealed partial class SettingsWindow : Window
@@ -33,7 +33,7 @@ internal sealed partial class SettingsWindow : Window
     private bool _suppressColorWriteback;
 
     /// <summary>
-    /// Erzeugt das Fenster fuer das angegebene (bereits geladene) ViewModel.
+    /// Erzeugt das Fenster für das angegebene (bereits geladene) ViewModel.
     /// </summary>
     /// <param name="viewModel">Bereits geladenes Settings-ViewModel.</param>
     public SettingsWindow(SettingsViewModel viewModel)
@@ -58,7 +58,7 @@ internal sealed partial class SettingsWindow : Window
             ["About"] = PanelAbout,
         };
 
-        // Farbwaehler auf die gespeicherte Overlay-Farbe setzen (Load lief bereits).
+        // Farbwähler auf die gespeicherte Overlay-Farbe setzen (Load lief bereits).
         _suppressColorWriteback = true;
         OverlayColorPicker.Color = ParseColor(viewModel.BreakOverlayColor);
         _suppressColorWriteback = false;
@@ -94,7 +94,7 @@ internal sealed partial class SettingsWindow : Window
 
     private void OnNavSelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
-        // Kann waehrend InitializeComponent feuern, bevor das Panel-Verzeichnis steht.
+        // Kann während InitializeComponent feuern, bevor das Panel-Verzeichnis steht.
         if (_panels is null || args.SelectedItem is not NavigationViewItem { Tag: string tag })
         {
             return;
@@ -120,7 +120,7 @@ internal sealed partial class SettingsWindow : Window
     private static string ToHex(WinColor color) => HexColor.ToHex(color.A, color.R, color.G, color.B);
 
     /// <summary>
-    /// Parst <c>#RRGGBB</c>/<c>#AARRGGBB</c>; bei ungueltiger Eingabe wird ein
+    /// Parst <c>#RRGGBB</c>/<c>#AARRGGBB</c>; bei ungültiger Eingabe wird ein
     /// dunkles Standard-Overlay verwendet.
     /// </summary>
     private static WinColor ParseColor(string hex)
@@ -157,7 +157,7 @@ internal sealed partial class SettingsWindow : Window
         }
         catch (IOException)
         {
-            // Schreibfehler (z. B. voller Datentraeger) darf den Export nicht
+            // Schreibfehler (z. B. voller Datenträger) darf den Export nicht
             // zum Absturz bringen — der Benutzer kann erneut versuchen.
         }
         catch (UnauthorizedAccessException)

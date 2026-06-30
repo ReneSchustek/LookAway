@@ -6,8 +6,8 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Data.Services;
 
 /// <summary>
-/// Prueft die neueste Release ueber die GitHub-Releases-API. Der
-/// eigentliche Netzwerkzugriff ist ueber <see cref="IHttpGetClient"/> gekapselt
+/// Prüft die neueste Release über die GitHub-Releases-API. Der
+/// eigentliche Netzwerkzugriff ist über <see cref="IHttpGetClient"/> gekapselt
 /// und damit testbar; die Versionsvergleichslogik liegt in <see cref="UpdateInfo"/>.
 /// </summary>
 public sealed class GitHubUpdateChecker : IUpdateChecker
@@ -77,8 +77,8 @@ public sealed class GitHubUpdateChecker : IUpdateChecker
 
     /// <summary>
     /// Sucht in den Release-Assets die Portable-ZIP und liefert deren direkte
-    /// Download-URL. Bevorzugt einen Namen mit "portable"; faellt sonst auf das
-    /// erste <c>.zip</c>-Asset zurueck. Akzeptiert nur vertrauenswuerdige
+    /// Download-URL. Bevorzugt einen Namen mit "portable"; fällt sonst auf das
+    /// erste <c>.zip</c>-Asset zurück. Akzeptiert nur vertrauenswürdige
     /// GitHub-HTTPS-URLs, damit kein Downgrade-/Fremdhost-Asset eingespielt wird.
     /// </summary>
     private static string? FindPackageAssetUrl(JsonElement root)
@@ -112,7 +112,7 @@ public sealed class GitHubUpdateChecker : IUpdateChecker
     }
 
     /// <summary>
-    /// Prueft, ob eine URL ueber HTTPS auf einen GitHub-Releasehost zeigt
+    /// Prüft, ob eine URL über HTTPS auf einen GitHub-Releasehost zeigt
     /// (<c>github.com</c> oder <c>*.githubusercontent.com</c>).
     /// </summary>
     private static bool IsTrustedGitHubUrl(string url)
@@ -134,9 +134,9 @@ public sealed class GitHubUpdateChecker : IUpdateChecker
 /// </summary>
 internal static partial class GitHubUpdateCheckerLog
 {
-    [LoggerMessage(EventId = 1600, Level = LogLevel.Information, Message = "Update verfuegbar: Version {Version}.")]
+    [LoggerMessage(EventId = 1600, Level = LogLevel.Information, Message = "Update verfügbar: Version {Version}.")]
     public static partial void UpdateAvailable(ILogger logger, string version);
 
-    [LoggerMessage(EventId = 1601, Level = LogLevel.Warning, Message = "Antwort der Update-Pruefung konnte nicht ausgewertet werden.")]
+    [LoggerMessage(EventId = 1601, Level = LogLevel.Warning, Message = "Antwort der Update-Prüfung konnte nicht ausgewertet werden.")]
     public static partial void ResponseUnparsable(ILogger logger, Exception exception);
 }

@@ -3,7 +3,7 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Tests.Unit.Fakes;
 
 /// <summary>
-/// Test-Fake fuer <see cref="IHttpGetClient"/>. <see cref="GetStringAsync"/>
+/// Test-Fake für <see cref="IHttpGetClient"/>. <see cref="GetStringAsync"/>
 /// liefert eine feste Antwort; <see cref="DownloadFileAsync"/> schreibt einen
 /// vorgegebenen Byte-Inhalt in die Zieldatei (oder meldet Misserfolg).
 /// </summary>

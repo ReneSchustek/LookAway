@@ -3,13 +3,13 @@ using LookAway.Core.Entities;
 namespace LookAway.Application.ViewModels;
 
 /// <summary>
-/// Traegt die gerade gespeicherten Einstellungen, damit laufende Dienste
-/// (Timer, Idle-/Vollbild-Erkennung) sie sofort uebernehmen koennen.
+/// Trägt die gerade gespeicherten Einstellungen, damit laufende Dienste
+/// (Timer, Idle-/Vollbild-Erkennung) sie sofort übernehmen können.
 /// </summary>
 public sealed class SettingsAppliedEventArgs : EventArgs
 {
     /// <summary>
-    /// Erzeugt die Ereignisdaten mit den gueltigen Einstellungen.
+    /// Erzeugt die Ereignisdaten mit den gültigen Einstellungen.
     /// </summary>
     /// <param name="settings">Die gespeicherten Einstellungen.</param>
     public SettingsAppliedEventArgs(Settings settings)
@@ -18,6 +18,6 @@ public sealed class SettingsAppliedEventArgs : EventArgs
         Settings = settings;
     }
 
-    /// <summary>Die gespeicherten, jetzt gueltigen Einstellungen.</summary>
+    /// <summary>Die gespeicherten, jetzt gültigen Einstellungen.</summary>
     public Settings Settings { get; }
 }

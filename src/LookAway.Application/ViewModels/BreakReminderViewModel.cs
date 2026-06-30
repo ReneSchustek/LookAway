@@ -8,9 +8,9 @@ namespace LookAway.Application.ViewModels;
 /// <see cref="TimeoutElapsed"/> auf.
 /// </summary>
 /// <remarks>
-/// Die erste gewaehlte Aktion gewinnt; weitere Aufrufe (auch ein spaeter Timeout)
-/// werden ignoriert. So koennen Doppelklicks oder ein Timeout-Race die Aktion
-/// nicht ueberschreiben.
+/// Die erste gewählte Aktion gewinnt; weitere Aufrufe (auch ein später Timeout)
+/// werden ignoriert. So können Doppelklicks oder ein Timeout-Race die Aktion
+/// nicht überschreiben.
 /// </remarks>
 public sealed class BreakReminderViewModel
 {
@@ -20,40 +20,40 @@ public sealed class BreakReminderViewModel
     /// <summary>Verschiebedauer in Minuten bei "Snooze".</summary>
     public const int SnoozeMinutes = 5;
 
-    /// <summary>Lokalisierungs-Schluessel des Titels.</summary>
+    /// <summary>Lokalisierungs-Schlüssel des Titels.</summary>
     public const string TitleKey = "Reminder.Title";
 
     private bool _completed;
 
     /// <summary>
-    /// Erzeugt das ViewModel fuer ein Pausenmodell.
+    /// Erzeugt das ViewModel für ein Pausenmodell.
     /// </summary>
-    /// <param name="hintKey">Lokalisierungs-Schluessel des Uebungs-Hinweises.</param>
+    /// <param name="hintKey">Lokalisierungs-Schlüssel des Übungs-Hinweises.</param>
     public BreakReminderViewModel(string hintKey)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(hintKey);
         HintKey = hintKey;
     }
 
-    /// <summary>Wird ausgeloest, sobald eine Aktion feststeht (genau einmal).</summary>
+    /// <summary>Wird ausgelöst, sobald eine Aktion feststeht (genau einmal).</summary>
     public event EventHandler<ReminderCompletedEventArgs>? Completed;
 
-    /// <summary>Lokalisierungs-Schluessel des angezeigten Uebungs-Hinweises.</summary>
+    /// <summary>Lokalisierungs-Schlüssel des angezeigten Übungs-Hinweises.</summary>
     public string HintKey { get; }
 
-    /// <summary>Wahr, sobald eine Aktion gewaehlt wurde.</summary>
+    /// <summary>Wahr, sobald eine Aktion gewählt wurde.</summary>
     public bool IsCompleted => _completed;
 
-    /// <summary>Die gewaehlte Aktion, oder <c>null</c> solange offen.</summary>
+    /// <summary>Die gewählte Aktion, oder <c>null</c> solange offen.</summary>
     public ReminderResult? Result { get; private set; }
 
     /// <summary>Aktion "Pause starten".</summary>
     public void StartBreak() => Complete(ReminderResult.StartBreak);
 
-    /// <summary>Aktion "5 Min spaeter" (Snooze).</summary>
+    /// <summary>Aktion "5 Min später" (Snooze).</summary>
     public void Snooze() => Complete(ReminderResult.Snooze);
 
-    /// <summary>Aktion "Ueberspringen".</summary>
+    /// <summary>Aktion "Überspringen".</summary>
     public void Skip() => Complete(ReminderResult.Skip);
 
     /// <summary>

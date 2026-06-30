@@ -9,7 +9,7 @@
     mc:Ignorable="d">
 
     <!-- RequestedTheme=Light erzwingt die hellen Control-Templates passend zur
-         Teal-Palette, unabhaengig vom Windows-Systemmodus. -->
+         Teal-Palette, unabhängig vom Windows-Systemmodus. -->
     <Grid x:Name="RootGrid" RequestedTheme="Light" Background="{StaticResource RcBackground}">
         <Grid.Resources>
             <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
@@ -19,7 +19,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Seitenmenue (Hamburger-Button klappt es auf eine Icon-Leiste ein/aus). -->
+        <!-- Seitenmenü (Hamburger-Button klappt es auf eine Icon-Leiste ein/aus). -->
         <NavigationView
             x:Name="NavView"
             Grid.Row="0"
@@ -87,8 +87,8 @@
                 </NavigationViewItem>
             </NavigationView.FooterMenuItems>
 
-            <!-- Inhaltsbereich: alle Abschnitte liegen uebereinander; nur der zur
-                 Menueauswahl passende ist sichtbar (Umschaltung im Code-Behind).
+            <!-- Inhaltsbereich: alle Abschnitte liegen übereinander; nur der zur
+                 Menüauswahl passende ist sichtbar (Umschaltung im Code-Behind).
                  Jeder Abschnitt: Titel + Karte. -->
             <Grid Padding="32,28,32,16">
 
@@ -355,7 +355,7 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- Ueber LookAway -->
+                <!-- Über LookAway -->
                 <ScrollViewer x:Name="PanelAbout" Visibility="Collapsed">
                     <StackPanel Spacing="12" MaxWidth="660" HorizontalAlignment="Left">
                         <TextBlock Text="{Binding TabAboutHeader}" Style="{StaticResource RcSectionHeaderStyle}" />

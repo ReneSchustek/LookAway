@@ -3,7 +3,7 @@ using LookAway.Core.Enums;
 
 namespace LookAway.Tests.Unit.Fakes;
 
-/// <summary>Test-Fake fuer <see cref="IReminderPresenter"/>.</summary>
+/// <summary>Test-Fake für <see cref="IReminderPresenter"/>.</summary>
 internal sealed class FakeReminderPresenter : IReminderPresenter
 {
     public bool IsReminderOpen { get; set; }
@@ -25,7 +25,7 @@ internal sealed class FakeReminderPresenter : IReminderPresenter
     public void CompleteWith(ReminderResult result) => _onResult?.Invoke(result);
 }
 
-/// <summary>Test-Fake fuer <see cref="IBreakOverlayPresenter"/>.</summary>
+/// <summary>Test-Fake für <see cref="IBreakOverlayPresenter"/>.</summary>
 internal sealed class FakeBreakOverlayPresenter : IBreakOverlayPresenter
 {
     public bool IsOverlayOpen { get; private set; }
@@ -57,7 +57,7 @@ internal sealed class FakeBreakOverlayPresenter : IBreakOverlayPresenter
     }
 }
 
-/// <summary>Test-Fake fuer <see cref="ITrayController"/>.</summary>
+/// <summary>Test-Fake für <see cref="ITrayController"/>.</summary>
 internal sealed class FakeTrayController : ITrayController
 {
     public BreakModel? ActiveModel { get; private set; }

@@ -3,7 +3,7 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Tests.Unit.Core.ValueObjects;
 
 /// <summary>
-/// Tests fuer das <see cref="WorkDurationRange"/>-ValueObject.
+/// Tests für das <see cref="WorkDurationRange"/>-ValueObject.
 /// </summary>
 public sealed class WorkDurationRangeTests
 {

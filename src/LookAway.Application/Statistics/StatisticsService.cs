@@ -6,7 +6,7 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Application.Statistics;
 
 /// <summary>
-/// Aggregiert die Pausen-Historie zu Kennzahlen fuer Heute, diese Woche und
+/// Aggregiert die Pausen-Historie zu Kennzahlen für Heute, diese Woche und
 /// dieses Jahr. Reine, UI-freie Logik; arbeitet in lokaler Zeit
 /// relativ zur <see cref="IClock"/>-Gegenwart und ist damit testbar.
 /// </summary>
@@ -22,7 +22,7 @@ public sealed class StatisticsService
     /// Erzeugt den Service.
     /// </summary>
     /// <param name="historyRepository">Quelle der aufgezeichneten Sitzungen.</param>
-    /// <param name="clock">Systemzeit fuer die Zeitraum-Grenzen.</param>
+    /// <param name="clock">Systemzeit für die Zeitraum-Grenzen.</param>
     public StatisticsService(IBreakHistoryRepository historyRepository, IClock clock)
     {
         ArgumentNullException.ThrowIfNull(historyRepository);

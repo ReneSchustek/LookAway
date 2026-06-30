@@ -8,8 +8,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace LookAway.Tests.Unit.Application.Services;
 
 /// <summary>
-/// Tests fuer den <see cref="LogService"/>: pruefen Lifecycle-Logging
-/// und Crash-Detection ueber einen <see cref="FakeCrashReporter"/>.
+/// Tests für den <see cref="LogService"/>: prüfen Lifecycle-Logging
+/// und Crash-Detection über einen <see cref="FakeCrashReporter"/>.
 /// </summary>
 public sealed class LogServiceTests
 {

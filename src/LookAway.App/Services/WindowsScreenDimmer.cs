@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Services;
 
 /// <summary>
-/// Dimmt DDC/CI-faehige Monitore ueber die Win32-Helligkeitssteuerung (Dxva2).
+/// Dimmt DDC/CI-fähige Monitore über die Win32-Helligkeitssteuerung (Dxva2).
 /// Auf Hardware ohne DDC/CI (z. B. viele Notebooks) bleibt der Aufruf
 /// wirkungslos — Fehler werden geschluckt und geloggt.
 /// </summary>
@@ -19,7 +19,7 @@ internal sealed partial class WindowsScreenDimmer : IScreenDimmer, IDisposable
     private bool _disposed;
 
     /// <summary>Erzeugt den Dimmer.</summary>
-    /// <param name="logger">Logger fuer Hardware-/Interop-Fehler.</param>
+    /// <param name="logger">Logger für Hardware-/Interop-Fehler.</param>
     public WindowsScreenDimmer(ILogger<WindowsScreenDimmer> logger)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -28,7 +28,7 @@ internal sealed partial class WindowsScreenDimmer : IScreenDimmer, IDisposable
 
     /// <inheritdoc />
     [SuppressMessage("Design", "CA1031:Do not catch general exception types",
-        Justification = "Helligkeitssteuerung ist unkritisch: jeder Hardware-/Interop-Fehler wird geloggt und ignoriert, damit die App nie abstuerzt.")]
+        Justification = "Helligkeitssteuerung ist unkritisch: jeder Hardware-/Interop-Fehler wird geloggt und ignoriert, damit die App nie abstürzt.")]
     public void DimTo(int targetPercent)
     {
         if (_disposed)
@@ -177,7 +177,7 @@ internal sealed partial class WindowsScreenDimmer : IScreenDimmer, IDisposable
 /// </summary>
 internal static partial class ScreenDimmerLog
 {
-    [LoggerMessage(EventId = 1700, Level = LogLevel.Information, Message = "Bildschirm-Dimmen nicht moeglich (kein DDC/CI-faehiger Monitor?).")]
+    [LoggerMessage(EventId = 1700, Level = LogLevel.Information, Message = "Bildschirm-Dimmen nicht möglich (kein DDC/CI-fähiger Monitor?).")]
     public static partial void DimFailed(ILogger logger, Exception exception);
 
     [LoggerMessage(EventId = 1701, Level = LogLevel.Warning, Message = "Bildschirmhelligkeit konnte nicht wiederhergestellt werden.")]

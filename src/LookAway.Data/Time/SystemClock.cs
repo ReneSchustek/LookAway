@@ -5,7 +5,7 @@ namespace LookAway.Data.Time;
 
 /// <summary>
 /// Standard-<see cref="IClock"/>-Implementation: liest die Wallclock-Uhr
-/// und kapselt einen Prozess-globalen <see cref="Stopwatch"/> fuer
+/// und kapselt einen Prozess-globalen <see cref="Stopwatch"/> für
 /// Diagnostik-Zwecke.
 /// </summary>
 public sealed class SystemClock : IClock

@@ -3,19 +3,19 @@ using LookAway.Core.Enums;
 namespace LookAway.Core.Events;
 
 /// <summary>
-/// Traegt die per globalem Hotkey ausgeloeste Aktion.
+/// Trägt die per globalem Hotkey ausgelöste Aktion.
 /// </summary>
 public sealed class HotkeyPressedEventArgs : EventArgs
 {
     /// <summary>
     /// Erzeugt die Ereignisdaten.
     /// </summary>
-    /// <param name="action">Die ausgeloeste Aktion.</param>
+    /// <param name="action">Die ausgelöste Aktion.</param>
     public HotkeyPressedEventArgs(HotkeyAction action)
     {
         Action = action;
     }
 
-    /// <summary>Die ausgeloeste Aktion.</summary>
+    /// <summary>Die ausgelöste Aktion.</summary>
     public HotkeyAction Action { get; }
 }

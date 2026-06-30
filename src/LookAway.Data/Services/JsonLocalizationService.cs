@@ -7,9 +7,9 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Data.Services;
 
 /// <summary>
-/// Lokalisierung ueber eingebettete JSON-Ressourcen (eine Datei je Sprache).
-/// Deutsch ist die Referenzsprache und dient als Fallback, falls ein Schluessel
-/// in der gewaehlten Sprache fehlt.
+/// Lokalisierung über eingebettete JSON-Ressourcen (eine Datei je Sprache).
+/// Deutsch ist die Referenzsprache und dient als Fallback, falls ein Schlüssel
+/// in der gewählten Sprache fehlt.
 /// </summary>
 public sealed class JsonLocalizationService : ILocalizationService
 {
@@ -19,7 +19,7 @@ public sealed class JsonLocalizationService : ILocalizationService
     private Language _currentLanguage;
 
     /// <summary>
-    /// Laedt die eingebetteten Sprachtabellen aus dem Data-Assembly.
+    /// Lädt die eingebetteten Sprachtabellen aus dem Data-Assembly.
     /// </summary>
     /// <param name="initialLanguage">Beim Start aktive Sprache.</param>
     public JsonLocalizationService(Language initialLanguage = Language.German)
@@ -45,7 +45,7 @@ public sealed class JsonLocalizationService : ILocalizationService
             return value;
         }
 
-        // Fallback auf Deutsch (Referenzsprache), sonst der Schluessel selbst.
+        // Fallback auf Deutsch (Referenzsprache), sonst der Schlüssel selbst.
         if (_currentLanguage != Language.German
             && _tables.TryGetValue(Language.German, out FrozenDictionary<string, string>? german)
             && german.TryGetValue(key, out string? germanValue))

@@ -3,12 +3,12 @@ using LookAway.Core.Entities;
 namespace LookAway.Core.Interfaces;
 
 /// <summary>
-/// Persistenz-Vertrag fuer die Benutzerkonfiguration.
+/// Persistenz-Vertrag für die Benutzerkonfiguration.
 /// </summary>
 /// <remarks>
-/// Implementierungen muessen atomar schreiben (kein halbgeschriebenes File auf
-/// Crash) und beim Lesen einer fehlenden oder beschaedigten Quelle Defaults
-/// zurueckliefern, ohne eine Exception zu werfen.
+/// Implementierungen müssen atomar schreiben (kein halbgeschriebenes File auf
+/// Crash) und beim Lesen einer fehlenden oder beschädigten Quelle Defaults
+/// zurückliefern, ohne eine Exception zu werfen.
 /// </remarks>
 public interface ISettingsRepository
 {

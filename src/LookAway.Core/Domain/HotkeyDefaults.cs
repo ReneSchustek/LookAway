@@ -14,13 +14,13 @@ public static class HotkeyDefaults
 
     private const HotkeyModifiers CtrlAlt = HotkeyModifiers.Control | HotkeyModifiers.Alt;
 
-    /// <summary>Standard fuer "Pause starten" (Strg+Alt+P).</summary>
+    /// <summary>Standard für "Pause starten" (Strg+Alt+P).</summary>
     public static HotkeyDefinition StartBreak => new(CtrlAlt, VkP);
 
-    /// <summary>Standard fuer "Ueberspringen/Snooze" (Strg+Alt+S).</summary>
+    /// <summary>Standard für "Überspringen/Snooze" (Strg+Alt+S).</summary>
     public static HotkeyDefinition SkipOrSnooze => new(CtrlAlt, VkS);
 
-    /// <summary>Standard fuer "DND umschalten" (Strg+Alt+D).</summary>
+    /// <summary>Standard für "DND umschalten" (Strg+Alt+D).</summary>
     public static HotkeyDefinition ToggleDnd => new(CtrlAlt, VkD);
 
     /// <summary>Liefert die Standardzuordnung aller Aktionen.</summary>

@@ -3,12 +3,12 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Tests.Unit.Fakes;
 
 /// <summary>
-/// Test-Fake fuer <see cref="IIdleDetector"/>. <see cref="IdleTime"/> ist frei
-/// setzbar, um Inaktivitaet deterministisch zu simulieren.
+/// Test-Fake für <see cref="IIdleDetector"/>. <see cref="IdleTime"/> ist frei
+/// setzbar, um Inaktivität deterministisch zu simulieren.
 /// </summary>
 internal sealed class FakeIdleDetector : IIdleDetector
 {
-    /// <summary>Die zurueckzugebende Inaktivitaetsdauer.</summary>
+    /// <summary>Die zurückzugebende Inaktivitätsdauer.</summary>
     public TimeSpan IdleTime { get; set; }
 
     public TimeSpan GetIdleTime() => IdleTime;

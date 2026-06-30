@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Application.Services;
 
 /// <summary>
-/// Source-generierte Logging-Methoden fuer den <see cref="AutoStartCoordinator"/>.
+/// Source-generierte Logging-Methoden für den <see cref="AutoStartCoordinator"/>.
 /// </summary>
 /// <remarks>
 /// Source-generierte <c>LoggerMessage</c>-Methoden vermeiden Boxing und

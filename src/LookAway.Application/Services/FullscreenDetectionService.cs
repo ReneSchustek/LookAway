@@ -3,10 +3,10 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Application.Services;
 
 /// <summary>
-/// Unterdrueckt Pause-Erinnerungen, solange eine Vollbild-Anwendung laeuft
+/// Unterdrückt Pause-Erinnerungen, solange eine Vollbild-Anwendung läuft
 /// (DND), und merkt sich maximal eine verpasste Erinnerung, die nach Verlassen
-/// des Vollbildmodus nachgeholt wird. Reine Logik ueber
-/// <see cref="IFullscreenDetector"/> — ohne Plattform-/UI-Abhaengigkeit testbar.
+/// des Vollbildmodus nachgeholt wird. Reine Logik über
+/// <see cref="IFullscreenDetector"/> — ohne Plattform-/UI-Abhängigkeit testbar.
 /// </summary>
 public sealed class FullscreenDetectionService
 {
@@ -24,7 +24,7 @@ public sealed class FullscreenDetectionService
         IsEnabled = true;
     }
 
-    /// <summary>Ist die Vollbild-Unterdrueckung (DND) aktiv?</summary>
+    /// <summary>Ist die Vollbild-Unterdrückung (DND) aktiv?</summary>
     public bool IsEnabled { get; set; }
 
     /// <summary>Wahr, solange eine Vollbild-App erkannt und DND aktiviert ist.</summary>
@@ -57,8 +57,8 @@ public sealed class FullscreenDetectionService
     }
 
     /// <summary>
-    /// Meldet eine faellige Erinnerung an. Ist DND aktiv, wird sie unterdrueckt
-    /// und (hoechstens eine) fuer spaeter gemerkt.
+    /// Meldet eine fällige Erinnerung an. Ist DND aktiv, wird sie unterdrückt
+    /// und (höchstens eine) für später gemerkt.
     /// </summary>
     /// <returns><c>true</c>, wenn die Erinnerung jetzt gezeigt werden darf; sonst <c>false</c>.</returns>
     public bool TryShowReminder()

@@ -6,7 +6,7 @@ namespace LookAway.Data.Power;
 
 /// <summary>
 /// Bindet sich an <see cref="SystemEvents.PowerModeChanged"/> und
-/// uebersetzt Suspend/Resume in plattformneutrale
+/// übersetzt Suspend/Resume in plattformneutrale
 /// <see cref="IPowerModeWatcher"/>-Events.
 /// </summary>
 [SupportedOSPlatform("windows")]

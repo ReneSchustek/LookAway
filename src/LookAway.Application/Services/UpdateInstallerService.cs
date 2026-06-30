@@ -11,7 +11,7 @@ namespace LookAway.Application.Services;
 /// <summary>
 /// Ergebnis eines erfolgreichen Downloads/Entpackens: der Staging-Ordner, die
 /// Version und der SHA-256 der entpackten Programmdatei. Der Hash wird in den
-/// Einstellungen vermerkt und vor dem Einspielen erneut geprueft.
+/// Einstellungen vermerkt und vor dem Einspielen erneut geprüft.
 /// </summary>
 /// <param name="Directory">Staging-Ordner mit den neuen Dateien.</param>
 /// <param name="Version">Versionszeichenkette des Updates.</param>
@@ -19,9 +19,9 @@ namespace LookAway.Application.Services;
 public sealed record StagedUpdate(string Directory, string Version, string ExecutableSha256);
 
 /// <summary>
-/// Verwaltet die automatische Aktualisierung ueber die Portable-ZIP eines
-/// GitHub-Release: laedt das Paket herunter, entpackt es in einen Staging-Ordner
-/// und ersetzt — beim naechsten Start, ausgeloest vom Anwendungs-Bootstrap — die
+/// Verwaltet die automatische Aktualisierung über die Portable-ZIP eines
+/// GitHub-Release: lädt das Paket herunter, entpackt es in einen Staging-Ordner
+/// und ersetzt — beim nächsten Start, ausgelöst vom Anwendungs-Bootstrap — die
 /// Programmdateien. Die reine Datei-/Versionslogik ist hier gekapselt; das
 /// Beenden/Neustarten der Prozesse steuert die App-Schicht.
 /// </summary>
@@ -39,17 +39,17 @@ public sealed class UpdateInstallerService
     private readonly string _stagingRoot;
 
     /// <summary>Erzeugt den Dienst.</summary>
-    /// <param name="httpClient">HTTP-Zugriff fuer den Paket-Download.</param>
+    /// <param name="httpClient">HTTP-Zugriff für den Paket-Download.</param>
     /// <param name="logger">Logger.</param>
     public UpdateInstallerService(IHttpGetClient httpClient, ILogger<UpdateInstallerService> logger)
         : this(httpClient, logger, DefaultStagingRoot())
     {
     }
 
-    /// <summary>Konstruktor mit explizitem Staging-Wurzelpfad (fuer Tests).</summary>
-    /// <param name="httpClient">HTTP-Zugriff fuer den Paket-Download.</param>
+    /// <summary>Konstruktor mit explizitem Staging-Wurzelpfad (für Tests).</summary>
+    /// <param name="httpClient">HTTP-Zugriff für den Paket-Download.</param>
     /// <param name="logger">Logger.</param>
-    /// <param name="stagingRoot">Wurzelordner fuer entpackte Update-Pakete.</param>
+    /// <param name="stagingRoot">Wurzelordner für entpackte Update-Pakete.</param>
     public UpdateInstallerService(IHttpGetClient httpClient, ILogger<UpdateInstallerService> logger, string stagingRoot)
     {
         ArgumentNullException.ThrowIfNull(httpClient);
@@ -64,7 +64,7 @@ public sealed class UpdateInstallerService
     /// <summary>Wurzelordner, unter dem Update-Pakete je Version entpackt werden.</summary>
     public string StagingRoot => _stagingRoot;
 
-    /// <summary>Pfad der ausfuehrbaren Datei innerhalb eines Staging-Ordners.</summary>
+    /// <summary>Pfad der ausführbaren Datei innerhalb eines Staging-Ordners.</summary>
     public static string ExecutablePathIn(string directory) => Path.Combine(directory, ExecutableName);
 
     private static string DefaultStagingRoot()
@@ -74,7 +74,7 @@ public sealed class UpdateInstallerService
             "updates");
 
     /// <summary>
-    /// Laedt das Portable-Paket der angegebenen Aktualisierung herunter und
+    /// Lädt das Portable-Paket der angegebenen Aktualisierung herunter und
     /// entpackt es in einen versionsbenannten Staging-Ordner.
     /// </summary>
     /// <param name="info">Die zu installierende Aktualisierung (mit <see cref="UpdateInfo.PackageUrl"/>).</param>
@@ -83,7 +83,7 @@ public sealed class UpdateInstallerService
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
-        Justification = "Die Aktualisierung ist unkritisch: Download-/Entpackfehler werden geloggt und als Misserfolg behandelt, damit die laufende App nie abstuerzt.")]
+        Justification = "Die Aktualisierung ist unkritisch: Download-/Entpackfehler werden geloggt und als Misserfolg behandelt, damit die laufende App nie abstürzt.")]
     public async Task<StagedUpdate?> DownloadAndStageAsync(UpdateInfo info, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(info);
@@ -108,7 +108,7 @@ public sealed class UpdateInstallerService
             if (!await _httpClient.DownloadFileAsync(info.PackageUrl, tempZip, cancellationToken).ConfigureAwait(false))
             {
                 // DownloadFileAsync meldet Misserfolg ohne zu werfen — die evtl.
-                // angelegte Teildatei hier selbst aufraeumen (catch greift nicht).
+                // angelegte Teildatei hier selbst aufräumen (catch greift nicht).
                 TryDelete(tempZip);
                 return null;
             }
@@ -123,7 +123,7 @@ public sealed class UpdateInstallerService
                 return null;
             }
 
-            // Atomar an den endgueltigen, versionsbenannten Ort versetzen.
+            // Atomar an den endgültigen, versionsbenannten Ort versetzen.
             if (Directory.Exists(stagingDir))
             {
                 Directory.Delete(stagingDir, recursive: true);
@@ -145,9 +145,9 @@ public sealed class UpdateInstallerService
     }
 
     /// <summary>
-    /// Entpackt ein ZIP sicher: erzwingt eine Obergrenze fuer Eintragszahl und
-    /// entpackte Gesamtgroesse (Schutz vor Zip-Bomben) und weist Eintraege ab, die
-    /// das Zielverzeichnis verlassen wuerden (Zip-Slip).
+    /// Entpackt ein ZIP sicher: erzwingt eine Obergrenze für Eintragszahl und
+    /// entpackte Gesamtgröße (Schutz vor Zip-Bomben) und weist Einträge ab, die
+    /// das Zielverzeichnis verlassen würden (Zip-Slip).
     /// </summary>
     private static void ExtractSafely(string zipPath, string destinationDir)
     {
@@ -158,7 +158,7 @@ public sealed class UpdateInstallerService
 
         if (archive.Entries.Count > MaxEntries)
         {
-            throw new InvalidOperationException($"ZIP enthaelt zu viele Eintraege ({archive.Entries.Count}).");
+            throw new InvalidOperationException($"ZIP enthält zu viele Einträge ({archive.Entries.Count}).");
         }
 
         long totalWritten = 0;
@@ -179,8 +179,8 @@ public sealed class UpdateInstallerService
 
             _ = Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
 
-            // Auf tatsaechlich geschriebene Bytes begrenzen statt auf die im ZIP
-            // deklarierte (manipulierbare) Groesse zu vertrauen — Schutz vor Zip-Bomben.
+            // Auf tatsächlich geschriebene Bytes begrenzen statt auf die im ZIP
+            // deklarierte (manipulierbare) Größe zu vertrauen — Schutz vor Zip-Bomben.
             using Stream source = entry.Open();
             using FileStream destination = File.Create(targetPath);
             byte[] buffer = new byte[81920];
@@ -190,7 +190,7 @@ public sealed class UpdateInstallerService
                 totalWritten += read;
                 if (totalWritten > MaxExtractedBytes)
                 {
-                    throw new InvalidOperationException("Entpackte Gesamtgroesse ueberschreitet das Limit.");
+                    throw new InvalidOperationException("Entpackte Gesamtgröße überschreitet das Limit.");
                 }
 
                 destination.Write(buffer, 0, read);
@@ -200,8 +200,8 @@ public sealed class UpdateInstallerService
 
     /// <summary>
     /// Liefert den Staging-Ordner eines ausstehenden Updates, aber nur wenn er zur
-    /// vermerkten Version gehoert, neuer als die aktuelle Version ist und der Hash
-    /// der entpackten Programmdatei mit dem vermerkten uebereinstimmt. Schuetzt
+    /// vermerkten Version gehört, neuer als die aktuelle Version ist und der Hash
+    /// der entpackten Programmdatei mit dem vermerkten übereinstimmt. Schützt
     /// davor, einen untergeschobenen Ordner einzuspielen.
     /// </summary>
     /// <param name="current">Aktuell laufende Version.</param>
@@ -263,10 +263,10 @@ public sealed class UpdateInstallerService
     }
 
     /// <summary>
-    /// Kopiert die Dateien eines Staging-Ordners ueber das Zielverzeichnis. Die
+    /// Kopiert die Dateien eines Staging-Ordners über das Zielverzeichnis. Die
     /// Portable-Markierung wird ausgelassen, damit eine installierte Version nicht
     /// versehentlich in den Portable-Modus wechselt; vorhandene Benutzerdaten
-    /// bleiben erhalten (es wird nur ueberschrieben, nie geloescht).
+    /// bleiben erhalten (es wird nur überschrieben, nie gelöscht).
     /// </summary>
     /// <param name="sourceDir">Staging-Ordner mit den neuen Dateien.</param>
     /// <param name="targetDir">Zielverzeichnis (Programmordner).</param>
@@ -275,9 +275,9 @@ public sealed class UpdateInstallerService
         ArgumentException.ThrowIfNullOrWhiteSpace(sourceDir);
         ArgumentException.ThrowIfNullOrWhiteSpace(targetDir);
 
-        // Ueberschriebene Dateien werden zuvor gesichert, damit bei einem Fehler
-        // mitten im Tausch der vorige (lauffaehige) Stand wiederhergestellt werden
-        // kann — ein halb eingespieltes Update darf die Installation nicht zerstoeren.
+        // Überschriebene Dateien werden zuvor gesichert, damit bei einem Fehler
+        // mitten im Tausch der vorige (lauffähige) Stand wiederhergestellt werden
+        // kann — ein halb eingespieltes Update darf die Installation nicht zerstören.
         List<string> backups = new();
         try
         {
@@ -285,7 +285,7 @@ public sealed class UpdateInstallerService
             {
                 string relative = Path.GetRelativePath(sourceDir, sourcePath);
 
-                // Portable-Markierung nie uebernehmen — sie entscheidet ueber den Datenort.
+                // Portable-Markierung nie übernehmen — sie entscheidet über den Datenort.
                 if (string.Equals(relative, AppPaths.PortableFlagFileName, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
@@ -348,7 +348,7 @@ public sealed class UpdateInstallerService
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
-        Justification = "Aufraeumen ist unkritisch: Fehler werden geloggt und ignoriert.")]
+        Justification = "Aufräumen ist unkritisch: Fehler werden geloggt und ignoriert.")]
     public void CleanObsolete(Version current)
     {
         ArgumentNullException.ThrowIfNull(current);
@@ -374,8 +374,8 @@ public sealed class UpdateInstallerService
         }
     }
 
-    /// <summary>Prueft, ob in das Verzeichnis geschrieben werden darf (Probe-Datei).</summary>
-    /// <param name="directory">Zu pruefendes Verzeichnis.</param>
+    /// <summary>Prüft, ob in das Verzeichnis geschrieben werden darf (Probe-Datei).</summary>
+    /// <param name="directory">Zu prüfendes Verzeichnis.</param>
     /// <returns><c>true</c>, wenn beschreibbar.</returns>
     [SuppressMessage(
         "Design",
@@ -422,7 +422,7 @@ public sealed class UpdateInstallerService
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
-        Justification = "Best-effort-Aufraeumen; Fehler sind unkritisch.")]
+        Justification = "Best-effort-Aufräumen; Fehler sind unkritisch.")]
     private static void TryDelete(string path)
     {
         try
@@ -441,7 +441,7 @@ public sealed class UpdateInstallerService
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
-        Justification = "Best-effort-Aufraeumen; Fehler sind unkritisch.")]
+        Justification = "Best-effort-Aufräumen; Fehler sind unkritisch.")]
     private static void TryDeleteDirectory(string path)
     {
         try
@@ -464,7 +464,7 @@ internal static partial class UpdateInstallerLog
     [LoggerMessage(EventId = 1651, Level = LogLevel.Warning, Message = "Update {Version} konnte nicht heruntergeladen/entpackt werden.")]
     public static partial void StageFailed(ILogger logger, Exception exception, string version);
 
-    [LoggerMessage(EventId = 1652, Level = LogLevel.Warning, Message = "Entpacktes Paket in {Directory} ist unvollstaendig (keine EXE).")]
+    [LoggerMessage(EventId = 1652, Level = LogLevel.Warning, Message = "Entpacktes Paket in {Directory} ist unvollständig (keine EXE).")]
     public static partial void PackageInvalid(ILogger logger, string directory);
 
     [LoggerMessage(EventId = 1653, Level = LogLevel.Warning, Message = "Staging-Ordner konnte nicht durchsucht werden.")]
@@ -476,9 +476,9 @@ internal static partial class UpdateInstallerLog
     [LoggerMessage(EventId = 1655, Level = LogLevel.Debug, Message = "Kopieren von {Target} erneut versucht (Versuch {Attempt}).")]
     public static partial void CopyRetry(ILogger logger, string target, int attempt);
 
-    [LoggerMessage(EventId = 1656, Level = LogLevel.Error, Message = "Rueckrollen von {Target} nach fehlgeschlagenem Update misslungen.")]
+    [LoggerMessage(EventId = 1656, Level = LogLevel.Error, Message = "Rückrollen von {Target} nach fehlgeschlagenem Update misslungen.")]
     public static partial void RollbackFailed(ILogger logger, Exception exception, string target);
 
-    [LoggerMessage(EventId = 1657, Level = LogLevel.Warning, Message = "Ausstehendes Update in {Directory} abgelehnt: Datei-Hash stimmt nicht mit dem vermerkten ueberein.")]
+    [LoggerMessage(EventId = 1657, Level = LogLevel.Warning, Message = "Ausstehendes Update in {Directory} abgelehnt: Datei-Hash stimmt nicht mit dem vermerkten überein.")]
     public static partial void HashMismatch(ILogger logger, string directory);
 }

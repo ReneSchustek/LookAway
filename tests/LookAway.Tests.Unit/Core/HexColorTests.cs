@@ -3,7 +3,7 @@ using LookAway.Core.Domain;
 namespace LookAway.Tests.Unit.Core;
 
 /// <summary>
-/// Tests fuer die ARGB-Hex-Hilfslogik <see cref="HexColor"/> (Validierung,
+/// Tests für die ARGB-Hex-Hilfslogik <see cref="HexColor"/> (Validierung,
 /// Parsing, Formatierung, Helligkeitsentscheidung).
 /// </summary>
 public sealed class HexColorTests

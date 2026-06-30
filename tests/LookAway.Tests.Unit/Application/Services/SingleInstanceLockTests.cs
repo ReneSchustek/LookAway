@@ -3,10 +3,10 @@ using LookAway.Application.Services;
 namespace LookAway.Tests.Unit.Application.Services;
 
 /// <summary>
-/// Tests fuer den <see cref="SingleInstanceLock"/>. Da der Mutex
-/// prozesslokal pro <c>Local\</c>-Namespace agiert, koennen sich zwei
+/// Tests für den <see cref="SingleInstanceLock"/>. Da der Mutex
+/// prozesslokal pro <c>Local\</c>-Namespace agiert, können sich zwei
 /// Lock-Instanzen im selben Prozess gegenseitig sehen — das nutzen wir,
-/// um die Acquire-/Signal-Logik deterministisch zu pruefen.
+/// um die Acquire-/Signal-Logik deterministisch zu prüfen.
 /// </summary>
 public sealed class SingleInstanceLockTests
 {
@@ -97,7 +97,7 @@ public sealed class SingleInstanceLockTests
 
     /// <summary>
     /// Liefert einen eindeutigen Benutzernamen pro Test, damit parallele
-    /// Testlaeufe sich nicht ueber den globalen Mutex-Namespace beeinflussen.
+    /// Testläufe sich nicht über den globalen Mutex-Namespace beeinflussen.
     /// </summary>
     private static string UniqueUser() => "ITTest-" + Guid.NewGuid().ToString("N");
 }

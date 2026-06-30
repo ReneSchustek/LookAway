@@ -5,14 +5,14 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Application.Services;
 
 /// <summary>
-/// Coordinator fuer das Lifecycle-Logging der Anwendung.
+/// Coordinator für das Lifecycle-Logging der Anwendung.
 /// </summary>
 /// <remarks>
 /// Kapselt drei wiederkehrende Operationen:
 /// <list type="bullet">
 /// <item>Beim Start einen strukturierten Eintrag mit Version und Sprache schreiben.</item>
 /// <item>Beim Shutdown einen passenden Gegen-Eintrag schreiben.</item>
-/// <item>Beim Start pruefen, ob im letzten Lauf ein Crash protokolliert wurde.</item>
+/// <item>Beim Start prüfen, ob im letzten Lauf ein Crash protokolliert wurde.</item>
 /// </list>
 /// Der Service ist UI-frei und damit unit-testbar.
 /// </remarks>
@@ -22,7 +22,7 @@ public sealed class LogService
     private readonly ICrashReporter _crashReporter;
 
     /// <summary>
-    /// Erzeugt einen LogService mit den noetigen Abhaengigkeiten.
+    /// Erzeugt einen LogService mit den nötigen Abhängigkeiten.
     /// </summary>
     public LogService(ILogger<LogService> logger, ICrashReporter crashReporter)
     {
@@ -34,8 +34,8 @@ public sealed class LogService
     }
 
     /// <summary>
-    /// Schreibt einen Start-Eintrag und gibt zurueck, ob der vorherige
-    /// Lauf in einen Crash gemuendet ist.
+    /// Schreibt einen Start-Eintrag und gibt zurück, ob der vorherige
+    /// Lauf in einen Crash gemündet ist.
     /// </summary>
     /// <param name="version">Versionskennung der Anwendung (z. B. <c>1.0.0</c>).</param>
     /// <param name="language">Aktuelle Anzeigesprache.</param>
@@ -55,7 +55,7 @@ public sealed class LogService
     /// <summary>
     /// Schreibt einen Shutdown-Eintrag.
     /// </summary>
-    /// <param name="reason">Grund fuer das Beenden (z. B. <c>UserRequested</c>).</param>
+    /// <param name="reason">Grund für das Beenden (z. B. <c>UserRequested</c>).</param>
     public void LogShutdown(string reason)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(reason);
@@ -63,7 +63,7 @@ public sealed class LogService
     }
 
     /// <summary>
-    /// Schreibt eine unbehandelte Exception ueber den injizierten
+    /// Schreibt eine unbehandelte Exception über den injizierten
     /// <see cref="ICrashReporter"/> persistent weg und legt einen
     /// strukturierten Log-Eintrag dazu an.
     /// </summary>
@@ -80,7 +80,7 @@ public sealed class LogService
         }
         catch (IOException ex)
         {
-            // CrashReporter selber ist robust; falls hier doch etwas durchschlaegt, loggen wir es.
+            // CrashReporter selber ist robust; falls hier doch etwas durchschlägt, loggen wir es.
             LogServiceLog.CrashReportFailed(_logger, ex);
         }
         catch (UnauthorizedAccessException ex)

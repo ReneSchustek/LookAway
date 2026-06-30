@@ -3,9 +3,9 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Application.Services;
 
 /// <summary>
-/// Fuehrt beim Pausenbeginn und -ende die konfigurierten Pause-Aktionen aus:
-/// Bildschirm dimmen und Medien pausieren. UI-frei und damit ueber
-/// Fakes testbar; die Aktivierung steuert der Aufrufer ueber die Eigenschaften.
+/// Führt beim Pausenbeginn und -ende die konfigurierten Pause-Aktionen aus:
+/// Bildschirm dimmen und Medien pausieren. UI-frei und damit über
+/// Fakes testbar; die Aktivierung steuert der Aufrufer über die Eigenschaften.
 /// </summary>
 public sealed class PauseActionService
 {
@@ -25,10 +25,10 @@ public sealed class PauseActionService
         _mediaController = mediaController;
     }
 
-    /// <summary>Soll der Bildschirm waehrend der Pause gedimmt werden?</summary>
+    /// <summary>Soll der Bildschirm während der Pause gedimmt werden?</summary>
     public bool DimScreenEnabled { get; set; }
 
-    /// <summary>Zielhelligkeit waehrend der Pause in Prozent.</summary>
+    /// <summary>Zielhelligkeit während der Pause in Prozent.</summary>
     public int DimBrightnessPercent { get; set; } = 30;
 
     /// <summary>Soll die Medienwiedergabe pausiert werden?</summary>
@@ -37,13 +37,13 @@ public sealed class PauseActionService
     /// <summary>Sollen Medien nach der Pause wieder fortgesetzt werden?</summary>
     public bool ResumeMediaAfterBreak { get; set; } = true;
 
-    /// <summary>Fuehrt die Aktionen zum Pausenbeginn aus.</summary>
+    /// <summary>Führt die Aktionen zum Pausenbeginn aus.</summary>
     /// <param name="cancellationToken">Abbruch-Token.</param>
     public async Task BeginBreakAsync(CancellationToken cancellationToken = default)
     {
         if (DimScreenEnabled)
         {
-            // DDC/CI-Aufrufe koennen blockieren — nicht auf dem UI-Thread ausfuehren.
+            // DDC/CI-Aufrufe können blockieren — nicht auf dem UI-Thread ausführen.
             int target = DimBrightnessPercent;
             await Task.Run(() => _screenDimmer.DimTo(target), cancellationToken).ConfigureAwait(false);
         }
@@ -54,7 +54,7 @@ public sealed class PauseActionService
         }
     }
 
-    /// <summary>Macht die Aktionen zum Pausenende rueckgaengig.</summary>
+    /// <summary>Macht die Aktionen zum Pausenende rückgängig.</summary>
     /// <param name="cancellationToken">Abbruch-Token.</param>
     public async Task EndBreakAsync(CancellationToken cancellationToken = default)
     {

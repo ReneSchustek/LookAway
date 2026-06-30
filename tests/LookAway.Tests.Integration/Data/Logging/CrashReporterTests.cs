@@ -3,14 +3,14 @@ using LookAway.Data.Logging;
 namespace LookAway.Tests.Integration.Data.Logging;
 
 /// <summary>
-/// Integrationstests fuer den <see cref="CrashReporter"/>.
+/// Integrationstests für den <see cref="CrashReporter"/>.
 /// </summary>
 public sealed class CrashReporterTests : IDisposable
 {
     private readonly string _crashDirectory;
 
     /// <summary>
-    /// Legt fuer jeden Test ein eigenes Temp-Verzeichnis an.
+    /// Legt für jeden Test ein eigenes Temp-Verzeichnis an.
     /// </summary>
     public CrashReporterTests()
     {
@@ -18,7 +18,7 @@ public sealed class CrashReporterTests : IDisposable
     }
 
     /// <summary>
-    /// Raeumt das Temp-Verzeichnis nach dem Test wieder ab.
+    /// Räumt das Temp-Verzeichnis nach dem Test wieder ab.
     /// </summary>
     public void Dispose()
     {
@@ -108,7 +108,7 @@ public sealed class CrashReporterTests : IDisposable
         reporter.Report(new InvalidOperationException("x"), "TestSource");
         Assert.True(reporter.HasUnresolvedCrashes());
 
-        // FileSystem-Timestamp-Aufloesung: minimal warten, damit ack > crashtime gilt.
+        // FileSystem-Timestamp-Auflösung: minimal warten, damit ack > crashtime gilt.
         await Task.Delay(50);
         reporter.MarkResolved();
 
@@ -151,7 +151,7 @@ public sealed class CrashReporterTests : IDisposable
     [Fact]
     public void Report_DoesNotCrashWhenDirectoryIsInvalid()
     {
-        // Pfad mit ungueltigen Zeichen — Directory.CreateDirectory wirft, was geschluckt werden muss.
+        // Pfad mit ungültigen Zeichen — Directory.CreateDirectory wirft, was geschluckt werden muss.
         CrashReporter reporter = new(@"C:\This\Path\Does\Not\Exist\__InvalidChar__\\?invalid?");
 
         // Test-Erwartung: Methode wirft NICHT.

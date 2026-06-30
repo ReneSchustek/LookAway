@@ -11,7 +11,7 @@ namespace LookAway.Application.Services;
 /// </summary>
 public readonly record struct UpdateApplyArgs(int Pid, string Source, string Target)
 {
-    /// <summary>Kommandozeilen-Flag, das den Helfer-Modus auswaehlt.</summary>
+    /// <summary>Kommandozeilen-Flag, das den Helfer-Modus auswählt.</summary>
     public const string ApplyFlag = "--apply-update";
 
     private const string PidArg = "--pid";
@@ -19,7 +19,7 @@ public readonly record struct UpdateApplyArgs(int Pid, string Source, string Tar
     private const string TargetArg = "--target";
 
     /// <summary>
-    /// Baut die Argumentliste fuer den Helfer-Aufruf (ohne Programmnamen).
+    /// Baut die Argumentliste für den Helfer-Aufruf (ohne Programmnamen).
     /// </summary>
     /// <returns>Argumente in der Reihenfolge Flag, PID, Quelle, Ziel.</returns>
     public IReadOnlyList<string> ToArgumentList() =>
@@ -35,7 +35,7 @@ public readonly record struct UpdateApplyArgs(int Pid, string Source, string Tar
     /// </summary>
     /// <param name="args">Prozess-Argumente (inkl. Programmname an Index 0).</param>
     /// <param name="result">Geparste Parameter bei Erfolg.</param>
-    /// <returns><c>true</c>, wenn ein gueltiger Helfer-Aufruf vorliegt.</returns>
+    /// <returns><c>true</c>, wenn ein gültiger Helfer-Aufruf vorliegt.</returns>
     public static bool TryParse(IReadOnlyList<string>? args, out UpdateApplyArgs result)
     {
         result = default;

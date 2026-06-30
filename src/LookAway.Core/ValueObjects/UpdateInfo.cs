@@ -1,7 +1,7 @@
 namespace LookAway.Core.ValueObjects;
 
 /// <summary>
-/// Ergebnis einer Update-Pruefung. Enthaelt die reine, testbare
+/// Ergebnis einer Update-Prüfung. Enthält die reine, testbare
 /// Vergleichslogik zwischen installierter und neuester Version.
 /// </summary>
 public sealed class UpdateInfo
@@ -15,7 +15,7 @@ public sealed class UpdateInfo
         ReleaseNotes = releaseNotes;
     }
 
-    /// <summary>Wahr, wenn eine neuere Version verfuegbar ist.</summary>
+    /// <summary>Wahr, wenn eine neuere Version verfügbar ist.</summary>
     public bool IsUpdateAvailable { get; }
 
     /// <summary>Die neueste bekannte Version (oder die installierte, wenn keine ermittelt wurde).</summary>
@@ -26,14 +26,14 @@ public sealed class UpdateInfo
 
     /// <summary>
     /// Direkte Download-URL des Installationspakets (Portable-ZIP) aus den
-    /// Release-Assets, falls vorhanden. Grundlage fuer die automatische Aktualisierung.
+    /// Release-Assets, falls vorhanden. Grundlage für die automatische Aktualisierung.
     /// </summary>
     public Uri? PackageUrl { get; }
 
     /// <summary>Release-Notes (Plaintext/Markdown), ggf. leer.</summary>
     public string ReleaseNotes { get; }
 
-    /// <summary>Ergebnis "kein Update verfuegbar".</summary>
+    /// <summary>Ergebnis "kein Update verfügbar".</summary>
     /// <param name="current">Installierte Version.</param>
     public static UpdateInfo NoUpdate(Version current)
     {
@@ -51,7 +51,7 @@ public sealed class UpdateInfo
     /// <param name="packageAddress">Direkte Download-URL des Installationspakets (Portable-ZIP), optional.</param>
     /// <returns>
     /// Ein <see cref="UpdateInfo"/>; <see cref="IsUpdateAvailable"/> ist nur dann
-    /// <c>true</c>, wenn das Tag eine hoehere Version als <paramref name="current"/> ergibt.
+    /// <c>true</c>, wenn das Tag eine höhere Version als <paramref name="current"/> ergibt.
     /// </returns>
     public static UpdateInfo Create(Version current, string? tagName, string? htmlAddress, string? releaseNotes, string? packageAddress = null)
     {
@@ -88,7 +88,7 @@ public sealed class UpdateInfo
             trimmed = trimmed[1..];
         }
 
-        // Nur den numerischen Versionsanteil beruecksichtigen (z. B. "1.2.0-beta" → "1.2.0").
+        // Nur den numerischen Versionsanteil berücksichtigen (z. B. "1.2.0-beta" → "1.2.0").
         int dashIndex = trimmed.IndexOf('-', StringComparison.Ordinal);
         if (dashIndex > 0)
         {

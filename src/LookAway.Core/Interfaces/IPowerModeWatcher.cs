@@ -1,10 +1,10 @@
 namespace LookAway.Core.Interfaces;
 
 /// <summary>
-/// Abstraktion ueber System-Power-Events (Sleep/Resume).
+/// Abstraktion über System-Power-Events (Sleep/Resume).
 /// Implementierungen verbinden sich an die Plattform (z. B.
-/// <c>Microsoft.Win32.SystemEvents.PowerModeChanged</c>) und uebersetzen
-/// die Events in Domaen-Events.
+/// <c>Microsoft.Win32.SystemEvents.PowerModeChanged</c>) und übersetzen
+/// die Events in Domän-Events.
 /// </summary>
 public interface IPowerModeWatcher : IDisposable
 {

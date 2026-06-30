@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace LookAway.Tests.Unit.Application.ViewModels;
 
 /// <summary>
-/// Tests fuer die UI-freie State-Machine des First-Run-Wizards
+/// Tests für die UI-freie State-Machine des First-Run-Wizards
 /// <see cref="WelcomeViewModel"/>.
 /// </summary>
 public sealed class WelcomeViewModelTests
@@ -69,7 +69,7 @@ public sealed class WelcomeViewModelTests
     }
 
     [Fact]
-    public void Finish_ist_nur_im_letzten_Schritt_ausfuehrbar()
+    public void Finish_ist_nur_im_letzten_Schritt_ausführbar()
     {
         using WelcomeViewModel viewModel = CreateViewModel(out _, out _, out _);
 

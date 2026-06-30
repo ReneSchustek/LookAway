@@ -9,10 +9,10 @@
          sichtbarem Akzent und WCAG-tauglichen Kontrasten. Teal wirkt
          ruhig und passt zur Augen-Pausen-App. Die Rc*-Pinsel speisen die
          eigenen Styles; die WinUI-System-Pinsel in den ThemeDictionaries
-         faerben Standard-Steuerelemente und das Seitenmenue ein.
+         färben Standard-Steuerelemente und das Seitenmenü ein.
          ============================================================ -->
 
-    <!-- Eigene (theme-unabhaengige) Pinsel fuer die App-Styles. -->
+    <!-- Eigene (theme-unabhängige) Pinsel für die App-Styles. -->
     <SolidColorBrush x:Key="RcCanvas" Color="#FFEFF6F4" />
     <SolidColorBrush x:Key="RcBackground" Color="#FFF4FAF8" />
     <SolidColorBrush x:Key="RcPaneBackground" Color="#FFE3F2EE" />
@@ -31,11 +31,11 @@
     <ResourceDictionary.ThemeDictionaries>
 
         <!-- LookAway erzwingt ein helles Erscheinungsbild: Light und Dark zeigen
-             dieselbe Teal-Palette, damit die Optik unabhaengig vom Windows-
+             dieselbe Teal-Palette, damit die Optik unabhängig vom Windows-
              Systemmodus stabil bleibt. RequestedTheme=Light an den Fenster-Wurzeln
-             stellt zusaetzlich die hellen Control-Templates sicher. -->
+             stellt zusätzlich die hellen Control-Templates sicher. -->
         <ResourceDictionary x:Key="Light">
-            <!-- Flaechen / Hintergruende -->
+            <!-- Flächen / Hintergründe -->
             <SolidColorBrush x:Key="ApplicationPageBackgroundThemeBrush" Color="#FFF4FAF8" />
             <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="#FFE3F2EE" />
             <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="#FFE3F2EE" />
@@ -47,7 +47,7 @@
             <SolidColorBrush x:Key="ControlFillColorSecondaryBrush" Color="#FFF1F8F6" />
             <SolidColorBrush x:Key="ControlFillColorTertiaryBrush" Color="#FFE8F3F0" />
 
-            <!-- Seitenmenue: deutlich sichtbarer Auswahl- und Hover-Zustand -->
+            <!-- Seitenmenü: deutlich sichtbarer Auswahl- und Hover-Zustand -->
             <SolidColorBrush x:Key="NavigationViewItemForeground" Color="#FF102A28" />
             <SolidColorBrush x:Key="NavigationViewItemForegroundPointerOver" Color="#FF102A28" />
             <SolidColorBrush x:Key="NavigationViewItemForegroundSelected" Color="#FF0F766E" />

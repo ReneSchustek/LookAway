@@ -3,8 +3,8 @@ using System.Globalization;
 namespace LookAway.Core.Domain;
 
 /// <summary>
-/// Reine Hilfslogik fuer ARGB-Hex-Farben im Format <c>#RRGGBB</c> oder
-/// <c>#AARRGGBB</c>. Ohne UI-/Plattformabhaengigkeit, damit Validierung, Parsing
+/// Reine Hilfslogik für ARGB-Hex-Farben im Format <c>#RRGGBB</c> oder
+/// <c>#AARRGGBB</c>. Ohne UI-/Plattformabhängigkeit, damit Validierung, Parsing
 /// und Formatierung in allen Schichten einheitlich und testbar verwendet werden.
 /// </summary>
 public static class HexColor
@@ -12,15 +12,15 @@ public static class HexColor
     /// <summary>Dunkles, leicht transparentes Standard-Overlay (#F20F1115).</summary>
     public const string Default = "#F20F1115";
 
-    /// <summary>Standard-ARGB-Komponenten, falls eine Eingabe ungueltig ist.</summary>
+    /// <summary>Standard-ARGB-Komponenten, falls eine Eingabe ungültig ist.</summary>
     public static readonly (byte A, byte R, byte G, byte B) DefaultComponents = (0xF2, 0x0F, 0x11, 0x15);
 
     /// <summary>
-    /// Prueft, ob die Zeichenkette eine gueltige Hex-Farbe (<c>#RRGGBB</c> oder
+    /// Prüft, ob die Zeichenkette eine gültige Hex-Farbe (<c>#RRGGBB</c> oder
     /// <c>#AARRGGBB</c>) ist.
     /// </summary>
-    /// <param name="value">Zu pruefende Zeichenkette.</param>
-    /// <returns><c>true</c>, wenn das Format gueltig ist.</returns>
+    /// <param name="value">Zu prüfende Zeichenkette.</param>
+    /// <returns><c>true</c>, wenn das Format gültig ist.</returns>
     public static bool IsValid(string? value)
     {
         if (string.IsNullOrEmpty(value) || value[0] != '#' || value.Length is not (7 or 9))
@@ -45,7 +45,7 @@ public static class HexColor
     /// </summary>
     /// <param name="value">Hex-Zeichenkette.</param>
     /// <param name="components">Ergebnis bei Erfolg.</param>
-    /// <returns><c>true</c> bei gueltiger Eingabe.</returns>
+    /// <returns><c>true</c> bei gültiger Eingabe.</returns>
     public static bool TryParse(string? value, out (byte A, byte R, byte G, byte B) components)
     {
         components = default;
@@ -65,8 +65,8 @@ public static class HexColor
     }
 
     /// <summary>
-    /// Zerlegt eine Hex-Farbe in ARGB-Komponenten; bei ungueltiger Eingabe werden
-    /// die <see cref="DefaultComponents"/> zurueckgegeben.
+    /// Zerlegt eine Hex-Farbe in ARGB-Komponenten; bei ungültiger Eingabe werden
+    /// die <see cref="DefaultComponents"/> zurückgegeben.
     /// </summary>
     /// <param name="value">Hex-Zeichenkette.</param>
     /// <returns>ARGB-Komponenten.</returns>
@@ -76,7 +76,7 @@ public static class HexColor
     /// <summary>Formatiert ARGB-Komponenten als <c>#AARRGGBB</c>.</summary>
     /// <param name="a">Alpha.</param>
     /// <param name="r">Rot.</param>
-    /// <param name="g">Gruen.</param>
+    /// <param name="g">Grün.</param>
     /// <param name="b">Blau.</param>
     /// <returns>Hex-Zeichenkette.</returns>
     public static string ToHex(byte a, byte r, byte g, byte b)
@@ -84,10 +84,10 @@ public static class HexColor
 
     /// <summary>
     /// Bestimmt anhand der relativen Luminanz (WCAG, sRGB-linearisiert), ob eine
-    /// Farbe hell ist — dient der Wahl einer kontrastreichen Textfarbe darueber.
+    /// Farbe hell ist — dient der Wahl einer kontrastreichen Textfarbe darüber.
     /// </summary>
     /// <param name="r">Rot.</param>
-    /// <param name="g">Gruen.</param>
+    /// <param name="g">Grün.</param>
     /// <param name="b">Blau.</param>
     /// <returns><c>true</c>, wenn dunkler Text besser lesbar ist.</returns>
     public static bool IsLight(byte r, byte g, byte b)

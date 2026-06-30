@@ -3,8 +3,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 namespace LookAway.Application.ViewModels;
 
 /// <summary>
-/// Ein auswaehlbarer Eintrag (Sprache, Pausenmodell) mit sprachabhaengiger
-/// Beschriftung. Die Beschriftung wird bei einem Sprachwechsel ueber
+/// Ein auswählbarer Eintrag (Sprache, Pausenmodell) mit sprachabhängiger
+/// Beschriftung. Die Beschriftung wird bei einem Sprachwechsel über
 /// <see cref="RefreshLabel"/> neu berechnet, ohne den Eintrag zu ersetzen — so
 /// bleibt die Auswahl in der gebundenen ComboBox erhalten.
 /// </summary>
@@ -31,7 +31,7 @@ public sealed class SettingsOption<T> : ObservableObject
     /// <summary>Der zugrunde liegende Wert des Eintrags.</summary>
     public T Value { get; }
 
-    /// <summary>Die in der UI angezeigte, sprachabhaengige Beschriftung.</summary>
+    /// <summary>Die in der UI angezeigte, sprachabhängige Beschriftung.</summary>
     public string Label
     {
         get => _label;

@@ -4,7 +4,7 @@ namespace LookAway.Application.Coordination;
 
 /// <summary>
 /// Zeigt das Pause-Erinnerungsfenster. UI-freie Abstraktion, damit der
-/// <see cref="BreakCoordinator"/> ohne WinUI-Abhaengigkeit testbar bleibt.
+/// <see cref="BreakCoordinator"/> ohne WinUI-Abhängigkeit testbar bleibt.
 /// </summary>
 public interface IReminderPresenter
 {
@@ -12,8 +12,8 @@ public interface IReminderPresenter
     bool IsReminderOpen { get; }
 
     /// <summary>Zeigt eine Erinnerung; bei bereits offener passiert nichts.</summary>
-    /// <param name="model">Aktives Pausenmodell (fuer den Hinweistext).</param>
-    /// <param name="onResult">Callback mit der gewaehlten Aktion.</param>
+    /// <param name="model">Aktives Pausenmodell (für den Hinweistext).</param>
+    /// <param name="onResult">Callback mit der gewählten Aktion.</param>
     void Show(BreakModel model, Action<ReminderResult> onResult);
 }
 
@@ -25,7 +25,7 @@ public interface IBreakOverlayPresenter
     /// <summary>Ist gerade ein Overlay sichtbar?</summary>
     bool IsOverlayOpen { get; }
 
-    /// <summary>Zeigt das Overlay fuer die Pausendauer; bei offenem passiert nichts.</summary>
+    /// <summary>Zeigt das Overlay für die Pausendauer; bei offenem passiert nichts.</summary>
     /// <param name="model">Aktives Pausenmodell.</param>
     /// <param name="breakDuration">Dauer der Pause.</param>
     /// <param name="overlayColorHex">Hintergrundfarbe als <c>#AARRGGBB</c>/<c>#RRGGBB</c>.</param>
@@ -33,13 +33,13 @@ public interface IBreakOverlayPresenter
     /// <param name="onEnded">Callback mit dem Grund des Pausenendes.</param>
     void Show(BreakModel model, TimeSpan breakDuration, string overlayColorHex, bool darkenAllScreens, Action<BreakEndReason> onEnded);
 
-    /// <summary>Schliesst offene Overlays ohne den Ende-Callback auszuloesen.</summary>
+    /// <summary>Schließt offene Overlays ohne den Ende-Callback auszulösen.</summary>
     void Close();
 }
 
 /// <summary>
 /// Schmale Sicht auf das Tray-Icon, soweit der Coordinator es steuert
-/// (aktives Modell und Nicht-stoeren-Anzeige).
+/// (aktives Modell und Nicht-stören-Anzeige).
 /// </summary>
 public interface ITrayController
 {
@@ -47,7 +47,7 @@ public interface ITrayController
     /// <param name="model">Aktives Modell.</param>
     void SetActiveModel(BreakModel model);
 
-    /// <summary>Schaltet die Nicht-stoeren-Anzeige um.</summary>
+    /// <summary>Schaltet die Nicht-stören-Anzeige um.</summary>
     /// <param name="isDndActive">Ist DND aktiv?</param>
     void SetDndActive(bool isDndActive);
 }

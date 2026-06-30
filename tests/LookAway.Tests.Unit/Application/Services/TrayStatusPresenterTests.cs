@@ -7,7 +7,7 @@ namespace LookAway.Tests.Unit.Application.Services;
 /// <summary>
 /// Tests der UI-freien Tray-Darstellungslogik (<see cref="TrayStatusPresenter"/>):
 /// Icon-Variante pro Zustand und Tooltip-Formatierung. Die Tooltip-Texte stammen
-/// aus der (gefakten) Lokalisierung; geprueft werden Schluesselwahl und Formatierung.
+/// aus der (gefakten) Lokalisierung; geprüft werden Schlüsselwahl und Formatierung.
 /// </summary>
 public sealed class TrayStatusPresenterTests
 {
@@ -16,9 +16,9 @@ public sealed class TrayStatusPresenterTests
         ["Tray.Tooltip.Dnd"] = "DND aktiv",
         ["Tray.Tooltip.Paused"] = "Timer pausiert",
         ["Tray.Tooltip.Idle"] = "Timer gestoppt",
-        ["Tray.Tooltip.NextBreak"] = "Naechste Pause in {0}",
+        ["Tray.Tooltip.NextBreak"] = "Nächste Pause in {0}",
         ["Tray.Tooltip.Model"] = "Modell: {0}",
-        ["Tray.Tooltip.OnBreak"] = "Pause laeuft ({0} verbleibend)",
+        ["Tray.Tooltip.OnBreak"] = "Pause läuft ({0} verbleibend)",
         ["Settings.Model.ModifiedPomodoro"] = "ModifiedPomodoro",
         ["Settings.Model.ClassicPomodoro"] = "ClassicPomodoro",
         ["Settings.Model.Ultradian"] = "Ultradian",
@@ -55,7 +55,7 @@ public sealed class TrayStatusPresenterTests
             TimeSpan.FromSeconds((23 * 60) + 45),
             BreakModel.ModifiedPomodoro);
 
-        Assert.Contains("Naechste Pause in 23:45", tooltip, StringComparison.Ordinal);
+        Assert.Contains("Nächste Pause in 23:45", tooltip, StringComparison.Ordinal);
         Assert.Contains("ModifiedPomodoro", tooltip, StringComparison.Ordinal);
     }
 
@@ -67,7 +67,7 @@ public sealed class TrayStatusPresenterTests
             TimeSpan.FromSeconds((4 * 60) + 30),
             BreakModel.ClassicPomodoro);
 
-        Assert.Equal("Pause laeuft (04:30 verbleibend)", tooltip);
+        Assert.Equal("Pause läuft (04:30 verbleibend)", tooltip);
     }
 
     [Fact]
@@ -117,6 +117,6 @@ public sealed class TrayStatusPresenterTests
             TimeSpan.FromSeconds(-5),
             BreakModel.ClassicPomodoro);
 
-        Assert.Equal("Pause laeuft (00:00 verbleibend)", tooltip);
+        Assert.Equal("Pause läuft (00:00 verbleibend)", tooltip);
     }
 }

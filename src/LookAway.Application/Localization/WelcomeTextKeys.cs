@@ -1,36 +1,36 @@
 namespace LookAway.Application.Localization;
 
 /// <summary>
-/// Sprachneutrale Schluessel des First-Run-Wizards. Texte liegen in
+/// Sprachneutrale Schlüssel des First-Run-Wizards. Texte liegen in
 /// den eingebetteten Sprachtabellen (Data-Schicht).
 /// </summary>
 public static class WelcomeTextKeys
 {
-    /// <summary>Fenstertitel / Begruessung.</summary>
+    /// <summary>Fenstertitel / Begrüßung.</summary>
     public const string Title = "Welcome.Title";
 
     /// <summary>Einleitungstext.</summary>
     public const string Intro = "Welcome.Intro";
 
-    /// <summary>Schritt-Ueberschrift "Sprache".</summary>
+    /// <summary>Schritt-Überschrift "Sprache".</summary>
     public const string StepLanguage = "Welcome.Step.Language";
 
-    /// <summary>Schritt-Ueberschrift "Pausenmodell".</summary>
+    /// <summary>Schritt-Überschrift "Pausenmodell".</summary>
     public const string StepModel = "Welcome.Step.Model";
 
-    /// <summary>Schritt-Ueberschrift "Autostart".</summary>
+    /// <summary>Schritt-Überschrift "Autostart".</summary>
     public const string StepAutoStart = "Welcome.Step.AutoStart";
 
     /// <summary>Hinweis zum Autostart.</summary>
     public const string AutoStartHint = "Welcome.AutoStartHint";
 
-    /// <summary>Hinweis zum Schliessen ohne Abschluss.</summary>
+    /// <summary>Hinweis zum Schließen ohne Abschluss.</summary>
     public const string CloseHint = "Welcome.CloseHint";
 
     /// <summary>Fortschrittsanzeige (Formatstring {0}/{1}).</summary>
     public const string StepProgress = "Welcome.StepProgress";
 
-    /// <summary>Beschriftung des Zurueck-Buttons.</summary>
+    /// <summary>Beschriftung des Zurück-Buttons.</summary>
     public const string ButtonBack = "Welcome.Button.Back";
 
     /// <summary>Beschriftung des Weiter-Buttons.</summary>

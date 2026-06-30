@@ -10,7 +10,7 @@ namespace LookAway.Data.Net;
 /// <summary>
 /// <see cref="IHttpGetClient"/> auf Basis von <see cref="HttpClient"/>.
 /// Setzt den von der GitHub-API geforderten User-Agent und einen Timeout; jeder
-/// Netzwerkfehler fuehrt zu <c>null</c> statt zu einer Exception.
+/// Netzwerkfehler führt zu <c>null</c> statt zu einer Exception.
 /// </summary>
 public sealed class HttpGetClient : IHttpGetClient, IDisposable
 {
@@ -24,7 +24,7 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
     /// <summary>
     /// Erzeugt den Client mit User-Agent und Timeout.
     /// </summary>
-    /// <param name="logger">Logger fuer Netzwerkfehler.</param>
+    /// <param name="logger">Logger für Netzwerkfehler.</param>
     public HttpGetClient(ILogger<HttpGetClient> logger)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -37,7 +37,7 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
-        Justification = "Die Update-Pruefung ist unkritisch: jeder Fehler wird geloggt und als 'kein Ergebnis' (null) behandelt, damit Netzwerkprobleme die App nie blockieren.")]
+        Justification = "Die Update-Prüfung ist unkritisch: jeder Fehler wird geloggt und als 'kein Ergebnis' (null) behandelt, damit Netzwerkprobleme die App nie blockieren.")]
     public async Task<string?> GetStringAsync(Uri requestUri, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(requestUri);
@@ -54,7 +54,7 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
         }
     }
 
-    // Obergrenze fuer Downloads (Schutz vor riesigen/boesartigen Dateien).
+    // Obergrenze für Downloads (Schutz vor riesigen/bösartigen Dateien).
     private const long MaxDownloadBytes = 512L * 1024 * 1024;
 
     /// <inheritdoc />
@@ -68,7 +68,7 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        // Nur HTTPS — kein Klartext-Download ausfuehrbarer Inhalte.
+        // Nur HTTPS — kein Klartext-Download ausführbarer Inhalte.
         if (!string.Equals(requestUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
         {
             HttpGetClientLog.DownloadRejected(_logger, requestUri.ToString());
@@ -77,8 +77,8 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
 
         try
         {
-            // Asset-Downloads (ggf. mehrere hundert MB) duerfen nicht am 10-s-Timeout
-            // des Clients scheitern; ein eigener, grosszuegiger Token wird verkettet.
+            // Asset-Downloads (ggf. mehrere hundert MB) dürfen nicht am 10-s-Timeout
+            // des Clients scheitern; ein eigener, großzügiger Token wird verkettet.
             using CancellationTokenSource timeoutCts = new(TimeSpan.FromMinutes(10));
             using CancellationTokenSource linked =
                 CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
@@ -97,7 +97,7 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
                 return false;
             }
 
-            // Frueher Abbruch, wenn die angekuendigte Groesse das Limit sprengt.
+            // Früher Abbruch, wenn die angekündigte Größe das Limit sprengt.
             if (response.Content.Headers.ContentLength is long announced && announced > MaxDownloadBytes)
             {
                 HttpGetClientLog.DownloadTooLarge(_logger, requestUri.ToString(), announced);
@@ -158,6 +158,6 @@ internal static partial class HttpGetClientLog
     [LoggerMessage(EventId = 1612, Level = LogLevel.Warning, Message = "Datei-Download von {Uri} abgelehnt (kein HTTPS).")]
     public static partial void DownloadRejected(ILogger logger, string uri);
 
-    [LoggerMessage(EventId = 1613, Level = LogLevel.Warning, Message = "Datei-Download von {Uri} abgebrochen: zu gross ({Bytes} Bytes).")]
+    [LoggerMessage(EventId = 1613, Level = LogLevel.Warning, Message = "Datei-Download von {Uri} abgebrochen: zu groß ({Bytes} Bytes).")]
     public static partial void DownloadTooLarge(ILogger logger, string uri, long bytes);
 }

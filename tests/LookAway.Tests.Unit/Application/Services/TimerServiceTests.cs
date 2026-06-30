@@ -8,11 +8,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace LookAway.Tests.Unit.Application.Services;
 
 /// <summary>
-/// Deterministische Tests fuer den <see cref="TimerService"/>:
+/// Deterministische Tests für den <see cref="TimerService"/>:
 /// Zeit wird per <see cref="FakeClock.Advance"/> gesteuert und der
-/// Phasenwechsel ueber <c>Tick()</c> ausgeloest. Der Hintergrund-Loop
-/// laeuft mit einem absurd hohen Tickintervall, damit er die
-/// Tests nicht stoert.
+/// Phasenwechsel über <c>Tick()</c> ausgelöst. Der Hintergrund-Loop
+/// läuft mit einem absurd hohen Tickintervall, damit er die
+/// Tests nicht stört.
 /// </summary>
 public sealed class TimerServiceTests
 {
@@ -174,7 +174,7 @@ public sealed class TimerServiceTests
             service.Tick();
             Assert.Equal(TimerState.Working, service.State);
 
-            // Tick nach insgesamt 15 Minuten Restzeit — Phase laeuft ab.
+            // Tick nach insgesamt 15 Minuten Restzeit — Phase läuft ab.
             clock.Advance(TimeSpan.FromMinutes(1));
             service.Tick();
             Assert.Equal(TimerState.OnBreak, service.State);
@@ -241,7 +241,7 @@ public sealed class TimerServiceTests
     [Fact]
     public async Task SystemResume_AfterLongSleep_RestartsWorkPhase()
     {
-        // Semantik: War der Rechner mindestens eine Pausenlaenge im Standby, hat
+        // Semantik: War der Rechner mindestens eine Pausenlänge im Standby, hat
         // der Nutzer nicht auf den Bildschirm geschaut — die Augen haben bereits
         // pausiert. Der Arbeits-Timer startet daher frisch (volle Arbeitszeit),
         // statt mit der Restzeit weiterzulaufen.
@@ -280,9 +280,9 @@ public sealed class TimerServiceTests
     [Fact]
     public async Task SystemResume_AfterLongSleepDuringBreak_EndsBreakAndRestartsWork()
     {
-        // Sleep waehrend einer laufenden Pause: nach langem Standby ist die Pause
-        // ohnehin vorbei. Es wird ein regulaeres Pausenende signalisiert
-        // (BreakCompleted -> Overlay/Helligkeit zuruecksetzen) und frisch gearbeitet.
+        // Sleep während einer laufenden Pause: nach langem Standby ist die Pause
+        // ohnehin vorbei. Es wird ein reguläres Pausenende signalisiert
+        // (BreakCompleted -> Overlay/Helligkeit zurücksetzen) und frisch gearbeitet.
         (TimerService service, FakeClock clock, FakePowerModeWatcher power) = CreateService();
         try
         {
@@ -367,7 +367,7 @@ public sealed class TimerServiceTests
             service.Pause();
             _ = await ReadEventAsync<TimerPausedEvent>(service);
 
-            // 2 min Abwesenheit < 5 min Pause -> Restzeit (15 min) laeuft weiter.
+            // 2 min Abwesenheit < 5 min Pause -> Restzeit (15 min) läuft weiter.
             service.ResumeAfterAway(TimeSpan.FromMinutes(2));
 
             Assert.Equal(TimerState.Working, service.State);
@@ -414,7 +414,7 @@ public sealed class TimerServiceTests
 
             service.ResumeAfterAway(TimeSpan.FromMinutes(30));
 
-            // System-Pausen werden ueber den Power-Resume-Pfad behandelt, nicht hier.
+            // System-Pausen werden über den Power-Resume-Pfad behandelt, nicht hier.
             Assert.Equal(TimerState.Paused, service.State);
         }
         finally

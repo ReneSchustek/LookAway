@@ -1,7 +1,7 @@
 namespace LookAway.Core.Enums;
 
 /// <summary>
-/// Vom Benutzer waehlbare Anzeigesprache der Anwendung.
+/// Vom Benutzer wählbare Anzeigesprache der Anwendung.
 /// </summary>
 public enum Language
 {
@@ -11,6 +11,6 @@ public enum Language
     /// <summary>Englisch.</summary>
     English,
 
-    /// <summary>Franzoesisch.</summary>
+    /// <summary>Französisch.</summary>
     French,
 }

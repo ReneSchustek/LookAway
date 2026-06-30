@@ -18,6 +18,6 @@ tools/gitleaks.exe detect --source . --no-banner
 tools/gitleaks.exe detect --source . --log-opts="--all" --no-banner   # inkl. History
 ```
 
-Die CI braucht das Binary nicht: Der Security-Scan laeuft ueber das
+Die CI braucht das Binary nicht: Der Security-Scan läuft über das
 pattern-basierte `tools/review.ps1 -Mode security` (Schritt „Security-Scan" in
 `.github/workflows/ci.yml`). gitleaks bleibt ein optionales lokales Werkzeug.

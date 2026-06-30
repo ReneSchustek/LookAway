@@ -2,7 +2,7 @@ using LookAway.Core.Interfaces;
 
 namespace LookAway.Tests.Unit.Fakes;
 
-/// <summary>Test-Fake fuer <see cref="IScreenDimmer"/>: merkt sich die Aufrufe.</summary>
+/// <summary>Test-Fake für <see cref="IScreenDimmer"/>: merkt sich die Aufrufe.</summary>
 internal sealed class FakeScreenDimmer : IScreenDimmer
 {
     /// <summary>Anzahl der <see cref="DimTo"/>-Aufrufe.</summary>

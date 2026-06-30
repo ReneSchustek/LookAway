@@ -7,7 +7,7 @@ using LookAway.Tests.Unit.Fakes;
 namespace LookAway.Tests.Unit.Application.Statistics;
 
 /// <summary>
-/// Tests fuer die Statistik-Aggregation, den CSV-Export und das
+/// Tests für die Statistik-Aggregation, den CSV-Export und das
 /// Statistik-ViewModel.
 /// </summary>
 public sealed class StatisticsTests
@@ -30,7 +30,7 @@ public sealed class StatisticsTests
     }
 
     [Fact]
-    public async Task GetToday_zaehlt_nur_die_heutigen_Sitzungen()
+    public async Task GetToday_zählt_nur_die_heutigen_Sitzungen()
     {
         (StatisticsService service, _) = CreateService();
 
@@ -49,12 +49,12 @@ public sealed class StatisticsTests
         PeriodStatistics week = await service.GetThisWeekAsync();
 
         Assert.Equal(7, week.Buckets.Count);
-        Assert.Equal(2, week.Count); // die Sitzung vor 10 Tagen liegt ausserhalb dieser Woche
+        Assert.Equal(2, week.Count); // die Sitzung vor 10 Tagen liegt außerhalb dieser Woche
         Assert.Equal(2, week.Buckets.Sum(bucket => bucket.Count));
     }
 
     [Fact]
-    public async Task GetThisYear_liefert_zwoelf_Monatsbalken()
+    public async Task GetThisYear_liefert_zwölf_Monatsbalken()
     {
         (StatisticsService service, _) = CreateService();
 
@@ -85,7 +85,7 @@ public sealed class StatisticsTests
     }
 
     [Fact]
-    public async Task StatisticsViewModel_Export_loest_Ereignis_mit_CSV_aus()
+    public async Task StatisticsViewModel_Export_löst_Ereignis_mit_CSV_aus()
     {
         FakeBreakHistoryRepository history = new(new[]
         {
@@ -107,7 +107,7 @@ public sealed class StatisticsTests
     }
 
     [Fact]
-    public async Task StatisticsViewModel_Load_befuellt_Heute_und_Balken()
+    public async Task StatisticsViewModel_Load_befüllt_Heute_und_Balken()
     {
         FakeBreakHistoryRepository history = new(new[]
         {

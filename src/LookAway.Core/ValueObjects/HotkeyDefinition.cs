@@ -4,7 +4,7 @@ namespace LookAway.Core.ValueObjects;
 
 /// <summary>
 /// Definition eines globalen Hotkeys: Modifikatoren plus virtueller Tastencode.
-/// Unveraenderlich; <see cref="VirtualKey"/> ist ein Win32-VK-Code.
+/// Unveränderlich; <see cref="VirtualKey"/> ist ein Win32-VK-Code.
 /// </summary>
 /// <param name="Modifiers">Modifikatortasten.</param>
 /// <param name="VirtualKey">Virtueller Tastencode (Win32 VK).</param>

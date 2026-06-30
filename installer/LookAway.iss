@@ -1,4 +1,4 @@
-; Inno-Setup-Skript fuer LookAway — erzeugt eine Setup.exe aus dem
+; Inno-Setup-Skript für LookAway — erzeugt eine Setup.exe aus dem
 ; self-contained Publish (dist\setup-publish). Per-User-Installation ohne
 ; Adminrechte; die App lebt im Tray und verwaltet Autostart selbst.
 ;
@@ -17,7 +17,7 @@
 #define PublishDir "..\dist\setup-publish"
 
 [Setup]
-; Stabile AppId (nicht aendern — identifiziert Installation fuer Upgrade/Deinstallation).
+; Stabile AppId (nicht ändern — identifiziert Installation für Upgrade/Deinstallation).
 AppId={{6E2D9F1A-7C4B-4E2A-9B57-2C8E5A0F1D34}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
@@ -27,15 +27,15 @@ AppPublisherURL={#MyAppURL}
 AppSupportURL={#MyAppURL}
 AppUpdatesURL={#MyAppURL}/releases
 ; {autopf} passt sich der Installationsart an: Programme (alle Benutzer) oder
-; %LOCALAPPDATA%\Programs (nur ich). Der Benutzer kann den Pfad frei aendern.
+; %LOCALAPPDATA%\Programs (nur ich). Der Benutzer kann den Pfad frei ändern.
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 DisableProgramGroupPage=yes
-; Verzeichnis-Auswahlseite immer anzeigen — Speicherort ist frei waehlbar.
+; Verzeichnis-Auswahlseite immer anzeigen — Speicherort ist frei wählbar.
 DisableDirPage=no
 AllowUNCPath=no
 ; Standard ohne Adminrechte (nur ich); der Benutzer kann im Dialog auf
-; "fuer alle Benutzer" wechseln (dann UAC-Elevation fuer Programme-Ordner).
+; "für alle Benutzer" wechseln (dann UAC-Elevation für Programme-Ordner).
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=dialog
 ArchitecturesAllowed=x64compatible
@@ -69,7 +69,7 @@ Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Registry]
-; Optionaler Autostart pro Benutzer (HKCU\...\Run). Die App haelt den Eintrag
+; Optionaler Autostart pro Benutzer (HKCU\...\Run). Die App hält den Eintrag
 ; danach selbst aktuell; bei Deinstallation wird er entfernt.
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "{#MyAppName}"; ValueData: """{app}\{#MyAppExeName}"""; Flags: uninsdeletevalue; Tasks: autostart
 

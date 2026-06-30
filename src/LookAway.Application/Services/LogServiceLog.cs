@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Application.Services;
 
 /// <summary>
-/// Source-generierte Logging-Methoden fuer den <see cref="LogService"/>.
+/// Source-generierte Logging-Methoden für den <see cref="LogService"/>.
 /// </summary>
 internal static partial class LogServiceLog
 {

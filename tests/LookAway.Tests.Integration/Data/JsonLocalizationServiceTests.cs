@@ -6,13 +6,13 @@ using LookAway.Data.Services;
 namespace LookAway.Tests.Integration.Data;
 
 /// <summary>
-/// Tests fuer den <see cref="JsonLocalizationService"/> gegen die echten,
+/// Tests für den <see cref="JsonLocalizationService"/> gegen die echten,
 /// eingebetteten Sprachtabellen.
 /// </summary>
 public sealed class JsonLocalizationServiceTests
 {
     [Fact]
-    public void GetText_liefert_den_deutschen_Text_fuer_einen_bekannten_Schluessel()
+    public void GetText_liefert_den_deutschen_Text_für_einen_bekannten_Schlüssel()
     {
         JsonLocalizationService service = new(Language.German);
 
@@ -32,7 +32,7 @@ public sealed class JsonLocalizationServiceTests
     }
 
     [Fact]
-    public void GetText_liefert_den_franzoesischen_Text()
+    public void GetText_liefert_den_französischen_Text()
     {
         JsonLocalizationService service = new(Language.French);
 
@@ -42,24 +42,24 @@ public sealed class JsonLocalizationServiceTests
     }
 
     [Fact]
-    public void GetText_liefert_den_Schluessel_wenn_er_nirgends_existiert()
+    public void GetText_liefert_den_Schlüssel_wenn_er_nirgends_existiert()
     {
         JsonLocalizationService service = new(Language.German);
 
-        string text = service.GetText("Nicht.Vorhanden.Schluessel");
+        string text = service.GetText("Nicht.Vorhanden.Schlüssel");
 
-        Assert.Equal("Nicht.Vorhanden.Schluessel", text);
+        Assert.Equal("Nicht.Vorhanden.Schlüssel", text);
     }
 
     [Fact]
-    public void SetLanguage_loest_LanguageChanged_nur_bei_echter_Aenderung_aus()
+    public void SetLanguage_löst_LanguageChanged_nur_bei_echter_Änderung_aus()
     {
         JsonLocalizationService service = new(Language.German);
         int raised = 0;
         service.LanguageChanged += (_, _) => raised++;
 
-        service.SetLanguage(Language.German); // keine Aenderung
-        service.SetLanguage(Language.French); // Aenderung
+        service.SetLanguage(Language.German); // keine Änderung
+        service.SetLanguage(Language.French); // Änderung
 
         Assert.Equal(1, raised);
         Assert.Equal(Language.French, service.CurrentLanguage);
@@ -68,25 +68,25 @@ public sealed class JsonLocalizationServiceTests
     [Theory]
     [InlineData("en.json")]
     [InlineData("fr.json")]
-    public void Alle_deutschen_Schluessel_existieren_auch_in_den_anderen_Sprachen(string otherFile)
+    public void Alle_deutschen_Schlüssel_existieren_auch_in_den_anderen_Sprachen(string otherFile)
     {
         HashSet<string> german = LoadKeys("de.json");
         HashSet<string> other = LoadKeys(otherFile);
 
         string[] missing = german.Except(other).Order().ToArray();
-        Assert.True(missing.Length == 0, $"Fehlende Schluessel in {otherFile}: {string.Join(", ", missing)}");
+        Assert.True(missing.Length == 0, $"Fehlende Schlüssel in {otherFile}: {string.Join(", ", missing)}");
     }
 
     [Theory]
     [InlineData("en.json")]
     [InlineData("fr.json")]
-    public void Keine_ueberzaehligen_Schluessel_in_den_anderen_Sprachen(string otherFile)
+    public void Keine_überzähligen_Schlüssel_in_den_anderen_Sprachen(string otherFile)
     {
         HashSet<string> german = LoadKeys("de.json");
         HashSet<string> other = LoadKeys(otherFile);
 
         string[] extra = other.Except(german).Order().ToArray();
-        Assert.True(extra.Length == 0, $"Ueberzaehlige Schluessel in {otherFile}: {string.Join(", ", extra)}");
+        Assert.True(extra.Length == 0, $"Überzählige Schlüssel in {otherFile}: {string.Join(", ", extra)}");
     }
 
     private static HashSet<string> LoadKeys(string fileName)

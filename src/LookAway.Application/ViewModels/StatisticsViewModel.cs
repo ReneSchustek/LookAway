@@ -9,7 +9,7 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Application.ViewModels;
 
 /// <summary>
-/// Bereitet die Pausen-Statistik fuer die Anzeige auf und stoesst den
+/// Bereitet die Pausen-Statistik für die Anzeige auf und stößt den
 /// CSV-Export an. UI-frei und damit testbar.
 /// </summary>
 public sealed partial class StatisticsViewModel : ObservableObject
@@ -40,7 +40,7 @@ public sealed partial class StatisticsViewModel : ObservableObject
     /// Erzeugt das ViewModel.
     /// </summary>
     /// <param name="statisticsService">Aggregiert die Historie.</param>
-    /// <param name="historyRepository">Quelle aller Sitzungen (fuer den Export).</param>
+    /// <param name="historyRepository">Quelle aller Sitzungen (für den Export).</param>
     /// <param name="csvExporter">Erzeugt die CSV-Darstellung.</param>
     /// <param name="localization">Liefert die Beschriftungen.</param>
     public StatisticsViewModel(
@@ -60,22 +60,22 @@ public sealed partial class StatisticsViewModel : ObservableObject
         _localization = localization;
     }
 
-    /// <summary>Wird ausgeloest, wenn der CSV-Inhalt zum Speichern bereitsteht.</summary>
+    /// <summary>Wird ausgelöst, wenn der CSV-Inhalt zum Speichern bereitsteht.</summary>
     public event EventHandler<CsvExportRequestedEventArgs>? CsvExportRequested;
 
     /// <summary>Aktualisiert alle gebundenen Beschriftungen (nach Sprachwechsel).</summary>
     public void RefreshTexts() => OnPropertyChanged(string.Empty);
 
-    /// <summary>Tab-Ueberschrift "Statistik".</summary>
+    /// <summary>Tab-Überschrift "Statistik".</summary>
     public string TabStatisticsHeader => _localization.GetText(SettingsTextKeys.TabStatistics);
 
-    /// <summary>Abschnitts-Ueberschrift "Heute".</summary>
+    /// <summary>Abschnitts-Überschrift "Heute".</summary>
     public string TodayHeader => _localization.GetText(SettingsTextKeys.StatisticsToday);
 
-    /// <summary>Abschnitts-Ueberschrift "Diese Woche".</summary>
+    /// <summary>Abschnitts-Überschrift "Diese Woche".</summary>
     public string WeekHeader => _localization.GetText(SettingsTextKeys.StatisticsWeek);
 
-    /// <summary>Abschnitts-Ueberschrift "Dieses Jahr".</summary>
+    /// <summary>Abschnitts-Überschrift "Dieses Jahr".</summary>
     public string YearHeader => _localization.GetText(SettingsTextKeys.StatisticsYear);
 
     /// <summary>Beschriftung "Pausen".</summary>
@@ -84,14 +84,14 @@ public sealed partial class StatisticsViewModel : ObservableObject
     /// <summary>Beschriftung "Pausenzeit".</summary>
     public string BreakTimeLabel => _localization.GetText(SettingsTextKeys.StatisticsBreakTime);
 
-    /// <summary>Beschriftung "Uebersprungen".</summary>
+    /// <summary>Beschriftung "Übersprungen".</summary>
     public string SkippedLabel => _localization.GetText(SettingsTextKeys.StatisticsSkipped);
 
     /// <summary>Beschriftung des Export-Buttons.</summary>
     public string ExportLabel => _localization.GetText(SettingsTextKeys.StatisticsExport);
 
     /// <summary>
-    /// Laedt die aktuellen Kennzahlen aus der Historie.
+    /// Lädt die aktuellen Kennzahlen aus der Historie.
     /// </summary>
     /// <param name="cancellationToken">Abbruch-Token.</param>
     public async Task LoadAsync(CancellationToken cancellationToken = default)

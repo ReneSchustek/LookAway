@@ -4,7 +4,7 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Core.Domain;
 
 /// <summary>
-/// Basisklasse fuer alle vom Timer-Service ausgegebenen Domain-Events.
+/// Basisklasse für alle vom Timer-Service ausgegebenen Domain-Events.
 /// </summary>
 public abstract record TimerEvent
 {
@@ -12,11 +12,11 @@ public abstract record TimerEvent
     public DateTimeOffset Timestamp { get; init; }
 }
 
-/// <summary>Wird gefeuert, wenn die Arbeitsphase abgelaufen ist und eine Pause faellig ist.</summary>
+/// <summary>Wird gefeuert, wenn die Arbeitsphase abgelaufen ist und eine Pause fällig ist.</summary>
 /// <param name="Interval">Aktives Intervall.</param>
 public sealed record BreakDueEvent(BreakInterval Interval) : TimerEvent;
 
-/// <summary>Wird gefeuert, wenn die Pausenphase regulaer abgelaufen ist.</summary>
+/// <summary>Wird gefeuert, wenn die Pausenphase regulär abgelaufen ist.</summary>
 public sealed record BreakCompletedEvent : TimerEvent;
 
 /// <summary>Wird gefeuert, wenn eine neue Arbeitsphase startet (nach Pause-Ende oder Resume).</summary>

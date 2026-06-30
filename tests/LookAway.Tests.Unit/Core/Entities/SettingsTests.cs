@@ -5,8 +5,8 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Tests.Unit.Core.Entities;
 
 /// <summary>
-/// Tests fuer die Default-Werte und die Setter-Validierung der
-/// <see cref="Settings"/>-Entitaet.
+/// Tests für die Default-Werte und die Setter-Validierung der
+/// <see cref="Settings"/>-Entität.
 /// </summary>
 public sealed class SettingsTests
 {

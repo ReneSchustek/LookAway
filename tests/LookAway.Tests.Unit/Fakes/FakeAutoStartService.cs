@@ -4,9 +4,9 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Tests.Unit.Fakes;
 
 /// <summary>
-/// Test-Fake fuer <see cref="IAutoStartService"/>. Haelt den An/Aus-Zustand im
-/// Speicher und zaehlt die Aufrufe, damit die "Settings-Logik" des
-/// <c>AutoStartCoordinator</c> ohne echte Registry geprueft werden kann.
+/// Test-Fake für <see cref="IAutoStartService"/>. Hält den An/Aus-Zustand im
+/// Speicher und zählt die Aufrufe, damit die "Settings-Logik" des
+/// <c>AutoStartCoordinator</c> ohne echte Registry geprüft werden kann.
 /// </summary>
 internal sealed class FakeAutoStartService : IAutoStartService
 {
@@ -27,7 +27,7 @@ internal sealed class FakeAutoStartService : IAutoStartService
 
     /// <summary>
     /// Wenn gesetzt, wirft <see cref="Enable"/> eine
-    /// <see cref="AutoStartException"/> — zum Pruefen der Fehlerpfade.
+    /// <see cref="AutoStartException"/> — zum Prüfen der Fehlerpfade.
     /// </summary>
     public bool ThrowOnEnable { get; set; }
 

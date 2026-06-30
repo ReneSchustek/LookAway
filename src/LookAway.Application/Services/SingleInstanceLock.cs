@@ -26,8 +26,8 @@ public sealed class SingleInstanceLock : IDisposable
     private bool _ownsMutex;
     private bool _disposed;
 
-    /// <summary>Erzeugt einen Lock fuer den angegebenen Benutzer.</summary>
-    /// <param name="userName">Benutzername fuer den lokalen Namespace.</param>
+    /// <summary>Erzeugt einen Lock für den angegebenen Benutzer.</summary>
+    /// <param name="userName">Benutzername für den lokalen Namespace.</param>
     public SingleInstanceLock(string userName)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(userName);
@@ -37,16 +37,16 @@ public sealed class SingleInstanceLock : IDisposable
     }
 
     /// <summary>
-    /// True, wenn der aktuelle Prozess den Mutex haelt (also die einzige
+    /// True, wenn der aktuelle Prozess den Mutex hält (also die einzige
     /// Instanz ist).
     /// </summary>
     public bool IsOwner => _ownsMutex;
 
     /// <summary>
-    /// Versucht, die Single-Instance-Sperre zu uebernehmen. Liefert
+    /// Versucht, die Single-Instance-Sperre zu übernehmen. Liefert
     /// <c>true</c>, wenn dieser Prozess die einzige Instanz ist;
-    /// <c>false</c>, wenn bereits eine andere Instanz laeuft.
-    /// Wird der Lock uebernommen, startet ein Hintergrund-Listener fuer
+    /// <c>false</c>, wenn bereits eine andere Instanz läuft.
+    /// Wird der Lock übernommen, startet ein Hintergrund-Listener für
     /// Activation-Requests einer eventuellen Zweit-Instanz.
     /// </summary>
     public bool TryAcquire()
@@ -69,9 +69,9 @@ public sealed class SingleInstanceLock : IDisposable
 
     /// <summary>
     /// Signalisiert der bereits laufenden Instanz, dass diese sich
-    /// zeigen soll (z. B. Settings-Fenster oeffnen). Wird von einer
+    /// zeigen soll (z. B. Settings-Fenster öffnen). Wird von einer
     /// Zweit-Instanz aufgerufen, nachdem <see cref="TryAcquire"/>
-    /// <c>false</c> zurueckgegeben hat.
+    /// <c>false</c> zurückgegeben hat.
     /// </summary>
     public bool SignalExistingInstance()
     {
@@ -129,7 +129,7 @@ public sealed class SingleInstanceLock : IDisposable
                 }
                 catch (ApplicationException)
                 {
-                    // Mutex bereits freigegeben oder Thread-Affinitaets-Verletzung — tolerieren.
+                    // Mutex bereits freigegeben oder Thread-Affinitäts-Verletzung — tolerieren.
                 }
             }
             _mutex.Dispose();

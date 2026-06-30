@@ -26,14 +26,14 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
     private DispatcherQueueTimer? _countdownTimer;
     private BreakOverlayViewModel? _viewModel;
     // Wird auf dem UI-Thread gesetzt, aber vom Timer-Consumer-Thread gelesen
-    // (BreakCompletedEvent-Gate) — daher volatile fuer korrekte Sichtbarkeit.
+    // (BreakCompletedEvent-Gate) — daher volatile für korrekte Sichtbarkeit.
     private volatile bool _isOverlayOpen;
 
     /// <summary>
     /// Erzeugt den Presenter mit dem UI-Dispatcher und der Lokalisierung.
     /// </summary>
     /// <param name="dispatcher">Dispatcher des Hauptfensters.</param>
-    /// <param name="localization">Liefert die sprachabhaengigen Texte.</param>
+    /// <param name="localization">Liefert die sprachabhängigen Texte.</param>
     public BreakOverlayPresenter(DispatcherQueue dispatcher, ILocalizationService localization)
     {
         ArgumentNullException.ThrowIfNull(dispatcher);

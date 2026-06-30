@@ -5,18 +5,18 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Application.Services;
 
 /// <summary>
-/// Pausiert den Timer automatisch bei laengerer Benutzer-Inaktivitaet und setzt
-/// ihn bei wiederkehrender Aktivitaet fort. Reine Logik ueber
+/// Pausiert den Timer automatisch bei längerer Benutzer-Inaktivität und setzt
+/// ihn bei wiederkehrender Aktivität fort. Reine Logik über
 /// <see cref="IIdleDetector"/> und <see cref="ITimerService"/> — ohne Plattform-
-/// oder UI-Abhaengigkeit testbar.
+/// oder UI-Abhängigkeit testbar.
 /// </summary>
 /// <remarks>
-/// Ein selbst ausgeloester Idle-Pause wird gemerkt (<c>_pausedByIdle</c>), damit
-/// eine vom Benutzer ausgeloeste Pause nicht faelschlich fortgesetzt wird.
+/// Ein selbst ausgelöster Idle-Pause wird gemerkt (<c>_pausedByIdle</c>), damit
+/// eine vom Benutzer ausgelöste Pause nicht fälschlich fortgesetzt wird.
 /// </remarks>
 public sealed class IdleDetectionService
 {
-    /// <summary>Standard-Inaktivitaetsschwelle (5 Minuten).</summary>
+    /// <summary>Standard-Inaktivitätsschwelle (5 Minuten).</summary>
     public static readonly TimeSpan DefaultThreshold = TimeSpan.FromMinutes(5);
 
     private readonly IIdleDetector _idleDetector;
@@ -26,9 +26,9 @@ public sealed class IdleDetectionService
     private TimeSpan _awayWhilePaused;
 
     /// <summary>
-    /// Erzeugt den Dienst mit Inaktivitaets-Quelle, Timer und Logger.
+    /// Erzeugt den Dienst mit Inaktivitäts-Quelle, Timer und Logger.
     /// </summary>
-    /// <param name="idleDetector">Quelle der Inaktivitaetsdauer.</param>
+    /// <param name="idleDetector">Quelle der Inaktivitätsdauer.</param>
     /// <param name="timerService">Timer, der pausiert/fortgesetzt wird.</param>
     /// <param name="logger">Logger.</param>
     public IdleDetectionService(
@@ -50,14 +50,14 @@ public sealed class IdleDetectionService
     /// <summary>Ist die automatische Idle-Pause aktiv?</summary>
     public bool IsEnabled { get; set; }
 
-    /// <summary>Inaktivitaetsschwelle, ab der pausiert wird.</summary>
+    /// <summary>Inaktivitätsschwelle, ab der pausiert wird.</summary>
     public TimeSpan Threshold { get; set; }
 
-    /// <summary>Wahr, solange der Timer wegen Inaktivitaet pausiert ist.</summary>
+    /// <summary>Wahr, solange der Timer wegen Inaktivität pausiert ist.</summary>
     public bool IsPausedByIdle => _pausedByIdle;
 
     /// <summary>
-    /// Wertet die aktuelle Inaktivitaet aus und pausiert bzw. setzt den Timer
+    /// Wertet die aktuelle Inaktivität aus und pausiert bzw. setzt den Timer
     /// fort. Pro Polling-Intervall einmal aufzurufen.
     /// </summary>
     public void Evaluate()
@@ -89,14 +89,14 @@ public sealed class IdleDetectionService
     {
         if (_timerService.State != TimerState.Paused)
         {
-            // Zustand wurde anderweitig geaendert — Anspruch aufgeben.
+            // Zustand wurde anderweitig geändert — Anspruch aufgeben.
             _pausedByIdle = false;
             return;
         }
 
         if (idleTime < Threshold)
         {
-            // War der Nutzer mindestens eine Pausenlaenge weg, startet der Timer
+            // War der Nutzer mindestens eine Pausenlänge weg, startet der Timer
             // eine frische Arbeitsphase (die Augen haben bereits geruht).
             _timerService.ResumeAfterAway(_awayWhilePaused);
             _pausedByIdle = false;
@@ -104,7 +104,7 @@ public sealed class IdleDetectionService
             return;
         }
 
-        // Noch immer inaktiv — laengste beobachtete Abwesenheit fortschreiben.
+        // Noch immer inaktiv — längste beobachtete Abwesenheit fortschreiben.
         _awayWhilePaused = idleTime;
     }
 
@@ -121,18 +121,18 @@ public sealed class IdleDetectionService
         => state is TimerState.Working or TimerState.OnBreak;
 }
 
-/// <summary>Source-generierte Logging-Methoden fuer den <see cref="IdleDetectionService"/>.</summary>
+/// <summary>Source-generierte Logging-Methoden für den <see cref="IdleDetectionService"/>.</summary>
 internal static partial class IdleDetectionLog
 {
     [LoggerMessage(
         EventId = 3201,
         Level = LogLevel.Information,
-        Message = "Timer wegen Inaktivitaet pausiert ({IdleSeconds}s).")]
+        Message = "Timer wegen Inaktivität pausiert ({IdleSeconds}s).")]
     public static partial void PausedDueToIdle(ILogger logger, int idleSeconds);
 
     [LoggerMessage(
         EventId = 3202,
         Level = LogLevel.Information,
-        Message = "Timer nach wiederkehrender Aktivitaet fortgesetzt.")]
+        Message = "Timer nach wiederkehrender Aktivität fortgesetzt.")]
     public static partial void ResumedAfterIdle(ILogger logger);
 }

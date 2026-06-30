@@ -5,7 +5,7 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Tests.Unit.Core;
 
 /// <summary>
-/// Tests fuer die Update-Vergleichslogik und die Pruef-Faelligkeit.
+/// Tests für die Update-Vergleichslogik und die Prüf-Fälligkeit.
 /// </summary>
 public sealed class UpdateTests
 {
@@ -30,7 +30,7 @@ public sealed class UpdateTests
     }
 
     [Fact]
-    public void Create_uebernimmt_Paket_URL()
+    public void Create_übernimmt_Paket_URL()
     {
         UpdateInfo info = UpdateInfo.Create(
             Current,
@@ -52,7 +52,7 @@ public sealed class UpdateTests
     }
 
     [Fact]
-    public void Create_meldet_kein_Update_bei_aelterer_Version()
+    public void Create_meldet_kein_Update_bei_älterer_Version()
     {
         UpdateInfo info = UpdateInfo.Create(Current, "1.1.9", null, null);
 
@@ -68,7 +68,7 @@ public sealed class UpdateTests
     }
 
     [Fact]
-    public void Create_schneidet_Praerelease_Suffix_ab()
+    public void Create_schneidet_Prärelease_Suffix_ab()
     {
         UpdateInfo info = UpdateInfo.Create(Current, "v1.3.0-beta", null, null);
 
@@ -82,7 +82,7 @@ public sealed class UpdateTests
     [InlineData(UpdateCheckFrequency.Daily, 25, true)]
     [InlineData(UpdateCheckFrequency.Weekly, 100, false)]
     [InlineData(UpdateCheckFrequency.Weekly, 200, true)]
-    public void IsDue_beachtet_Haeufigkeit(UpdateCheckFrequency frequency, int hoursSinceLast, bool expected)
+    public void IsDue_beachtet_Häufigkeit(UpdateCheckFrequency frequency, int hoursSinceLast, bool expected)
     {
         DateTimeOffset now = new(2026, 6, 28, 12, 0, 0, TimeSpan.Zero);
         DateTimeOffset last = now.AddHours(-hoursSinceLast);
@@ -91,7 +91,7 @@ public sealed class UpdateTests
     }
 
     [Fact]
-    public void IsDue_ist_wahr_wenn_nie_geprueft()
+    public void IsDue_ist_wahr_wenn_nie_geprüft()
     {
         DateTimeOffset now = new(2026, 6, 28, 12, 0, 0, TimeSpan.Zero);
 

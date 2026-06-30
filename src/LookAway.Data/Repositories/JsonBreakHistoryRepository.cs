@@ -10,9 +10,9 @@ namespace LookAway.Data.Repositories;
 /// Persistiert die Pausen-Historie als JSON-Array pro Windows-Benutzer.
 /// </summary>
 /// <remarks>
-/// Append-only: jede neue Sitzung wird der bestehenden Liste hinzugefuegt und das
-/// gesamte Array atomar (Temp-Datei + Rename) zurueckgeschrieben. Schreibvorgaenge
-/// sind ueber einen Semaphor serialisiert; Lesezugriffe oeffnen die Datei mit
+/// Append-only: jede neue Sitzung wird der bestehenden Liste hinzugefügt und das
+/// gesamte Array atomar (Temp-Datei + Rename) zurückgeschrieben. Schreibvorgänge
+/// sind über einen Semaphor serialisiert; Lesezugriffe öffnen die Datei mit
 /// <see cref="FileShare.Delete"/>, damit ein paralleler Rename nicht blockiert.
 /// </remarks>
 public sealed class JsonBreakHistoryRepository : IBreakHistoryRepository, IDisposable
@@ -37,17 +37,17 @@ public sealed class JsonBreakHistoryRepository : IBreakHistoryRepository, IDispo
     /// Erzeugt das Repository mit dem Standardpfad
     /// <c>%APPDATA%\LookAway\history.json</c>.
     /// </summary>
-    /// <param name="logger">Logger fuer Persistenz-Vorgaenge.</param>
+    /// <param name="logger">Logger für Persistenz-Vorgänge.</param>
     public JsonBreakHistoryRepository(ILogger<JsonBreakHistoryRepository> logger)
         : this(GetDefaultFilePath(), logger)
     {
     }
 
     /// <summary>
-    /// Erzeugt das Repository mit einem expliziten Dateipfad (fuer Tests).
+    /// Erzeugt das Repository mit einem expliziten Dateipfad (für Tests).
     /// </summary>
     /// <param name="filePath">Absoluter Pfad zur Historie-Datei.</param>
-    /// <param name="logger">Logger fuer Persistenz-Vorgaenge.</param>
+    /// <param name="logger">Logger für Persistenz-Vorgänge.</param>
     public JsonBreakHistoryRepository(string filePath, ILogger<JsonBreakHistoryRepository> logger)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
@@ -167,7 +167,7 @@ public sealed class JsonBreakHistoryRepository : IBreakHistoryRepository, IDispo
         }
         catch (JsonException ex)
         {
-            // Beschaedigte Historie soll die App nicht blockieren — leer starten.
+            // Beschädigte Historie soll die App nicht blockieren — leer starten.
             JsonBreakHistoryRepositoryLog.HistoryCorrupted(_logger, ex, _filePath);
             return new List<BreakSession>();
         }
@@ -226,13 +226,13 @@ public sealed class JsonBreakHistoryRepository : IBreakHistoryRepository, IDispo
 /// </summary>
 internal static partial class JsonBreakHistoryRepositoryLog
 {
-    [LoggerMessage(EventId = 1400, Level = LogLevel.Debug, Message = "Pausen-Sitzung an {Path} angehaengt.")]
+    [LoggerMessage(EventId = 1400, Level = LogLevel.Debug, Message = "Pausen-Sitzung an {Path} angehängt.")]
     public static partial void SessionAppended(ILogger logger, string path);
 
-    [LoggerMessage(EventId = 1401, Level = LogLevel.Information, Message = "{Count} alte Historie-Eintraege aus {Path} entfernt.")]
+    [LoggerMessage(EventId = 1401, Level = LogLevel.Information, Message = "{Count} alte Historie-Einträge aus {Path} entfernt.")]
     public static partial void HistoryPurged(ILogger logger, int count, string path);
 
-    [LoggerMessage(EventId = 1402, Level = LogLevel.Warning, Message = "Historie {Path} ist beschaedigt — sie wird leer behandelt.")]
+    [LoggerMessage(EventId = 1402, Level = LogLevel.Warning, Message = "Historie {Path} ist beschädigt — sie wird leer behandelt.")]
     public static partial void HistoryCorrupted(ILogger logger, Exception exception, string path);
 
     [LoggerMessage(EventId = 1403, Level = LogLevel.Warning, Message = "Historie {Path} konnte nicht gelesen werden — sie wird leer behandelt.")]

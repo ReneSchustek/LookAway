@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace LookAway.Tests.Integration.Data;
 
 /// <summary>
-/// Tests fuer die Sicherheits-Vorbedingungen von <see cref="HttpGetClient"/>.
+/// Tests für die Sicherheits-Vorbedingungen von <see cref="HttpGetClient"/>.
 /// Der HTTPS-Zwang greift vor jedem Netzwerkzugriff und ist daher ohne Server testbar.
 /// </summary>
 public sealed class HttpGetClientTests

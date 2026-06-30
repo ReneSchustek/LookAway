@@ -6,12 +6,12 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Application.Services;
 
 /// <summary>
-/// Uebersetzt den Timer-Zustand in die Tray-Darstellung: Icon-Variante und
+/// Übersetzt den Timer-Zustand in die Tray-Darstellung: Icon-Variante und
 /// Tooltip-Text. Reine, UI-freie Logik — damit ohne Tray-Control testbar.
 /// </summary>
 /// <remarks>
 /// Die Tooltip-Texte sind bewusst kompakt gehalten (Windows-Tooltip-Limit) und
-/// werden ueber die Lokalisierung in der aktuellen Sprache aufgeloest.
+/// werden über die Lokalisierung in der aktuellen Sprache aufgelöst.
 /// </remarks>
 public sealed class TrayStatusPresenter
 {
@@ -20,7 +20,7 @@ public sealed class TrayStatusPresenter
     /// <summary>
     /// Erzeugt den Presenter mit der Lokalisierung.
     /// </summary>
-    /// <param name="localization">Liefert die sprachabhaengigen Tooltip-Texte.</param>
+    /// <param name="localization">Liefert die sprachabhängigen Tooltip-Texte.</param>
     public TrayStatusPresenter(ILocalizationService localization)
     {
         ArgumentNullException.ThrowIfNull(localization);
@@ -28,7 +28,7 @@ public sealed class TrayStatusPresenter
     }
 
     /// <summary>
-    /// Liefert die Icon-Variante fuer den aktuellen Zustand. Ein aktiver
+    /// Liefert die Icon-Variante für den aktuellen Zustand. Ein aktiver
     /// DND-/Vollbild-Modus hat Vorrang vor dem Timer-Zustand.
     /// </summary>
     /// <param name="state">Aktueller Timer-Zustand.</param>
@@ -52,11 +52,11 @@ public sealed class TrayStatusPresenter
     }
 
     /// <summary>
-    /// Baut den Tooltip-Text fuer den aktuellen Zustand.
+    /// Baut den Tooltip-Text für den aktuellen Zustand.
     /// </summary>
     /// <param name="state">Aktueller Timer-Zustand.</param>
     /// <param name="remaining">Verbleibende Zeit der laufenden Phase.</param>
-    /// <param name="model">Aktives Pausenmodell (fuer die Modell-Zeile).</param>
+    /// <param name="model">Aktives Pausenmodell (für die Modell-Zeile).</param>
     /// <param name="isDndActive">Sind Erinnerungen aktuell ausgesetzt?</param>
     /// <returns>Der mehrzeilige Tooltip-Text.</returns>
     public string GetTooltip(
@@ -92,7 +92,7 @@ public sealed class TrayStatusPresenter
         => string.Format(CultureInfo.CurrentCulture, _localization.GetText(key), argument);
 
     /// <summary>
-    /// Formatiert eine Restzeit als <c>mm:ss</c> (Minuten koennen &gt; 59 sein,
+    /// Formatiert eine Restzeit als <c>mm:ss</c> (Minuten können &gt; 59 sein,
     /// z. B. <c>90:00</c>). Negative Werte werden auf <c>00:00</c> geklemmt.
     /// </summary>
     /// <param name="remaining">Restzeit.</param>

@@ -5,16 +5,16 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Application.Services;
 
 /// <summary>
-/// Haelt die Autostart-Einstellung (<see cref="Settings.AutoStart"/>) und den
+/// Hält die Autostart-Einstellung (<see cref="Settings.AutoStart"/>) und den
 /// Windows-Registry-Eintrag synchron. Kapselt die beiden Synchronisations-
-/// Richtungen: Benutzeraenderung -> Registry und Startup-Abgleich Registry ->
+/// Richtungen: Benutzeränderung -> Registry und Startup-Abgleich Registry ->
 /// Einstellungen.
 /// </summary>
 /// <remarks>
 /// Die Klasse kapselt die testbare Settings-Logik: sie kennt nur die
 /// Core-Interfaces <see cref="IAutoStartService"/> und
-/// <see cref="ISettingsRepository"/> und laesst sich mit Fakes ohne echte
-/// Registry pruefen.
+/// <see cref="ISettingsRepository"/> und lässt sich mit Fakes ohne echte
+/// Registry prüfen.
 /// </remarks>
 public sealed class AutoStartCoordinator
 {
@@ -25,9 +25,9 @@ public sealed class AutoStartCoordinator
     /// <summary>
     /// Erzeugt den Koordinator mit Autostart-Dienst, Settings-Persistenz und Logger.
     /// </summary>
-    /// <param name="autoStartService">Plattform-Dienst fuer den Autostart-Eintrag.</param>
+    /// <param name="autoStartService">Plattform-Dienst für den Autostart-Eintrag.</param>
     /// <param name="settingsRepository">Persistenz der Benutzereinstellungen.</param>
-    /// <param name="logger">Logger fuer Synchronisations-Vorgaenge.</param>
+    /// <param name="logger">Logger für Synchronisations-Vorgänge.</param>
     public AutoStartCoordinator(
         IAutoStartService autoStartService,
         ISettingsRepository settingsRepository,
@@ -43,11 +43,11 @@ public sealed class AutoStartCoordinator
     }
 
     /// <summary>
-    /// Wendet eine Benutzeraenderung an: aktualisiert zuerst die Registry und
-    /// persistiert anschliessend die Einstellung. Schlaegt die Registry-
+    /// Wendet eine Benutzeränderung an: aktualisiert zuerst die Registry und
+    /// persistiert anschliessend die Einstellung. Schlägt die Registry-
     /// Operation fehl, wird nichts gespeichert (kein inkonsistenter Zustand).
     /// </summary>
-    /// <param name="enabled">Gewuenschter Autostart-Zustand.</param>
+    /// <param name="enabled">Gewünschter Autostart-Zustand.</param>
     /// <param name="cancellationToken">Abbruch-Token.</param>
     /// <exception cref="LookAway.Core.Exceptions.AutoStartException">
     /// Der Registry-Eintrag konnte nicht aktualisiert werden.
@@ -68,13 +68,13 @@ public sealed class AutoStartCoordinator
 
     /// <summary>
     /// Gleicht beim App-Start die Einstellung an die Registry an. Die Registry
-    /// ist fuer den An/Aus-Zustand die fuehrende Quelle, damit ein manueller
-    /// Eingriff (z. B. Deaktivieren ueber den Task-Manager) uebernommen wird.
-    /// Ist Autostart aktiv, wird zusaetzlich der hinterlegte Pfad auf den
+    /// ist für den An/Aus-Zustand die führende Quelle, damit ein manueller
+    /// Eingriff (z. B. Deaktivieren über den Task-Manager) übernommen wird.
+    /// Ist Autostart aktiv, wird zusätzlich der hinterlegte Pfad auf den
     /// aktuellen Stand gebracht (Anwendung wurde verschoben).
     /// </summary>
     /// <param name="cancellationToken">Abbruch-Token.</param>
-    /// <returns>Der nach dem Abgleich gueltige Autostart-Zustand.</returns>
+    /// <returns>Der nach dem Abgleich gültige Autostart-Zustand.</returns>
     /// <exception cref="LookAway.Core.Exceptions.AutoStartException">
     /// Der Registry-Status konnte nicht gelesen oder korrigiert werden.
     /// </exception>

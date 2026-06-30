@@ -10,7 +10,7 @@ using Windows.Graphics;
 namespace LookAway.Views;
 
 /// <summary>
-/// Eigenstaendiges, dezentes Erinnerungsfenster. Bindet an das UI-freie
+/// Eigenständiges, dezentes Erinnerungsfenster. Bindet an das UI-freie
 /// <see cref="BreakReminderViewModel"/>; die Texte kommen aus der Lokalisierung.
 /// </summary>
 internal sealed partial class BreakReminderWindow : Window
@@ -22,10 +22,10 @@ internal sealed partial class BreakReminderWindow : Window
     private DispatcherQueueTimer? _timeoutTimer;
 
     /// <summary>
-    /// Erzeugt das Fenster fuer das angegebene ViewModel.
+    /// Erzeugt das Fenster für das angegebene ViewModel.
     /// </summary>
     /// <param name="viewModel">Aktionslogik der Erinnerung.</param>
-    /// <param name="localization">Liefert die sprachabhaengigen Texte.</param>
+    /// <param name="localization">Liefert die sprachabhängigen Texte.</param>
     public BreakReminderWindow(BreakReminderViewModel viewModel, ILocalizationService localization)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
@@ -95,7 +95,7 @@ internal sealed partial class BreakReminderWindow : Window
         _viewModel.Completed -= OnViewModelCompleted;
         Closed -= OnWindowClosed;
 
-        // Direkt ueber das X geschlossen (keine Aktion gewaehlt): wie "Ueberspringen"
+        // Direkt über das X geschlossen (keine Aktion gewählt): wie "Überspringen"
         // behandeln, damit kein Default-"Pause starten" per Timeout nachfeuert.
         if (!_viewModel.IsCompleted)
         {

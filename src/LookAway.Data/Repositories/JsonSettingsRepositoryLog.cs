@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Data.Repositories;
 
 /// <summary>
-/// Source-generierte Logging-Methoden fuer das <see cref="JsonSettingsRepository"/>.
+/// Source-generierte Logging-Methoden für das <see cref="JsonSettingsRepository"/>.
 /// </summary>
 /// <remarks>
 /// Source-generierte <c>LoggerMessage</c>-Methoden vermeiden Boxing und
@@ -44,19 +44,19 @@ internal static partial class JsonSettingsRepositoryLog
     [LoggerMessage(
         EventId = 2012,
         Level = LogLevel.Warning,
-        Message = "Einstellungsdatei {SettingsPath} ist beschaedigt; Defaults werden verwendet.")]
+        Message = "Einstellungsdatei {SettingsPath} ist beschädigt; Defaults werden verwendet.")]
     public static partial void SettingsFileCorrupted(ILogger logger, Exception exception, string settingsPath);
 
     [LoggerMessage(
         EventId = 2013,
         Level = LogLevel.Warning,
-        Message = "Einstellungsdatei {SettingsPath} enthaelt ungueltige Werte; Defaults werden verwendet.")]
+        Message = "Einstellungsdatei {SettingsPath} enthält ungültige Werte; Defaults werden verwendet.")]
     public static partial void SettingsFileInvalidValues(ILogger logger, Exception exception, string settingsPath);
 
     [LoggerMessage(
         EventId = 2020,
         Level = LogLevel.Error,
-        Message = "Keine Leseberechtigung fuer Einstellungsdatei {SettingsPath}.")]
+        Message = "Keine Leseberechtigung für Einstellungsdatei {SettingsPath}.")]
     public static partial void ReadAccessDenied(ILogger logger, Exception exception, string settingsPath);
 
     [LoggerMessage(
@@ -68,7 +68,7 @@ internal static partial class JsonSettingsRepositoryLog
     [LoggerMessage(
         EventId = 2022,
         Level = LogLevel.Error,
-        Message = "Keine Schreibberechtigung fuer Einstellungsdatei {SettingsPath}.")]
+        Message = "Keine Schreibberechtigung für Einstellungsdatei {SettingsPath}.")]
     public static partial void WriteAccessDenied(ILogger logger, Exception exception, string settingsPath);
 
     [LoggerMessage(

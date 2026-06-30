@@ -12,11 +12,11 @@ using WinColor = Windows.UI.Color;
 namespace LookAway.Views;
 
 /// <summary>
-/// Abgedunkeltes Vollbild-Overlay waehrend einer Pause — eine Instanz je Monitor.
+/// Abgedunkeltes Vollbild-Overlay während einer Pause — eine Instanz je Monitor.
 /// Bindet an das UI-freie <see cref="BreakOverlayViewModel"/>, zeigt einen
-/// Sekunden-Countdown und laesst sich mit ESC vorzeitig beenden. Der Countdown
+/// Sekunden-Countdown und lässt sich mit ESC vorzeitig beenden. Der Countdown
 /// wird zentral vom <see cref="Services.BreakOverlayPresenter"/> getaktet, damit
-/// mehrere Fenster synchron bleiben und der Zaehler nicht mehrfach laeuft.
+/// mehrere Fenster synchron bleiben und der Zähler nicht mehrfach läuft.
 /// </summary>
 internal sealed partial class BreakOverlayWindow : Window
 {
@@ -24,10 +24,10 @@ internal sealed partial class BreakOverlayWindow : Window
     private bool _closedByCaller;
 
     /// <summary>
-    /// Erzeugt ein Overlay-Fenster fuer das angegebene ViewModel.
+    /// Erzeugt ein Overlay-Fenster für das angegebene ViewModel.
     /// </summary>
     /// <param name="viewModel">Gemeinsame Countdown- und Aktionslogik der Pause.</param>
-    /// <param name="localization">Liefert die sprachabhaengigen Texte.</param>
+    /// <param name="localization">Liefert die sprachabhängigen Texte.</param>
     /// <param name="background">Hintergrundfarbe des Overlays (inkl. Transparenz).</param>
     public BreakOverlayWindow(BreakOverlayViewModel viewModel, ILocalizationService localization, WinColor background)
     {
@@ -40,7 +40,7 @@ internal sealed partial class BreakOverlayWindow : Window
         Title = "LookAway";
         RootGrid.Background = new SolidColorBrush(background);
 
-        // Textfarbe an die gewaehlte Overlay-Farbe anpassen: auf hellen Farben
+        // Textfarbe an die gewählte Overlay-Farbe anpassen: auf hellen Farben
         // dunkler Text, sonst heller — damit der Inhalt immer lesbar bleibt.
         ApplyReadableForeground(background);
 
@@ -87,9 +87,9 @@ internal sealed partial class BreakOverlayWindow : Window
     }
 
     /// <summary>
-    /// Schliesst das Overlay von aussen (regulaeres Pausenende oder weil ein
-    /// Geschwister-Fenster die Pause beendet hat). Unterdrueckt das
-    /// Benutzer-Ende-Fallback, damit kein zusaetzliches Ende signalisiert wird.
+    /// Schließt das Overlay von aussen (reguläres Pausenende oder weil ein
+    /// Geschwister-Fenster die Pause beendet hat). Unterdrückt das
+    /// Benutzer-Ende-Fallback, damit kein zusätzliches Ende signalisiert wird.
     /// </summary>
     public void CloseFromCaller()
     {
@@ -107,14 +107,14 @@ internal sealed partial class BreakOverlayWindow : Window
     {
         Closed -= OnWindowClosed;
 
-        // Vom Presenter geschlossen (regulaeres Ende, ESC oder Geschwister-Fenster):
+        // Vom Presenter geschlossen (reguläres Ende, ESC oder Geschwister-Fenster):
         // das Ende ist bereits behandelt.
         if (_closedByCaller)
         {
             return;
         }
 
-        // Direkt ueber das Fenster geschlossen: wie ein Benutzer-Ende behandeln,
+        // Direkt über das Fenster geschlossen: wie ein Benutzer-Ende behandeln,
         // damit Helligkeit/Medien wiederhergestellt werden.
         if (!_viewModel.IsEnded)
         {

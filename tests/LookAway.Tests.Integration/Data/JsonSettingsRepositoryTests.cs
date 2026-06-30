@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace LookAway.Tests.Integration.Data;
 
 /// <summary>
-/// Integrationstests fuer das <see cref="JsonSettingsRepository"/> auf dem
+/// Integrationstests für das <see cref="JsonSettingsRepository"/> auf dem
 /// echten Dateisystem in einem isolierten Temp-Verzeichnis.
 /// </summary>
 public sealed class JsonSettingsRepositoryTests : IDisposable
@@ -16,7 +16,7 @@ public sealed class JsonSettingsRepositoryTests : IDisposable
     private readonly string _settingsFilePath;
 
     /// <summary>
-    /// Legt fuer jeden Test ein eigenes Temp-Verzeichnis an, damit Tests sich
+    /// Legt für jeden Test ein eigenes Temp-Verzeichnis an, damit Tests sich
     /// nicht gegenseitig beeinflussen.
     /// </summary>
     public JsonSettingsRepositoryTests()
@@ -27,7 +27,7 @@ public sealed class JsonSettingsRepositoryTests : IDisposable
     }
 
     /// <summary>
-    /// Raeumt das Temp-Verzeichnis nach dem Test wieder ab.
+    /// Räumt das Temp-Verzeichnis nach dem Test wieder ab.
     /// </summary>
     public void Dispose()
     {
@@ -40,7 +40,7 @@ public sealed class JsonSettingsRepositoryTests : IDisposable
         }
         catch (IOException)
         {
-            // Fremdprozess haelt eine Datei: tolerieren, Temp wird vom OS aufgeraeumt.
+            // Fremdprozess hält eine Datei: tolerieren, Temp wird vom OS aufgeräumt.
         }
     }
 

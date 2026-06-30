@@ -52,19 +52,19 @@ jobs:
 
       - name: Restore workloads (Windows App SDK)
         # 'dotnet workload restore' liest die Anforderungen aus den Projekten
-        # und installiert nur, was tatsaechlich gebraucht wird.
+        # und installiert nur, was tatsächlich gebraucht wird.
         run: dotnet workload restore ${{ env.SOLUTION_FILE }}
 
       - name: Restore dependencies
         run: dotnet restore ${{ env.SOLUTION_FILE }}
 
       - name: Build
-        # TreatWarningsAsErrors greift global ueber Directory.Build.props.
+        # TreatWarningsAsErrors greift global über Directory.Build.props.
         run: dotnet build ${{ env.SOLUTION_FILE }} --configuration ${{ env.CONFIGURATION }} --no-restore
 
       - name: Test
         # 'trx'-Logger ohne fixen Dateinamen → dotnet legt pro Test-Projekt
-        # eine eigene Datei an (sonst ueberschreibt das zweite Projekt das erste).
+        # eine eigene Datei an (sonst überschreibt das zweite Projekt das erste).
         run: >
           dotnet test ${{ env.SOLUTION_FILE }}
           --configuration ${{ env.CONFIGURATION }}
@@ -75,8 +75,8 @@ jobs:
           --collect "XPlat Code Coverage"
 
       - name: Security-Scan (review.ps1)
-        # Lokales Pattern-Audit aus tools/review.ps1 — ergaenzt die Compiler-Analyzer
-        # um zusaetzliche Heuristiken (Secrets, Console.WriteLine, BinaryFormatter, ...).
+        # Lokales Pattern-Audit aus tools/review.ps1 — ergänzt die Compiler-Analyzer
+        # um zusätzliche Heuristiken (Secrets, Console.WriteLine, BinaryFormatter, ...).
         shell: pwsh
         run: ./tools/review.ps1 -Mode security
 
@@ -131,7 +131,7 @@ jobs:
         shell: pwsh
         run: ./tools/publish.ps1 -Version ${{ steps.version.outputs.value }}
 
-      - name: Release veroeffentlichen
+      - name: Release veröffentlichen
         uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         with:
           files: dist/LookAway-Portable-v${{ steps.version.outputs.value }}.zip

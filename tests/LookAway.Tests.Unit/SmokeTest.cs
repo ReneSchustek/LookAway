@@ -2,7 +2,7 @@ namespace LookAway.Tests.Unit;
 
 /// <summary>
 /// Stellt sicher, dass das Test-Projekt gebaut, geladen und xUnit korrekt verkabelt ist.
-/// Wird mit der ersten echten Domain-Logik durch fachliche Tests ersetzt oder ergaenzt.
+/// Wird mit der ersten echten Domain-Logik durch fachliche Tests ersetzt oder ergänzt.
 /// </summary>
 public sealed class SmokeTest
 {

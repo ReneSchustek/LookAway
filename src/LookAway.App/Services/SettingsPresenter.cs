@@ -6,7 +6,7 @@ using Microsoft.UI.Dispatching;
 namespace LookAway.Services;
 
 /// <summary>
-/// Oeffnet das Settings-Fenster. Stellt sicher, dass nie zwei Fenster
+/// Öffnet das Settings-Fenster. Stellt sicher, dass nie zwei Fenster
 /// gleichzeitig offen sind: ein zweiter Aufruf aktiviert das bestehende.
 /// </summary>
 internal interface ISettingsPresenter
@@ -18,7 +18,7 @@ internal interface ISettingsPresenter
 /// <summary>
 /// WinUI-Implementierung von <see cref="ISettingsPresenter"/>: erzeugt das
 /// <see cref="Views.SettingsWindow"/> samt ViewModel auf dem UI-Thread und
-/// reicht angewendete Einstellungen an einen Callback weiter (Live-Uebernahme).
+/// reicht angewendete Einstellungen an einen Callback weiter (Live-Übernahme).
 /// </summary>
 internal sealed class SettingsPresenter : ISettingsPresenter
 {

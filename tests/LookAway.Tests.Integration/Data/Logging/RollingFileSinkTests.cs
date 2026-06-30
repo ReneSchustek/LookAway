@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Tests.Integration.Data.Logging;
 
 /// <summary>
-/// Integrationstests fuer den <see cref="RollingFileSink"/>: pruefen
+/// Integrationstests für den <see cref="RollingFileSink"/>: prüfen
 /// Datei-Layout, Rotation und Retention auf einem echten Temp-Verzeichnis.
 /// </summary>
 public sealed class RollingFileSinkTests : IDisposable
@@ -13,7 +13,7 @@ public sealed class RollingFileSinkTests : IDisposable
     private readonly string _logDirectory;
 
     /// <summary>
-    /// Legt fuer jeden Test ein eigenes Temp-Verzeichnis an.
+    /// Legt für jeden Test ein eigenes Temp-Verzeichnis an.
     /// </summary>
     public RollingFileSinkTests()
     {
@@ -22,7 +22,7 @@ public sealed class RollingFileSinkTests : IDisposable
     }
 
     /// <summary>
-    /// Raeumt das Temp-Verzeichnis nach dem Test wieder ab.
+    /// Räumt das Temp-Verzeichnis nach dem Test wieder ab.
     /// </summary>
     public void Dispose()
     {
@@ -56,12 +56,12 @@ public sealed class RollingFileSinkTests : IDisposable
         using RollingFileSink sink = CreateSink();
         DateTimeOffset timestamp = new(2026, 5, 10, 12, 30, 45, 123, TimeSpan.Zero);
 
-        sink.Write(timestamp, LogLevel.Warning, "LookAway.Foo", "Pause uebersprungen", null);
+        sink.Write(timestamp, LogLevel.Warning, "LookAway.Foo", "Pause übersprungen", null);
 
         string content = ReadAllLogs();
         Assert.Contains("[2026-05-10T12:30:45.123Z]", content, StringComparison.Ordinal);
         Assert.Contains("[Warning]", content, StringComparison.Ordinal);
-        Assert.Contains("LookAway.Foo: Pause uebersprungen", content, StringComparison.Ordinal);
+        Assert.Contains("LookAway.Foo: Pause übersprungen", content, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public sealed class RollingFileSinkTests : IDisposable
             DateTimeOffset.UtcNow,
             LogLevel.Information,
             "Cat",
-            @"User testuser hat C:\Users\testuser\AppData\Roaming\LookAway geoeffnet",
+            @"User testuser hat C:\Users\testuser\AppData\Roaming\LookAway geöffnet",
             null);
 
         string content = ReadAllLogs();

@@ -5,9 +5,9 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Tests.Unit.Core.Domain;
 
 /// <summary>
-/// Tests fuer die in <see cref="BreakModelRegistry"/> hinterlegten Modelle:
-/// Standardintervalle, Benutzer-Ueberschreibung, Anpassungsbereiche und
-/// Hinweis-Schluessel.
+/// Tests für die in <see cref="BreakModelRegistry"/> hinterlegten Modelle:
+/// Standardintervalle, Benutzer-Überschreibung, Anpassungsbereiche und
+/// Hinweis-Schlüssel.
 /// </summary>
 public sealed class BreakModelRegistryTests
 {
@@ -89,7 +89,7 @@ public sealed class BreakModelRegistryTests
     [Fact]
     public void GetEffective_CustomWorkExceedingMaxLimit_Throws()
     {
-        // TaskBased MaxLimit ist 120 min; eine groessere Arbeitsdauer verletzt die Querbedingung.
+        // TaskBased MaxLimit ist 120 min; eine größere Arbeitsdauer verletzt die Querbedingung.
         CustomDurations custom = new() { WorkMinutes = 130, BreakMinutes = 10 };
 
         _ = Assert.Throws<ArgumentException>(

@@ -3,7 +3,7 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Tests.Unit.Core.ValueObjects;
 
 /// <summary>
-/// Tests fuer die Wertebereichs-Validierung des <see cref="CustomDurations"/>-Value-Objects.
+/// Tests für die Wertebereichs-Validierung des <see cref="CustomDurations"/>-Value-Objects.
 /// </summary>
 public sealed class CustomDurationsTests
 {

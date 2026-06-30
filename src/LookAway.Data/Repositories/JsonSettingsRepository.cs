@@ -10,12 +10,12 @@ namespace LookAway.Data.Repositories;
 /// Persistiert die Benutzerkonfiguration als JSON-Datei pro Windows-Benutzer.
 /// </summary>
 /// <remarks>
-/// Schreibvorgaenge sind atomar (Schreiben in eine Temp-Datei + Rename) und
-/// werden ueber einen Semaphor serialisiert, damit parallele Schreiber das
-/// Zielfile nicht beschaedigen. Lesezugriffe oeffnen die Datei mit
+/// Schreibvorgänge sind atomar (Schreiben in eine Temp-Datei + Rename) und
+/// werden über einen Semaphor serialisiert, damit parallele Schreiber das
+/// Zielfile nicht beschädigen. Lesezugriffe öffnen die Datei mit
 /// <see cref="FileShare.Read"/> | <see cref="FileShare.Delete"/>, damit ein
 /// parallel laufender atomarer Rename nicht durch ein Reader-Handle blockiert
-/// wird. So koennen Lese- und Schreibzugriffe parallel erfolgen, ohne dass
+/// wird. So können Lese- und Schreibzugriffe parallel erfolgen, ohne dass
 /// das Zielfile inkonsistent oder die Operation per Exception abbricht.
 /// </remarks>
 public sealed class JsonSettingsRepository : ISettingsRepository, IDisposable
@@ -41,18 +41,18 @@ public sealed class JsonSettingsRepository : ISettingsRepository, IDisposable
     /// Erzeugt das Repository mit dem Standardpfad
     /// <c>%APPDATA%\LookAway\settings.json</c>.
     /// </summary>
-    /// <param name="logger">Logger fuer Persistenz-Vorgaenge.</param>
+    /// <param name="logger">Logger für Persistenz-Vorgänge.</param>
     public JsonSettingsRepository(ILogger<JsonSettingsRepository> logger)
         : this(GetDefaultFilePath(), logger)
     {
     }
 
     /// <summary>
-    /// Erzeugt das Repository mit einem expliziten Dateipfad. Vorgesehen fuer
+    /// Erzeugt das Repository mit einem expliziten Dateipfad. Vorgesehen für
     /// Integrationstests, die ein Temp-Verzeichnis nutzen.
     /// </summary>
     /// <param name="filePath">Absoluter Pfad zur Konfigurationsdatei.</param>
-    /// <param name="logger">Logger fuer Persistenz-Vorgaenge.</param>
+    /// <param name="logger">Logger für Persistenz-Vorgänge.</param>
     public JsonSettingsRepository(string filePath, ILogger<JsonSettingsRepository> logger)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
@@ -137,7 +137,7 @@ public sealed class JsonSettingsRepository : ISettingsRepository, IDisposable
         }
         catch (ArgumentException ex)
         {
-            // Validierung in Settern hat einen ungueltigen Wert in der Datei erkannt.
+            // Validierung in Settern hat einen ungültigen Wert in der Datei erkannt.
             JsonSettingsRepositoryLog.SettingsFileInvalidValues(_logger, ex, _filePath);
             return CreateFirstRunDefaults();
         }

@@ -5,7 +5,7 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Tests.Unit.Core;
 
 /// <summary>
-/// Tests fuer die Hotkey-Validierung, -Defaults und -Darstellung.
+/// Tests für die Hotkey-Validierung, -Defaults und -Darstellung.
 /// </summary>
 public sealed class HotkeyTests
 {
@@ -54,9 +54,9 @@ public sealed class HotkeyTests
     }
 
     [Fact]
-    public void FindConflicts_meldet_ungueltige_Leer_Bindungen_nicht()
+    public void FindConflicts_meldet_ungültige_Leer_Bindungen_nicht()
     {
-        // Zwei ungebundene Aktionen (None+0) sind wertgleich, duerfen aber nicht
+        // Zwei ungebundene Aktionen (None+0) sind wertgleich, dürfen aber nicht
         // als Konflikt gelten.
         Dictionary<HotkeyAction, HotkeyDefinition> bindings = new()
         {
@@ -69,7 +69,7 @@ public sealed class HotkeyTests
     }
 
     [Fact]
-    public void Defaults_sind_gueltig_und_kollisionsfrei()
+    public void Defaults_sind_gültig_und_kollisionsfrei()
     {
         IReadOnlyDictionary<HotkeyAction, HotkeyDefinition> defaults = HotkeyDefaults.CreateDefaults();
 

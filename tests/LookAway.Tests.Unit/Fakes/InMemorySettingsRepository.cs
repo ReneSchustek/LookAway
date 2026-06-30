@@ -4,9 +4,9 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Tests.Unit.Fakes;
 
 /// <summary>
-/// In-Memory-Fake fuer <see cref="ISettingsRepository"/>. Liefert bei jedem
+/// In-Memory-Fake für <see cref="ISettingsRepository"/>. Liefert bei jedem
 /// <see cref="LoadAsync"/> eine Kopie des gehaltenen Zustands (wie ein echtes
-/// Repository ueber die Datei-Deserialisierung) und zaehlt Speichervorgaenge.
+/// Repository über die Datei-Deserialisierung) und zählt Speichervorgänge.
 /// </summary>
 internal sealed class InMemorySettingsRepository : ISettingsRepository
 {

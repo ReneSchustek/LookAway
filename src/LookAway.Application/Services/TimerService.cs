@@ -8,19 +8,19 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Application.Services;
 
 /// <summary>
-/// State-Machine fuer Pausen-Erinnerungen. Konsumiert <see cref="IClock"/>
-/// fuer Zeitabfragen und <see cref="IPowerModeWatcher"/> fuer Sleep-/Resume-
+/// State-Machine für Pausen-Erinnerungen. Konsumiert <see cref="IClock"/>
+/// für Zeitabfragen und <see cref="IPowerModeWatcher"/> für Sleep-/Resume-
 /// Events. Produziert einen Strom von <see cref="TimerEvent"/>-Instanzen
-/// ueber einen unbeschraenkten Channel.
+/// über einen unbeschränkten Channel.
 /// </summary>
 /// <remarks>
 /// Zustandswechsel werden von einem Hintergrund-Loop und von externen
-/// Power-Events ausgeloest. Beide Pfade gehen durch <see cref="Tick"/>,
+/// Power-Events ausgelöst. Beide Pfade gehen durch <see cref="Tick"/>,
 /// damit die Logik einheitlich getestet werden kann.
 /// </remarks>
 public sealed class TimerService : ITimerService, IDisposable
 {
-    /// <summary>Default-Tickintervall fuer den Hintergrund-Loop.</summary>
+    /// <summary>Default-Tickintervall für den Hintergrund-Loop.</summary>
     public static readonly TimeSpan DefaultTickInterval = TimeSpan.FromMilliseconds(250);
 
     private readonly IClock _clock;
@@ -41,7 +41,7 @@ public sealed class TimerService : ITimerService, IDisposable
 
     private CancellationTokenSource? _loopCts;
     private Task? _loopTask;
-    // Wird vom Hintergrund-Loop und von Power-Events ausserhalb des Locks gelesen.
+    // Wird vom Hintergrund-Loop und von Power-Events außerhalb des Locks gelesen.
     private volatile bool _disposed;
 
     /// <summary>Erzeugt einen <see cref="TimerService"/> mit Default-Tickintervall.</summary>
@@ -51,7 +51,7 @@ public sealed class TimerService : ITimerService, IDisposable
     }
 
     /// <summary>
-    /// Konstruktor mit explizitem Tickintervall — vorgesehen fuer Tests,
+    /// Konstruktor mit explizitem Tickintervall — vorgesehen für Tests,
     /// die den Loop-Takt selbst kontrollieren wollen.
     /// </summary>
     internal TimerService(IClock clock, IPowerModeWatcher powerWatcher, ILogger<TimerService> logger, TimeSpan tickInterval)
@@ -181,7 +181,7 @@ public sealed class TimerService : ITimerService, IDisposable
         lock (_lock)
         {
             // Nur eine echte Benutzer-Pause faktisch fortsetzen. Wenn der
-            // Service nur durch System-Sleep pausiert ist, behaelt er die
+            // Service nur durch System-Sleep pausiert ist, behält er die
             // Wiederaufnahme dem Power-Resume-Pfad vor.
             if (_state == TimerState.Paused && !_pausedBySystem)
             {
@@ -197,8 +197,8 @@ public sealed class TimerService : ITimerService, IDisposable
 
         lock (_lock)
         {
-            // Betrifft nur automatische Pausen (Idle). System-Pausen werden ueber
-            // den Power-Resume-Pfad behandelt; Benutzer-Pausen ueber Resume().
+            // Betrifft nur automatische Pausen (Idle). System-Pausen werden über
+            // den Power-Resume-Pfad behandelt; Benutzer-Pausen über Resume().
             if (_state == TimerState.Paused && !_pausedBySystem)
             {
                 ResumeOrRestart(awayDuration);
@@ -316,7 +316,7 @@ public sealed class TimerService : ITimerService, IDisposable
         TimerServiceLog.TimerResumed(_logger, resumedState);
 
         // Nach Resume in eine Arbeitsphase wird ein WorkResumed-Event emittiert;
-        // beim Resume aus einer Pause (OnBreak) verlaesst sich der Konsument auf den State.
+        // beim Resume aus einer Pause (OnBreak) verlässt sich der Konsument auf den State.
         if (resumedState == TimerState.Working)
         {
             EnqueueEvent(new WorkResumedEvent { Timestamp = _clock.UtcNow });
@@ -324,7 +324,7 @@ public sealed class TimerService : ITimerService, IDisposable
     }
 
     /// <summary>
-    /// Entscheidet beim Fortsetzen, ob die Restzeit weiterlaeuft oder eine frische
+    /// Entscheidet beim Fortsetzen, ob die Restzeit weiterläuft oder eine frische
     /// Arbeitsphase beginnt: War die Abwesenheit mindestens so lang wie eine Pause,
     /// haben die Augen bereits geruht — dann wird neu gestartet.
     /// </summary>
@@ -338,16 +338,16 @@ public sealed class TimerService : ITimerService, IDisposable
         else
         {
             ResumeInternal();
-            // Falls die Restzeit waehrend der Abwesenheit abgelaufen waere,
-            // sofort den naechsten Phasenuebergang ausfuehren.
+            // Falls die Restzeit während der Abwesenheit abgelaufen wäre,
+            // sofort den nächsten Phasenübergang ausführen.
             EvaluatePhase();
         }
     }
 
     /// <summary>
     /// Beginnt eine frische Arbeitsphase mit voller Arbeitsdauer. Lag die
-    /// Abwesenheit in einer Pause, wird zuvor das regulaere Pausenende signalisiert
-    /// (damit Overlay/Helligkeit/Medien sauber zurueckgesetzt werden).
+    /// Abwesenheit in einer Pause, wird zuvor das reguläre Pausenende signalisiert
+    /// (damit Overlay/Helligkeit/Medien sauber zurückgesetzt werden).
     /// </summary>
     private void RestartWorkingPhase()
     {
@@ -410,8 +410,8 @@ public sealed class TimerService : ITimerService, IDisposable
         {
             if (_state == TimerState.Paused && _pausedBySystem)
             {
-                // Sleep zaehlt als Abwesenheit: War der Rechner mindestens eine
-                // Pausenlaenge im Standby, beginnt eine frische Arbeitsphase.
+                // Sleep zählt als Abwesenheit: War der Rechner mindestens eine
+                // Pausenlänge im Standby, beginnt eine frische Arbeitsphase.
                 ResumeOrRestart(_clock.UtcNow - _pauseStartUtc);
             }
         }
@@ -420,7 +420,7 @@ public sealed class TimerService : ITimerService, IDisposable
     private void EnsureLoopStarted()
     {
         // Nur weiterlaufen lassen, wenn der Loop aktiv UND nicht bereits abgebrochen
-        // ist (sonst wuerde ein Start nach Stop keinen neuen Loop aufsetzen).
+        // ist (sonst würde ein Start nach Stop keinen neuen Loop aufsetzen).
         if (_loopTask is { IsCompleted: false } && _loopCts is { IsCancellationRequested: false })
         {
             return;

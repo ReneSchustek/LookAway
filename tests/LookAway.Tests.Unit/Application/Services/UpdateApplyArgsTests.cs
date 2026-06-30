@@ -3,7 +3,7 @@ using LookAway.Application.Services;
 namespace LookAway.Tests.Unit.Application.Services;
 
 /// <summary>
-/// Tests fuer das Erzeugen und Parsen der Update-Helfer-Argumente
+/// Tests für das Erzeugen und Parsen der Update-Helfer-Argumente
 /// (<see cref="UpdateApplyArgs"/>).
 /// </summary>
 public sealed class UpdateApplyArgsTests

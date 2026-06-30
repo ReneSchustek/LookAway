@@ -6,16 +6,16 @@ namespace LookAway.Data.Logging;
 /// </summary>
 /// <remarks>
 /// Die Sanitisierung erfolgt rein per String-Replacement. Ersetzungen sind
-/// nach absteigender Pfadlaenge sortiert, damit z. B. <c>%LOCALAPPDATA%</c>
+/// nach absteigender Pfadlänge sortiert, damit z. B. <c>%LOCALAPPDATA%</c>
 /// vor <c>%USERPROFILE%</c> erkannt wird. Der Sanitizer ist threadsafe,
-/// weil er nur unveraenderliche Felder liest.
+/// weil er nur unveränderliche Felder liest.
 /// </remarks>
 public sealed class LogMessageSanitizer
 {
     private readonly (string Original, string Replacement)[] _replacements;
 
     /// <summary>
-    /// Erzeugt einen Sanitizer fuer den aktuellen Windows-Benutzer.
+    /// Erzeugt einen Sanitizer für den aktuellen Windows-Benutzer.
     /// </summary>
     public LogMessageSanitizer()
         : this(
@@ -27,8 +27,8 @@ public sealed class LogMessageSanitizer
     }
 
     /// <summary>
-    /// Konstruktor fuer Tests: erlaubt das Setzen aller benutzerspezifischen
-    /// Werte unabhaengig vom aktuellen Prozess-Kontext.
+    /// Konstruktor für Tests: erlaubt das Setzen aller benutzerspezifischen
+    /// Werte unabhängig vom aktuellen Prozess-Kontext.
     /// </summary>
     /// <param name="localAppData">Pfad zu <c>%LOCALAPPDATA%</c>.</param>
     /// <param name="appData">Pfad zu <c>%APPDATA%</c>.</param>
@@ -41,8 +41,8 @@ public sealed class LogMessageSanitizer
         ArgumentNullException.ThrowIfNull(userProfile);
         ArgumentNullException.ThrowIfNull(userName);
 
-        // Sortiert nach Laenge absteigend, damit Pfade vor dem Benutzernamen
-        // ersetzt werden und laengere Pfade vor kuerzeren.
+        // Sortiert nach Länge absteigend, damit Pfade vor dem Benutzernamen
+        // ersetzt werden und längere Pfade vor kürzeren.
         List<(string Original, string Replacement)> entries = [];
         AddIfPresent(entries, localAppData, "%LOCALAPPDATA%");
         AddIfPresent(entries, appData, "%APPDATA%");
@@ -54,7 +54,7 @@ public sealed class LogMessageSanitizer
 
     /// <summary>
     /// Ersetzt benutzerspezifische Pfade und den Benutzernamen in der
-    /// uebergebenen Zeichenkette durch generische Platzhalter.
+    /// übergebenen Zeichenkette durch generische Platzhalter.
     /// </summary>
     /// <param name="input">Zu maskierende Eingabe; <c>null</c> ergibt eine leere Zeichenkette.</param>
     public string Sanitize(string? input)

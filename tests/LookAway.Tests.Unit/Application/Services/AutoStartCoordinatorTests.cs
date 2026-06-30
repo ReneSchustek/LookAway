@@ -9,8 +9,8 @@ namespace LookAway.Tests.Unit.Application.Services;
 /// <summary>
 /// Tests der "Settings-Logik" des <see cref="AutoStartCoordinator"/> mit
 /// <see cref="FakeAutoStartService"/> und <see cref="InMemorySettingsRepository"/> —
-/// ohne echte Registry. Geprueft werden beide Synchronisations-Richtungen:
-/// Benutzeraenderung -> Registry und Startup-Abgleich Registry -> Einstellungen.
+/// ohne echte Registry. Geprüft werden beide Synchronisations-Richtungen:
+/// Benutzeränderung -> Registry und Startup-Abgleich Registry -> Einstellungen.
 /// </summary>
 public sealed class AutoStartCoordinatorTests
 {

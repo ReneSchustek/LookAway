@@ -16,7 +16,7 @@ namespace LookAway.Application.ViewModels;
 /// <summary>
 /// Zustand und Aktionslogik des Settings-Fensters — UI-frei und damit ohne WinUI
 /// testbar. Kapselt Laden, Validieren und Persistieren der Benutzerkonfiguration
-/// und haelt den Autostart-Eintrag (ueber den <see cref="AutoStartCoordinator"/>)
+/// und hält den Autostart-Eintrag (über den <see cref="AutoStartCoordinator"/>)
 /// synchron.
 /// </summary>
 /// <remarks>
@@ -125,16 +125,16 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private string _breakOverlayColor = Settings.DefaultBreakOverlayColor;
 
     /// <summary>
-    /// Erzeugt das ViewModel mit seinen Abhaengigkeiten.
+    /// Erzeugt das ViewModel mit seinen Abhängigkeiten.
     /// </summary>
     /// <param name="settingsRepository">Persistenz der Einstellungen.</param>
-    /// <param name="autoStartCoordinator">Haelt Einstellung und Registry synchron.</param>
+    /// <param name="autoStartCoordinator">Hält Einstellung und Registry synchron.</param>
     /// <param name="localization">Liefert Texte und steuert den Sprachwechsel.</param>
-    /// <param name="soundService">Spielt den Erinnerungston fuer die Vorschau.</param>
-    /// <param name="updateChecker">Prueft auf Updates.</param>
+    /// <param name="soundService">Spielt den Erinnerungston für die Vorschau.</param>
+    /// <param name="updateChecker">Prüft auf Updates.</param>
     /// <param name="statistics">Statistik-ViewModel (komponiert).</param>
     /// <param name="logger">Logger.</param>
-    /// <param name="applicationVersion">Anzuzeigende Versionsnummer (Ueber-Bereich).</param>
+    /// <param name="applicationVersion">Anzuzeigende Versionsnummer (Über-Bereich).</param>
     public SettingsViewModel(
         ISettingsRepository settingsRepository,
         AutoStartCoordinator autoStartCoordinator,
@@ -171,38 +171,38 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _localization.LanguageChanged += OnLanguageChanged;
     }
 
-    /// <summary>Wird ausgeloest, wenn das Fenster geschlossen werden soll.</summary>
+    /// <summary>Wird ausgelöst, wenn das Fenster geschlossen werden soll.</summary>
     public event EventHandler? CloseRequested;
 
     /// <summary>
-    /// Wird nach erfolgreichem Speichern/Anwenden mit den gueltigen Einstellungen
-    /// ausgeloest, damit laufende Dienste (Timer, Idle-/Vollbild-Erkennung) sie
-    /// sofort uebernehmen koennen.
+    /// Wird nach erfolgreichem Speichern/Anwenden mit den gültigen Einstellungen
+    /// ausgelöst, damit laufende Dienste (Timer, Idle-/Vollbild-Erkennung) sie
+    /// sofort übernehmen können.
     /// </summary>
     public event EventHandler<SettingsAppliedEventArgs>? SettingsApplied;
 
-    /// <summary>Auswaehlbare Sprachen mit lokalisierter Beschriftung.</summary>
+    /// <summary>Auswählbare Sprachen mit lokalisierter Beschriftung.</summary>
     public IReadOnlyList<SettingsOption<Language>> Languages { get; }
 
-    /// <summary>Auswaehlbare Pausenmodelle mit lokalisierter Beschriftung.</summary>
+    /// <summary>Auswählbare Pausenmodelle mit lokalisierter Beschriftung.</summary>
     public IReadOnlyList<SettingsOption<BreakModel>> Models { get; }
 
-    /// <summary>Auswaehlbare Erinnerungstoene mit lokalisierter Beschriftung.</summary>
+    /// <summary>Auswählbare Erinnerungstöne mit lokalisierter Beschriftung.</summary>
     public IReadOnlyList<SettingsOption<SoundType>> Sounds { get; }
 
-    /// <summary>Auswaehlbare Update-Pruef-Haeufigkeiten mit lokalisierter Beschriftung.</summary>
+    /// <summary>Auswählbare Update-Prüf-Häufigkeiten mit lokalisierter Beschriftung.</summary>
     public IReadOnlyList<SettingsOption<UpdateCheckFrequency>> UpdateFrequencies { get; }
 
-    /// <summary>Die aktuell gewaehlte Pruef-Haeufigkeit.</summary>
+    /// <summary>Die aktuell gewählte Prüf-Häufigkeit.</summary>
     public UpdateCheckFrequency SelectedFrequency => SelectedFrequencyOption?.Value ?? UpdateCheckFrequency.Weekly;
 
     /// <summary>Wahr, wenn ein Download-Link vorliegt.</summary>
     public bool IsDownloadAvailable => DownloadUri is not null;
 
-    /// <summary>Untere Grenze der Arbeitsdauer (Minuten) fuer das aktive Modell.</summary>
+    /// <summary>Untere Grenze der Arbeitsdauer (Minuten) für das aktive Modell.</summary>
     public int WorkMinMinutes { get; private set; } = (int)BreakInterval.MinWorkDuration.TotalMinutes;
 
-    /// <summary>Obere Grenze der Arbeitsdauer (Minuten) fuer das aktive Modell.</summary>
+    /// <summary>Obere Grenze der Arbeitsdauer (Minuten) für das aktive Modell.</summary>
     public int WorkMaxMinutes { get; private set; } = (int)BreakInterval.MaxWorkDuration.TotalMinutes;
 
     /// <summary>Untere Grenze der Pausendauer (Minuten).</summary>
@@ -211,46 +211,46 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Obere Grenze der Pausendauer (Minuten).</summary>
     public int BreakMaxMinutes => (int)BreakInterval.MaxBreakDuration.TotalMinutes;
 
-    /// <summary>Untere Grenze der Inaktivitaetsschwelle (Minuten).</summary>
+    /// <summary>Untere Grenze der Inaktivitätsschwelle (Minuten).</summary>
     public int IdleMinMinutes => Settings.MinIdleThresholdMinutes;
 
-    /// <summary>Obere Grenze der Inaktivitaetsschwelle (Minuten).</summary>
+    /// <summary>Obere Grenze der Inaktivitätsschwelle (Minuten).</summary>
     public int IdleMaxMinutes => Settings.MaxIdleThresholdMinutes;
 
     /// <summary>Wahr, wenn das aktive Modell die Arbeitsdauer nur in einem Bereich erlaubt.</summary>
     public bool HasWorkRange { get; private set; }
 
-    /// <summary>Das aktuell gewaehlte Pausenmodell.</summary>
+    /// <summary>Das aktuell gewählte Pausenmodell.</summary>
     public BreakModel SelectedModel => SelectedModelOption?.Value ?? BreakModel.ClassicPomodoro;
 
-    /// <summary>Die aktuell gewaehlte Sprache.</summary>
+    /// <summary>Die aktuell gewählte Sprache.</summary>
     public Language SelectedLanguage => SelectedLanguageOption?.Value ?? Language.German;
 
-    /// <summary>Der aktuell gewaehlte Erinnerungston.</summary>
+    /// <summary>Der aktuell gewählte Erinnerungston.</summary>
     public SoundType SelectedSound => SelectedSoundOption?.Value ?? SoundType.Chime;
 
-    /// <summary>Untere Grenze der Lautstaerke.</summary>
+    /// <summary>Untere Grenze der Lautstärke.</summary>
     public int SoundVolumeMin => Settings.MinSoundVolumePercent;
 
-    /// <summary>Obere Grenze der Lautstaerke.</summary>
+    /// <summary>Obere Grenze der Lautstärke.</summary>
     public int SoundVolumeMax => Settings.MaxSoundVolumePercent;
 
-    /// <summary>Wahr, wenn die aktuellen Eingaben gespeichert werden duerfen.</summary>
+    /// <summary>Wahr, wenn die aktuellen Eingaben gespeichert werden dürfen.</summary>
     public bool CanPersist => WorkError is null && BreakError is null && HexColor.IsValid(BreakOverlayColor);
 
     /// <summary>Fenstertitel.</summary>
     public string Title => _localization.GetText(SettingsTextKeys.Title);
 
-    /// <summary>Tab-Ueberschrift "Allgemein".</summary>
+    /// <summary>Tab-Überschrift "Allgemein".</summary>
     public string TabGeneralHeader => _localization.GetText(SettingsTextKeys.TabGeneral);
 
-    /// <summary>Tab-Ueberschrift "Pausenmodell".</summary>
+    /// <summary>Tab-Überschrift "Pausenmodell".</summary>
     public string TabModelHeader => _localization.GetText(SettingsTextKeys.TabModel);
 
-    /// <summary>Tab-Ueberschrift "Eigene Intervalle".</summary>
+    /// <summary>Tab-Überschrift "Eigene Intervalle".</summary>
     public string TabIntervalsHeader => _localization.GetText(SettingsTextKeys.TabIntervals);
 
-    /// <summary>Tab-Ueberschrift "Ueber LookAway".</summary>
+    /// <summary>Tab-Überschrift "Über LookAway".</summary>
     public string TabAboutHeader => _localization.GetText(SettingsTextKeys.TabAbout);
 
     /// <summary>Beschriftung der Sprachauswahl.</summary>
@@ -262,7 +262,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Beschriftung der Auto-Pause-Option.</summary>
     public string IdlePauseLabel => _localization.GetText(SettingsTextKeys.IdlePauseLabel);
 
-    /// <summary>Beschriftung der Inaktivitaetsschwelle.</summary>
+    /// <summary>Beschriftung der Inaktivitätsschwelle.</summary>
     public string IdleThresholdLabel => _localization.GetText(SettingsTextKeys.IdleThresholdLabel);
 
     /// <summary>Beschriftung der DND-Option.</summary>
@@ -283,7 +283,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Beschriftung der Pausendauer.</summary>
     public string BreakLabel => _localization.GetText(SettingsTextKeys.BreakLabel);
 
-    /// <summary>Hinweis auf den erlaubten Arbeitsdauer-Bereich (leer, wenn unbeschraenkt).</summary>
+    /// <summary>Hinweis auf den erlaubten Arbeitsdauer-Bereich (leer, wenn unbeschränkt).</summary>
     public string WorkRangeText => HasWorkRange
         ? string.Format(CultureInfo.CurrentCulture, _localization.GetText(SettingsTextKeys.WorkRangeHint), WorkMinMinutes, WorkMaxMinutes)
         : string.Empty;
@@ -303,7 +303,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Beschriftung "Dokumentation".</summary>
     public string DocsLabel => _localization.GetText(SettingsTextKeys.DocsLabel);
 
-    /// <summary>URL zur Dokumentation (fuer einen HyperlinkButton); <c>null</c> bei ungueltigem Wert.</summary>
+    /// <summary>URL zur Dokumentation (für einen HyperlinkButton); <c>null</c> bei ungültigem Wert.</summary>
     public Uri? DocsUri =>
         Uri.TryCreate(_localization.GetText(SettingsTextKeys.DocsUrl), UriKind.Absolute, out Uri? uri) ? uri : null;
 
@@ -316,7 +316,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Beschriftung des Anwenden-Buttons.</summary>
     public string ApplyLabel => _localization.GetText(SettingsTextKeys.ButtonApply);
 
-    /// <summary>Tab-Ueberschrift "Sound".</summary>
+    /// <summary>Tab-Überschrift "Sound".</summary>
     public string TabSoundHeader => _localization.GetText(SettingsTextKeys.TabSound);
 
     /// <summary>Beschriftung der Ton-aktivieren-Option.</summary>
@@ -325,13 +325,13 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Beschriftung der Ton-Auswahl.</summary>
     public string SoundSelectLabel => _localization.GetText(SettingsTextKeys.SoundSelectLabel);
 
-    /// <summary>Beschriftung der Lautstaerke.</summary>
+    /// <summary>Beschriftung der Lautstärke.</summary>
     public string SoundVolumeLabel => _localization.GetText(SettingsTextKeys.SoundVolumeLabel);
 
-    /// <summary>Beschriftung des Vorhoer-Buttons.</summary>
+    /// <summary>Beschriftung des Vorhör-Buttons.</summary>
     public string SoundPreviewLabel => _localization.GetText(SettingsTextKeys.SoundPreviewButton);
 
-    /// <summary>Tab-Ueberschrift "Hotkeys".</summary>
+    /// <summary>Tab-Überschrift "Hotkeys".</summary>
     public string TabHotkeysHeader => _localization.GetText(SettingsTextKeys.TabHotkeys);
 
     /// <summary>Beschriftung der Hotkey-aktivieren-Option.</summary>
@@ -340,25 +340,25 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Beschriftung der Aktion "Pause starten".</summary>
     public string HotkeyStartBreakLabel => _localization.GetText(SettingsTextKeys.HotkeyStartBreak);
 
-    /// <summary>Beschriftung der Aktion "Ueberspringen/Snooze".</summary>
+    /// <summary>Beschriftung der Aktion "Überspringen/Snooze".</summary>
     public string HotkeySkipOrSnoozeLabel => _localization.GetText(SettingsTextKeys.HotkeySkipOrSnooze);
 
     /// <summary>Beschriftung der Aktion "DND umschalten".</summary>
     public string HotkeyToggleDndLabel => _localization.GetText(SettingsTextKeys.HotkeyToggleDnd);
 
-    /// <summary>Beschriftung des Zuruecksetzen-Buttons.</summary>
+    /// <summary>Beschriftung des Zurücksetzen-Buttons.</summary>
     public string HotkeysResetLabel => _localization.GetText(SettingsTextKeys.HotkeysReset);
 
     /// <summary>Anzeigetext des "Pause starten"-Hotkeys.</summary>
     public string HotkeyStartBreakText => _hotkeyStartBreak.ToString();
 
-    /// <summary>Anzeigetext des "Ueberspringen/Snooze"-Hotkeys.</summary>
+    /// <summary>Anzeigetext des "Überspringen/Snooze"-Hotkeys.</summary>
     public string HotkeySkipOrSnoozeText => _hotkeySkipOrSnooze.ToString();
 
     /// <summary>Anzeigetext des "DND umschalten"-Hotkeys.</summary>
     public string HotkeyToggleDndText => _hotkeyToggleDnd.ToString();
 
-    /// <summary>Beschriftung "Auf Updates pruefen".</summary>
+    /// <summary>Beschriftung "Auf Updates prüfen".</summary>
     public string UpdateEnableLabel => _localization.GetText(SettingsTextKeys.UpdateEnableLabel);
 
     /// <summary>Beschriftung der Auto-Update-Option.</summary>
@@ -367,16 +367,16 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Hinweistext zur Auto-Update-Option.</summary>
     public string AutoUpdateHint => _localization.GetText(SettingsTextKeys.UpdateAutoHint);
 
-    /// <summary>Beschriftung der Pruef-Haeufigkeit.</summary>
+    /// <summary>Beschriftung der Prüf-Häufigkeit.</summary>
     public string UpdateFrequencyLabel => _localization.GetText(SettingsTextKeys.UpdateFrequencyLabel);
 
-    /// <summary>Beschriftung des "Jetzt pruefen"-Buttons.</summary>
+    /// <summary>Beschriftung des "Jetzt prüfen"-Buttons.</summary>
     public string UpdateCheckNowLabel => _localization.GetText(SettingsTextKeys.UpdateCheckNow);
 
     /// <summary>Download-Link-Text.</summary>
     public string UpdateDownloadLabel => _localization.GetText(SettingsTextKeys.UpdateDownload);
 
-    /// <summary>Tab-Ueberschrift "Pause-Aktionen".</summary>
+    /// <summary>Tab-Überschrift "Pause-Aktionen".</summary>
     public string TabPauseActionsHeader => _localization.GetText(SettingsTextKeys.TabPauseActions);
 
     /// <summary>Beschriftung "Bildschirm dimmen".</summary>
@@ -394,10 +394,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Beschriftung "Alle Bildschirme abdunkeln".</summary>
     public string DarkenAllScreensLabel => _localization.GetText(SettingsTextKeys.PauseActionsDarkenAllScreens);
 
-    /// <summary>Beschriftung des Overlay-Farbwaehlers.</summary>
+    /// <summary>Beschriftung des Overlay-Farbwählers.</summary>
     public string OverlayColorLabel => _localization.GetText(SettingsTextKeys.PauseActionsOverlayColor);
 
-    /// <summary>Hinweistext zum Overlay-Farbwaehler (Transparenz).</summary>
+    /// <summary>Hinweistext zum Overlay-Farbwähler (Transparenz).</summary>
     public string OverlayColorHint => _localization.GetText(SettingsTextKeys.PauseActionsOverlayColorHint);
 
     /// <summary>Untere Grenze der Pause-Helligkeit.</summary>
@@ -407,7 +407,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public int DimBrightnessMax => Settings.MaxDimBrightnessPercent;
 
     /// <summary>
-    /// Laedt die persistierten Einstellungen in das ViewModel. Vor dem ersten
+    /// Lädt die persistierten Einstellungen in das ViewModel. Vor dem ersten
     /// Anzeigen aufzurufen.
     /// </summary>
     /// <param name="cancellationToken">Abbruch-Token.</param>
@@ -462,23 +462,23 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         OnPropertyChanged(string.Empty);
     }
 
-    /// <summary>Waehlt das Modell anhand seines Werts (UI/Test-Hilfe).</summary>
-    /// <param name="model">Zu waehlendes Pausenmodell.</param>
+    /// <summary>Wählt das Modell anhand seines Werts (UI/Test-Hilfe).</summary>
+    /// <param name="model">Zu wählendes Pausenmodell.</param>
     public void SelectModel(BreakModel model)
         => SelectedModelOption = Models.First(option => option.Value == model);
 
-    /// <summary>Waehlt die Sprache anhand ihres Werts (UI/Test-Hilfe).</summary>
-    /// <param name="language">Zu waehlende Sprache.</param>
+    /// <summary>Wählt die Sprache anhand ihres Werts (UI/Test-Hilfe).</summary>
+    /// <param name="language">Zu wählende Sprache.</param>
     public void SelectLanguage(Language language)
         => SelectedLanguageOption = Languages.First(option => option.Value == language);
 
-    /// <summary>Waehlt den Erinnerungston anhand seines Werts (UI/Test-Hilfe).</summary>
-    /// <param name="soundType">Zu waehlender Ton.</param>
+    /// <summary>Wählt den Erinnerungston anhand seines Werts (UI/Test-Hilfe).</summary>
+    /// <param name="soundType">Zu wählender Ton.</param>
     public void SelectSound(SoundType soundType)
         => SelectedSoundOption = Sounds.First(option => option.Value == soundType);
 
-    /// <summary>Waehlt die Pruef-Haeufigkeit anhand ihres Werts (UI/Test-Hilfe).</summary>
-    /// <param name="frequency">Zu waehlende Haeufigkeit.</param>
+    /// <summary>Wählt die Prüf-Häufigkeit anhand ihres Werts (UI/Test-Hilfe).</summary>
+    /// <param name="frequency">Zu wählende Häufigkeit.</param>
     public void SelectFrequency(UpdateCheckFrequency frequency)
         => SelectedFrequencyOption = UpdateFrequencies.First(option => option.Value == frequency);
 
@@ -515,7 +515,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
         UpdateInfo info = await _updateChecker.CheckForUpdateAsync(cancellationToken).ConfigureAwait(true);
 
-        // Letzten Pruefzeitpunkt persistieren.
+        // Letzten Prüfzeitpunkt persistieren.
         Settings settings = await _settingsRepository.LoadAsync(cancellationToken).ConfigureAwait(true);
         settings.LastUpdateCheck = DateTimeOffset.UtcNow;
         await _settingsRepository.SaveAsync(settings, cancellationToken).ConfigureAwait(true);
@@ -548,7 +548,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void Cancel()
     {
-        // Nur Vorschau-Aenderungen verwerfen: zuletzt gespeicherte Sprache zurueck.
+        // Nur Vorschau-Änderungen verwerfen: zuletzt gespeicherte Sprache zurück.
         _localization.SetLanguage(_originalLanguage);
         CloseRequested?.Invoke(this, EventArgs.Empty);
     }
@@ -603,7 +603,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         catch (AutoStartException ex)
         {
             // Autostart ist optional (z. B. durch Gruppenrichtlinie gesperrt):
-            // die uebrigen Einstellungen werden trotzdem gespeichert.
+            // die übrigen Einstellungen werden trotzdem gespeichert.
             SettingsViewModelLog.AutoStartApplyFailed(_logger, ex);
         }
     }
@@ -654,8 +654,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
         UpdateModelRanges(value.Value);
 
-        // Bei Modellwechsel die Dauern auf die Modell-Vorgaben zuruecksetzen,
-        // damit zuvor eingegebene Werte nicht ausserhalb des neuen Bereichs liegen.
+        // Bei Modellwechsel die Dauern auf die Modell-Vorgaben zurücksetzen,
+        // damit zuvor eingegebene Werte nicht außerhalb des neuen Bereichs liegen.
         BreakInterval defaults = BreakModelRegistry.GetDefault(value.Value);
         WorkMinutes = (int)defaults.WorkDuration.TotalMinutes;
         BreakMinutes = (int)defaults.BreakDuration.TotalMinutes;
@@ -769,6 +769,6 @@ internal static partial class SettingsViewModelLog
     [LoggerMessage(
         EventId = 1200,
         Level = LogLevel.Warning,
-        Message = "Autostart konnte nicht angewendet werden — uebrige Einstellungen wurden trotzdem gespeichert.")]
+        Message = "Autostart konnte nicht angewendet werden — übrige Einstellungen wurden trotzdem gespeichert.")]
     public static partial void AutoStartApplyFailed(ILogger logger, Exception exception);
 }

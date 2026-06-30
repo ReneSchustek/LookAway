@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Application.Services;
 
 /// <summary>
-/// Source-generierte Logging-Methoden fuer den <see cref="TimerService"/>.
+/// Source-generierte Logging-Methoden für den <see cref="TimerService"/>.
 /// </summary>
 internal static partial class TimerServiceLog
 {
@@ -23,7 +23,7 @@ internal static partial class TimerServiceLog
     [LoggerMessage(
         EventId = 3010,
         Level = LogLevel.Information,
-        Message = "Pause faellig nach {WorkDuration}.")]
+        Message = "Pause fällig nach {WorkDuration}.")]
     public static partial void BreakDue(ILogger logger, TimeSpan workDuration);
 
     [LoggerMessage(
@@ -47,12 +47,12 @@ internal static partial class TimerServiceLog
     [LoggerMessage(
         EventId = 3022,
         Level = LogLevel.Information,
-        Message = "Abwesenheit {AwayDuration} (aus {PausedFromState}) >= Pausenlaenge — Arbeitsphase wird neu gestartet.")]
+        Message = "Abwesenheit {AwayDuration} (aus {PausedFromState}) >= Pausenlänge — Arbeitsphase wird neu gestartet.")]
     public static partial void TimerRestartedAfterAway(ILogger logger, TimerState pausedFromState, TimeSpan awayDuration);
 
     [LoggerMessage(
         EventId = 3099,
         Level = LogLevel.Critical,
-        Message = "Timer-Loop ist abgestuerzt; Service wird beendet.")]
+        Message = "Timer-Loop ist abgestürzt; Service wird beendet.")]
     public static partial void LoopCrashed(ILogger logger, Exception exception);
 }

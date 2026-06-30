@@ -10,18 +10,18 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Data.Services;
 
 /// <summary>
-/// Registriert globale Hotkeys ueber die Win32-API <c>RegisterHotKey</c>.
+/// Registriert globale Hotkeys über die Win32-API <c>RegisterHotKey</c>.
 /// Ein eigener Hintergrund-Thread betreibt ein nachrichtenfreies Fenster
-/// (<c>HWND_MESSAGE</c>) mit Message-Loop und empfaengt <c>WM_HOTKEY</c>.
+/// (<c>HWND_MESSAGE</c>) mit Message-Loop und empfängt <c>WM_HOTKEY</c>.
 /// </summary>
 /// <remarks>
-/// Registrierung und Freigabe laufen auf dem Thread, dem das Fenster gehoert;
-/// Aufrufe von aussen werden ueber eine gepostete Nachricht dorthin marshalled.
+/// Registrierung und Freigabe laufen auf dem Thread, dem das Fenster gehört;
+/// Aufrufe von aussen werden über eine gepostete Nachricht dorthin marshalled.
 /// </remarks>
 [SuppressMessage(
     "Usage",
     "CA2216:Disposable types should declare finalizer",
-    Justification = "Das einzige native Handle (Nachrichtenfenster) gehoert einem Hintergrund-Thread mit Prozess-Lebensdauer und wird in Dispose freigegeben; ein Finalizer koennte nicht sicher auf diesen Thread marshallen.")]
+    Justification = "Das einzige native Handle (Nachrichtenfenster) gehört einem Hintergrund-Thread mit Prozess-Lebensdauer und wird in Dispose freigegeben; ein Finalizer könnte nicht sicher auf diesen Thread marshallen.")]
 [System.Runtime.Versioning.SupportedOSPlatform("windows")]
 public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
 {
@@ -41,13 +41,13 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
     private Thread? _thread;
     private nint _hwnd;
     private nint _originalWndProc;
-    private WndProcDelegate? _wndProc; // Feld haelt das Delegate vor dem GC.
+    private WndProcDelegate? _wndProc; // Feld hält das Delegate vor dem GC.
     private bool _disposed;
 
     /// <summary>
     /// Erzeugt den Service und startet den Nachrichten-Thread.
     /// </summary>
-    /// <param name="logger">Logger fuer Registrierungs-Vorgaenge.</param>
+    /// <param name="logger">Logger für Registrierungs-Vorgänge.</param>
     public WindowsHotkeyService(ILogger<WindowsHotkeyService> logger)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -140,7 +140,7 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
                 ApplyPending();
                 return 0;
             case WmQuitLoop:
-                // Abbau auf dem Thread, dem das Fenster gehoert (Hotkeys sind thread-affin).
+                // Abbau auf dem Thread, dem das Fenster gehört (Hotkeys sind thread-affin).
                 TeardownOnMessageThread(hWnd);
                 return 0;
             default:
@@ -213,7 +213,7 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
         _disposed = true;
 
         // Abbau auf dem Message-Thread anstossen (Hotkeys sind thread-affin); der
-        // Handler gibt die Hotkeys frei, zerstoert das Fenster und beendet den Loop.
+        // Handler gibt die Hotkeys frei, zerstört das Fenster und beendet den Loop.
         nint hwnd = Volatile.Read(ref _hwnd);
         if (hwnd != 0)
         {
@@ -320,6 +320,6 @@ internal static partial class WindowsHotkeyServiceLog
     [LoggerMessage(EventId = 1500, Level = LogLevel.Warning, Message = "Hotkey-Nachrichtenfenster konnte nicht erstellt werden — globale Hotkeys sind inaktiv.")]
     public static partial void WindowCreationFailed(ILogger logger);
 
-    [LoggerMessage(EventId = 1501, Level = LogLevel.Warning, Message = "Hotkey fuer {Action} konnte nicht registriert werden (vermutlich von einer anderen App belegt).")]
+    [LoggerMessage(EventId = 1501, Level = LogLevel.Warning, Message = "Hotkey für {Action} konnte nicht registriert werden (vermutlich von einer anderen App belegt).")]
     public static partial void RegistrationFailed(ILogger logger, string action);
 }

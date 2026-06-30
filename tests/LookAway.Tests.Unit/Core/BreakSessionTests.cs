@@ -4,7 +4,7 @@ using LookAway.Core.Enums;
 namespace LookAway.Tests.Unit.Core;
 
 /// <summary>
-/// Tests fuer die Invarianten der <see cref="BreakSession"/>-Entitaet.
+/// Tests für die Invarianten der <see cref="BreakSession"/>-Entität.
 /// </summary>
 public sealed class BreakSessionTests
 {

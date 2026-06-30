@@ -9,7 +9,7 @@ namespace LookAway;
 [SuppressMessage(
     "Design",
     "CA1515:Consider making public types internal",
-    Justification = "WinUI-3-XAML-Compiler erfordert eine 'public partial'-Window-Klasse fuer die generierte InitializeComponent-Methode.")]
+    Justification = "WinUI-3-XAML-Compiler erfordert eine 'public partial'-Window-Klasse für die generierte InitializeComponent-Methode.")]
 public sealed partial class MainWindow : Window
 {
     /// <summary>

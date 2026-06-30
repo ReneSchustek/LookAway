@@ -2,8 +2,8 @@ namespace LookAway.Core.Enums;
 
 /// <summary>
 /// Modifikatortasten eines globalen Hotkeys. Die Werte entsprechen den Win32-
-/// <c>MOD_*</c>-Konstanten, damit sie direkt an <c>RegisterHotKey</c> uebergeben
-/// werden koennen.
+/// <c>MOD_*</c>-Konstanten, damit sie direkt an <c>RegisterHotKey</c> übergeben
+/// werden können.
 /// </summary>
 [Flags]
 public enum HotkeyModifiers

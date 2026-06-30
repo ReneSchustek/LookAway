@@ -3,9 +3,9 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Tests.Unit.Fakes;
 
 /// <summary>
-/// Deterministischer <see cref="IClock"/> fuer Tests. Die Zeit wird per
+/// Deterministischer <see cref="IClock"/> für Tests. Die Zeit wird per
 /// <see cref="Advance"/> oder <see cref="SetUtcNow"/> gesteuert; der
-/// Monotonic-Counter laeuft synchron zur Wallclock.
+/// Monotonic-Counter läuft synchron zur Wallclock.
 /// </summary>
 internal sealed class FakeClock : IClock
 {

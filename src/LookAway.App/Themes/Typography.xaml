@@ -10,7 +10,7 @@
     -->
     <FontFamily x:Key="RcFontFamily">Roboto, Segoe UI Variable Text, Segoe UI</FontFamily>
 
-    <!-- Schriftgroessen laut Designvorgabe. -->
+    <!-- Schriftgrößen laut Designvorgabe. -->
     <x:Double x:Key="RcFontSizeH1">28</x:Double>
     <x:Double x:Key="RcFontSizeH2">22</x:Double>
     <x:Double x:Key="RcFontSizeH3">18</x:Double>
@@ -51,7 +51,7 @@
         <Setter Property="Margin" Value="2,0,0,4" />
     </Style>
 
-    <!-- Sekundaerer, dezenter Beschreibungstext. -->
+    <!-- Sekundärer, dezenter Beschreibungstext. -->
     <Style x:Key="RcSecondaryTextStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource RcFontFamily}" />
         <Setter Property="Foreground" Value="{StaticResource RcTextSecondary}" />

@@ -10,17 +10,17 @@ using Microsoft.Win32;
 namespace LookAway.Data.Services;
 
 /// <summary>
-/// Traegt LookAway ueber den Registry-Schluessel
+/// Trägt LookAway über den Registry-Schlüssel
 /// <c>HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run</c> in den
-/// benutzerspezifischen Windows-Autostart ein. Es werden ausschliesslich
-/// <c>HKCU</c>-Schluessel verwendet — damit sind keine Administrator-Rechte
+/// benutzerspezifischen Windows-Autostart ein. Es werden ausschließlich
+/// <c>HKCU</c>-Schlüssel verwendet — damit sind keine Administrator-Rechte
 /// erforderlich.
 /// </summary>
 /// <remarks>
-/// Der Eintragswert wird als vollstaendiger, in Anfuehrungszeichen gesetzter
+/// Der Eintragswert wird als vollständiger, in Anführungszeichen gesetzter
 /// Pfad gespeichert (Pfade mit Leerzeichen, z. B. <c>C:\Program Files\…</c>,
-/// muessen quotiert sein). <see cref="Enable"/> ist idempotent und korrigiert
-/// einen veralteten Pfad selbsttaetig.
+/// müssen quotiert sein). <see cref="Enable"/> ist idempotent und korrigiert
+/// einen veralteten Pfad selbsttätig.
 /// </remarks>
 [SupportedOSPlatform("windows")]
 public sealed class RegistryAutoStartService : IAutoStartService
@@ -29,7 +29,7 @@ public sealed class RegistryAutoStartService : IAutoStartService
     private const string DefaultValueName = "LookAway";
 
     /// <summary>
-    /// Startargument fuer den Autostart. LookAway laeuft ohnehin im Tray, das
+    /// Startargument für den Autostart. LookAway läuft ohnehin im Tray, das
     /// Argument macht die Absicht im Registry-Eintrag jedoch sichtbar und wird
     /// von der Anwendung toleriert.
     /// </summary>
@@ -38,7 +38,7 @@ public sealed class RegistryAutoStartService : IAutoStartService
     private const string ReadFailedMessage = "Autostart-Status konnte nicht aus der Registry gelesen werden.";
     private const string WriteFailedMessage = "Autostart-Eintrag konnte nicht in die Registry geschrieben werden.";
     private const string DeleteFailedMessage = "Autostart-Eintrag konnte nicht aus der Registry entfernt werden.";
-    private const string PathFailedMessage = "Pfad zur ausfuehrbaren LookAway-Datei konnte nicht ermittelt werden.";
+    private const string PathFailedMessage = "Pfad zur ausführbaren LookAway-Datei konnte nicht ermittelt werden.";
 
     private readonly string _valueName;
     private readonly Func<string> _executablePathProvider;
@@ -48,7 +48,7 @@ public sealed class RegistryAutoStartService : IAutoStartService
     /// Erzeugt den Dienst mit dem Produktions-Eintragsnamen <c>LookAway</c> und
     /// dem Pfad des aktuell laufenden Prozesses.
     /// </summary>
-    /// <param name="logger">Logger fuer Autostart-Vorgaenge.</param>
+    /// <param name="logger">Logger für Autostart-Vorgänge.</param>
     public RegistryAutoStartService(ILogger<RegistryAutoStartService> logger)
         : this(DefaultValueName, ResolveCurrentExecutablePath, logger)
     {
@@ -56,12 +56,12 @@ public sealed class RegistryAutoStartService : IAutoStartService
 
     /// <summary>
     /// Erzeugt den Dienst mit explizitem Eintragsnamen und Pfad-Quelle.
-    /// Vorgesehen fuer Integrationstests, die einen eindeutigen Eintragsnamen
-    /// nutzen und nach dem Test wieder aufraeumen.
+    /// Vorgesehen für Integrationstests, die einen eindeutigen Eintragsnamen
+    /// nutzen und nach dem Test wieder aufräumen.
     /// </summary>
-    /// <param name="valueName">Name des Registry-Werts unter dem Run-Schluessel.</param>
+    /// <param name="valueName">Name des Registry-Werts unter dem Run-Schlüssel.</param>
     /// <param name="executablePathProvider">Liefert den einzutragenden Programmpfad.</param>
-    /// <param name="logger">Logger fuer Autostart-Vorgaenge.</param>
+    /// <param name="logger">Logger für Autostart-Vorgänge.</param>
     public RegistryAutoStartService(
         string valueName,
         Func<string> executablePathProvider,
@@ -161,11 +161,11 @@ public sealed class RegistryAutoStartService : IAutoStartService
     }
 
     /// <summary>
-    /// Baut den Registry-Wert: vollstaendiger Pfad in Anfuehrungszeichen, gefolgt
-    /// vom Start-Argument. Anfuehrungszeichen sind Pflicht, da der Pfad
+    /// Baut den Registry-Wert: vollständiger Pfad in Anführungszeichen, gefolgt
+    /// vom Start-Argument. Anführungszeichen sind Pflicht, da der Pfad
     /// Leerzeichen enthalten kann.
     /// </summary>
-    /// <param name="executablePath">Vollstaendiger Pfad zur ausfuehrbaren Datei.</param>
+    /// <param name="executablePath">Vollständiger Pfad zur ausführbaren Datei.</param>
     /// <returns>Der zu speichernde Befehlszeilen-String.</returns>
     private static string BuildRunCommand(string executablePath)
     {
@@ -173,10 +173,10 @@ public sealed class RegistryAutoStartService : IAutoStartService
     }
 
     /// <summary>
-    /// Ermittelt den Pfad der aktuell laufenden ausfuehrbaren Datei ueber das
+    /// Ermittelt den Pfad der aktuell laufenden ausführbaren Datei über das
     /// Hauptmodul des Prozesses.
     /// </summary>
-    /// <returns>Vollstaendiger Pfad zur LookAway.App.exe.</returns>
+    /// <returns>Vollständiger Pfad zur LookAway.App.exe.</returns>
     private static string ResolveCurrentExecutablePath()
     {
         try

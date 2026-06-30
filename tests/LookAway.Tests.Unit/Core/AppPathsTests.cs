@@ -4,7 +4,7 @@ using LookAway.Core.Domain;
 namespace LookAway.Tests.Unit.Core;
 
 /// <summary>
-/// Tests fuer die Datenverzeichnis-Aufloesung (Portable-Modus).
+/// Tests für die Datenverzeichnis-Auflösung (Portable-Modus).
 /// </summary>
 public sealed class AppPathsTests
 {

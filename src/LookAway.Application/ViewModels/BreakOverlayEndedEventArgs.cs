@@ -7,7 +7,7 @@ namespace LookAway.Application.ViewModels;
 /// </summary>
 public sealed class BreakOverlayEndedEventArgs : EventArgs
 {
-    /// <summary>Erzeugt die Argumente fuer den angegebenen Grund.</summary>
+    /// <summary>Erzeugt die Argumente für den angegebenen Grund.</summary>
     /// <param name="reason">Grund des Pausenendes.</param>
     public BreakOverlayEndedEventArgs(BreakEndReason reason) => Reason = reason;
 

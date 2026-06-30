@@ -13,7 +13,7 @@ namespace LookAway.Application.ViewModels;
 
 /// <summary>
 /// Zustand und Ablauflogik des First-Run-Wizards — UI-frei und damit
-/// ohne WinUI testbar. Fuehrt in drei Schritten durch Sprache, Pausenmodell und
+/// ohne WinUI testbar. Führt in drei Schritten durch Sprache, Pausenmodell und
 /// Autostart und persistiert beim Abschluss die Erstkonfiguration.
 /// </summary>
 public sealed partial class WelcomeViewModel : ObservableObject, IDisposable
@@ -44,10 +44,10 @@ public sealed partial class WelcomeViewModel : ObservableObject, IDisposable
     private bool _autoStart = true;
 
     /// <summary>
-    /// Erzeugt das ViewModel und waehlt die erkannte Sprache vor.
+    /// Erzeugt das ViewModel und wählt die erkannte Sprache vor.
     /// </summary>
     /// <param name="settingsRepository">Persistenz der Einstellungen.</param>
-    /// <param name="autoStartCoordinator">Haelt Einstellung und Registry synchron.</param>
+    /// <param name="autoStartCoordinator">Hält Einstellung und Registry synchron.</param>
     /// <param name="localization">Liefert Texte und steuert den Sprachwechsel.</param>
     /// <param name="logger">Logger.</param>
     /// <param name="detectedLanguage">Anhand der Systemkultur erkannte Startsprache.</param>
@@ -86,19 +86,19 @@ public sealed partial class WelcomeViewModel : ObservableObject, IDisposable
         SelectedModelOption = Models.First(option => option.Value == DefaultModel);
     }
 
-    /// <summary>Wird ausgeloest, wenn der Wizard erfolgreich abgeschlossen wurde.</summary>
+    /// <summary>Wird ausgelöst, wenn der Wizard erfolgreich abgeschlossen wurde.</summary>
     public event EventHandler<SettingsAppliedEventArgs>? Completed;
 
-    /// <summary>Auswaehlbare Sprachen mit lokalisierter Beschriftung.</summary>
+    /// <summary>Auswählbare Sprachen mit lokalisierter Beschriftung.</summary>
     public IReadOnlyList<SettingsOption<Language>> Languages { get; }
 
-    /// <summary>Auswaehlbare Pausenmodelle mit lokalisierter Beschriftung.</summary>
+    /// <summary>Auswählbare Pausenmodelle mit lokalisierter Beschriftung.</summary>
     public IReadOnlyList<SettingsOption<BreakModel>> Models { get; }
 
-    /// <summary>Die aktuell gewaehlte Sprache.</summary>
+    /// <summary>Die aktuell gewählte Sprache.</summary>
     public Language SelectedLanguage => SelectedLanguageOption?.Value ?? Language.German;
 
-    /// <summary>Das aktuell gewaehlte Pausenmodell.</summary>
+    /// <summary>Das aktuell gewählte Pausenmodell.</summary>
     public BreakModel SelectedModel => SelectedModelOption?.Value ?? DefaultModel;
 
     /// <summary>Wahr, solange der erste Schritt aktiv ist.</summary>
@@ -116,7 +116,7 @@ public sealed partial class WelcomeViewModel : ObservableObject, IDisposable
     /// <summary>Wahr, wenn der Autostart-Schritt aktiv ist.</summary>
     public bool IsStepAutoStart => CurrentStep == 2;
 
-    /// <summary>Soll der Zurueck-Button sichtbar sein?</summary>
+    /// <summary>Soll der Zurück-Button sichtbar sein?</summary>
     public bool ShowBackButton => !IsFirstStep;
 
     /// <summary>Soll der Weiter-Button sichtbar sein?</summary>
@@ -125,13 +125,13 @@ public sealed partial class WelcomeViewModel : ObservableObject, IDisposable
     /// <summary>Soll der Fertig-Button sichtbar sein?</summary>
     public bool ShowFinishButton => IsLastStep;
 
-    /// <summary>Begruessung.</summary>
+    /// <summary>Begrüßung.</summary>
     public string Title => _localization.GetText(WelcomeTextKeys.Title);
 
     /// <summary>Einleitungstext.</summary>
     public string Intro => _localization.GetText(WelcomeTextKeys.Intro);
 
-    /// <summary>Ueberschrift des aktuellen Schritts.</summary>
+    /// <summary>Überschrift des aktuellen Schritts.</summary>
     public string StepHeader => _localization.GetText(CurrentStep switch
     {
         0 => WelcomeTextKeys.StepLanguage,
@@ -158,10 +158,10 @@ public sealed partial class WelcomeViewModel : ObservableObject, IDisposable
     /// <summary>Hinweis zum Autostart.</summary>
     public string AutoStartHint => _localization.GetText(WelcomeTextKeys.AutoStartHint);
 
-    /// <summary>Hinweis zum Schliessen ohne Abschluss.</summary>
+    /// <summary>Hinweis zum Schließen ohne Abschluss.</summary>
     public string CloseHint => _localization.GetText(WelcomeTextKeys.CloseHint);
 
-    /// <summary>Beschriftung des Zurueck-Buttons.</summary>
+    /// <summary>Beschriftung des Zurück-Buttons.</summary>
     public string BackLabel => _localization.GetText(WelcomeTextKeys.ButtonBack);
 
     /// <summary>Beschriftung des Weiter-Buttons.</summary>

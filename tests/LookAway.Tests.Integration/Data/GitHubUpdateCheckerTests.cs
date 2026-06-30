@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace LookAway.Tests.Integration.Data;
 
 /// <summary>
-/// Tests fuer den <see cref="GitHubUpdateChecker"/> mit gefaketem HTTP-Zugriff.
+/// Tests für den <see cref="GitHubUpdateChecker"/> mit gefaketem HTTP-Zugriff.
 /// </summary>
 public sealed class GitHubUpdateCheckerTests
 {
@@ -63,7 +63,7 @@ public sealed class GitHubUpdateCheckerTests
     }
 
     [Fact]
-    public async Task CheckForUpdate_faellt_auf_erste_ZIP_zurueck_wenn_keine_Portable()
+    public async Task CheckForUpdate_fällt_auf_erste_ZIP_zurück_wenn_keine_Portable()
     {
         const string json = """
         {
@@ -165,7 +165,7 @@ public sealed class GitHubUpdateCheckerTests
     }
 
     [Fact]
-    public async Task CheckForUpdate_behandelt_ungueltiges_JSON_als_kein_Update()
+    public async Task CheckForUpdate_behandelt_ungültiges_JSON_als_kein_Update()
     {
         GitHubUpdateChecker checker = CreateChecker("nicht json", new Version(1, 0, 0));
 

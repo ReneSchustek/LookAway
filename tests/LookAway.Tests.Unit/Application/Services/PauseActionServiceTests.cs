@@ -4,7 +4,7 @@ using LookAway.Tests.Unit.Fakes;
 namespace LookAway.Tests.Unit.Application.Services;
 
 /// <summary>
-/// Tests fuer die UI-freie Koordination der Pause-Aktionen.
+/// Tests für die UI-freie Koordination der Pause-Aktionen.
 /// </summary>
 public sealed class PauseActionServiceTests
 {
@@ -56,7 +56,7 @@ public sealed class PauseActionServiceTests
     }
 
     [Fact]
-    public async Task EndBreak_setzt_Medien_nicht_fort_wenn_abgewaehlt()
+    public async Task EndBreak_setzt_Medien_nicht_fort_wenn_abgewählt()
     {
         PauseActionService service = Create(out _, out FakeMediaController media);
         service.PauseMediaEnabled = true;

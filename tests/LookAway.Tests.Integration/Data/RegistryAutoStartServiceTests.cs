@@ -6,10 +6,10 @@ using Microsoft.Win32;
 namespace LookAway.Tests.Integration.Data;
 
 /// <summary>
-/// Integrationstests fuer den <see cref="RegistryAutoStartService"/> gegen die
+/// Integrationstests für den <see cref="RegistryAutoStartService"/> gegen die
 /// echte Registry (<c>HKCU\…\Run</c>). Jeder Test verwendet einen eindeutigen
-/// Eintragsnamen und raeumt ihn in <see cref="Dispose"/> wieder ab — es werden
-/// nur <c>HKCU</c>-Schluessel beruehrt, daher keine Administrator-Rechte noetig.
+/// Eintragsnamen und räumt ihn in <see cref="Dispose"/> wieder ab — es werden
+/// nur <c>HKCU</c>-Schlüssel berührt, daher keine Administrator-Rechte nötig.
 /// </summary>
 [SupportedOSPlatform("windows")]
 public sealed class RegistryAutoStartServiceTests : IDisposable
@@ -19,8 +19,8 @@ public sealed class RegistryAutoStartServiceTests : IDisposable
     private readonly string _valueName;
 
     /// <summary>
-    /// Erzeugt fuer jeden Test einen eindeutigen Eintragsnamen, damit ein real
-    /// vorhandener <c>LookAway</c>-Autostart des Entwicklers nicht beruehrt wird.
+    /// Erzeugt für jeden Test einen eindeutigen Eintragsnamen, damit ein real
+    /// vorhandener <c>LookAway</c>-Autostart des Entwicklers nicht berührt wird.
     /// </summary>
     public RegistryAutoStartServiceTests()
     {

@@ -16,8 +16,8 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Services;
 
 /// <summary>
-/// Stellt das LookAway-Tray-Icon mit Kontextmenue bereit. Vereint die
-/// Tray-Bedienung mit den Domain-Operationen ueber den
+/// Stellt das LookAway-Tray-Icon mit Kontextmenü bereit. Vereint die
+/// Tray-Bedienung mit den Domain-Operationen über den
 /// <see cref="ITimerService"/>.
 /// </summary>
 /// <remarks>
@@ -53,17 +53,17 @@ internal sealed class TrayIconService : ITrayController, IDisposable
     private bool _disposed;
 
     /// <summary>
-    /// Erzeugt den Service mit den noetigen Abhaengigkeiten.
+    /// Erzeugt den Service mit den nötigen Abhängigkeiten.
     /// </summary>
-    /// <param name="timerService">Domain-Service fuer Pause/Resume.</param>
-    /// <param name="statusPresenter">Uebersetzt den Timer-Zustand in Icon und Tooltip.</param>
-    /// <param name="localization">Liefert die sprachabhaengigen Menue- und Tooltip-Texte.</param>
+    /// <param name="timerService">Domain-Service für Pause/Resume.</param>
+    /// <param name="statusPresenter">Übersetzt den Timer-Zustand in Icon und Tooltip.</param>
+    /// <param name="localization">Liefert die sprachabhängigen Menü- und Tooltip-Texte.</param>
     /// <param name="dispatcher">UI-Dispatcher des Hauptfensters.</param>
     /// <param name="logger">Logger.</param>
-    /// <param name="showSettingsHandler">Callback fuer Settings-Klick (zeigt das Hauptfenster).</param>
-    /// <param name="exitHandler">Callback fuer "Beenden".</param>
-    /// <param name="updateDownloadHandler">Callback fuer "Update herunterladen".</param>
-    /// <param name="startBreakHandler">Callback fuer "Pause jetzt starten".</param>
+    /// <param name="showSettingsHandler">Callback für Settings-Klick (zeigt das Hauptfenster).</param>
+    /// <param name="exitHandler">Callback für "Beenden".</param>
+    /// <param name="updateDownloadHandler">Callback für "Update herunterladen".</param>
+    /// <param name="startBreakHandler">Callback für "Pause jetzt starten".</param>
     public TrayIconService(
         ITimerService timerService,
         TrayStatusPresenter statusPresenter,
@@ -99,9 +99,9 @@ internal sealed class TrayIconService : ITrayController, IDisposable
     }
 
     /// <summary>
-    /// Zeigt oder verbirgt den "Update herunterladen"-Eintrag im Tray-Menue.
+    /// Zeigt oder verbirgt den "Update herunterladen"-Eintrag im Tray-Menü.
     /// </summary>
-    /// <param name="available">Ist ein Update verfuegbar?</param>
+    /// <param name="available">Ist ein Update verfügbar?</param>
     public void SetUpdateAvailable(bool available)
         => _ = _dispatcher.TryEnqueue(() =>
         {
@@ -214,7 +214,7 @@ internal sealed class TrayIconService : ITrayController, IDisposable
     };
 
     /// <summary>
-    /// Aktualisiert die Sichtbarkeit der Pause/Fortsetzen-Eintraege passend
+    /// Aktualisiert die Sichtbarkeit der Pause/Fortsetzen-Einträge passend
     /// zum aktuellen <see cref="TimerState"/>.
     /// </summary>
     public void UpdateMenuForState(TimerState state)
@@ -261,7 +261,7 @@ internal sealed class TrayIconService : ITrayController, IDisposable
             }
             catch (InvalidOperationException)
             {
-                // Tray-API kann beim Shutdown ueberraschend werfen — tolerieren.
+                // Tray-API kann beim Shutdown überraschend werfen — tolerieren.
             }
             _icon = null;
         }
@@ -341,7 +341,7 @@ internal sealed class TrayIconService : ITrayController, IDisposable
             _exitItem.Text = _localization.GetText(TrayTextKeys.MenuExit);
         }
 
-        // Toggle-Text haengt vom Zustand ab; Tooltip aktualisiert RefreshStatus.
+        // Toggle-Text hängt vom Zustand ab; Tooltip aktualisiert RefreshStatus.
         UpdateMenuForState(_timerService.State);
         RefreshStatus();
     }

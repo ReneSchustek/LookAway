@@ -24,7 +24,7 @@ internal sealed class ReminderPresenter : IReminderPresenter
     /// Erzeugt den Presenter mit dem UI-Dispatcher und der Lokalisierung.
     /// </summary>
     /// <param name="dispatcher">Dispatcher des Hauptfensters.</param>
-    /// <param name="localization">Liefert die sprachabhaengigen Texte.</param>
+    /// <param name="localization">Liefert die sprachabhängigen Texte.</param>
     public ReminderPresenter(DispatcherQueue dispatcher, ILocalizationService localization)
     {
         ArgumentNullException.ThrowIfNull(dispatcher);

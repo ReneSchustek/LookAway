@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Tests.Integration.Data.Logging;
 
 /// <summary>
-/// Integrationstests fuer den <see cref="RollingFileLoggerProvider"/>:
+/// Integrationstests für den <see cref="RollingFileLoggerProvider"/>:
 /// stellt sicher, dass Logger pro Kategorie wiederverwendet werden und
 /// IO-/Formatter-Fehler die Anwendung nicht zum Absturz bringen.
 /// </summary>
@@ -13,7 +13,7 @@ public sealed class RollingFileLoggerProviderTests : IDisposable
     private readonly string _logDirectory;
 
     /// <summary>
-    /// Legt fuer jeden Test ein eigenes Temp-Verzeichnis an.
+    /// Legt für jeden Test ein eigenes Temp-Verzeichnis an.
     /// </summary>
     public RollingFileLoggerProviderTests()
     {
@@ -22,7 +22,7 @@ public sealed class RollingFileLoggerProviderTests : IDisposable
     }
 
     /// <summary>
-    /// Raeumt das Temp-Verzeichnis nach dem Test wieder ab.
+    /// Räumt das Temp-Verzeichnis nach dem Test wieder ab.
     /// </summary>
     public void Dispose()
     {

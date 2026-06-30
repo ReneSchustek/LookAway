@@ -18,7 +18,7 @@ internal sealed partial class WelcomeWindow : Window
     private readonly WelcomeViewModel _viewModel;
 
     /// <summary>
-    /// Erzeugt das Fenster fuer das angegebene ViewModel.
+    /// Erzeugt das Fenster für das angegebene ViewModel.
     /// </summary>
     /// <param name="viewModel">Wizard-ViewModel.</param>
     public WelcomeWindow(WelcomeViewModel viewModel)

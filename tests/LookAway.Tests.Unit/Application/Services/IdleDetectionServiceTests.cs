@@ -7,9 +7,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace LookAway.Tests.Unit.Application.Services;
 
 /// <summary>
-/// Tests fuer den <see cref="IdleDetectionService"/> mit
-/// <see cref="FakeIdleDetector"/> und einem realen, ueber <see cref="FakeClock"/>
-/// gesteuerten <see cref="TimerService"/>. Der Timer wird je Test ueber
+/// Tests für den <see cref="IdleDetectionService"/> mit
+/// <see cref="FakeIdleDetector"/> und einem realen, über <see cref="FakeClock"/>
+/// gesteuerten <see cref="TimerService"/>. Der Timer wird je Test über
 /// <see cref="WithService"/> deterministisch freigegeben.
 /// </summary>
 public sealed class IdleDetectionServiceTests
@@ -62,8 +62,8 @@ public sealed class IdleDetectionServiceTests
     public void Evaluate_ActivityAfterLongIdle_RestartsWorkPhase() => WithService((service, idle, timer) =>
     {
         timer.Start(ClassicPomodoro);
-        // 6 min Inaktivitaet >= 5 min Pause: der Nutzer hat nicht auf den Schirm
-        // geschaut, daher startet der Arbeits-Timer beim Zurueckkehren frisch.
+        // 6 min Inaktivität >= 5 min Pause: der Nutzer hat nicht auf den Schirm
+        // geschaut, daher startet der Arbeits-Timer beim Zurückkehren frisch.
         idle.IdleTime = TimeSpan.FromMinutes(6);
         service.Evaluate();
 
@@ -117,7 +117,7 @@ public sealed class IdleDetectionServiceTests
     public void Evaluate_UserPause_NotAutoResumed() => WithService((service, idle, timer) =>
     {
         timer.Start(ClassicPomodoro);
-        timer.Pause(); // Benutzer-Pause, nicht durch Idle ausgeloest
+        timer.Pause(); // Benutzer-Pause, nicht durch Idle ausgelöst
         idle.IdleTime = TimeSpan.Zero;
 
         service.Evaluate();

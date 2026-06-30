@@ -5,7 +5,7 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Data.Services;
 
 /// <summary>
-/// Erkennt eine Vollbild-Anwendung im Vordergrund ueber Win32-APIs
+/// Erkennt eine Vollbild-Anwendung im Vordergrund über Win32-APIs
 /// (<c>GetForegroundWindow</c> + Vergleich von Fenster- und Monitor-Rechteck).
 /// Shell-Fenster (Desktop, Sperrbildschirm) werden ausgeschlossen.
 /// </summary>

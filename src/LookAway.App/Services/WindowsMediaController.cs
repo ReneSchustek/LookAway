@@ -10,7 +10,7 @@ using Windows.Media.Control;
 namespace LookAway.Services;
 
 /// <summary>
-/// Pausiert und reaktiviert die System-Medienwiedergabe ueber die SMTC-API
+/// Pausiert und reaktiviert die System-Medienwiedergabe über die SMTC-API
 /// (<see cref="GlobalSystemMediaTransportControlsSessionManager"/>).
 /// Fehlt die API oder eine Session, bleibt der Aufruf wirkungslos.
 /// </summary>
@@ -20,7 +20,7 @@ internal sealed class WindowsMediaController : IMediaController
     private readonly List<string> _pausedSources = new();
 
     /// <summary>Erzeugt die Medien-Steuerung.</summary>
-    /// <param name="logger">Logger fuer SMTC-Fehler.</param>
+    /// <param name="logger">Logger für SMTC-Fehler.</param>
     public WindowsMediaController(ILogger<WindowsMediaController> logger)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -29,7 +29,7 @@ internal sealed class WindowsMediaController : IMediaController
 
     /// <inheritdoc />
     [SuppressMessage("Design", "CA1031:Do not catch general exception types",
-        Justification = "SMTC ist optional: jeder Fehler wird geloggt und ignoriert, damit die App nie abstuerzt.")]
+        Justification = "SMTC ist optional: jeder Fehler wird geloggt und ignoriert, damit die App nie abstürzt.")]
     public async Task PauseAllAsync(CancellationToken cancellationToken = default)
     {
         _pausedSources.Clear();
@@ -57,7 +57,7 @@ internal sealed class WindowsMediaController : IMediaController
 
     /// <inheritdoc />
     [SuppressMessage("Design", "CA1031:Do not catch general exception types",
-        Justification = "SMTC ist optional: jeder Fehler wird geloggt und ignoriert, damit die App nie abstuerzt.")]
+        Justification = "SMTC ist optional: jeder Fehler wird geloggt und ignoriert, damit die App nie abstürzt.")]
     public async Task ResumeAllAsync(CancellationToken cancellationToken = default)
     {
         if (_pausedSources.Count == 0)
@@ -94,7 +94,7 @@ internal sealed class WindowsMediaController : IMediaController
 /// </summary>
 internal static partial class MediaControllerLog
 {
-    [LoggerMessage(EventId = 1710, Level = LogLevel.Information, Message = "Medienwiedergabe konnte nicht pausiert werden (SMTC nicht verfuegbar?).")]
+    [LoggerMessage(EventId = 1710, Level = LogLevel.Information, Message = "Medienwiedergabe konnte nicht pausiert werden (SMTC nicht verfügbar?).")]
     public static partial void PauseFailed(ILogger logger, Exception exception);
 
     [LoggerMessage(EventId = 1711, Level = LogLevel.Warning, Message = "Medienwiedergabe konnte nicht fortgesetzt werden.")]

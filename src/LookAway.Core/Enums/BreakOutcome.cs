@@ -11,6 +11,6 @@ public enum BreakOutcome
     /// <summary>Pause wurde verschoben (Snooze).</summary>
     Snoozed,
 
-    /// <summary>Pause wurde uebersprungen.</summary>
+    /// <summary>Pause wurde übersprungen.</summary>
     Skipped,
 }

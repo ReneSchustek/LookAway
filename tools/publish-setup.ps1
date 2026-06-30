@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     1. Publiziert LookAway.App self-contained (.NET + Windows App SDK) nach
-       dist\setup-publish — eine lauffaehige, unpackaged App ohne externe Runtime.
+       dist\setup-publish — eine lauffähige, unpackaged App ohne externe Runtime.
     2. Erzeugt das Setup-Icon (DIB-ICO) und kompiliert installer\LookAway.iss mit
        Inno Setup zur Setup.exe.
 
@@ -14,7 +14,7 @@
     Versionsnummer (Default: 1.1.0).
 
 .PARAMETER OutputDir
-    Zielordner fuer die fertige Setup.exe (Default: dist/ im Repo-Root).
+    Zielordner für die fertige Setup.exe (Default: dist/ im Repo-Root).
 
 .PARAMETER Runtime
     Ziel-RID (Default: win-x64).

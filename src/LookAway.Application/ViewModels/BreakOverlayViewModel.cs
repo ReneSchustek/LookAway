@@ -7,27 +7,27 @@ namespace LookAway.Application.ViewModels;
 /// Zustand und Countdown-Logik des Pausen-Overlays — UI-frei und damit ohne
 /// WinUI testbar. Die View (App-Schicht) dunkelt den Bildschirm ab, bindet an
 /// dieses ViewModel, ruft im Sekundentakt <see cref="Tick"/> auf und meldet
-/// einen ESC-Druck ueber <see cref="EndByUser"/>.
+/// einen ESC-Druck über <see cref="EndByUser"/>.
 /// </summary>
 /// <remarks>
 /// Das erste Ende gewinnt: ein abgelaufener Countdown und ein gleichzeitiger
-/// ESC-Druck koennen sich nicht gegenseitig ueberschreiben, und ein spaeter
+/// ESC-Druck können sich nicht gegenseitig überschreiben, und ein später
 /// <see cref="Tick"/> feuert kein zweites <see cref="Ended"/>.
 /// </remarks>
 public sealed class BreakOverlayViewModel
 {
-    /// <summary>Lokalisierungs-Schluessel des Overlay-Titels.</summary>
+    /// <summary>Lokalisierungs-Schlüssel des Overlay-Titels.</summary>
     public const string TitleKey = "Overlay.Title";
 
-    /// <summary>Lokalisierungs-Schluessel des ESC-Hinweises.</summary>
+    /// <summary>Lokalisierungs-Schlüssel des ESC-Hinweises.</summary>
     public const string EndHintKey = "Overlay.EndHint";
 
     private bool _ended;
 
     /// <summary>
-    /// Erzeugt das ViewModel fuer eine Pause.
+    /// Erzeugt das ViewModel für eine Pause.
     /// </summary>
-    /// <param name="hintKey">Lokalisierungs-Schluessel des Uebungs-Hinweises.</param>
+    /// <param name="hintKey">Lokalisierungs-Schlüssel des Übungs-Hinweises.</param>
     /// <param name="breakDuration">Dauer der Pause (positiv).</param>
     public BreakOverlayViewModel(string hintKey, TimeSpan breakDuration)
     {
@@ -43,10 +43,10 @@ public sealed class BreakOverlayViewModel
         RemainingSeconds = (int)Math.Ceiling(breakDuration.TotalSeconds);
     }
 
-    /// <summary>Wird ausgeloest, sobald die Pause endet (genau einmal).</summary>
+    /// <summary>Wird ausgelöst, sobald die Pause endet (genau einmal).</summary>
     public event EventHandler<BreakOverlayEndedEventArgs>? Ended;
 
-    /// <summary>Lokalisierungs-Schluessel des angezeigten Uebungs-Hinweises.</summary>
+    /// <summary>Lokalisierungs-Schlüssel des angezeigten Übungs-Hinweises.</summary>
     public string HintKey { get; }
 
     /// <summary>Verbleibende Pausensekunden.</summary>
@@ -55,7 +55,7 @@ public sealed class BreakOverlayViewModel
     /// <summary>Wahr, sobald die Pause beendet wurde.</summary>
     public bool IsEnded => _ended;
 
-    /// <summary>Verbleibende Zeit als <c>m:ss</c> fuer die Anzeige.</summary>
+    /// <summary>Verbleibende Zeit als <c>m:ss</c> für die Anzeige.</summary>
     public string RemainingDisplay
     {
         get
@@ -68,7 +68,7 @@ public sealed class BreakOverlayViewModel
     }
 
     /// <summary>
-    /// Zaehlt den Countdown um eine Sekunde herunter. Erreicht er null, endet
+    /// Zählt den Countdown um eine Sekunde herunter. Erreicht er null, endet
     /// die Pause mit <see cref="BreakEndReason.Elapsed"/>.
     /// </summary>
     public void Tick()

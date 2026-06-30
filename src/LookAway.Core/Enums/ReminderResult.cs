@@ -1,7 +1,7 @@
 namespace LookAway.Core.Enums;
 
 /// <summary>
-/// Die vom Benutzer (oder per Timeout) gewaehlte Reaktion auf eine
+/// Die vom Benutzer (oder per Timeout) gewählte Reaktion auf eine
 /// Pause-Erinnerung.
 /// </summary>
 public enum ReminderResult
@@ -12,6 +12,6 @@ public enum ReminderResult
     /// <summary>Erinnerung um wenige Minuten verschieben.</summary>
     Snooze,
 
-    /// <summary>Pause ueberspringen, naechster Arbeitszyklus beginnt.</summary>
+    /// <summary>Pause überspringen, nächster Arbeitszyklus beginnt.</summary>
     Skip,
 }

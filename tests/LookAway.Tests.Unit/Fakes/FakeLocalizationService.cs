@@ -4,9 +4,9 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Tests.Unit.Fakes;
 
 /// <summary>
-/// Test-Fake fuer <see cref="ILocalizationService"/>. Liefert sprachpraefigierte
-/// Texte (<c>"&lt;Sprache&gt;:&lt;Schluessel&gt;"</c>), damit Sprachwechsel in Tests
-/// sichtbar werden, und zaehlt die Sprachwechsel.
+/// Test-Fake für <see cref="ILocalizationService"/>. Liefert sprachpräfigierte
+/// Texte (<c>"&lt;Sprache&gt;:&lt;Schlüssel&gt;"</c>), damit Sprachwechsel in Tests
+/// sichtbar werden, und zählt die Sprachwechsel.
 /// </summary>
 internal sealed class FakeLocalizationService : ILocalizationService
 {
@@ -16,8 +16,8 @@ internal sealed class FakeLocalizationService : ILocalizationService
     /// <summary>Erzeugt den Fake mit einer Startsprache.</summary>
     /// <param name="initialLanguage">Anfangssprache.</param>
     /// <param name="table">
-    /// Optionale Texttabelle (Schluessel → Vorlage). Fehlt ein Schluessel, wird
-    /// <c>"&lt;Sprache&gt;:&lt;Schluessel&gt;"</c> geliefert.
+    /// Optionale Texttabelle (Schlüssel → Vorlage). Fehlt ein Schlüssel, wird
+    /// <c>"&lt;Sprache&gt;:&lt;Schlüssel&gt;"</c> geliefert.
     /// </param>
     public FakeLocalizationService(
         Language initialLanguage = Language.German,

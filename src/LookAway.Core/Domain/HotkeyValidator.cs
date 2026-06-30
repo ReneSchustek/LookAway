@@ -4,8 +4,8 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Core.Domain;
 
 /// <summary>
-/// Prueft globale Hotkeys auf Gueltigkeit und Kollisionen. Reine,
-/// plattformunabhaengige Logik — ohne echte Registrierung testbar.
+/// Prüft globale Hotkeys auf Gültigkeit und Kollisionen. Reine,
+/// plattformunabhängige Logik — ohne echte Registrierung testbar.
 /// </summary>
 public static class HotkeyValidator
 {
@@ -13,19 +13,19 @@ public static class HotkeyValidator
         HotkeyModifiers.Control | HotkeyModifiers.Alt | HotkeyModifiers.Win;
 
     /// <summary>
-    /// Eine Tastenkombination ist gueltig, wenn sie eine Taste und mindestens
+    /// Eine Tastenkombination ist gültig, wenn sie eine Taste und mindestens
     /// einen "echten" Modifikator (Strg, Alt oder Win) hat. Umschalt allein reicht
     /// nicht, da solche Kombinationen mit normaler Eingabe kollidieren.
     /// </summary>
-    /// <param name="definition">Zu pruefende Kombination.</param>
-    /// <returns><c>true</c>, wenn gueltig.</returns>
+    /// <param name="definition">Zu prüfende Kombination.</param>
+    /// <returns><c>true</c>, wenn gültig.</returns>
     public static bool IsValid(HotkeyDefinition definition)
         => definition.HasKey && (definition.Modifiers & RequiredAnyOf) != HotkeyModifiers.None;
 
     /// <summary>
-    /// Ermittelt Aktionen, die sich dieselbe (gueltige) Kombination teilen.
+    /// Ermittelt Aktionen, die sich dieselbe (gültige) Kombination teilen.
     /// </summary>
-    /// <param name="bindings">Zu pruefende Zuordnung.</param>
+    /// <param name="bindings">Zu prüfende Zuordnung.</param>
     /// <returns>Aktionen, die in einer Kollision stehen.</returns>
     public static IReadOnlyCollection<HotkeyAction> FindConflicts(
         IReadOnlyDictionary<HotkeyAction, HotkeyDefinition> bindings)
@@ -37,8 +37,8 @@ public static class HotkeyValidator
 
         for (int i = 0; i < entries.Count; i++)
         {
-            // Nur gueltige Bindungen koennen kollidieren; ungebundene/ungueltige
-            // (z. B. None+0) duerfen sich nicht gegenseitig als Konflikt melden.
+            // Nur gültige Bindungen können kollidieren; ungebundene/ungültige
+            // (z. B. None+0) dürfen sich nicht gegenseitig als Konflikt melden.
             if (!IsValid(entries[i].Value))
             {
                 continue;

@@ -4,7 +4,7 @@ using LookAway.Tests.Unit.Fakes;
 namespace LookAway.Tests.Unit.Application.Services;
 
 /// <summary>
-/// Tests fuer den <see cref="FullscreenDetectionService"/> mit
+/// Tests für den <see cref="FullscreenDetectionService"/> mit
 /// <see cref="FakeFullscreenDetector"/>: DND-Zustand und Nachhol-Logik der
 /// verpassten Erinnerung.
 /// </summary>
@@ -51,7 +51,7 @@ public sealed class FullscreenDetectionServiceTests
         (FullscreenDetectionService service, FakeFullscreenDetector detector) = Create();
         detector.IsActive = true;
         _ = service.Evaluate();
-        _ = service.TryShowReminder(); // unterdrueckt + gemerkt
+        _ = service.TryShowReminder(); // unterdrückt + gemerkt
 
         detector.IsActive = false;
         bool surfaceNow = service.Evaluate();

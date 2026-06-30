@@ -4,8 +4,8 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Tests.Unit.Fakes;
 
 /// <summary>
-/// Test-Fake fuer <see cref="ISoundService"/>: spielt keinen echten Ton, sondern
-/// merkt sich den letzten Aufruf und zaehlt die Wiedergaben.
+/// Test-Fake für <see cref="ISoundService"/>: spielt keinen echten Ton, sondern
+/// merkt sich den letzten Aufruf und zählt die Wiedergaben.
 /// </summary>
 internal sealed class FakeSoundService : ISoundService
 {
@@ -15,7 +15,7 @@ internal sealed class FakeSoundService : ISoundService
     /// <summary>Zuletzt abgespielter Ton.</summary>
     public SoundType? LastSound { get; private set; }
 
-    /// <summary>Zuletzt verwendete Lautstaerke.</summary>
+    /// <summary>Zuletzt verwendete Lautstärke.</summary>
     public int LastVolume { get; private set; }
 
     /// <inheritdoc />

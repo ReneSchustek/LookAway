@@ -9,9 +9,9 @@ using Windows.Media.Playback;
 namespace LookAway.Services;
 
 /// <summary>
-/// Spielt die eingebetteten Erinnerungstoene ueber einen wiederverwendeten
-/// <see cref="MediaPlayer"/> ab. Die Lautstaerke wird pro Wiedergabe
-/// gesetzt; Fehler (z. B. Audiogeraete-Wechsel) werden geschluckt.
+/// Spielt die eingebetteten Erinnerungstöne über einen wiederverwendeten
+/// <see cref="MediaPlayer"/> ab. Die Lautstärke wird pro Wiedergabe
+/// gesetzt; Fehler (z. B. Audiogeräte-Wechsel) werden geschluckt.
 /// </summary>
 internal sealed class SoundService : ISoundService, IDisposable
 {
@@ -25,7 +25,7 @@ internal sealed class SoundService : ISoundService, IDisposable
     /// <summary>
     /// Erzeugt den Service.
     /// </summary>
-    /// <param name="logger">Logger fuer Wiedergabefehler.</param>
+    /// <param name="logger">Logger für Wiedergabefehler.</param>
     public SoundService(ILogger<SoundService> logger)
     {
         ArgumentNullException.ThrowIfNull(logger);
@@ -36,7 +36,7 @@ internal sealed class SoundService : ISoundService, IDisposable
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
-        Justification = "Audiowiedergabe ist unkritisch: jeder Fehler (fehlendes Geraet, Geraetewechsel, COM-Fehler) wird geloggt und geschluckt, damit die App nie abstuerzt.")]
+        Justification = "Audiowiedergabe ist unkritisch: jeder Fehler (fehlendes Gerät, Gerätewechsel, COM-Fehler) wird geloggt und geschluckt, damit die App nie abstürzt.")]
     public void Play(SoundType soundType, int volumePercent)
     {
         if (_disposed)
@@ -56,7 +56,7 @@ internal sealed class SoundService : ISoundService, IDisposable
             MediaSource source = MediaSource.CreateFromUri(uri);
             _player.Source = source;
 
-            // Vorherige Quelle erst nach dem Umhaengen freigeben (kein COM-Leak).
+            // Vorherige Quelle erst nach dem Umhängen freigeben (kein COM-Leak).
             _currentSource?.Dispose();
             _currentSource = source;
 
@@ -66,7 +66,7 @@ internal sealed class SoundService : ISoundService, IDisposable
         catch (Exception ex)
         {
             // Audiowiedergabe darf die App nie zum Absturz bringen
-            // (z. B. fehlendes Geraet oder Geraetewechsel zur Laufzeit).
+            // (z. B. fehlendes Gerät oder Gerätewechsel zur Laufzeit).
             SoundServiceLog.PlaybackFailed(_logger, ex);
         }
     }

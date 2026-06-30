@@ -4,24 +4,24 @@ namespace LookAway.Core.ValueObjects;
 /// Arbeits-/Pausen-Intervall eines Pausenmodells als Rich-Domain-Value-Object.
 /// </summary>
 /// <remarks>
-/// Konstruktion ausschliesslich ueber die Factory <see cref="Create"/>, damit die
+/// Konstruktion ausschließlich über die Factory <see cref="Create"/>, damit die
 /// Invarianten (Wertebereiche und die Querbedingung <c>MaxLimit ≥ WorkDuration</c>)
-/// nie verletzt werden koennen. <see cref="MaxLimit"/> ist nur bei
+/// nie verletzt werden können. <see cref="MaxLimit"/> ist nur bei
 /// aufgabenbasierten Modellen gesetzt und begrenzt die maximale Arbeitsdauer
 /// ohne Pause.
 /// </remarks>
 public sealed record BreakInterval
 {
-    /// <summary>Untergrenze fuer Arbeitsdauer (5 Minuten).</summary>
+    /// <summary>Untergrenze für Arbeitsdauer (5 Minuten).</summary>
     public static readonly TimeSpan MinWorkDuration = TimeSpan.FromMinutes(5);
 
-    /// <summary>Obergrenze fuer Arbeitsdauer (8 Stunden).</summary>
+    /// <summary>Obergrenze für Arbeitsdauer (8 Stunden).</summary>
     public static readonly TimeSpan MaxWorkDuration = TimeSpan.FromHours(8);
 
-    /// <summary>Untergrenze fuer Pausendauer (1 Minute).</summary>
+    /// <summary>Untergrenze für Pausendauer (1 Minute).</summary>
     public static readonly TimeSpan MinBreakDuration = TimeSpan.FromMinutes(1);
 
-    /// <summary>Obergrenze fuer Pausendauer (2 Stunden).</summary>
+    /// <summary>Obergrenze für Pausendauer (2 Stunden).</summary>
     public static readonly TimeSpan MaxBreakDuration = TimeSpan.FromHours(2);
 
     private BreakInterval()
@@ -47,7 +47,7 @@ public sealed record BreakInterval
     /// <param name="breakDuration">Pausendauer (zwischen <see cref="MinBreakDuration"/> und <see cref="MaxBreakDuration"/>).</param>
     /// <param name="maxLimit">Optionales Arbeits-Maximum; muss &#8805; <paramref name="workDuration"/> sein.</param>
     /// <returns>Das validierte <see cref="BreakInterval"/>.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Ein Wert liegt ausserhalb seines gueltigen Bereichs.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Ein Wert liegt außerhalb seines gültigen Bereichs.</exception>
     /// <exception cref="ArgumentException"><paramref name="maxLimit"/> ist kleiner als <paramref name="workDuration"/>.</exception>
     public static BreakInterval Create(
         TimeSpan workDuration,

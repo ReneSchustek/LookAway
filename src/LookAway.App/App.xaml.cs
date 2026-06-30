@@ -27,7 +27,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 
-// Aliase aufloesen Namespace-Kollisionen mit Microsoft.UI.Xaml und System.
+// Aliase auflösen Namespace-Kollisionen mit Microsoft.UI.Xaml und System.
 using AutoStartCoordinator = LookAway.Application.Services.AutoStartCoordinator;
 using BreakReminderViewModel = LookAway.Application.ViewModels.BreakReminderViewModel;
 using SettingsViewModel = LookAway.Application.ViewModels.SettingsViewModel;
@@ -54,12 +54,12 @@ namespace LookAway;
 /// <summary>
 /// Anwendungs-Bootstrap. Konfiguriert das DI-Container, das Logging
 /// (Datei-Sink mit Rotation), die globalen Crash-Handler und das
-/// Tray-Icon. Stellt sicher, dass nur eine Instanz pro Benutzer laeuft.
+/// Tray-Icon. Stellt sicher, dass nur eine Instanz pro Benutzer läuft.
 /// </summary>
 [SuppressMessage(
     "Design",
     "CA1515:Consider making public types internal",
-    Justification = "WinUI-3-XAML-Compiler erfordert eine 'public partial'-App-Klasse fuer den generierten Activator.")]
+    Justification = "WinUI-3-XAML-Compiler erfordert eine 'public partial'-App-Klasse für den generierten Activator.")]
 [SuppressMessage(
     "Design",
     "CA1001:Types that own disposable fields should be disposable",
@@ -75,7 +75,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     private const string ShutdownReasonSecondInstance = "SecondInstanceDetected";
 
     /// <summary>
-    /// Globaler Service-Provider, ueber den alle Schichten ihre Abhaengigkeiten beziehen.
+    /// Globaler Service-Provider, über den alle Schichten ihre Abhängigkeiten beziehen.
     /// </summary>
     public static IServiceProvider Services { get; private set; } = null!;
 
@@ -121,7 +121,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         catch (Exception ex)
         {
             // Startfehler vor der Handler-Registrierung werden sonst nicht
-            // protokolliert. Bestes Bemuehen: in eine Datei schreiben, dann weiter.
+            // protokolliert. Bestes Bemühen: in eine Datei schreiben, dann weiter.
             WriteStartupError(ex);
             throw;
         }
@@ -130,7 +130,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
-        Justification = "Letzte Diagnose-Chance fuer Startfehler: jede Ausnahme wird in eine Datei geschrieben und anschliessend weitergereicht.")]
+        Justification = "Letzte Diagnose-Chance für Startfehler: jede Ausnahme wird in eine Datei geschrieben und anschliessend weitergereicht.")]
     private static void WriteStartupError(Exception exception)
     {
         try
@@ -151,7 +151,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     }
 
     /// <summary>
-    /// Wird beim Start aufgerufen. Pruefen Single-Instance, sonst Zeit-
+    /// Wird beim Start aufgerufen. Prüfen Single-Instance, sonst Zeit-
     /// instanz signalisieren und beenden. Bei alleiniger Instanz: Tray-Icon
     /// einblenden und das Hauptfenster verborgen halten.
     /// </summary>
@@ -204,7 +204,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     }
 
     /// <summary>
-    /// Startsequenz: beim allerersten Start fuehrt der Wizard durch die
+    /// Startsequenz: beim allerersten Start führt der Wizard durch die
     /// Erstkonfiguration; danach werden Tray und Timer eingerichtet.
     /// </summary>
     private async Task StartAsync()
@@ -220,7 +220,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
                 if (!completed)
                 {
                     // Der Benutzer hat den Wizard ohne Abschluss geschlossen —
-                    // ohne gueltige Konfiguration wird nicht weitergestartet.
+                    // ohne gültige Konfiguration wird nicht weitergestartet.
                     _logService?.LogShutdown(ShutdownReasonUserExit);
                     Exit();
                     return;
@@ -229,21 +229,21 @@ public partial class App : global::Microsoft.UI.Xaml.Application
                 settings = await repository.LoadAsync().ConfigureAwait(true);
             }
 
-            // Anzeigesprache aus der Konfiguration uebernehmen.
+            // Anzeigesprache aus der Konfiguration übernehmen.
             Services.GetRequiredService<ILocalizationService>().SetLanguage(settings.Language);
 
             InitializeTray();
 
-            // Registry ist die fuehrende Quelle fuer den Autostart-Zustand: ein
-            // manueller Eingriff wird uebernommen, ein veralteter Pfad korrigiert.
+            // Registry ist die führende Quelle für den Autostart-Zustand: ein
+            // manueller Eingriff wird übernommen, ein veralteter Pfad korrigiert.
             _ = SynchronizeAutoStartAsync();
 
-            // Alte Historie-Eintraege (>1 Jahr) aufraeumen — nicht startkritisch.
+            // Alte Historie-Einträge (>1 Jahr) aufräumen — nicht startkritisch.
             _ = PurgeHistoryAsync();
 
             StartTimer(settings);
 
-            // Update-Pruefung im Hintergrund — nicht startkritisch.
+            // Update-Prüfung im Hintergrund — nicht startkritisch.
             _ = CheckForUpdatesAtStartupAsync(settings);
         }
         catch (UnauthorizedAccessException ex)
@@ -278,7 +278,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         }
         catch (HttpRequestException ex)
         {
-            // Routinemaessiger Offline-Start darf nicht als unbeobachteter Fehler enden.
+            // Routinemäßiger Offline-Start darf nicht als unbeobachteter Fehler enden.
             AppLog.UpdateCheckPersistFailed(_logger!, ex);
             return;
         }
@@ -311,7 +311,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
             // Auto-Update: Paket im Hintergrund herunterladen, entpacken und Version
             // + Datei-Hash vermerken; das eigentliche Einspielen erfolgt beim
-            // naechsten Start nur fuer genau dieses (verifizierte) Paket.
+            // nächsten Start nur für genau dieses (verifizierte) Paket.
             if (settings.AutoUpdate && info.PackageUrl is not null)
             {
                 _ = AutoStageUpdateAsync(info);
@@ -322,7 +322,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     [SuppressMessage(
         "Reliability",
         "CA1031:Do not catch general exception types",
-        Justification = "Das Oeffnen des Browsers ist unkritisch; jeder Fehler wird geloggt, statt die App zu beenden.")]
+        Justification = "Das Öffnen des Browsers ist unkritisch; jeder Fehler wird geloggt, statt die App zu beenden.")]
     private void OpenUpdatePage()
     {
         if (_updateDownloadUrl is null)
@@ -341,13 +341,13 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     }
 
     // Tray-Aktion "Update": gefundene Aktualisierung herunterladen, entpacken und
-    // ueber den Helfer-Prozess sofort einspielen (App startet danach neu).
+    // über den Helfer-Prozess sofort einspielen (App startet danach neu).
     private void OnUpdateRequested() => _ = HandleUpdateRequestedAsync();
 
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
-        Justification = "Die manuelle Aktualisierung darf nie abstuerzen: bei jedem Fehler wird auf das Oeffnen der Release-Seite zurueckgefallen.")]
+        Justification = "Die manuelle Aktualisierung darf nie abstürzen: bei jedem Fehler wird auf das Öffnen der Release-Seite zurückgefallen.")]
     private async Task HandleUpdateRequestedAsync()
     {
         try
@@ -355,7 +355,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             UpdateInfo? info = _pendingUpdate;
             string target = AppContext.BaseDirectory;
 
-            // Ohne Paket-URL oder bei schreibgeschuetztem Programmordner: Release-Seite oeffnen.
+            // Ohne Paket-URL oder bei schreibgeschütztem Programmordner: Release-Seite öffnen.
             if (info?.PackageUrl is null || !UpdateInstallerService.IsDirectoryWritable(target))
             {
                 OpenUpdatePage();
@@ -381,8 +381,8 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         }
     }
 
-    // Laedt/entpackt das Update im Hintergrund und vermerkt Version + Datei-Hash in
-    // den Einstellungen, damit es beim naechsten Start verifiziert eingespielt wird.
+    // Lädt/entpackt das Update im Hintergrund und vermerkt Version + Datei-Hash in
+    // den Einstellungen, damit es beim nächsten Start verifiziert eingespielt wird.
     private async Task AutoStageUpdateAsync(UpdateInfo info)
     {
         StagedUpdate? staged = await Services.GetRequiredService<UpdateInstallerService>()
@@ -420,9 +420,9 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     }
 
     /// <summary>
-    /// Prueft beim Start auf ein bereits entpacktes, neueres Paket und spielt es
-    /// ueber den Helfer-Prozess ein. Gibt <c>true</c> zurueck, wenn diese Instanz
-    /// dafuer beendet wird.
+    /// Prüft beim Start auf ein bereits entpacktes, neueres Paket und spielt es
+    /// über den Helfer-Prozess ein. Gibt <c>true</c> zurück, wenn diese Instanz
+    /// dafür beendet wird.
     /// </summary>
     [SuppressMessage(
         "Design",
@@ -451,7 +451,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
             if (!UpdateInstallerService.IsDirectoryWritable(target))
             {
-                // z. B. "fuer alle Benutzer"-Installation in Programme — kein Auto-Tausch.
+                // z. B. "für alle Benutzer"-Installation in Programme — kein Auto-Tausch.
                 AppLog.UpdateTargetNotWritable(_logger!, target);
                 return false;
             }
@@ -482,7 +482,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     [SuppressMessage(
         "Design",
         "CA1031:Do not catch general exception types",
-        Justification = "Der Helfer darf nicht abstuerzen; bei Fehlern wird best-effort die installierte App gestartet.")]
+        Justification = "Der Helfer darf nicht abstürzen; bei Fehlern wird best-effort die installierte App gestartet.")]
     private void RunUpdateApply(UpdateApplyArgs apply)
     {
         _ = Task.Run(() =>
@@ -494,13 +494,13 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             }
             catch (Exception ex)
             {
-                // Bei Fehler hat ApplyStagedFiles auf den vorigen Stand zurueckgerollt.
+                // Bei Fehler hat ApplyStagedFiles auf den vorigen Stand zurückgerollt.
                 AppLog.UpdateApplyFailed(_logger!, ex);
             }
             finally
             {
                 // In jedem Fall die installierte App starten (neuer Stand bei Erfolg,
-                // zurueckgerollter, lauffaehiger Stand bei Fehler), dann den Helfer beenden.
+                // zurückgerollter, lauffähiger Stand bei Fehler), dann den Helfer beenden.
                 TryStartInstalledApp(apply.Target);
                 Environment.Exit(0);
             }
@@ -778,7 +778,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         Services.GetRequiredService<ILocalizationService>());
 
     /// <summary>
-    /// Uebernimmt gespeicherte Einstellungen sofort: startet den Timer mit dem
+    /// Übernimmt gespeicherte Einstellungen sofort: startet den Timer mit dem
     /// neuen Modell neu und aktualisiert Idle-/Vollbild-Erkennung sowie das Tray.
     /// </summary>
     private void ApplySettingsLive(Settings settings)
@@ -816,7 +816,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     private void OnActivationRequested(object? sender, EventArgs e)
     {
         AppLog.ActivationFromSecondInstance(_logger!);
-        // Zweitstart oeffnet die Einstellungen — das einzige echte Fenster der
+        // Zweitstart öffnet die Einstellungen — das einzige echte Fenster der
         // Tray-App; das verborgene Hauptfenster bliebe sonst leer.
         _ = OpenSettings();
     }
@@ -869,7 +869,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _ = services.AddSingleton<IMediaController>(sp => new WindowsMediaController(sp.GetRequiredService<ILogger<WindowsMediaController>>()));
         _ = services.AddSingleton<PauseActionService>();
 
-        // Update-Pruefung und automatische Installation
+        // Update-Prüfung und automatische Installation
         _ = services.AddSingleton<IHttpGetClient>(sp => new HttpGetClient(sp.GetRequiredService<ILogger<HttpGetClient>>()));
         _ = services.AddSingleton<IUpdateChecker>(sp => new GitHubUpdateChecker(
             sp.GetRequiredService<IHttpGetClient>(),
@@ -950,7 +950,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 }
 
 /// <summary>
-/// Source-generierte Logging-Methoden fuer die App-Klasse.
+/// Source-generierte Logging-Methoden für die App-Klasse.
 /// </summary>
 internal static partial class AppLog
 {
@@ -981,7 +981,7 @@ internal static partial class AppLog
     [LoggerMessage(
         EventId = 1130,
         Level = LogLevel.Warning,
-        Message = "Autostart-Abgleich beim Start fehlgeschlagen — Autostart bleibt unveraendert.")]
+        Message = "Autostart-Abgleich beim Start fehlgeschlagen — Autostart bleibt unverändert.")]
     public static partial void AutoStartSyncFailed(ILogger logger, Exception exception);
 
     [LoggerMessage(
@@ -993,19 +993,19 @@ internal static partial class AppLog
     [LoggerMessage(
         EventId = 1150,
         Level = LogLevel.Warning,
-        Message = "Pausen-Historie konnte nicht geschrieben werden — Statistik bleibt unveraendert.")]
+        Message = "Pausen-Historie konnte nicht geschrieben werden — Statistik bleibt unverändert.")]
     public static partial void HistoryWriteFailed(ILogger logger, Exception exception);
 
     [LoggerMessage(
         EventId = 1160,
         Level = LogLevel.Warning,
-        Message = "Update-Pruefung konnte nicht abgeschlossen werden.")]
+        Message = "Update-Prüfung konnte nicht abgeschlossen werden.")]
     public static partial void UpdateCheckPersistFailed(ILogger logger, Exception exception);
 
     [LoggerMessage(
         EventId = 1161,
         Level = LogLevel.Warning,
-        Message = "Die Update-Seite konnte nicht im Browser geoeffnet werden.")]
+        Message = "Die Update-Seite konnte nicht im Browser geöffnet werden.")]
     public static partial void BrowserOpenFailed(ILogger logger, Exception exception);
 
     [LoggerMessage(
@@ -1017,7 +1017,7 @@ internal static partial class AppLog
     [LoggerMessage(
         EventId = 1171,
         Level = LogLevel.Warning,
-        Message = "Programmordner {Directory} ist nicht beschreibbar — automatische Aktualisierung nicht moeglich.")]
+        Message = "Programmordner {Directory} ist nicht beschreibbar — automatische Aktualisierung nicht möglich.")]
     public static partial void UpdateTargetNotWritable(ILogger logger, string directory);
 
     [LoggerMessage(

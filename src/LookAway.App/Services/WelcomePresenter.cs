@@ -7,7 +7,7 @@ using Microsoft.UI.Dispatching;
 namespace LookAway.Services;
 
 /// <summary>
-/// Zeigt den First-Run-Wizard und meldet zurueck, ob er abgeschlossen wurde.
+/// Zeigt den First-Run-Wizard und meldet zurück, ob er abgeschlossen wurde.
 /// </summary>
 internal sealed class WelcomePresenter
 {

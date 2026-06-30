@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Data.Logging;
 
 /// <summary>
-/// <see cref="ILogger"/>-Implementation, die Eintraege in ein
+/// <see cref="ILogger"/>-Implementation, die Einträge in ein
 /// <see cref="RollingFileSink"/> weiterreicht.
 /// </summary>
 internal sealed class RollingFileLogger : ILogger

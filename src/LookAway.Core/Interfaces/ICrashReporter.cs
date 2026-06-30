@@ -4,8 +4,8 @@ namespace LookAway.Core.Interfaces;
 /// Persistiert unbehandelte Exceptions als nachvollziehbare Crash-Berichte.
 /// </summary>
 /// <remarks>
-/// Implementierungen muessen so robust sein, dass ein Fehler beim
-/// Schreiben des Crash-Berichts nicht selbst zu einem Crash fuehrt.
+/// Implementierungen müssen so robust sein, dass ein Fehler beim
+/// Schreiben des Crash-Berichts nicht selbst zu einem Crash führt.
 /// </remarks>
 public interface ICrashReporter
 {
@@ -27,8 +27,8 @@ public interface ICrashReporter
 
     /// <summary>
     /// Markiert alle bestehenden Crash-Berichte als vom Benutzer
-    /// gesehen. Loescht die Berichte nicht — sie bleiben fuer Diagnose
-    /// erhalten und werden ueber die Retention abgeraeumt.
+    /// gesehen. Löscht die Berichte nicht — sie bleiben für Diagnose
+    /// erhalten und werden über die Retention abgeräumt.
     /// </summary>
     void MarkResolved();
 }

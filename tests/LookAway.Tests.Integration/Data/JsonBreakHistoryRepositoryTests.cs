@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace LookAway.Tests.Integration.Data;
 
 /// <summary>
-/// Tests fuer das <see cref="JsonBreakHistoryRepository"/> gegen das echte
+/// Tests für das <see cref="JsonBreakHistoryRepository"/> gegen das echte
 /// Dateisystem.
 /// </summary>
 public sealed class JsonBreakHistoryRepositoryTests : IDisposable
@@ -52,7 +52,7 @@ public sealed class JsonBreakHistoryRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task PurgeOlderThan_entfernt_alte_Eintraege()
+    public async Task PurgeOlderThan_entfernt_alte_Einträge()
     {
         using JsonBreakHistoryRepository repository = CreateRepository();
         DateTimeOffset now = DateTimeOffset.UtcNow;

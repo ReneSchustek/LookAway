@@ -4,8 +4,8 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Core.Domain;
 
 /// <summary>
-/// Single source of truth fuer die fachlichen Pausenmodelle: Standardintervalle,
-/// erlaubte Anpassungsbereiche und die Lokalisierungs-Schluessel der Hinweise.
+/// Single source of truth für die fachlichen Pausenmodelle: Standardintervalle,
+/// erlaubte Anpassungsbereiche und die Lokalisierungs-Schlüssel der Hinweise.
 /// </summary>
 public static class BreakModelRegistry
 {
@@ -15,7 +15,7 @@ public static class BreakModelRegistry
     private const int TaskBasedMaxMinutes = 120;
 
     /// <summary>
-    /// Liefert das Standardintervall fuer das angegebene Modell.
+    /// Liefert das Standardintervall für das angegebene Modell.
     /// </summary>
     /// <param name="model">Pausenmodell.</param>
     /// <returns>Default-<see cref="BreakInterval"/> mit Arbeit, Pause und ggf. MaxLimit.</returns>
@@ -38,8 +38,8 @@ public static class BreakModelRegistry
             TimeSpan.FromMinutes(PhysicalCounterWorkDefaultMinutes),
             TimeSpan.FromMinutes(2)),
         BreakModel.TaskBased => BreakInterval.Create(
-            // Manueller Trigger; bis zur User-Aktion gilt die Hoechstgrenze
-            // als Arbeitsdauer, damit der Timer nicht endlos laeuft.
+            // Manueller Trigger; bis zur User-Aktion gilt die Höchstgrenze
+            // als Arbeitsdauer, damit der Timer nicht endlos läuft.
             TimeSpan.FromMinutes(TaskBasedMaxMinutes),
             TimeSpan.FromMinutes(10),
             TimeSpan.FromMinutes(TaskBasedMaxMinutes)),
@@ -50,15 +50,15 @@ public static class BreakModelRegistry
     };
 
     /// <summary>
-    /// Liefert das effektive Intervall: die Benutzer-Ueberschreibung, falls
+    /// Liefert das effektive Intervall: die Benutzer-Überschreibung, falls
     /// vorhanden, sonst die Modell-Defaults. Das modellspezifische
     /// <see cref="BreakInterval.MaxLimit"/> bleibt erhalten.
     /// </summary>
     /// <param name="model">Pausenmodell.</param>
     /// <param name="customDurations">Optionale Benutzerwerte; <c>null</c> = Defaults.</param>
     /// <returns>Das anzuwendende <see cref="BreakInterval"/>.</returns>
-    /// <exception cref="ArgumentOutOfRangeException">Unbekanntes Modell oder ungueltige Werte.</exception>
-    /// <exception cref="ArgumentException">MaxLimit kleiner als die ueberschriebene Arbeitsdauer.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Unbekanntes Modell oder ungültige Werte.</exception>
+    /// <exception cref="ArgumentException">MaxLimit kleiner als die überschriebene Arbeitsdauer.</exception>
     public static BreakInterval GetEffective(BreakModel model, CustomDurations? customDurations)
     {
         BreakInterval defaults = GetDefault(model);
@@ -74,9 +74,9 @@ public static class BreakModelRegistry
     }
 
     /// <summary>
-    /// Liefert den erlaubten Anpassungsbereich der Arbeitsdauer fuer Modelle mit
+    /// Liefert den erlaubten Anpassungsbereich der Arbeitsdauer für Modelle mit
     /// begrenzter Konfigurierbarkeit. Aktuell nur <c>PhysicalCounter</c>
-    /// (30–45 min); fuer alle anderen Modelle <c>null</c>.
+    /// (30–45 min); für alle anderen Modelle <c>null</c>.
     /// </summary>
     /// <param name="model">Pausenmodell.</param>
     /// <returns>Der Bereich oder <c>null</c>, wenn kein begrenzter Slider vorgesehen ist.</returns>
@@ -89,12 +89,12 @@ public static class BreakModelRegistry
     };
 
     /// <summary>
-    /// Liefert den Lokalisierungs-Schluessel des Uebungs-/Pausen-Hinweises fuer
+    /// Liefert den Lokalisierungs-Schlüssel des Übungs-/Pausen-Hinweises für
     /// das Modell. <c>ClassicPomodoro</c> und <c>ModifiedPomodoro</c> teilen sich
-    /// den Schluessel <see cref="BreakHintKeys.Pomodoro"/>.
+    /// den Schlüssel <see cref="BreakHintKeys.Pomodoro"/>.
     /// </summary>
     /// <param name="model">Pausenmodell.</param>
-    /// <returns>Der sprachneutrale Hinweis-Schluessel.</returns>
+    /// <returns>Der sprachneutrale Hinweis-Schlüssel.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Unbekanntes Modell.</exception>
     public static string GetHintKey(BreakModel model) => model switch
     {

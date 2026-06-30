@@ -13,7 +13,7 @@ public static class AppDataLocation
         => File.Exists(Path.Combine(AppContext.BaseDirectory, AppPaths.PortableFlagFileName));
 
     /// <summary>
-    /// Liefert das aktuell gueltige Datenverzeichnis (portabel neben der EXE,
+    /// Liefert das aktuell gültige Datenverzeichnis (portabel neben der EXE,
     /// sonst <c>%APPDATA%\LookAway</c>).
     /// </summary>
     public static string GetDataDirectory()

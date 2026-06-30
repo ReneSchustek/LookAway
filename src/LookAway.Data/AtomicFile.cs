@@ -1,8 +1,8 @@
 namespace LookAway.Data;
 
 /// <summary>
-/// Hilfen fuer atomares Ersetzen von Dateien (Temp-Datei + Rename). Geteilt von
-/// den JSON-Repositories, damit das Verhalten (Retry, Aufraeumen) einheitlich ist.
+/// Hilfen für atomares Ersetzen von Dateien (Temp-Datei + Rename). Geteilt von
+/// den JSON-Repositories, damit das Verhalten (Retry, Aufräumen) einheitlich ist.
 /// </summary>
 internal static class AtomicFile
 {
@@ -12,8 +12,8 @@ internal static class AtomicFile
     /// <summary>
     /// Ersetzt <paramref name="destinationPath"/> durch <paramref name="sourcePath"/>
     /// und wiederholt den Rename bei transienten Sharing-Fehlern (paralleler Reader,
-    /// Virenscanner). Schlaegt der Rename endgueltig fehl, wird die Temp-Datei nach
-    /// bestem Bemuehen entfernt und die Ausnahme weitergereicht.
+    /// Virenscanner). Schlägt der Rename endgültig fehl, wird die Temp-Datei nach
+    /// bestem Bemühen entfernt und die Ausnahme weitergereicht.
     /// </summary>
     /// <param name="sourcePath">Pfad der Temp-Datei.</param>
     /// <param name="destinationPath">Zielpfad.</param>
@@ -40,7 +40,7 @@ internal static class AtomicFile
             }
             catch (IOException)
             {
-                // Endgueltiger Fehlschlag: verwaiste Temp-Datei aufraeumen, dann weiterreichen.
+                // Endgültiger Fehlschlag: verwaiste Temp-Datei aufräumen, dann weiterreichen.
                 TryDelete(sourcePath);
                 throw;
             }
@@ -60,11 +60,11 @@ internal static class AtomicFile
         }
         catch (IOException)
         {
-            // Aufraeumen ist best-effort.
+            // Aufräumen ist best-effort.
         }
         catch (UnauthorizedAccessException)
         {
-            // Aufraeumen ist best-effort.
+            // Aufräumen ist best-effort.
         }
     }
 }

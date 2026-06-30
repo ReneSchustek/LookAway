@@ -1,12 +1,12 @@
 namespace LookAway.Core.Enums;
 
 /// <summary>
-/// Auswaehlbarer Erinnerungston. Die konkreten Audiodateien liefert
+/// Auswählbarer Erinnerungston. Die konkreten Audiodateien liefert
 /// die Implementierung von <see cref="LookAway.Core.Interfaces.ISoundService"/>.
 /// </summary>
 public enum SoundType
 {
-    /// <summary>Sanftes hohes Gloeckchen.</summary>
+    /// <summary>Sanftes hohes Glöckchen.</summary>
     Chime,
 
     /// <summary>Warmer Glockenton.</summary>

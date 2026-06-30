@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace LookAway.Tests.Unit.Application.Services;
 
 /// <summary>
-/// Tests fuer den <see cref="UpdateInstallerService"/>: Download/Entpacken in den
+/// Tests für den <see cref="UpdateInstallerService"/>: Download/Entpacken in den
 /// Staging-Ordner, Erkennung ausstehender Updates und der Datei-Tausch (inkl.
 /// Auslassen der Portable-Markierung und Erhalt von Benutzerdaten).
 /// </summary>
@@ -32,7 +32,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
         }
         catch (IOException)
         {
-            // Aufraeumen ist best-effort.
+            // Aufräumen ist best-effort.
         }
     }
 
@@ -113,7 +113,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task DownloadAndStage_bei_Paket_ohne_EXE_liefert_null_und_raeumt_auf()
+    public async Task DownloadAndStage_bei_Paket_ohne_EXE_liefert_null_und_räumt_auf()
     {
         byte[] zipWithoutExe = BuildZip(("readme.txt", "hallo"));
         string stagingRoot = Path.Combine(_root, "staging");
@@ -127,7 +127,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     [Fact]
     public async Task DownloadAndStage_lehnt_ZipSlip_ab_und_entkommt_nicht()
     {
-        byte[] zipSlip = BuildZip(("../escape.exe", "boese"), ("LookAway.exe", "x"));
+        byte[] zipSlip = BuildZip(("../escape.exe", "böse"), ("LookAway.exe", "x"));
         string stagingRoot = Path.Combine(_root, "staging");
         UpdateInstallerService service = CreateService(stagingRoot, zipSlip);
         UpdateInfo info = UpdateInfo.Create(new Version(1, 0, 0), "v1.5.0", null, null, "https://example.com/p.zip");
@@ -164,7 +164,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public void FindVerified_ignoriert_aeltere_oder_gleiche()
+    public void FindVerified_ignoriert_ältere_oder_gleiche()
     {
         string stagingRoot = Path.Combine(_root, "staging");
         StageVersion(stagingRoot, "1.5.0");
@@ -200,7 +200,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public void ApplyStagedFiles_ersetzt_Dateien_ohne_Portable_Flag_und_erhaelt_Benutzerdaten()
+    public void ApplyStagedFiles_ersetzt_Dateien_ohne_Portable_Flag_und_erhält_Benutzerdaten()
     {
         string source = Path.Combine(_root, "src");
         string target = Path.Combine(_root, "app");
@@ -224,12 +224,12 @@ public sealed class UpdateInstallerServiceTests : IDisposable
         Assert.Equal("neu", File.ReadAllText(Path.Combine(target, "Assets", "lib.dll")));
         // Benutzerdaten bleiben erhalten.
         Assert.Equal("benutzer", File.ReadAllText(Path.Combine(target, "settings.json")));
-        // Portable-Markierung wird nicht uebernommen.
+        // Portable-Markierung wird nicht übernommen.
         Assert.False(File.Exists(Path.Combine(target, "portable.flag")));
     }
 
     [Fact]
-    public void IsDirectoryWritable_ist_wahr_fuer_Temp_und_falsch_fuer_Unbekannt()
+    public void IsDirectoryWritable_ist_wahr_für_Temp_und_falsch_für_Unbekannt()
     {
         Assert.True(UpdateInstallerService.IsDirectoryWritable(_root));
         Assert.False(UpdateInstallerService.IsDirectoryWritable(Path.Combine(_root, "gibt-es-nicht")));

@@ -3,7 +3,7 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Tests.Unit.Fakes;
 
 /// <summary>
-/// Test-Fake fuer <see cref="IFullscreenDetector"/>. <see cref="IsActive"/>
+/// Test-Fake für <see cref="IFullscreenDetector"/>. <see cref="IsActive"/>
 /// steuert das Erkennungsergebnis deterministisch.
 /// </summary>
 internal sealed class FakeFullscreenDetector : IFullscreenDetector

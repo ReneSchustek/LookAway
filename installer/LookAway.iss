@@ -5,10 +5,10 @@
 ; Build (vom Repo-Root):
 ;   tools\publish-setup.ps1            -> publiziert + kompiliert die Setup.exe
 ; oder direkt:
-;   ISCC.exe /DMyAppVersion=1.0.1 installer\LookAway.iss
+;   ISCC.exe /DMyAppVersion=1.1.1 installer\LookAway.iss
 
 #ifndef MyAppVersion
-  #define MyAppVersion "1.0.2"
+  #define MyAppVersion "1.1.1"
 #endif
 #define MyAppName "LookAway"
 #define MyAppPublisher "Rene Schustek"

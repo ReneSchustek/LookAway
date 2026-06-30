@@ -79,7 +79,7 @@
 
   "Settings.About.VersionLabel": "Version",
   "Settings.About.LicenseLabel": "Licence",
-  "Settings.About.License": "Propriétaire – tous droits réservés.",
+  "Settings.About.License": "Licence MIT",
   "Settings.About.DocsLabel": "Documentation",
   "Settings.About.DocsUrl": "https://github.com/ReneSchustek/LookAway",
 

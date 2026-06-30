@@ -81,12 +81,14 @@ public sealed class UpdateInstallerServiceTests : IDisposable
         UpdateInstallerService service = CreateService(stagingRoot, BuildPackageZip());
         UpdateInfo info = UpdateInfo.Create(new Version(1, 0, 0), "v1.5.0", null, null, "https://example.com/p.zip");
 
-        string? staged = await service.DownloadAndStageAsync(info);
+        StagedUpdate? staged = await service.DownloadAndStageAsync(info);
 
         Assert.NotNull(staged);
-        Assert.True(File.Exists(Path.Combine(staged!, "LookAway.exe")));
-        Assert.True(File.Exists(Path.Combine(staged!, "Assets", "sound.wav")));
-        Assert.EndsWith("1.5.0", staged, StringComparison.Ordinal);
+        Assert.True(File.Exists(Path.Combine(staged!.Directory, "LookAway.exe")));
+        Assert.True(File.Exists(Path.Combine(staged.Directory, "Assets", "sound.wav")));
+        Assert.EndsWith("1.5.0", staged.Directory, StringComparison.Ordinal);
+        Assert.Equal("1.5.0", staged.Version);
+        Assert.False(string.IsNullOrEmpty(staged.ExecutableSha256));
     }
 
     [Fact]
@@ -95,7 +97,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
         UpdateInstallerService service = CreateService(Path.Combine(_root, "staging"), BuildPackageZip());
         UpdateInfo info = UpdateInfo.Create(new Version(1, 0, 0), "v1.5.0", "https://example.com/r", null);
 
-        string? staged = await service.DownloadAndStageAsync(info);
+        StagedUpdate? staged = await service.DownloadAndStageAsync(info);
 
         Assert.Null(staged);
     }
@@ -123,29 +125,64 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public void FindPending_liefert_hoechste_neuere_Version()
+    public async Task DownloadAndStage_lehnt_ZipSlip_ab_und_entkommt_nicht()
     {
+        byte[] zipSlip = BuildZip(("../escape.exe", "boese"), ("LookAway.exe", "x"));
         string stagingRoot = Path.Combine(_root, "staging");
-        StageVersion(stagingRoot, "1.4.0");
-        StageVersion(stagingRoot, "1.6.0");
-        StageVersion(stagingRoot, "1.5.0");
-        UpdateInstallerService service = CreateService(stagingRoot);
+        UpdateInstallerService service = CreateService(stagingRoot, zipSlip);
+        UpdateInfo info = UpdateInfo.Create(new Version(1, 0, 0), "v1.5.0", null, null, "https://example.com/p.zip");
 
-        string? pending = service.FindPendingUpdateDirectory(new Version(1, 5, 0));
-
-        Assert.NotNull(pending);
-        Assert.EndsWith("1.6.0", pending, StringComparison.Ordinal);
+        Assert.Null(await service.DownloadAndStageAsync(info));
+        // Kein Ausbruch aus dem Staging-Wurzelverzeichnis.
+        Assert.False(File.Exists(Path.Combine(_root, "escape.exe")));
     }
 
     [Fact]
-    public void FindPending_ignoriert_aeltere_oder_gleiche()
+    public void FindVerified_liefert_Ordner_bei_passendem_Hash()
     {
         string stagingRoot = Path.Combine(_root, "staging");
-        StageVersion(stagingRoot, "1.4.0");
-        StageVersion(stagingRoot, "1.5.0");
+        StageVersion(stagingRoot, "1.6.0");
+        UpdateInstallerService service = CreateService(stagingRoot);
+        string sha = UpdateInstallerService.ComputeFileHash(
+            UpdateInstallerService.ExecutablePathIn(Path.Combine(stagingRoot, "1.6.0")));
+
+        string? pending = service.FindVerifiedPendingUpdateDirectory(new Version(1, 5, 0), "1.6.0", sha);
+
+        Assert.NotNull(pending);
+        Assert.EndsWith("1.6.0", pending!, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void FindVerified_lehnt_falschen_Hash_ab()
+    {
+        string stagingRoot = Path.Combine(_root, "staging");
+        StageVersion(stagingRoot, "1.6.0");
         UpdateInstallerService service = CreateService(stagingRoot);
 
-        Assert.Null(service.FindPendingUpdateDirectory(new Version(1, 5, 0)));
+        // Untergeschobener Ordner ohne passenden vermerkten Hash -> nicht angewendet.
+        Assert.Null(service.FindVerifiedPendingUpdateDirectory(new Version(1, 5, 0), "1.6.0", "deadbeef"));
+    }
+
+    [Fact]
+    public void FindVerified_ignoriert_aeltere_oder_gleiche()
+    {
+        string stagingRoot = Path.Combine(_root, "staging");
+        StageVersion(stagingRoot, "1.5.0");
+        UpdateInstallerService service = CreateService(stagingRoot);
+        string sha = UpdateInstallerService.ComputeFileHash(
+            UpdateInstallerService.ExecutablePathIn(Path.Combine(stagingRoot, "1.5.0")));
+
+        Assert.Null(service.FindVerifiedPendingUpdateDirectory(new Version(1, 5, 0), "1.5.0", sha));
+    }
+
+    [Fact]
+    public void FindVerified_ohne_Vermerk_liefert_null()
+    {
+        string stagingRoot = Path.Combine(_root, "staging");
+        StageVersion(stagingRoot, "1.6.0");
+        UpdateInstallerService service = CreateService(stagingRoot);
+
+        Assert.Null(service.FindVerifiedPendingUpdateDirectory(new Version(1, 5, 0), null, null));
     }
 
     [Fact]

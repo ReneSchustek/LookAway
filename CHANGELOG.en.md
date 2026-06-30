@@ -15,6 +15,11 @@ and versioning follows [Semantic Versioning](https://semver.org/).
   default: on). Works independently of DDC/CI — so on laptops too.
 - **Freely selectable break screen colour** including transparency (opacity/alpha
   slider) via a colour picker in the settings.
+- **Automatic updates**: when a new version is available, LookAway can install it
+  itself — the new portable package is downloaded, the program files are swapped
+  after the app closes and it restarts. New **"Update automatically"** setting:
+  downloads the latest version in the background and installs it on the next start
+  with no interaction. Without it, a single click on the tray "Update" entry suffices.
 
 ### Changed
 
@@ -25,6 +30,8 @@ and versioning follows [Semantic Versioning](https://semver.org/).
   if you were away at least as long as a break — your eyes have already rested by
   then. Short interruptions keep counting down the remaining time as before; a
   manual pause is unaffected.
+- The tray "Update" entry no longer just opens the release page — it downloads the
+  new version and installs it automatically.
 
 ## [1.0.2] – 2026-06-29
 

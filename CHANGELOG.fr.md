@@ -16,6 +16,12 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
   donc aussi sur les ordinateurs portables.
 - **Couleur de l'écran de pause librement configurable**, transparence comprise
   (curseur d'opacité/alpha), via un sélecteur de couleur dans les paramètres.
+- **Mise à jour automatique** : lorsqu'une nouvelle version est disponible,
+  LookAway peut l'installer lui-même — le nouveau paquet portable est téléchargé,
+  les fichiers du programme sont remplacés après la fermeture et l'application
+  redémarre. Nouveau réglage **« Mettre à jour automatiquement »** : télécharge la
+  dernière version en arrière-plan et l'installe au prochain démarrage, sans
+  intervention. Sinon, un clic sur l'entrée « Update » de la zone de notification suffit.
 
 ### Modifié
 
@@ -27,6 +33,8 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
   le minuteur de travail redémarre à zéro si l'absence a duré au moins le temps
   d'une pause — les yeux se sont alors déjà reposés. Les courtes interruptions
   reprennent avec le temps restant comme avant ; une pause manuelle reste inchangée.
+- L'entrée « Update » de la zone de notification n'ouvre plus seulement la page de
+  publication : elle télécharge la nouvelle version et l'installe automatiquement.
 
 ## [1.0.2] – 2026-06-29
 

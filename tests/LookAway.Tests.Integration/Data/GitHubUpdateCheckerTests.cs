@@ -18,6 +18,9 @@ public sealed class GitHubUpdateCheckerTests
 
         public Task<string?> GetStringAsync(Uri requestUri, CancellationToken cancellationToken = default)
             => Task.FromResult(_response);
+
+        public Task<bool> DownloadFileAsync(Uri requestUri, string destinationPath, CancellationToken cancellationToken = default)
+            => Task.FromResult(false);
     }
 
     private static GitHubUpdateChecker CreateChecker(string? response, Version current)
@@ -34,6 +37,40 @@ public sealed class GitHubUpdateCheckerTests
         Assert.True(info.IsUpdateAvailable);
         Assert.Equal("2.0.0", info.LatestVersion);
         Assert.NotNull(info.DownloadUrl);
+    }
+
+    [Fact]
+    public async Task CheckForUpdate_liest_Portable_ZIP_aus_Assets()
+    {
+        const string json = """
+        {
+          "tag_name": "v2.0.0",
+          "html_url": "https://github.com/x/releases/2.0.0",
+          "body": "Neu",
+          "assets": [
+            { "name": "LookAway-Setup-v2.0.0.exe", "browser_download_url": "https://github.com/x/setup.exe" },
+            { "name": "LookAway-Portable-v2.0.0.zip", "browser_download_url": "https://github.com/x/portable.zip" }
+          ]
+        }
+        """;
+        GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
+
+        UpdateInfo info = await checker.CheckForUpdateAsync();
+
+        Assert.True(info.IsUpdateAvailable);
+        Assert.NotNull(info.PackageUrl);
+        Assert.Equal("https://github.com/x/portable.zip", info.PackageUrl!.ToString());
+    }
+
+    [Fact]
+    public async Task CheckForUpdate_ohne_Assets_hat_keine_Paket_URL()
+    {
+        const string json = """{ "tag_name": "v2.0.0", "html_url": "https://github.com/x", "body": "" }""";
+        GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
+
+        UpdateInfo info = await checker.CheckForUpdateAsync();
+
+        Assert.Null(info.PackageUrl);
     }
 
     [Fact]

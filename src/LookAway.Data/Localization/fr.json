@@ -31,6 +31,8 @@
   "Settings.Hotkeys.Reset": "Restaurer les valeurs par défaut",
 
   "Settings.Update.EnableLabel": "Rechercher les mises à jour",
+  "Settings.Update.AutoLabel": "Mettre à jour automatiquement",
+  "Settings.Update.AutoHint": "La dernière version est téléchargée en arrière-plan et installée automatiquement au prochain démarrage.",
   "Settings.Update.FrequencyLabel": "Fréquence",
   "Settings.Update.CheckNow": "Vérifier maintenant",
   "Settings.Update.UpToDate": "LookAway est à jour.",

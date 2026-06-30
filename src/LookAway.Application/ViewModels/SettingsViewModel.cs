@@ -94,6 +94,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private bool _updateCheckEnabled;
 
     [ObservableProperty]
+    private bool _autoUpdate;
+
+    [ObservableProperty]
     private SettingsOption<UpdateCheckFrequency>? _selectedFrequencyOption;
 
     [ObservableProperty]
@@ -358,6 +361,12 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Beschriftung "Auf Updates pruefen".</summary>
     public string UpdateEnableLabel => _localization.GetText(SettingsTextKeys.UpdateEnableLabel);
 
+    /// <summary>Beschriftung der Auto-Update-Option.</summary>
+    public string AutoUpdateLabel => _localization.GetText(SettingsTextKeys.UpdateAutoLabel);
+
+    /// <summary>Hinweistext zur Auto-Update-Option.</summary>
+    public string AutoUpdateHint => _localization.GetText(SettingsTextKeys.UpdateAutoHint);
+
     /// <summary>Beschriftung der Pruef-Haeufigkeit.</summary>
     public string UpdateFrequencyLabel => _localization.GetText(SettingsTextKeys.UpdateFrequencyLabel);
 
@@ -430,6 +439,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             _hotkeyToggleDnd = settings.HotkeyToggleDnd;
 
             UpdateCheckEnabled = settings.UpdateCheckEnabled;
+            AutoUpdate = settings.AutoUpdate;
             SelectFrequency(settings.UpdateCheckFrequency);
 
             DimScreenDuringBreak = settings.DimScreenDuringBreak;
@@ -564,6 +574,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
         settings.HotkeySkipOrSnooze = _hotkeySkipOrSnooze;
         settings.HotkeyToggleDnd = _hotkeyToggleDnd;
         settings.UpdateCheckEnabled = UpdateCheckEnabled;
+        settings.AutoUpdate = AutoUpdate;
         settings.UpdateCheckFrequency = SelectedFrequency;
         settings.DimScreenDuringBreak = DimScreenDuringBreak;
         settings.DimBrightnessPercent = Math.Clamp(DimBrightnessPercent, DimBrightnessMin, DimBrightnessMax);

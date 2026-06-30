@@ -71,6 +71,12 @@ public static class SettingsTextKeys
     /// <summary>Beschriftung "Auf Updates pruefen".</summary>
     public const string UpdateEnableLabel = "Settings.Update.EnableLabel";
 
+    /// <summary>Beschriftung "Automatisch aktualisieren".</summary>
+    public const string UpdateAutoLabel = "Settings.Update.AutoLabel";
+
+    /// <summary>Hinweistext zur Auto-Update-Option.</summary>
+    public const string UpdateAutoHint = "Settings.Update.AutoHint";
+
     /// <summary>Beschriftung der Pruef-Haeufigkeit.</summary>
     public const string UpdateFrequencyLabel = "Settings.Update.FrequencyLabel";
 

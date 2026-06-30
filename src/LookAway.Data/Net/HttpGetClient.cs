@@ -1,5 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Net.Http;
+using System.Threading;
 using LookAway.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -52,6 +54,42 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
         }
     }
 
+    /// <inheritdoc />
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Der Download ist unkritisch: jeder Fehler wird geloggt und als Misserfolg (false) behandelt, damit Netzwerk-/Dateifehler die App nie zum Absturz bringen.")]
+    public async Task<bool> DownloadFileAsync(Uri requestUri, string destinationPath, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(requestUri);
+        ArgumentException.ThrowIfNullOrWhiteSpace(destinationPath);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        try
+        {
+            // Asset-Downloads (ggf. mehrere hundert MB) duerfen nicht am 10-s-Timeout
+            // des Clients scheitern; ein eigener, grosszuegiger Token wird verkettet.
+            using CancellationTokenSource timeoutCts = new(TimeSpan.FromMinutes(10));
+            using CancellationTokenSource linked =
+                CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+
+            using HttpResponseMessage response = await _httpClient
+                .GetAsync(requestUri, HttpCompletionOption.ResponseHeadersRead, linked.Token)
+                .ConfigureAwait(false);
+            _ = response.EnsureSuccessStatusCode();
+
+            using FileStream file = new(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None);
+            await response.Content.CopyToAsync(file, linked.Token).ConfigureAwait(false);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            HttpGetClientLog.DownloadFailed(_logger, ex, requestUri.ToString());
+            return false;
+        }
+    }
+
     /// <summary>Gibt den HttpClient frei.</summary>
     public void Dispose()
     {
@@ -72,4 +110,7 @@ internal static partial class HttpGetClientLog
 {
     [LoggerMessage(EventId = 1610, Level = LogLevel.Warning, Message = "HTTP-GET auf {Uri} fehlgeschlagen.")]
     public static partial void RequestFailed(ILogger logger, Exception exception, string uri);
+
+    [LoggerMessage(EventId = 1611, Level = LogLevel.Warning, Message = "Datei-Download von {Uri} fehlgeschlagen.")]
+    public static partial void DownloadFailed(ILogger logger, Exception exception, string uri);
 }

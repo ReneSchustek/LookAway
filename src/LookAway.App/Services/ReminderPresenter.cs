@@ -1,4 +1,5 @@
 using System;
+using LookAway.Application.Coordination;
 using LookAway.Application.ViewModels;
 using LookAway.Core.Domain;
 using LookAway.Core.Enums;
@@ -8,27 +9,10 @@ using Microsoft.UI.Dispatching;
 namespace LookAway.Services;
 
 /// <summary>
-/// Zeigt das Pause-Erinnerungsfenster. Stellt sicher, dass nie mehrere
-/// Erinnerungen gleichzeitig offen sind (zweite <c>BreakDue</c>-Meldung bei
-/// offenem Fenster wird ignoriert).
-/// </summary>
-internal interface IReminderPresenter
-{
-    /// <summary>Ist gerade eine Erinnerung sichtbar?</summary>
-    bool IsReminderOpen { get; }
-
-    /// <summary>
-    /// Zeigt eine Erinnerung fuer das Modell. Bei bereits offener Erinnerung
-    /// passiert nichts.
-    /// </summary>
-    /// <param name="model">Aktives Pausenmodell (fuer den Hinweis-Schluessel).</param>
-    /// <param name="onResult">Callback mit der gewaehlten Aktion.</param>
-    void Show(BreakModel model, Action<ReminderResult> onResult);
-}
-
-/// <summary>
 /// WinUI-Implementierung von <see cref="IReminderPresenter"/>: erzeugt das
-/// <see cref="Views.BreakReminderWindow"/> auf dem UI-Thread.
+/// <see cref="Views.BreakReminderWindow"/> auf dem UI-Thread. Stellt sicher, dass
+/// nie mehrere Erinnerungen gleichzeitig offen sind (eine zweite Anforderung bei
+/// offenem Fenster wird ignoriert).
 /// </summary>
 internal sealed class ReminderPresenter : IReminderPresenter
 {

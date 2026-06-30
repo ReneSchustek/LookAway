@@ -39,6 +39,7 @@ using FullscreenDetectionService = LookAway.Application.Services.FullscreenDetec
 using IdleDetectionService = LookAway.Application.Services.IdleDetectionService;
 using LogService = LookAway.Application.Services.LogService;
 using PauseActionService = LookAway.Application.Services.PauseActionService;
+using BreakCoordinator = LookAway.Application.Coordination.BreakCoordinator;
 using UpdateInstallerService = LookAway.Application.Services.UpdateInstallerService;
 using UpdateApplyArgs = LookAway.Application.Services.UpdateApplyArgs;
 using StagedUpdate = LookAway.Application.Services.StagedUpdate;
@@ -90,15 +91,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     private ReminderPresenter? _reminderPresenter;
     private BreakOverlayPresenter? _overlayPresenter;
     private SettingsPresenter? _settingsPresenter;
-    private BreakModel _activeModel = BreakModel.ClassicPomodoro;
-    private BreakInterval? _activeInterval;
-    private bool _soundEnabled;
-    private SoundType _soundType = SoundType.Chime;
-    private int _soundVolume;
-    private DateTimeOffset _reminderShownAt;
-    private bool _manualDnd;
-    private string _overlayColor = Settings.DefaultBreakOverlayColor;
-    private bool _darkenAllScreens = true;
+    private BreakCoordinator? _coordinator;
     private Uri? _updateDownloadUrl;
     private UpdateInfo? _pendingUpdate;
 
@@ -561,7 +554,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             OpenSettings,
             RequestExit,
             OnUpdateRequested,
-            ShowBreakReminder);
+            () => _coordinator?.RequestReminder());
 
         _trayIcon.Show();
         AppLog.TrayReady(_logger!);
@@ -571,15 +564,20 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     // Zustand dann live wider.
     private void StartTimer(Settings settings)
     {
-        BreakInterval interval = BreakModelRegistry.GetEffective(settings.BreakModel, settings.CustomDurations);
-        _activeModel = settings.BreakModel;
-        _activeInterval = interval;
-        CaptureSoundSettings(settings);
-        CapturePauseActionSettings(settings);
-
-        _trayIcon?.SetActiveModel(settings.BreakModel);
         ITimerService timerService = Services.GetRequiredService<ITimerService>();
-        timerService.Start(interval);
+        _coordinator = new BreakCoordinator(
+            timerService,
+            _reminderPresenter!,
+            _overlayPresenter!,
+            Services.GetRequiredService<PauseActionService>(),
+            Services.GetRequiredService<ISoundService>(),
+            Services.GetRequiredService<IClock>(),
+            Services.GetRequiredService<IBreakHistoryRepository>(),
+            _trayIcon!,
+            Services.GetRequiredService<FullscreenDetectionService>(),
+            Services.GetRequiredService<ILogger<BreakCoordinator>>());
+
+        _coordinator.ApplySchedule(settings);
 
         StartDetectionLoop(settings);
         _ = ConsumeTimerEventsAsync(timerService, _detectionCts!.Token);
@@ -616,18 +614,13 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         switch (action)
         {
             case HotkeyAction.StartBreak:
-                ShowBreakReminder();
+                _coordinator?.RequestReminder();
                 break;
             case HotkeyAction.SkipOrSnooze:
-                if (_activeInterval is not null)
-                {
-                    Services.GetRequiredService<ITimerService>().Start(_activeInterval);
-                }
-
+                _coordinator?.SkipOrSnooze();
                 break;
             case HotkeyAction.ToggleDnd:
-                _manualDnd = !_manualDnd;
-                _trayIcon?.SetDndActive(_manualDnd);
+                _coordinator?.ToggleManualDnd();
                 break;
             default:
                 break;
@@ -683,12 +676,12 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             {
                 idle.Evaluate();
                 bool surfaceMissedReminder = fullscreen.Evaluate();
-                _trayIcon?.SetDndActive(fullscreen.IsDndActive || _manualDnd);
+                _coordinator?.UpdateDndIndicator(fullscreen.IsDndActive);
 
                 if (surfaceMissedReminder)
                 {
                     // DND wurde beendet: verpasste Erinnerung nachholen.
-                    ShowBreakReminder();
+                    _coordinator?.RequestReminder();
                 }
             }
         }
@@ -708,30 +701,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         {
             await foreach (TimerEvent timerEvent in timerService.Events.WithCancellation(cancellationToken))
             {
-                switch (timerEvent)
-                {
-                    case BreakDueEvent:
-                        FullscreenDetectionService fullscreen = Services.GetRequiredService<FullscreenDetectionService>();
-                        if (fullscreen.TryShowReminder())
-                        {
-                            ShowBreakReminder();
-                        }
-
-                        break;
-                    case BreakCompletedEvent:
-                        // Ist das Overlay offen, ist es massgeblich fuer Ende und
-                        // Wiederherstellung (siehe OnBreakOverlayEnded) — die Engine-
-                        // Pause kann durch die Reaktionszeit etwas frueher ablaufen.
-                        // Nur ohne Overlay (z. B. ignorierte Erinnerung) hier aufraeumen.
-                        if (_overlayPresenter is not { IsOverlayOpen: true })
-                        {
-                            _ = Services.GetRequiredService<PauseActionService>().EndBreakAsync(cancellationToken);
-                        }
-
-                        break;
-                    default:
-                        break;
-                }
+                _coordinator?.HandleTimerEvent(timerEvent);
             }
         }
         catch (OperationCanceledException)
@@ -741,149 +711,6 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         catch (ObjectDisposedException)
         {
             // Container/Services beim Shutdown bereits freigegeben — unkritisch.
-        }
-    }
-
-    private void CaptureSoundSettings(Settings settings)
-    {
-        _soundEnabled = settings.SoundEnabled;
-        _soundType = settings.ReminderSound;
-        _soundVolume = settings.SoundVolumePercent;
-    }
-
-    private void CapturePauseActionSettings(Settings settings)
-    {
-        PauseActionService service = Services.GetRequiredService<PauseActionService>();
-        service.DimScreenEnabled = settings.DimScreenDuringBreak;
-        service.DimBrightnessPercent = settings.DimBrightnessPercent;
-        service.PauseMediaEnabled = settings.PauseMediaDuringBreak;
-        service.ResumeMediaAfterBreak = settings.ResumeMediaAfterBreak;
-
-        _overlayColor = settings.BreakOverlayColor;
-        _darkenAllScreens = settings.DarkenAllScreens;
-    }
-
-    // Kann aus Hintergrund-Threads (Timer-/Detection-Loop) und vom UI-Thread
-    // (Tray/Hotkey) kommen. Auf den UI-Thread marshallen, damit die "bereits
-    // offen"-Pruefung und das Anzeigen single-threaded laufen und keine zwei
-    // Erinnerungsfenster entstehen koennen.
-    private void ShowBreakReminder()
-    {
-        DispatcherQueue? dispatcher = _window?.DispatcherQueue;
-        if (dispatcher is null)
-        {
-            ShowBreakReminderCore();
-            return;
-        }
-
-        _ = dispatcher.TryEnqueue(ShowBreakReminderCore);
-    }
-
-    private void ShowBreakReminderCore()
-    {
-        if (_reminderPresenter is null || _reminderPresenter.IsReminderOpen || _manualDnd)
-        {
-            // Bereits offen oder manuelles DND aktiv: nichts anzeigen, kein Ton.
-            return;
-        }
-
-        if (_soundEnabled)
-        {
-            Services.GetRequiredService<ISoundService>().Play(_soundType, _soundVolume);
-        }
-
-        _reminderShownAt = Services.GetRequiredService<IClock>().UtcNow;
-        _reminderPresenter.Show(_activeModel, OnReminderResult);
-    }
-
-    private void OnReminderResult(ReminderResult result)
-    {
-        RecordSession(result);
-
-        if (_activeInterval is null)
-        {
-            return;
-        }
-
-        ITimerService timerService = Services.GetRequiredService<ITimerService>();
-        switch (result)
-        {
-            case ReminderResult.StartBreak:
-                // Pause-Aktionen starten und den Bildschirm mit dem abdunkelnden
-                // Overlay verdecken. Das Overlay ist ab hier massgeblich fuer das
-                // Pausenende (Ablauf des Countdowns oder ESC) — siehe OnBreakOverlayEnded.
-                _ = Services.GetRequiredService<PauseActionService>().BeginBreakAsync();
-                _overlayPresenter?.Show(
-                    _activeModel,
-                    _activeInterval.BreakDuration,
-                    _overlayColor,
-                    _darkenAllScreens,
-                    _ => OnBreakOverlayEnded());
-                break;
-            case ReminderResult.Snooze:
-                timerService.Start(BreakInterval.Create(
-                    TimeSpan.FromMinutes(BreakReminderViewModel.SnoozeMinutes),
-                    _activeInterval.BreakDuration));
-                break;
-            case ReminderResult.Skip:
-                timerService.Start(_activeInterval);
-                break;
-            default:
-                break;
-        }
-    }
-
-    /// <summary>
-    /// Reaktion auf das Ende der laufenden Pause aus dem Overlay — egal ob der
-    /// Countdown ablief oder der Benutzer mit ESC beendet hat. Das Overlay ist die
-    /// massgebliche Quelle fuer das Pausenende: die Pause-Aktionen (Helligkeit/
-    /// Medien) werden zurueckgenommen und eine frische Arbeitsphase gestartet. So
-    /// bleibt nichts haengen, falls Engine-Pause und Overlay (durch die
-    /// Reaktionszeit) nicht exakt gleich lange liefen.
-    /// </summary>
-    private void OnBreakOverlayEnded()
-    {
-        _ = Services.GetRequiredService<PauseActionService>().EndBreakAsync();
-        if (_activeInterval is not null)
-        {
-            Services.GetRequiredService<ITimerService>().Start(_activeInterval);
-        }
-    }
-
-    private void RecordSession(ReminderResult result)
-    {
-        BreakOutcome outcome = result switch
-        {
-            ReminderResult.StartBreak => BreakOutcome.Taken,
-            ReminderResult.Snooze => BreakOutcome.Snoozed,
-            ReminderResult.Skip => BreakOutcome.Skipped,
-            _ => BreakOutcome.Taken,
-        };
-
-        // Bei tatsaechlicher Pause die Pausendauer als Zeitraum, sonst Null-Dauer.
-        DateTimeOffset end = outcome == BreakOutcome.Taken && _activeInterval is not null
-            ? _reminderShownAt + _activeInterval.BreakDuration
-            : _reminderShownAt;
-
-        BreakSession session = new(Guid.NewGuid(), _reminderShownAt, end, _activeModel, outcome);
-        _ = AppendSessionAsync(session);
-    }
-
-    private async Task AppendSessionAsync(BreakSession session)
-    {
-        try
-        {
-            await Services.GetRequiredService<IBreakHistoryRepository>()
-                .AppendAsync(session)
-                .ConfigureAwait(false);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            AppLog.HistoryWriteFailed(_logger!, ex);
-        }
-        catch (IOException ex)
-        {
-            AppLog.HistoryWriteFailed(_logger!, ex);
         }
     }
 
@@ -956,14 +783,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     /// </summary>
     private void ApplySettingsLive(Settings settings)
     {
-        BreakInterval interval = BreakModelRegistry.GetEffective(settings.BreakModel, settings.CustomDurations);
-        _activeModel = settings.BreakModel;
-        _activeInterval = interval;
-        CaptureSoundSettings(settings);
-        CapturePauseActionSettings(settings);
-        _trayIcon?.SetActiveModel(settings.BreakModel);
-
-        Services.GetRequiredService<ITimerService>().Start(interval);
+        _coordinator?.ApplySchedule(settings);
 
         IdleDetectionService idle = Services.GetRequiredService<IdleDetectionService>();
         idle.IsEnabled = settings.PauseOnIdle;

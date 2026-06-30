@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using LookAway.Application.Coordination;
 using LookAway.Application.ViewModels;
 using LookAway.Core.Domain;
 using LookAway.Core.Enums;
@@ -11,39 +12,11 @@ using WinColor = Windows.UI.Color;
 namespace LookAway.Services;
 
 /// <summary>
-/// Zeigt waehrend einer Pause das abdunkelnde Vollbild-Overlay. Auf Wunsch wird
-/// jeder angeschlossene Monitor mit einem eigenen Overlay abgedeckt; der
-/// Countdown laeuft zentral und bleibt so ueber alle Fenster synchron. Stellt
-/// sicher, dass nie mehrere Overlay-Saetze gleichzeitig offen sind, und meldet
-/// ueber den Callback, wie die Pause endete.
-/// </summary>
-internal interface IBreakOverlayPresenter
-{
-    /// <summary>Ist gerade ein Overlay sichtbar?</summary>
-    bool IsOverlayOpen { get; }
-
-    /// <summary>
-    /// Zeigt das Pausen-Overlay fuer das Modell und die Pausendauer. Bei bereits
-    /// offenem Overlay passiert nichts.
-    /// </summary>
-    /// <param name="model">Aktives Pausenmodell (fuer den Hinweis-Schluessel).</param>
-    /// <param name="breakDuration">Dauer der Pause.</param>
-    /// <param name="overlayColorHex">Hintergrundfarbe als <c>#AARRGGBB</c>/<c>#RRGGBB</c>.</param>
-    /// <param name="allScreens">Alle Monitore abdecken (<c>true</c>) oder nur den Hauptbildschirm.</param>
-    /// <param name="onEnded">Callback mit dem Grund des Pausenendes.</param>
-    void Show(BreakModel model, TimeSpan breakDuration, string overlayColorHex, bool allScreens, Action<BreakEndReason> onEnded);
-
-    /// <summary>
-    /// Schliesst offene Overlays, weil die Timer-Engine das regulaere Pausenende
-    /// gemeldet hat. Loest den Callback nicht aus.
-    /// </summary>
-    void Close();
-}
-
-/// <summary>
 /// WinUI-Implementierung von <see cref="IBreakOverlayPresenter"/>: erzeugt je
-/// Monitor ein <see cref="Views.BreakOverlayWindow"/> auf dem UI-Thread und
-/// taktet den gemeinsamen Countdown.
+/// Monitor ein <see cref="Views.BreakOverlayWindow"/> auf dem UI-Thread und taktet
+/// den gemeinsamen Countdown. Auf Wunsch wird jeder angeschlossene Monitor mit
+/// einem eigenen Overlay abgedeckt; der Countdown bleibt über alle Fenster
+/// synchron. Stellt sicher, dass nie mehrere Overlay-Sätze gleichzeitig offen sind.
 /// </summary>
 internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
 {

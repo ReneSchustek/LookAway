@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using H.NotifyIcon;
 using H.NotifyIcon.Core;
+using LookAway.Application.Coordination;
 using LookAway.Application.Localization;
 using LookAway.Application.Services;
 using LookAway.Core.Enums;
@@ -23,7 +24,7 @@ namespace LookAway.Services;
 /// WinUI 3 bringt kein natives Tray-API mit; <c>H.NotifyIcon.WinUI</c>
 /// liefert das <see cref="TaskbarIcon"/>-Control.
 /// </remarks>
-internal sealed class TrayIconService : IDisposable
+internal sealed class TrayIconService : ITrayController, IDisposable
 {
     private const int TooltipRefreshIntervalSeconds = 1;
 

@@ -11,17 +11,17 @@
     Ergebnis: <OutputDir>\LookAway-Setup-v<Version>.exe
 
 .PARAMETER Version
-    Versionsnummer (Default: 1.0.1).
+    Versionsnummer (Default: 1.1.0).
 
 .PARAMETER OutputDir
-    Zielordner fuer die fertige Setup.exe (Default: F:\Entwicklung\publish).
+    Zielordner fuer die fertige Setup.exe (Default: dist/ im Repo-Root).
 
 .PARAMETER Runtime
     Ziel-RID (Default: win-x64).
 #>
 param(
-    [string]$Version = '1.0.2',
-    [string]$OutputDir = 'F:\Entwicklung\publish',
+    [string]$Version = '1.1.0',
+    [string]$OutputDir = "$PSScriptRoot\..\dist",
     [string]$Runtime = 'win-x64'
 )
 

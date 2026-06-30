@@ -239,12 +239,12 @@ public sealed class TimerServiceTests
     }
 
     [Fact]
-    public async Task SystemResume_AfterLongSleep_PreservesRemainingWorkTime()
+    public async Task SystemResume_AfterLongSleep_RestartsWorkPhase()
     {
-        // Semantik: Sleep zaehlt als Pause (User war nicht am Rechner). Auch bei
-        // langem Sleep wird die Restzeit eingefroren und nach dem Aufwachen
-        // weitergezaehlt. Eine sofortige BreakDue-Auslosung waere fuer den User
-        // ueberraschend, weil er die Arbeitszeit ja gar nicht aufgebracht hat.
+        // Semantik: War der Rechner mindestens eine Pausenlaenge im Standby, hat
+        // der Nutzer nicht auf den Bildschirm geschaut — die Augen haben bereits
+        // pausiert. Der Arbeits-Timer startet daher frisch (volle Arbeitszeit),
+        // statt mit der Restzeit weiterzulaufen.
         (TimerService service, FakeClock clock, FakePowerModeWatcher power) = CreateService();
         try
         {
@@ -253,18 +253,56 @@ public sealed class TimerServiceTests
             power.RaiseSuspending();
             _ = await ReadEventAsync<TimerPausedEvent>(service);
 
+            // 30 min Sleep >= 5 min Pause -> Neustart der Arbeitsphase.
             clock.Advance(TimeSpan.FromMinutes(30));
             power.RaiseResuming();
 
             Assert.Equal(TimerState.Working, service.State);
-            Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
+            Assert.Equal(TimeSpan.FromMinutes(25), service.Remaining);
 
             _ = await ReadEventAsync<WorkResumedEvent>(service);
 
-            // Nach 15 weiteren Minuten ist die Phase abgelaufen.
-            clock.Advance(TimeSpan.FromMinutes(15));
+            // Erst nach vollen 25 weiteren Minuten ist die frische Phase abgelaufen.
+            clock.Advance(TimeSpan.FromMinutes(24));
+            service.Tick();
+            Assert.Equal(TimerState.Working, service.State);
+
+            clock.Advance(TimeSpan.FromMinutes(1));
             service.Tick();
             Assert.Equal(TimerState.OnBreak, service.State);
+        }
+        finally
+        {
+            service.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task SystemResume_AfterLongSleepDuringBreak_EndsBreakAndRestartsWork()
+    {
+        // Sleep waehrend einer laufenden Pause: nach langem Standby ist die Pause
+        // ohnehin vorbei. Es wird ein regulaeres Pausenende signalisiert
+        // (BreakCompleted -> Overlay/Helligkeit zuruecksetzen) und frisch gearbeitet.
+        (TimerService service, FakeClock clock, FakePowerModeWatcher power) = CreateService();
+        try
+        {
+            service.Start(ClassicPomodoro);
+            clock.Advance(TimeSpan.FromMinutes(25));
+            service.Tick(); // -> OnBreak
+            _ = await ReadEventAsync<BreakDueEvent>(service);
+
+            clock.Advance(TimeSpan.FromMinutes(1));
+            power.RaiseSuspending();
+            _ = await ReadEventAsync<TimerPausedEvent>(service);
+
+            clock.Advance(TimeSpan.FromMinutes(30));
+            power.RaiseResuming();
+
+            Assert.Equal(TimerState.Working, service.State);
+            Assert.Equal(TimeSpan.FromMinutes(25), service.Remaining);
+
+            _ = await ReadEventAsync<BreakCompletedEvent>(service);
+            _ = await ReadEventAsync<WorkResumedEvent>(service);
         }
         finally
         {
@@ -311,6 +349,93 @@ public sealed class TimerServiceTests
             power.RaiseResuming();
 
             Assert.Equal(TimerState.Paused, service.State);
+        }
+        finally
+        {
+            service.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task ResumeAfterAway_ShortAway_ResumesRemainingTime()
+    {
+        (TimerService service, FakeClock clock, _) = CreateService();
+        try
+        {
+            service.Start(ClassicPomodoro);
+            clock.Advance(TimeSpan.FromMinutes(10));
+            service.Pause();
+            _ = await ReadEventAsync<TimerPausedEvent>(service);
+
+            // 2 min Abwesenheit < 5 min Pause -> Restzeit (15 min) laeuft weiter.
+            service.ResumeAfterAway(TimeSpan.FromMinutes(2));
+
+            Assert.Equal(TimerState.Working, service.State);
+            Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
+        }
+        finally
+        {
+            service.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task ResumeAfterAway_LongAway_RestartsFullWorkPhase()
+    {
+        (TimerService service, FakeClock clock, _) = CreateService();
+        try
+        {
+            service.Start(ClassicPomodoro);
+            clock.Advance(TimeSpan.FromMinutes(10));
+            service.Pause();
+            _ = await ReadEventAsync<TimerPausedEvent>(service);
+
+            // 5 min Abwesenheit >= 5 min Pause -> frische Arbeitsphase (25 min).
+            service.ResumeAfterAway(TimeSpan.FromMinutes(5));
+
+            Assert.Equal(TimerState.Working, service.State);
+            Assert.Equal(TimeSpan.FromMinutes(25), service.Remaining);
+        }
+        finally
+        {
+            service.Dispose();
+        }
+    }
+
+    [Fact]
+    public void ResumeAfterAway_WhenPausedBySystem_IsNoOp()
+    {
+        (TimerService service, FakeClock clock, FakePowerModeWatcher power) = CreateService();
+        try
+        {
+            service.Start(ClassicPomodoro);
+            clock.Advance(TimeSpan.FromMinutes(10));
+            power.RaiseSuspending(); // System-Pause
+
+            service.ResumeAfterAway(TimeSpan.FromMinutes(30));
+
+            // System-Pausen werden ueber den Power-Resume-Pfad behandelt, nicht hier.
+            Assert.Equal(TimerState.Paused, service.State);
+        }
+        finally
+        {
+            service.Dispose();
+        }
+    }
+
+    [Fact]
+    public void ResumeAfterAway_WhenNotPaused_IsNoOp()
+    {
+        (TimerService service, FakeClock clock, _) = CreateService();
+        try
+        {
+            service.Start(ClassicPomodoro);
+            clock.Advance(TimeSpan.FromMinutes(10));
+
+            service.ResumeAfterAway(TimeSpan.FromMinutes(30));
+
+            Assert.Equal(TimerState.Working, service.State);
+            Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
         }
         finally
         {

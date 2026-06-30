@@ -71,6 +71,12 @@ public static class SettingsTextKeys
     /// <summary>Beschriftung "Auf Updates pruefen".</summary>
     public const string UpdateEnableLabel = "Settings.Update.EnableLabel";
 
+    /// <summary>Beschriftung "Automatisch aktualisieren".</summary>
+    public const string UpdateAutoLabel = "Settings.Update.AutoLabel";
+
+    /// <summary>Hinweistext zur Auto-Update-Option.</summary>
+    public const string UpdateAutoHint = "Settings.Update.AutoHint";
+
     /// <summary>Beschriftung der Pruef-Haeufigkeit.</summary>
     public const string UpdateFrequencyLabel = "Settings.Update.FrequencyLabel";
 
@@ -103,6 +109,15 @@ public static class SettingsTextKeys
 
     /// <summary>Beschriftung "Medien fortsetzen".</summary>
     public const string PauseActionsResumeMedia = "Settings.PauseActions.ResumeMedia";
+
+    /// <summary>Beschriftung "Alle Bildschirme abdunkeln".</summary>
+    public const string PauseActionsDarkenAllScreens = "Settings.PauseActions.DarkenAllScreens";
+
+    /// <summary>Beschriftung des Overlay-Farbwaehlers.</summary>
+    public const string PauseActionsOverlayColor = "Settings.PauseActions.OverlayColor";
+
+    /// <summary>Hinweistext zum Overlay-Farbwaehler (Transparenz).</summary>
+    public const string PauseActionsOverlayColorHint = "Settings.PauseActions.OverlayColorHint";
 
     /// <summary>
     /// Liefert den Anzeigenamen-Schluessel einer Pruef-Haeufigkeit.

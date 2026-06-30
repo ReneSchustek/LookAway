@@ -30,6 +30,28 @@ public sealed class UpdateTests
     }
 
     [Fact]
+    public void Create_uebernimmt_Paket_URL()
+    {
+        UpdateInfo info = UpdateInfo.Create(
+            Current,
+            "v1.3.0",
+            "https://example.com/r",
+            "Notes",
+            "https://example.com/LookAway-Portable-v1.3.0.zip");
+
+        Assert.NotNull(info.PackageUrl);
+        Assert.Equal("https://example.com/LookAway-Portable-v1.3.0.zip", info.PackageUrl!.ToString());
+    }
+
+    [Fact]
+    public void Create_ohne_Paket_URL_hat_keine()
+    {
+        UpdateInfo info = UpdateInfo.Create(Current, "v1.3.0", "https://example.com/r", "Notes");
+
+        Assert.Null(info.PackageUrl);
+    }
+
+    [Fact]
     public void Create_meldet_kein_Update_bei_aelterer_Version()
     {
         UpdateInfo info = UpdateInfo.Create(Current, "1.1.9", null, null);

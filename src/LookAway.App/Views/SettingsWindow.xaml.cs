@@ -1,32 +1,39 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using LookAway.Application.ViewModels;
+using LookAway.Core.Domain;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Windows.Graphics;
 using Windows.Storage;
 using Windows.Storage.Pickers;
+using WinColor = Windows.UI.Color;
 
 namespace LookAway.Views;
 
 /// <summary>
-/// Settings-Fenster. Bindet an das UI-freie
-/// <see cref="SettingsViewModel"/>; die gesamte Lade-, Validierungs- und
-/// Persistenzlogik liegt dort.
+/// Settings-Fenster mit Seitenmenue (<see cref="NavigationView"/>). Bindet an das
+/// UI-freie <see cref="SettingsViewModel"/>; die gesamte Lade-, Validierungs- und
+/// Persistenzlogik liegt dort. Die Auswahl im Menue blendet den passenden
+/// Abschnitt ein.
 /// </summary>
 internal sealed partial class SettingsWindow : Window
 {
-    private const int WindowWidth = 560;
-    private const int WindowHeight = 600;
+    private const int WindowWidth = 840;
+    private const int WindowHeight = 680;
 
     private static readonly string[] CsvFileExtensions = { ".csv" };
 
     private readonly SettingsViewModel _viewModel;
+    private readonly Dictionary<string, FrameworkElement> _panels;
+    private bool _suppressColorWriteback;
 
     /// <summary>
-    /// Erzeugt das Fenster fuer das angegebene ViewModel.
+    /// Erzeugt das Fenster fuer das angegebene (bereits geladene) ViewModel.
     /// </summary>
     /// <param name="viewModel">Bereits geladenes Settings-ViewModel.</param>
     public SettingsWindow(SettingsViewModel viewModel)
@@ -38,6 +45,23 @@ internal sealed partial class SettingsWindow : Window
 
         RootGrid.DataContext = viewModel;
         Title = viewModel.Title;
+
+        _panels = new Dictionary<string, FrameworkElement>(StringComparer.Ordinal)
+        {
+            ["General"] = PanelGeneral,
+            ["Model"] = PanelModel,
+            ["Intervals"] = PanelIntervals,
+            ["Sound"] = PanelSound,
+            ["Pause"] = PanelPause,
+            ["Hotkeys"] = PanelHotkeys,
+            ["Statistics"] = PanelStatistics,
+            ["About"] = PanelAbout,
+        };
+
+        // Farbwaehler auf die gespeicherte Overlay-Farbe setzen (Load lief bereits).
+        _suppressColorWriteback = true;
+        OverlayColorPicker.Color = ParseColor(viewModel.BreakOverlayColor);
+        _suppressColorWriteback = false;
 
         _viewModel.CloseRequested += OnCloseRequested;
         _viewModel.Statistics.CsvExportRequested += OnCsvExportRequested;
@@ -66,6 +90,43 @@ internal sealed partial class SettingsWindow : Window
         int left = work.X + ((work.Width - WindowWidth) / 2);
         int top = work.Y + ((work.Height - WindowHeight) / 2);
         AppWindow.Move(new PointInt32(left, top));
+    }
+
+    private void OnNavSelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    {
+        // Kann waehrend InitializeComponent feuern, bevor das Panel-Verzeichnis steht.
+        if (_panels is null || args.SelectedItem is not NavigationViewItem { Tag: string tag })
+        {
+            return;
+        }
+
+        foreach (KeyValuePair<string, FrameworkElement> entry in _panels)
+        {
+            entry.Value.Visibility = entry.Key == tag ? Visibility.Visible : Visibility.Collapsed;
+        }
+    }
+
+    private void OnOverlayColorChanged(ColorPicker sender, ColorChangedEventArgs args)
+    {
+        if (_suppressColorWriteback)
+        {
+            return;
+        }
+
+        _viewModel.BreakOverlayColor = ToHex(args.NewColor);
+    }
+
+    /// <summary>Formatiert eine Farbe als <c>#AARRGGBB</c>.</summary>
+    private static string ToHex(WinColor color) => HexColor.ToHex(color.A, color.R, color.G, color.B);
+
+    /// <summary>
+    /// Parst <c>#RRGGBB</c>/<c>#AARRGGBB</c>; bei ungueltiger Eingabe wird ein
+    /// dunkles Standard-Overlay verwendet.
+    /// </summary>
+    private static WinColor ParseColor(string hex)
+    {
+        (byte a, byte r, byte g, byte b) = HexColor.ParseOrDefault(hex);
+        return WinColor.FromArgb(a, r, g, b);
     }
 
     private void OnCloseRequested(object? sender, EventArgs e) => Close();

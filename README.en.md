@@ -136,4 +136,4 @@ Architecture, build, tests and the internal details are described in
 
 ## License
 
-Proprietary – all rights reserved.
+MIT License – see [LICENSE](LICENSE).

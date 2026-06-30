@@ -144,4 +144,4 @@ L'architecture, la compilation, les tests et les détails internes sont décrits
 
 ## Licence
 
-Propriétaire – tous droits réservés.
+Licence MIT – voir [LICENSE](LICENSE).

@@ -1,10 +1,41 @@
 # Changelog
 
+**Deutsch** · [English](CHANGELOG.en.md) · [Français](CHANGELOG.fr.md)
+
 Alle nennenswerten Aenderungen an LookAway werden hier dokumentiert.
 Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveroeffentlicht]
+
+## [1.1.0] – 2026-06-30
+
+### Hinzugefuegt
+
+- Pausen-Screen auf **mehreren Monitoren**: Auf Wunsch wird waehrend der Pause
+  jeder angeschlossene Bildschirm mit einem eigenen Overlay abgedeckt (Option
+  „Alle Bildschirme abdunkeln", Standard: an). Funktioniert unabhaengig von
+  DDC/CI — also auch auf Notebooks.
+- **Frei waehlbare Farbe des Pausen-Screens** inklusive Transparenz (Deckkraft-/
+  Alpha-Regler) ueber einen Farbwaehler in den Einstellungen.
+- **Automatische Aktualisierung**: Ist eine neue Version verfuegbar, kann LookAway
+  sie selbst installieren — das neue Portable-Paket wird heruntergeladen, die
+  Programmdateien werden nach dem Beenden ausgetauscht und die App startet neu.
+  Neue Einstellung **„Automatisch aktualisieren"**: laedt die neueste Version im
+  Hintergrund und installiert sie beim naechsten Start ohne Zutun. Ohne diese
+  Option genuegt ein Klick auf den Tray-Eintrag „Update".
+
+### Geaendert
+
+- Modernisierte Einstellungen: Das Menue oben (Registerkarten) wurde durch ein
+  ein-/ausklappbares **Seitenmenue** (NavigationView mit Hamburger-Button) ersetzt.
+- Neues helles **Mint/Teal-Theme** (augenfreundlich) fuer die gesamte Oberflaeche.
+- Nach **Standby oder Inaktivitaet** (z. B. Telefonat) startet der Arbeits-Timer
+  frisch, wenn die Abwesenheit mindestens so lang wie eine Pause war — die Augen
+  haben dann ohnehin bereits geruht. Kurze Unterbrechungen laufen wie bisher mit
+  der Restzeit weiter; eine manuelle Pause bleibt unveraendert.
+- Der Tray-Eintrag „Update" oeffnet nicht mehr nur die Release-Seite, sondern
+  laedt die neue Version herunter und installiert sie automatisch.
 
 ## [1.0.2] – 2026-06-29
 
@@ -63,7 +94,8 @@ Erste vollstaendige Version.
 - Autostart mit Windows ueber den benutzerspezifischen Run-Eintrag
 - Distribution als portable ZIP und MSIX-Paket
 
-[Unveroeffentlicht]: https://github.com/ReneSchustek/LookAway/compare/v1.0.2...HEAD
+[Unveroeffentlicht]: https://github.com/ReneSchustek/LookAway/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/ReneSchustek/LookAway/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/ReneSchustek/LookAway/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/ReneSchustek/LookAway/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/ReneSchustek/LookAway/releases/tag/v1.0.0

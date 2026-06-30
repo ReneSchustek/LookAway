@@ -8,7 +8,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid x:Name="RootGrid" Padding="32" RowSpacing="16" Background="{StaticResource RcBackground}">
+    <Grid x:Name="RootGrid" RequestedTheme="Light" Padding="32" RowSpacing="16" Background="{StaticResource RcBackground}">
         <Grid.Resources>
             <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
         </Grid.Resources>

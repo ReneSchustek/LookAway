@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
+using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,6 +39,8 @@ using FullscreenDetectionService = LookAway.Application.Services.FullscreenDetec
 using IdleDetectionService = LookAway.Application.Services.IdleDetectionService;
 using LogService = LookAway.Application.Services.LogService;
 using PauseActionService = LookAway.Application.Services.PauseActionService;
+using UpdateInstallerService = LookAway.Application.Services.UpdateInstallerService;
+using UpdateApplyArgs = LookAway.Application.Services.UpdateApplyArgs;
 using TrayStatusPresenter = LookAway.Application.Services.TrayStatusPresenter;
 using SingleInstanceLock = LookAway.Application.Services.SingleInstanceLock;
 using TimerService = LookAway.Application.Services.TimerService;
@@ -93,7 +96,10 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     private int _soundVolume;
     private DateTimeOffset _reminderShownAt;
     private bool _manualDnd;
+    private string _overlayColor = Settings.DefaultBreakOverlayColor;
+    private bool _darkenAllScreens = true;
     private Uri? _updateDownloadUrl;
+    private UpdateInfo? _pendingUpdate;
 
     /// <summary>
     /// Initialisiert die Anwendung, das DI-Container und die globalen Handler.
@@ -158,6 +164,14 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     /// <param name="args">Vom System gelieferte Startparameter.</param>
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        // Helfer-Modus: aus dem Staging-Ordner gestartet, um nach dem Beenden der
+        // alten Instanz die Programmdateien zu ersetzen und neu zu starten.
+        if (UpdateApplyArgs.TryParse(Environment.GetCommandLineArgs(), out UpdateApplyArgs applyArgs))
+        {
+            RunUpdateApply(applyArgs);
+            return;
+        }
+
         _instanceLock = new SingleInstanceLock(Environment.UserName);
         if (!_instanceLock.TryAcquire())
         {
@@ -165,6 +179,13 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             _ = _instanceLock.SignalExistingInstance();
             _logService?.LogShutdown(ShutdownReasonSecondInstance);
             Exit();
+            return;
+        }
+
+        // Ausstehendes Update beim Start anwenden (Datei-Tausch via Helfer-Prozess);
+        // beendet diese Instanz, falls ein Update eingespielt wird.
+        if (TryApplyPendingUpdateOnStartup())
+        {
             return;
         }
 
@@ -254,9 +275,23 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             return;
         }
 
-        UpdateInfo info = await Services.GetRequiredService<IUpdateChecker>()
-            .CheckForUpdateAsync()
-            .ConfigureAwait(true);
+        UpdateInfo info;
+        try
+        {
+            info = await Services.GetRequiredService<IUpdateChecker>()
+                .CheckForUpdateAsync()
+                .ConfigureAwait(true);
+        }
+        catch (HttpRequestException ex)
+        {
+            // Routinemaessiger Offline-Start darf nicht als unbeobachteter Fehler enden.
+            AppLog.UpdateCheckPersistFailed(_logger!, ex);
+            return;
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
 
         try
         {
@@ -274,10 +309,19 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             AppLog.UpdateCheckPersistFailed(_logger!, ex);
         }
 
-        if (info.IsUpdateAvailable && info.DownloadUrl is not null)
+        if (info.IsUpdateAvailable)
         {
+            _pendingUpdate = info;
             _updateDownloadUrl = info.DownloadUrl;
             _trayIcon?.SetUpdateAvailable(true);
+
+            // Auto-Update: Paket im Hintergrund herunterladen und entpacken; das
+            // eigentliche Einspielen erfolgt beim naechsten Start.
+            if (settings.AutoUpdate && info.PackageUrl is not null)
+            {
+                _ = Services.GetRequiredService<UpdateInstallerService>()
+                    .DownloadAndStageAsync(info);
+            }
         }
     }
 
@@ -302,6 +346,169 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         }
     }
 
+    // Tray-Aktion "Update": gefundene Aktualisierung herunterladen, entpacken und
+    // ueber den Helfer-Prozess sofort einspielen (App startet danach neu).
+    private void OnUpdateRequested() => _ = HandleUpdateRequestedAsync();
+
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Die manuelle Aktualisierung darf nie abstuerzen: bei jedem Fehler wird auf das Oeffnen der Release-Seite zurueckgefallen.")]
+    private async Task HandleUpdateRequestedAsync()
+    {
+        try
+        {
+            UpdateInfo? info = _pendingUpdate;
+            string target = AppContext.BaseDirectory;
+
+            // Ohne Paket-URL oder bei schreibgeschuetztem Programmordner: Release-Seite oeffnen.
+            if (info?.PackageUrl is null || !UpdateInstallerService.IsDirectoryWritable(target))
+            {
+                OpenUpdatePage();
+                return;
+            }
+
+            string? staged = await Services.GetRequiredService<UpdateInstallerService>()
+                .DownloadAndStageAsync(info)
+                .ConfigureAwait(true);
+            if (staged is null)
+            {
+                OpenUpdatePage();
+                return;
+            }
+
+            RelaunchToApply(staged, target);
+        }
+        catch (Exception ex)
+        {
+            AppLog.UpdateApplyFailed(_logger!, ex);
+            OpenUpdatePage();
+        }
+    }
+
+    private void RelaunchToApply(string stagedDir, string target)
+    {
+        UpdateProcess.StartApply(
+            UpdateInstallerService.ExecutablePathIn(stagedDir),
+            new UpdateApplyArgs(Environment.ProcessId, stagedDir, target));
+        RequestExit();
+    }
+
+    /// <summary>
+    /// Prueft beim Start auf ein bereits entpacktes, neueres Paket und spielt es
+    /// ueber den Helfer-Prozess ein. Gibt <c>true</c> zurueck, wenn diese Instanz
+    /// dafuer beendet wird.
+    /// </summary>
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Der Start darf nie an der Aktualisierung scheitern: jeder Fehler wird geloggt und der normale Start fortgesetzt.")]
+    private bool TryApplyPendingUpdateOnStartup()
+    {
+        try
+        {
+            UpdateInstallerService installer = Services.GetRequiredService<UpdateInstallerService>();
+            Version current = ParseVersion(GetVersion());
+            string target = AppContext.BaseDirectory;
+
+            string? staged = installer.FindPendingUpdateDirectory(current);
+            if (staged is null)
+            {
+                installer.CleanObsolete(current);
+                return false;
+            }
+
+            if (!UpdateInstallerService.IsDirectoryWritable(target))
+            {
+                // z. B. "fuer alle Benutzer"-Installation in Programme — kein Auto-Tausch.
+                AppLog.UpdateTargetNotWritable(_logger!, target);
+                return false;
+            }
+
+            AppLog.ApplyingPendingUpdate(_logger!, staged);
+            UpdateProcess.StartApply(
+                UpdateInstallerService.ExecutablePathIn(staged),
+                new UpdateApplyArgs(Environment.ProcessId, staged, target));
+
+            // Lock freigeben und beenden, damit der Helfer die Dateien ersetzen kann.
+            _instanceLock?.Dispose();
+            _instanceLock = null;
+            _logService?.LogShutdown(ShutdownReasonUserExit);
+            Exit();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            AppLog.UpdateApplyFailed(_logger!, ex);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Helfer-Modus: wartet auf das Ende der alten Instanz, ersetzt die Dateien im
+    /// Zielordner und startet die neue Version. Beendet danach den Helfer-Prozess.
+    /// </summary>
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Der Helfer darf nicht abstuerzen; bei Fehlern wird best-effort die installierte App gestartet.")]
+    private void RunUpdateApply(UpdateApplyArgs apply)
+    {
+        _ = Task.Run(() =>
+        {
+            try
+            {
+                WaitForProcessExit(apply.Pid, TimeSpan.FromSeconds(30));
+                Services.GetRequiredService<UpdateInstallerService>().ApplyStagedFiles(apply.Source, apply.Target);
+            }
+            catch (Exception ex)
+            {
+                // Bei Fehler hat ApplyStagedFiles auf den vorigen Stand zurueckgerollt.
+                AppLog.UpdateApplyFailed(_logger!, ex);
+            }
+            finally
+            {
+                // In jedem Fall die installierte App starten (neuer Stand bei Erfolg,
+                // zurueckgerollter, lauffaehiger Stand bei Fehler), dann den Helfer beenden.
+                TryStartInstalledApp(apply.Target);
+                Environment.Exit(0);
+            }
+        });
+    }
+
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Best-effort-Neustart der App im Helfer-Prozess; ein Fehler darf den Helfer nur am Beenden nicht hindern.")]
+    private void TryStartInstalledApp(string targetDir)
+    {
+        try
+        {
+            UpdateProcess.StartApp(UpdateInstallerService.ExecutablePathIn(targetDir));
+        }
+        catch (Exception ex)
+        {
+            AppLog.UpdateApplyFailed(_logger!, ex);
+        }
+    }
+
+    private static void WaitForProcessExit(int pid, TimeSpan timeout)
+    {
+        try
+        {
+            using Process process = Process.GetProcessById(pid);
+            _ = process.WaitForExit((int)timeout.TotalMilliseconds);
+        }
+        catch (ArgumentException)
+        {
+            // Prozess existiert nicht mehr — bereits beendet.
+        }
+        catch (InvalidOperationException)
+        {
+            // Prozess bereits beendet.
+        }
+    }
+
     private static Version ParseVersion(string version)
         => Version.TryParse(version, out Version? parsed) ? parsed : new Version(0, 0, 0);
 
@@ -315,7 +522,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             Services.GetRequiredService<ILogger<TrayIconService>>(),
             OpenSettings,
             RequestExit,
-            OpenUpdatePage,
+            OnUpdateRequested,
             ShowBreakReminder);
 
         _trayIcon.Show();
@@ -451,6 +658,10 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         {
             // Erwartetes Ende beim Shutdown.
         }
+        catch (ObjectDisposedException)
+        {
+            // Tray/Services beim Shutdown bereits freigegeben — unkritisch.
+        }
     }
 
     private async Task ConsumeTimerEventsAsync(ITimerService timerService, CancellationToken cancellationToken)
@@ -470,9 +681,15 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
                         break;
                     case BreakCompletedEvent:
-                        // Pause regulaer vorbei: Overlay schliessen, Dimmen/Medien-Pause rueckgaengig machen.
-                        _overlayPresenter?.Close();
-                        _ = Services.GetRequiredService<PauseActionService>().EndBreakAsync(cancellationToken);
+                        // Ist das Overlay offen, ist es massgeblich fuer Ende und
+                        // Wiederherstellung (siehe OnBreakOverlayEnded) — die Engine-
+                        // Pause kann durch die Reaktionszeit etwas frueher ablaufen.
+                        // Nur ohne Overlay (z. B. ignorierte Erinnerung) hier aufraeumen.
+                        if (_overlayPresenter is not { IsOverlayOpen: true })
+                        {
+                            _ = Services.GetRequiredService<PauseActionService>().EndBreakAsync(cancellationToken);
+                        }
+
                         break;
                     default:
                         break;
@@ -482,6 +699,10 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         catch (OperationCanceledException)
         {
             // Erwartetes Ende beim Shutdown.
+        }
+        catch (ObjectDisposedException)
+        {
+            // Container/Services beim Shutdown bereits freigegeben — unkritisch.
         }
     }
 
@@ -499,6 +720,9 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         service.DimBrightnessPercent = settings.DimBrightnessPercent;
         service.PauseMediaEnabled = settings.PauseMediaDuringBreak;
         service.ResumeMediaAfterBreak = settings.ResumeMediaAfterBreak;
+
+        _overlayColor = settings.BreakOverlayColor;
+        _darkenAllScreens = settings.DarkenAllScreens;
     }
 
     private void ShowBreakReminder()
@@ -531,10 +755,16 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         switch (result)
         {
             case ReminderResult.StartBreak:
-                // Die Pause laeuft bereits durch die Engine-Transition; Pause-Aktionen starten
-                // und den Bildschirm mit dem abdunkelnden Overlay verdecken (ESC beendet vorzeitig).
+                // Pause-Aktionen starten und den Bildschirm mit dem abdunkelnden
+                // Overlay verdecken. Das Overlay ist ab hier massgeblich fuer das
+                // Pausenende (Ablauf des Countdowns oder ESC) — siehe OnBreakOverlayEnded.
                 _ = Services.GetRequiredService<PauseActionService>().BeginBreakAsync();
-                _overlayPresenter?.Show(_activeModel, _activeInterval.BreakDuration, OnBreakOverlayEnded);
+                _overlayPresenter?.Show(
+                    _activeModel,
+                    _activeInterval.BreakDuration,
+                    _overlayColor,
+                    _darkenAllScreens,
+                    _ => OnBreakOverlayEnded());
                 break;
             case ReminderResult.Snooze:
                 timerService.Start(BreakInterval.Create(
@@ -550,18 +780,15 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     }
 
     /// <summary>
-    /// Reaktion auf das Ende der laufenden Pause aus dem Overlay. Ein regulaeres
-    /// Ende treibt die Timer-Engine selbst (<see cref="BreakCompletedEvent"/>);
-    /// ein vorzeitiges Ende per ESC nimmt die Pause-Aktionen sofort zurueck und
-    /// startet eine neue Arbeitsphase, damit die Restpause nicht weiterlaeuft.
+    /// Reaktion auf das Ende der laufenden Pause aus dem Overlay — egal ob der
+    /// Countdown ablief oder der Benutzer mit ESC beendet hat. Das Overlay ist die
+    /// massgebliche Quelle fuer das Pausenende: die Pause-Aktionen (Helligkeit/
+    /// Medien) werden zurueckgenommen und eine frische Arbeitsphase gestartet. So
+    /// bleibt nichts haengen, falls Engine-Pause und Overlay (durch die
+    /// Reaktionszeit) nicht exakt gleich lange liefen.
     /// </summary>
-    private void OnBreakOverlayEnded(BreakEndReason reason)
+    private void OnBreakOverlayEnded()
     {
-        if (reason != BreakEndReason.EndedByUser)
-        {
-            return;
-        }
-
         _ = Services.GetRequiredService<PauseActionService>().EndBreakAsync();
         if (_activeInterval is not null)
         {
@@ -694,21 +921,6 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         RegisterHotkeys(settings);
     }
 
-    private bool ShowMainWindow()
-    {
-        if (_window is null)
-        {
-            return false;
-        }
-
-        _ = _window.DispatcherQueue.TryEnqueue(() =>
-        {
-            _window.AppWindow.Show();
-            _window.Activate();
-        });
-        return true;
-    }
-
     private void RequestExit()
     {
         _logService?.LogShutdown(ShutdownReasonUserExit);
@@ -730,7 +942,9 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     private void OnActivationRequested(object? sender, EventArgs e)
     {
         AppLog.ActivationFromSecondInstance(_logger!);
-        _ = ShowMainWindow();
+        // Zweitstart oeffnet die Einstellungen — das einzige echte Fenster der
+        // Tray-App; das verborgene Hauptfenster bliebe sonst leer.
+        _ = OpenSettings();
     }
 
     private static ServiceProvider ConfigureServices()
@@ -781,12 +995,15 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _ = services.AddSingleton<IMediaController>(sp => new WindowsMediaController(sp.GetRequiredService<ILogger<WindowsMediaController>>()));
         _ = services.AddSingleton<PauseActionService>();
 
-        // Update-Pruefung
+        // Update-Pruefung und automatische Installation
         _ = services.AddSingleton<IHttpGetClient>(sp => new HttpGetClient(sp.GetRequiredService<ILogger<HttpGetClient>>()));
         _ = services.AddSingleton<IUpdateChecker>(sp => new GitHubUpdateChecker(
             sp.GetRequiredService<IHttpGetClient>(),
             ParseVersion(GetVersion()),
             sp.GetRequiredService<ILogger<GitHubUpdateChecker>>()));
+        _ = services.AddSingleton<UpdateInstallerService>(sp => new UpdateInstallerService(
+            sp.GetRequiredService<IHttpGetClient>(),
+            sp.GetRequiredService<ILogger<UpdateInstallerService>>()));
 
         // Autostart
         _ = services.AddSingleton<IAutoStartService, RegistryAutoStartService>();
@@ -916,4 +1133,22 @@ internal static partial class AppLog
         Level = LogLevel.Warning,
         Message = "Die Update-Seite konnte nicht im Browser geoeffnet werden.")]
     public static partial void BrowserOpenFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(
+        EventId = 1170,
+        Level = LogLevel.Information,
+        Message = "Ausstehendes Update wird eingespielt: {Directory}.")]
+    public static partial void ApplyingPendingUpdate(ILogger logger, string directory);
+
+    [LoggerMessage(
+        EventId = 1171,
+        Level = LogLevel.Warning,
+        Message = "Programmordner {Directory} ist nicht beschreibbar — automatische Aktualisierung nicht moeglich.")]
+    public static partial void UpdateTargetNotWritable(ILogger logger, string directory);
+
+    [LoggerMessage(
+        EventId = 1172,
+        Level = LogLevel.Warning,
+        Message = "Automatische Aktualisierung fehlgeschlagen.")]
+    public static partial void UpdateApplyFailed(ILogger logger, Exception exception);
 }

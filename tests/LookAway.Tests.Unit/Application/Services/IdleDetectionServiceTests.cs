@@ -59,6 +59,23 @@ public sealed class IdleDetectionServiceTests
     });
 
     [Fact]
+    public void Evaluate_ActivityAfterLongIdle_RestartsWorkPhase() => WithService((service, idle, timer) =>
+    {
+        timer.Start(ClassicPomodoro);
+        // 6 min Inaktivitaet >= 5 min Pause: der Nutzer hat nicht auf den Schirm
+        // geschaut, daher startet der Arbeits-Timer beim Zurueckkehren frisch.
+        idle.IdleTime = TimeSpan.FromMinutes(6);
+        service.Evaluate();
+
+        idle.IdleTime = TimeSpan.Zero;
+        service.Evaluate();
+
+        Assert.Equal(TimerState.Working, timer.State);
+        Assert.Equal(TimeSpan.FromMinutes(25), timer.Remaining);
+        Assert.False(service.IsPausedByIdle);
+    });
+
+    [Fact]
     public void Evaluate_TimerIdle_DoesNotPause() => WithService((service, idle, timer) =>
     {
         idle.IdleTime = TimeSpan.FromMinutes(10);

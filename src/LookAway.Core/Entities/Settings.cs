@@ -194,6 +194,12 @@ public sealed class Settings
         }
     }
 
+    /// <summary>
+    /// Soll die neueste Version automatisch im Hintergrund heruntergeladen und
+    /// beim naechsten Start installiert werden? Default: <c>false</c>.
+    /// </summary>
+    public bool AutoUpdate { get; set; }
+
     /// <summary>Zeitpunkt der letzten Update-Pruefung; <c>null</c>, wenn nie geprueft.</summary>
     public DateTimeOffset? LastUpdateCheck { get; set; }
 
@@ -225,6 +231,41 @@ public sealed class Settings
                     $"DimBrightnessPercent muss zwischen {MinDimBrightnessPercent} und {MaxDimBrightnessPercent} liegen.");
             }
             _dimBrightnessPercent = value;
+        }
+    }
+
+    /// <summary>
+    /// Standardfarbe des Pausen-Overlays im ARGB-Hex-Format. Dunkel, leicht
+    /// transparent (Alpha <c>F2</c>).
+    /// </summary>
+    public const string DefaultBreakOverlayColor = HexColor.Default;
+
+    private string _breakOverlayColor = DefaultBreakOverlayColor;
+
+    /// <summary>
+    /// Sollen waehrend der Pause alle angeschlossenen Bildschirme abgedunkelt
+    /// werden (ein Overlay je Monitor)? Bei <c>false</c> nur der Hauptbildschirm.
+    /// Default: <c>true</c>.
+    /// </summary>
+    public bool DarkenAllScreens { get; set; } = true;
+
+    /// <summary>
+    /// Hintergrundfarbe des Pausen-Overlays als Hex-Zeichenkette im Format
+    /// <c>#RRGGBB</c> oder <c>#AARRGGBB</c> (Alpha steuert die Transparenz).
+    /// Default: <see cref="DefaultBreakOverlayColor"/>.
+    /// </summary>
+    public string BreakOverlayColor
+    {
+        get => _breakOverlayColor;
+        set
+        {
+            if (!HexColor.IsValid(value))
+            {
+                throw new ArgumentException(
+                    "BreakOverlayColor muss im Format #RRGGBB oder #AARRGGBB vorliegen.",
+                    nameof(value));
+            }
+            _breakOverlayColor = value;
         }
     }
 

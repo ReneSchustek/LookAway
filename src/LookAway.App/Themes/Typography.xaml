@@ -32,11 +32,30 @@
         <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
 
+    <Style x:Key="RcH2TextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource RcFontFamily}" />
+        <Setter Property="Foreground" Value="{StaticResource RcTextPrimary}" />
+        <Setter Property="FontSize" Value="{StaticResource RcFontSizeH2}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
     <Style x:Key="RcH3TextStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource RcFontFamily}" />
         <Setter Property="Foreground" Value="{StaticResource RcTextPrimary}" />
         <Setter Property="FontSize" Value="{StaticResource RcFontSizeH3}" />
         <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <!-- Abschnittstitel oberhalb einer Karte. -->
+    <Style x:Key="RcSectionHeaderStyle" TargetType="TextBlock" BasedOn="{StaticResource RcH2TextStyle}">
+        <Setter Property="Margin" Value="2,0,0,4" />
+    </Style>
+
+    <!-- Sekundaerer, dezenter Beschreibungstext. -->
+    <Style x:Key="RcSecondaryTextStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource RcFontFamily}" />
+        <Setter Property="Foreground" Value="{StaticResource RcTextSecondary}" />
+        <Setter Property="FontSize" Value="{StaticResource RcFontSizeCaption}" />
     </Style>
 
     <Style x:Key="RcCaptionTextStyle" TargetType="TextBlock">

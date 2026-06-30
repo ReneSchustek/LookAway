@@ -7,7 +7,8 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <!-- Abgedunkelter Vollbild-Hintergrund; helle Schrift fuer den Pausen-Inhalt. -->
+    <!-- Abgedunkelter Vollbild-Hintergrund; helle Schrift fuer den Pausen-Inhalt.
+         Die konkrete Hintergrundfarbe setzt der Code-Behind aus den Einstellungen. -->
     <Grid x:Name="RootGrid" Background="#F20F1115">
         <Grid.KeyboardAccelerators>
             <KeyboardAccelerator Key="Escape" Invoked="OnEscapeInvoked" />

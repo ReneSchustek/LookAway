@@ -1,10 +1,27 @@
 # Changelog
 
+**Deutsch** · [English](CHANGELOG.en.md) · [Français](CHANGELOG.fr.md)
+
 Alle nennenswerten Aenderungen an LookAway werden hier dokumentiert.
 Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
 die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveroeffentlicht]
+
+### Hinzugefuegt
+
+- Pausen-Screen auf **mehreren Monitoren**: Auf Wunsch wird waehrend der Pause
+  jeder angeschlossene Bildschirm mit einem eigenen Overlay abgedeckt (Option
+  „Alle Bildschirme abdunkeln", Standard: an). Funktioniert unabhaengig von
+  DDC/CI — also auch auf Notebooks.
+- **Frei waehlbare Farbe des Pausen-Screens** inklusive Transparenz (Deckkraft-/
+  Alpha-Regler) ueber einen Farbwaehler in den Einstellungen.
+
+### Geaendert
+
+- Modernisierte Einstellungen: Das Menue oben (Registerkarten) wurde durch ein
+  ein-/ausklappbares **Seitenmenue** (NavigationView mit Hamburger-Button) ersetzt.
+- Neues helles **Mint/Teal-Theme** (augenfreundlich) fuer die gesamte Oberflaeche.
 
 ## [1.0.2] – 2026-06-29
 

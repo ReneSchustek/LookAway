@@ -22,6 +22,14 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
   couvre à nouveau tous les moniteurs. (La protection ajoutée en 1.2.2 intercepte
   toujours une éventuelle erreur au lieu de bloquer l'application.)
 
+### Modifié
+
+- **Contenu de pause uniquement sur le moniteur principal :** avec « assombrir tous
+  les écrans », le titre, l'astuce et le compte à rebours n'apparaissent plus que sur
+  le moniteur principal ; les autres moniteurs sont simplement assombris
+  (superposition vide). Le raccourci ÉCHAP met toujours fin à la pause depuis
+  n'importe quel moniteur.
+
 ## [1.2.2] – 2026-07-01
 
 ### Corrigé

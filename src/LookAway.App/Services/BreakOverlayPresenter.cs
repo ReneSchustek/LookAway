@@ -90,6 +90,8 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
             // per foreach in CsWinRT einen InvalidCastException wirft (fehlschlagende
             // IIterable-Abfrage). Daher per Index (IVectorView) in ein verwaltetes
             // Array übernehmen und erst über dieses iterieren.
+            DisplayArea primary = DisplayArea.Primary;
+
             DisplayArea[] areas;
             if (allScreens)
             {
@@ -102,12 +104,15 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
             }
             else
             {
-                areas = new[] { DisplayArea.Primary };
+                areas = new[] { primary };
             }
 
             foreach (DisplayArea area in areas)
             {
-                Views.BreakOverlayWindow window = new(viewModel, _localization, background);
+                // Inhalt (Titel/Hinweis/Countdown) nur auf dem Hauptmonitor; weitere
+                // Monitore werden nur abgedunkelt (leeres Overlay).
+                bool isPrimary = area.DisplayId.Value == primary.DisplayId.Value;
+                Views.BreakOverlayWindow window = new(viewModel, _localization, background, isPrimary);
                 _windows.Add(window);
                 window.ShowOnDisplay(area);
             }

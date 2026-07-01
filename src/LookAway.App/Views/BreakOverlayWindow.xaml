@@ -15,6 +15,7 @@
         </Grid.KeyboardAccelerators>
 
         <StackPanel
+            x:Name="ContentPanel"
             VerticalAlignment="Center"
             HorizontalAlignment="Center"
             MaxWidth="960"

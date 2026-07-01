@@ -21,6 +21,7 @@ namespace LookAway.Views;
 internal sealed partial class BreakOverlayWindow : Window
 {
     private readonly BreakOverlayViewModel _viewModel;
+    private readonly bool _showContent;
     private bool _closedByCaller;
 
     /// <summary>
@@ -29,25 +30,40 @@ internal sealed partial class BreakOverlayWindow : Window
     /// <param name="viewModel">Gemeinsame Countdown- und Aktionslogik der Pause.</param>
     /// <param name="localization">Liefert die sprachabhängigen Texte.</param>
     /// <param name="background">Hintergrundfarbe des Overlays (inkl. Transparenz).</param>
-    public BreakOverlayWindow(BreakOverlayViewModel viewModel, ILocalizationService localization, WinColor background)
+    /// <param name="showContent">
+    /// Zeigt dieses Fenster Titel, Hinweis und Countdown? Nur der Hauptmonitor zeigt
+    /// den Inhalt; weitere Monitore werden nur abgedunkelt (leeres Overlay).
+    /// </param>
+    public BreakOverlayWindow(BreakOverlayViewModel viewModel, ILocalizationService localization, WinColor background, bool showContent)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
         ArgumentNullException.ThrowIfNull(localization);
         _viewModel = viewModel;
+        _showContent = showContent;
 
         InitializeComponent();
 
         Title = "LookAway";
         RootGrid.Background = new SolidColorBrush(background);
 
-        // Textfarbe an die gewählte Overlay-Farbe anpassen: auf hellen Farben
-        // dunkler Text, sonst heller — damit der Inhalt immer lesbar bleibt.
-        ApplyReadableForeground(background);
+        if (showContent)
+        {
+            // Hauptmonitor: Titel, Hinweis und Countdown anzeigen. Die Textfarbe an
+            // die gewählte Overlay-Farbe anpassen (auf hellen Farben dunkler Text,
+            // sonst heller), damit der Inhalt immer lesbar bleibt.
+            ApplyReadableForeground(background);
 
-        TitleText.Text = localization.GetText(OverlayTextKeys.Title);
-        HintText.Text = localization.GetText(viewModel.HintKey);
-        EndHintText.Text = localization.GetText(OverlayTextKeys.EndHint);
-        CountdownText.Text = viewModel.RemainingDisplay;
+            TitleText.Text = localization.GetText(OverlayTextKeys.Title);
+            HintText.Text = localization.GetText(viewModel.HintKey);
+            EndHintText.Text = localization.GetText(OverlayTextKeys.EndHint);
+            CountdownText.Text = viewModel.RemainingDisplay;
+        }
+        else
+        {
+            // Nebenmonitor: nur abdunkeln, keinen Inhalt zeigen. Der ESC-Kurzbefehl
+            // (auf dem RootGrid) bleibt aktiv, sodass die Pause auch hier endbar ist.
+            ContentPanel.Visibility = Visibility.Collapsed;
+        }
 
         Closed += OnWindowClosed;
     }
@@ -69,8 +85,17 @@ internal sealed partial class BreakOverlayWindow : Window
         Activate();
     }
 
-    /// <summary>Aktualisiert die angezeigte Restzeit aus dem ViewModel.</summary>
-    public void RefreshCountdown() => CountdownText.Text = _viewModel.RemainingDisplay;
+    /// <summary>
+    /// Aktualisiert die angezeigte Restzeit aus dem ViewModel. Nur auf dem
+    /// Hauptmonitor wirksam; Nebenmonitore zeigen keinen Countdown.
+    /// </summary>
+    public void RefreshCountdown()
+    {
+        if (_showContent)
+        {
+            CountdownText.Text = _viewModel.RemainingDisplay;
+        }
+    }
 
     private void ApplyReadableForeground(WinColor background)
     {

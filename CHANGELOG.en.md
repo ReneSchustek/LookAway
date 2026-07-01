@@ -21,6 +21,13 @@ and versioning follows [Semantic Versioning](https://semver.org/).
   all monitors again. (The safeguard added in 1.2.2 still catches any failure
   instead of leaving the app stuck.)
 
+### Changed
+
+- **Break content only on the primary monitor:** With "darken all screens", the
+  title, hint, and countdown now appear only on the primary monitor; additional
+  monitors are merely darkened (empty overlay). The ESC shortcut still ends the
+  break from any monitor.
+
 ## [1.2.2] – 2026-07-01
 
 ### Fixed

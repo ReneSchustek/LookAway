@@ -21,6 +21,13 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
   übernommen; das Overlay deckt wieder alle Monitore ab. (Die in 1.2.2 ergänzte
   Absicherung fängt einen etwaigen Fehler weiterhin ab, statt die App hängen zu lassen.)
 
+### Geändert
+
+- **Pausen-Inhalt nur auf dem Hauptmonitor:** Titel, Hinweis und Countdown werden
+  bei „alle Bildschirme abdunkeln" nur noch auf dem Hauptmonitor angezeigt; weitere
+  Monitore werden lediglich abgedunkelt (leeres Overlay). Der ESC-Kurzbefehl beendet
+  die Pause weiterhin von jedem Monitor aus.
+
 ## [1.2.2] – 2026-07-01
 
 ### Behoben

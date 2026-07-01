@@ -99,7 +99,18 @@ internal sealed partial class BreakOverlayWindow : Window
 
     private void ApplyReadableForeground(WinColor background)
     {
-        bool light = Core.Domain.HexColor.IsLight(background.R, background.G, background.B);
+        // Das Overlay ist halbtransparent und liegt über dem (hellen) Fenstergrund.
+        // Für die Textfarbe zählt daher die tatsächlich sichtbare, deckende Farbe:
+        // die Overlay-Farbe über Weiß zusammensetzen und danach die wahrgenommene
+        // Helligkeit (BT.601-Luma) bewerten. So bekommt z. B. ein halbtransparentes
+        // Schwarz (wirkt als Grau) dunklen statt hellen Text.
+        static byte OverWhite(byte channel, byte alpha)
+            => (byte)(((channel * alpha) + (255 * (255 - alpha))) / 255);
+
+        byte er = OverWhite(background.R, background.A);
+        byte eg = OverWhite(background.G, background.A);
+        byte eb = OverWhite(background.B, background.A);
+        bool light = ((0.299 * er) + (0.587 * eg) + (0.114 * eb)) > 128.0;
 
         SolidColorBrush primary = new(light ? WinColor.FromArgb(0xFF, 0x0B, 0x1F, 0x1C) : WinColor.FromArgb(0xFF, 0xFF, 0xFF, 0xFF));
         SolidColorBrush secondary = new(light ? WinColor.FromArgb(0xFF, 0x33, 0x4A, 0x45) : WinColor.FromArgb(0xFF, 0xE5, 0xE7, 0xEB));

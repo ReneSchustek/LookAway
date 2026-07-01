@@ -27,6 +27,10 @@ and versioning follows [Semantic Versioning](https://semver.org/).
   title, hint, and countdown now appear only on the primary monitor; additional
   monitors are merely darkened (empty overlay). The ESC shortcut still ends the
   break from any monitor.
+- **Better automatic overlay text color:** The high-contrast text color now follows
+  the actually visible overlay color (the semi-transparent color composited over a
+  light background, judged by perceived brightness). A semi-transparent black — which
+  appears grey — therefore gets dark text instead of poorly readable light text.
 
 ## [1.2.2] – 2026-07-01
 

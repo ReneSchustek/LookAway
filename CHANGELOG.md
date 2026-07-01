@@ -27,6 +27,11 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
   bei „alle Bildschirme abdunkeln" nur noch auf dem Hauptmonitor angezeigt; weitere
   Monitore werden lediglich abgedunkelt (leeres Overlay). Der ESC-Kurzbefehl beendet
   die Pause weiterhin von jedem Monitor aus.
+- **Bessere automatische Textfarbe im Overlay:** Die kontrastreiche Textfarbe richtet
+  sich jetzt nach der tatsächlich sichtbaren Overlay-Farbe (halbtransparente Farbe
+  über hellem Grund zusammengesetzt, wahrgenommene Helligkeit). Ein halbtransparentes
+  Schwarz — das als Grau erscheint — bekommt dadurch dunklen statt hellem, schlecht
+  lesbarem Text.
 
 ## [1.2.2] – 2026-07-01
 

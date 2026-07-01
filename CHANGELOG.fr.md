@@ -29,6 +29,11 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
   le moniteur principal ; les autres moniteurs sont simplement assombris
   (superposition vide). Le raccourci ÉCHAP met toujours fin à la pause depuis
   n'importe quel moniteur.
+- **Meilleure couleur de texte automatique de la superposition :** la couleur de
+  texte contrastée suit désormais la couleur réellement visible de la superposition
+  (la couleur semi-transparente composée sur un fond clair, évaluée selon la
+  luminosité perçue). Un noir semi-transparent — qui apparaît gris — obtient ainsi un
+  texte foncé au lieu d'un texte clair peu lisible.
 
 ## [1.2.2] – 2026-07-01
 

@@ -86,9 +86,24 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
             WinColor background = WinColor.FromArgb(a, r, g, b);
 
             // Auf Wunsch jeden Monitor abdecken; sonst nur den Hauptbildschirm.
-            IReadOnlyList<DisplayArea> areas = allScreens
-                ? DisplayArea.FindAll()
-                : new[] { DisplayArea.Primary };
+            // DisplayArea.FindAll() liefert eine WinRT-Projektion, deren Enumeration
+            // per foreach in CsWinRT einen InvalidCastException wirft (fehlschlagende
+            // IIterable-Abfrage). Daher per Index (IVectorView) in ein verwaltetes
+            // Array übernehmen und erst über dieses iterieren.
+            DisplayArea[] areas;
+            if (allScreens)
+            {
+                IReadOnlyList<DisplayArea> found = DisplayArea.FindAll();
+                areas = new DisplayArea[found.Count];
+                for (int i = 0; i < found.Count; i++)
+                {
+                    areas[i] = found[i];
+                }
+            }
+            else
+            {
+                areas = new[] { DisplayArea.Primary };
+            }
 
             foreach (DisplayArea area in areas)
             {

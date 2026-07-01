@@ -8,6 +8,19 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+## [1.2.3] – 2026-07-01
+
+### Behoben
+
+- **Pausen-Overlay erscheint wieder:** Beim Pausenbeginn mit aktivem „alle
+  Bildschirme abdunkeln" (Standard) wurde das Overlay nicht angezeigt. Ursache war
+  ein `InvalidCastException` beim Aufzählen der Monitorliste aus
+  `DisplayArea.FindAll()` (WinRT-Projektion, fehlschlagende `IIterable`-Abfrage in
+  CsWinRT) — auf älteren Ständen führte das sogar zum Absturz beim Klick auf
+  „Pause starten". Die Monitorliste wird jetzt per Index in ein verwaltetes Array
+  übernommen; das Overlay deckt wieder alle Monitore ab. (Die in 1.2.2 ergänzte
+  Absicherung fängt einen etwaigen Fehler weiterhin ab, statt die App hängen zu lassen.)
+
 ## [1.2.2] – 2026-07-01
 
 ### Behoben

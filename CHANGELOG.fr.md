@@ -8,6 +8,20 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+## [1.2.3] – 2026-07-01
+
+### Corrigé
+
+- **La superposition de pause s'affiche à nouveau :** avec « assombrir tous les
+  écrans » activé (par défaut), la superposition ne s'affichait pas au début d'une
+  pause. La cause était une `InvalidCastException` lors de l'énumération de la liste
+  des moniteurs issue de `DisplayArea.FindAll()` (une projection WinRT dont la
+  requête `IIterable` échoue dans CsWinRT) — sur les versions plus anciennes, cela
+  faisait même planter l'application au clic sur « Démarrer la pause ». La liste des
+  moniteurs est désormais copiée dans un tableau managé par index ; la superposition
+  couvre à nouveau tous les moniteurs. (La protection ajoutée en 1.2.2 intercepte
+  toujours une éventuelle erreur au lieu de bloquer l'application.)
+
 ## [1.2.2] – 2026-07-01
 
 ### Corrigé

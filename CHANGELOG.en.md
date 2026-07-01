@@ -8,6 +8,19 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.3] – 2026-07-01
+
+### Fixed
+
+- **Break overlay shows again:** With "darken all screens" enabled (the default),
+  the overlay was not displayed when a break started. The cause was an
+  `InvalidCastException` while enumerating the monitor list from
+  `DisplayArea.FindAll()` (a WinRT projection whose `IIterable` query fails in
+  CsWinRT) — on older builds this even crashed the app when clicking "Start break".
+  The monitor list is now copied into a managed array by index; the overlay covers
+  all monitors again. (The safeguard added in 1.2.2 still catches any failure
+  instead of leaving the app stuck.)
+
 ## [1.2.2] – 2026-07-01
 
 ### Fixed

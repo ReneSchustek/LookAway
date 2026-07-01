@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using LookAway.Application.Coordination;
 using LookAway.Application.ViewModels;
 using LookAway.Core.Domain;
@@ -51,7 +52,19 @@ internal sealed class ReminderPresenter : IReminderPresenter
 
         _isReminderOpen = true;
 
-        _ = _dispatcher.TryEnqueue(() =>
+        _ = _dispatcher.TryEnqueue(() => TryShowWindow(model, onResult));
+    }
+
+    // Erzeugt das Erinnerungsfenster auf dem UI-Thread. Scheitert der Aufbau, wird das
+    // Offen-Flag zurückgesetzt, damit künftige Erinnerungen nicht dauerhaft
+    // unterdrückt bleiben; die verpasste Erinnerung gilt als „übersprungen".
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Der Fenster-Aufbau darf die Erinnerungen nie dauerhaft blockieren: bei jedem Fehler wird das Offen-Flag zurückgesetzt und die Erinnerung als übersprungen behandelt.")]
+    private void TryShowWindow(BreakModel model, Action<ReminderResult> onResult)
+    {
+        try
         {
             string hintKey = BreakModelRegistry.GetHintKey(model);
             BreakReminderViewModel viewModel = new(hintKey);
@@ -63,6 +76,11 @@ internal sealed class ReminderPresenter : IReminderPresenter
 
             Views.BreakReminderWindow window = new(viewModel, _localization);
             window.Activate();
-        });
+        }
+        catch (Exception)
+        {
+            _isReminderOpen = false;
+            onResult(ReminderResult.Skip);
+        }
     }
 }

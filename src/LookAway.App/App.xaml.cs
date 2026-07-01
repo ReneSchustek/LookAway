@@ -313,7 +313,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             // Auto-Update: Paket im Hintergrund herunterladen, entpacken und Version
             // + Datei-Hash vermerken; das eigentliche Einspielen erfolgt beim
             // nächsten Start nur für genau dieses (verifizierte) Paket.
-            if (settings.AutoUpdate && info.PackageUrl is not null)
+            if (settings.AutoUpdate && info.PackageUrl is not null && !IsAlreadyStaged(info, settings))
             {
                 _ = AutoStageUpdateAsync(info);
             }
@@ -410,6 +410,27 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         {
             AppLog.UpdateCheckPersistFailed(_logger!, ex);
         }
+    }
+
+    /// <summary>
+    /// Liegt für genau diese Aktualisierung bereits ein verifiziertes Paket im
+    /// Staging-Ordner? Dann nicht erneut laden. Sonst würde die entpackte EXE bei
+    /// jedem Start neu geschrieben und vom Virenscanner erneut geprüft — solange
+    /// dieser Scan das Einspielen (kurzzeitig „Zugriff verweigert") blockiert, käme
+    /// das Update nie durch. Ein einmal gestagetes Paket „kühlt ab" und wird beim
+    /// nächsten Start eingespielt.
+    /// </summary>
+    private static bool IsAlreadyStaged(UpdateInfo info, Settings settings)
+    {
+        if (!string.Equals(settings.PendingUpdateVersion, info.LatestVersion, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        Version current = ParseVersion(GetVersion());
+        return Services.GetRequiredService<UpdateInstallerService>()
+            .FindVerifiedPendingUpdateDirectory(current, settings.PendingUpdateVersion, settings.PendingUpdateSha256)
+            is not null;
     }
 
     private void RelaunchToApply(string stagedDir, string target)

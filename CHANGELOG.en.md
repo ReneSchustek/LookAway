@@ -8,6 +8,22 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.2] – 2026-07-01
+
+### Fixed
+
+- **Automatic update no longer gets stuck:** An update package that was already
+  downloaded and verified (signature and hash) is **no longer re-downloaded and
+  re-extracted on every launch**. Previously each startup overwrote the extracted
+  `LookAway.exe`; a freshly written, unsigned file is scanned by the virus scanner
+  on first execution, which can briefly block the helper launch with "Access
+  denied". That kept the package perpetually "cold" and the update never got
+  applied. The staged package now stays in place and is applied on the next start.
+- **More robust break start:** If building the break overlay or the reminder window
+  fails, the app stays usable: state is reset cleanly, brightness/media are
+  restored, and the timer keeps running — instead of getting stuck in a "break in
+  progress" state.
+
 ## [1.2.1] – 2026-06-30
 
 ### Fixed

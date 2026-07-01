@@ -8,6 +8,23 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+## [1.2.2] – 2026-07-01
+
+### Behoben
+
+- **Automatische Aktualisierung bleibt nicht mehr hängen:** Ein bereits
+  heruntergeladenes, signatur- und hash-geprüftes Update-Paket wird bei jedem
+  Start **nicht erneut geladen und entpackt**. Bisher überschrieb der Startlauf die
+  entpackte `LookAway.exe` jedes Mal neu; eine frisch geschriebene, noch nicht
+  signierte Datei wird beim ersten Ausführen vom Virenscanner geprüft, was den
+  Helfer-Start kurzzeitig mit „Zugriff verweigert" blockieren kann. Dadurch wurde
+  das Paket immer wieder „kalt" und das Update nie eingespielt. Jetzt bleibt das
+  einmal bereitgestellte Paket liegen und wird beim nächsten Start eingespielt.
+- **Robusterer Pausenbeginn:** Schlägt der Aufbau des Pausen-Overlays oder des
+  Erinnerungsfensters fehl, bleibt die App bedienbar: der Zustand wird sauber
+  zurückgesetzt, Helligkeit/Medien werden wiederhergestellt und der Timer läuft
+  weiter — statt mit gesetztem „Pause läuft"-Zustand hängenzubleiben.
+
 ## [1.2.1] – 2026-06-30
 
 ### Behoben

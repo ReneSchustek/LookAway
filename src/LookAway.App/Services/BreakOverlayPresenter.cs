@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using LookAway.Application.Coordination;
 using LookAway.Application.ViewModels;
 using LookAway.Core.Domain;
@@ -56,7 +57,20 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
 
         _isOverlayOpen = true;
 
-        _ = _dispatcher.TryEnqueue(() =>
+        _ = _dispatcher.TryEnqueue(() => TryShowWindows(model, breakDuration, overlayColorHex, allScreens, onEnded));
+    }
+
+    // Erzeugt die Overlay-Fenster auf dem UI-Thread. Scheitert der Aufbau (z. B. ein
+    // Fenster-/Vollbild-Fehler auf ungewöhnlichen Monitor-Konfigurationen), wird
+    // sauber aufgeräumt und das Pausenende signalisiert — so bleibt die App bedienbar,
+    // statt mit gesetztem Overlay-Flag und aktiven Pause-Aktionen hängenzubleiben.
+    [SuppressMessage(
+        "Design",
+        "CA1031:Do not catch general exception types",
+        Justification = "Der Overlay-Aufbau darf die App nie hängen lassen: jeder Fehler wird geloggt-frei aufgeräumt und als Pausenende behandelt.")]
+    private void TryShowWindows(BreakModel model, TimeSpan breakDuration, string overlayColorHex, bool allScreens, Action<BreakEndReason> onEnded)
+    {
+        try
         {
             string hintKey = BreakModelRegistry.GetHintKey(model);
             BreakOverlayViewModel viewModel = new(hintKey, breakDuration);
@@ -84,7 +98,15 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
             }
 
             StartCountdown(viewModel);
-        });
+        }
+        catch (Exception)
+        {
+            TeardownWindows();
+            _isOverlayOpen = false;
+            // Als reguläres Pausenende behandeln: Helligkeit/Medien werden
+            // zurückgenommen und eine frische Arbeitsphase gestartet.
+            onEnded(BreakEndReason.Elapsed);
+        }
     }
 
     /// <inheritdoc />

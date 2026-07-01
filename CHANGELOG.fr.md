@@ -8,6 +8,24 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+## [1.2.2] – 2026-07-01
+
+### Corrigé
+
+- **La mise à jour automatique ne reste plus bloquée :** un paquet de mise à jour
+  déjà téléchargé et vérifié (signature et empreinte) **n'est plus retéléchargé ni
+  réextrait à chaque démarrage**. Auparavant, chaque lancement réécrivait le
+  `LookAway.exe` extrait ; un fichier fraîchement écrit et non signé est analysé par
+  l'antivirus lors de sa première exécution, ce qui peut brièvement bloquer le
+  lancement de l'assistant avec « Accès refusé ». Le paquet restait ainsi
+  perpétuellement « froid » et la mise à jour n'était jamais appliquée. Le paquet
+  préparé est désormais conservé et appliqué au prochain démarrage.
+- **Démarrage de pause plus robuste :** si la construction de la superposition de
+  pause ou de la fenêtre de rappel échoue, l'application reste utilisable : l'état
+  est réinitialisé proprement, la luminosité et les médias sont restaurés et le
+  minuteur continue de tourner — au lieu de rester bloqué dans un état « pause en
+  cours ».
+
 ## [1.2.1] – 2026-06-30
 
 ### Corrigé

@@ -8,6 +8,17 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+## [1.2.4] – 2026-07-01
+
+### Modifié
+
+- **Transparence de la superposition supprimée :** le curseur alpha/opacité du sélecteur
+  de couleur disparaît, tout comme l'astuce trompeuse (« la transparence de l'écran »).
+  La vraie transparence de fenêtre n'est pas réalisable de façon fiable dans WinUI 3 ; la
+  superposition recouvre l'écran de manière opaque. Une couleur auparavant
+  semi-transparente est automatiquement migrée vers son équivalent opaque visuellement
+  identique — l'apparence ne change pas.
+
 ## [1.2.3] – 2026-07-01
 
 ### Corrigé

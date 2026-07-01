@@ -378,7 +378,11 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
             PauseMediaDuringBreak = settings.PauseMediaDuringBreak;
             ResumeMediaAfterBreak = settings.ResumeMediaAfterBreak;
             DarkenAllScreens = settings.DarkenAllScreens;
-            BreakOverlayColor = settings.BreakOverlayColor;
+            // Overlay-Farbe deckend übernehmen: die Transparenz-/Alpha-Einstellung
+            // entfällt (in WinUI 3 nicht als Durchsicht umsetzbar). Eine bisher
+            // halbtransparente Farbe wird auf ihr sichtbares, opakes Äquivalent
+            // migriert, damit sich das Erscheinungsbild nicht ändert.
+            BreakOverlayColor = HexColor.FlattenOverWhite(settings.BreakOverlayColor);
 
             LoadDurations(settings);
         }

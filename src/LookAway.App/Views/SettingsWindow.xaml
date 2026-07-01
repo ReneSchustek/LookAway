@@ -241,7 +241,7 @@
                                 <ColorPicker
                                     x:Name="OverlayColorPicker"
                                     AutomationProperties.Name="{Binding OverlayColorLabel}"
-                                    IsAlphaEnabled="True"
+                                    IsAlphaEnabled="False"
                                     IsColorSliderVisible="True"
                                     IsColorChannelTextInputVisible="False"
                                     IsHexInputVisible="True"

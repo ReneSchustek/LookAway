@@ -8,6 +8,16 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.4] – 2026-07-01
+
+### Changed
+
+- **Overlay transparency removed:** The alpha/opacity slider on the overlay colour
+  picker is gone, along with the misleading hint ("how much the screen shows through").
+  True window transparency is not reliably achievable in WinUI 3; the overlay covers
+  the screen opaquely. A previously semi-transparent colour is automatically migrated
+  to its visually equivalent opaque colour — the appearance does not change.
+
 ## [1.2.3] – 2026-07-01
 
 ### Fixed

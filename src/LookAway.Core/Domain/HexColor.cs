@@ -83,6 +83,22 @@ public static class HexColor
         => string.Create(CultureInfo.InvariantCulture, $"#{a:X2}{r:X2}{g:X2}{b:X2}");
 
     /// <summary>
+    /// Setzt eine (evtl. halbtransparente) Farbe deckend über Weiß zusammen und gibt
+    /// die resultierende <em>opake</em> Farbe (<c>#FFRRGGBB</c>) zurück. So bleibt das
+    /// sichtbare Erscheinungsbild eines über hellem Grund gezeichneten Overlays
+    /// erhalten, ohne einen Alphakanal zu benötigen. Bei bereits deckenden Farben
+    /// (Alpha <c>0xFF</c>) unverändert.
+    /// </summary>
+    /// <param name="value">Hex-Farbe (<c>#RRGGBB</c> oder <c>#AARRGGBB</c>).</param>
+    /// <returns>Deckende Farbe als <c>#FFRRGGBB</c>.</returns>
+    public static string FlattenOverWhite(string? value)
+    {
+        (byte a, byte r, byte g, byte b) = ParseOrDefault(value);
+        byte Over(byte channel) => (byte)(((channel * a) + (255 * (255 - a))) / 255);
+        return ToHex(0xFF, Over(r), Over(g), Over(b));
+    }
+
+    /// <summary>
     /// Bestimmt anhand der relativen Luminanz (WCAG, sRGB-linearisiert), ob eine
     /// Farbe hell ist — dient der Wahl einer kontrastreichen Textfarbe darüber.
     /// </summary>

@@ -8,6 +8,17 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+## [1.2.4] – 2026-07-01
+
+### Geändert
+
+- **Overlay-Transparenz entfernt:** Der Alpha-/Deckkraft-Regler beim Overlay-Farbwähler
+  entfällt, ebenso der irreführende Hinweis („wie stark der Bildschirm durchscheint").
+  Echte Fenster-Transparenz ist in WinUI 3 nicht zuverlässig umsetzbar; das Overlay
+  überdeckt den Bildschirm deckend. Eine bisher halbtransparent eingestellte Farbe wird
+  automatisch auf ihr optisch gleiches, deckendes Äquivalent migriert — das Aussehen
+  ändert sich dadurch nicht.
+
 ## [1.2.3] – 2026-07-01
 
 ### Behoben

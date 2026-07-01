@@ -68,4 +68,19 @@ public sealed class HexColorTests
         Assert.True(HexColor.IsLight(0xFF, 0xFF, 0xFF));
         Assert.False(HexColor.IsLight(0x0F, 0x11, 0x15));
     }
+
+    [Fact]
+    public void FlattenOverWhite_CompositesSemiTransparentBlackToGrey()
+    {
+        // Schwarz mit 0x61 (97) Deckkraft über Weiß ergibt Grau: 255*(255-97)/255 = 158 = 0x9E.
+        Assert.Equal("#FF9E9E9E", HexColor.FlattenOverWhite("#61000000"));
+    }
+
+    [Fact]
+    public void FlattenOverWhite_LeavesOpaqueColorsUnchanged()
+    {
+        Assert.Equal("#FF123456", HexColor.FlattenOverWhite("#FF123456"));
+        // 6-stellige Eingabe gilt als deckend.
+        Assert.Equal("#FF123456", HexColor.FlattenOverWhite("#123456"));
+    }
 }

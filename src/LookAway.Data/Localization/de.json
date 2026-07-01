@@ -60,7 +60,7 @@
   "Settings.PauseActions.ResumeMedia": "Medien nach der Pause fortsetzen",
   "Settings.PauseActions.DarkenAllScreens": "Alle Bildschirme abdunkeln (mehrere Monitore)",
   "Settings.PauseActions.OverlayColor": "Farbe des Pausen-Bildschirms",
-  "Settings.PauseActions.OverlayColorHint": "Über den Deckkraft-Regler (Alpha) legst du fest, wie stark der Bildschirm durchscheint.",
+  "Settings.PauseActions.OverlayColorHint": "Farbe, mit der der Bildschirm während der Pause überdeckt wird.",
 
   "Settings.Language.Label": "Sprache",
   "Settings.AutoStart.Label": "Mit Windows starten",

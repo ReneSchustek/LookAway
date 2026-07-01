@@ -309,7 +309,9 @@ public sealed class SettingsViewModelTests
         await viewModel.LoadAsync();
 
         Assert.False(viewModel.DarkenAllScreens);
-        Assert.Equal("#80123456", viewModel.BreakOverlayColor);
+        // Halbtransparent gespeicherte Farbe wird beim Laden auf ihr deckendes
+        // Äquivalent (über Weiß zusammengesetzt) migriert — Transparenz entfällt.
+        Assert.Equal("#FF8899AA", viewModel.BreakOverlayColor);
         Assert.True(viewModel.DimScreenDuringBreak);
         Assert.Equal(50, viewModel.DimBrightnessPercent);
         Assert.True(viewModel.AutoUpdate);

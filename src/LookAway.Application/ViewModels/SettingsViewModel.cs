@@ -322,6 +322,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Beschriftung "Medien fortsetzen".</summary>
     public string ResumeMediaLabel => _localization.GetText(SettingsTextKeys.PauseActionsResumeMedia);
 
+    /// <summary>Hinweistext, welche Player automatisch pausiert werden.</summary>
+    public string PauseMediaHint => _localization.GetText(SettingsTextKeys.PauseActionsPauseMediaHint);
+
     /// <summary>Beschriftung "Alle Bildschirme abdunkeln".</summary>
     public string DarkenAllScreensLabel => _localization.GetText(SettingsTextKeys.PauseActionsDarkenAllScreens);
 

@@ -8,6 +8,15 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+## [1.2.5] – 2026-07-02
+
+### Geändert
+
+- **Hinweis zur Medienpause:** In den Pause-Aktionen erklärt ein Hinweistext nun, welche
+  Player automatisch pausiert werden. Nur Anwendungen, die sich in die Windows-Mediensteuerung
+  (SMTC) einklinken, lassen sich steuern (z. B. Spotify, die Musik-App sowie Wiedergabe in
+  Chrome, Edge und Firefox). **VLC unterstützt dies nicht** und wird nicht pausiert.
+
 ## [1.2.4] – 2026-07-01
 
 ### Geändert

@@ -41,6 +41,7 @@ der 1.1-Reihe:
   Pause, zeigt den Countdown und das Übungs-Ziel und lässt sich jederzeit mit **ESC** beenden;
   optional auf **allen Monitoren** und in **frei wählbarer Farbe**
 - **Pause-Aktionen** – Bildschirm dimmen (DDC/CI) und Medienwiedergabe während der Pause pausieren
+  (nur Player mit Windows-Mediensteuerung wie Spotify, Musik-App, Chrome/Edge/Firefox; VLC wird nicht unterstützt)
 - **Automatische Updates** – optionale Prüfung über die GitHub-Releases-API; auf Wunsch lädt und
   installiert LookAway neue Versionen selbst (siehe [Updates](#updates))
 - **Dreisprachig** – Deutsch, Englisch, Französisch, live umschaltbar

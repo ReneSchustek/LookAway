@@ -41,6 +41,7 @@ Highlights of the 1.1 line:
   countdown and the exercise goal, and can be ended at any time with **ESC**; optionally on **all
   monitors** and in a **freely selectable colour**
 - **Break actions** – dim the screen (DDC/CI) and pause media playback during the break
+  (only players with Windows media controls such as Spotify, the Music app, Chrome/Edge/Firefox; VLC is not supported)
 - **Automatic updates** – optional check via the GitHub releases API; on request LookAway downloads
   and installs new versions itself (see [Updates](#updates))
 - **Trilingual** – German, English, French, switchable at runtime

@@ -58,6 +58,7 @@
   "Settings.PauseActions.DimBrightness": "Brightness during the break (%)",
   "Settings.PauseActions.PauseMedia": "Pause media playback",
   "Settings.PauseActions.ResumeMedia": "Resume media after the break",
+  "Settings.PauseActions.PauseMediaHint": "Only players that integrate with the Windows media controls are paused automatically (e.g. Spotify, the Music app, and playback in Chrome, Edge and Firefox). VLC does not support this and will not be paused.",
   "Settings.PauseActions.DarkenAllScreens": "Darken all screens (multiple monitors)",
   "Settings.PauseActions.OverlayColor": "Break screen colour",
   "Settings.PauseActions.OverlayColorHint": "Colour used to cover the screen during a break.",

@@ -230,6 +230,7 @@
                                     Content="{Binding ResumeMediaLabel}"
                                     IsChecked="{Binding ResumeMediaAfterBreak, Mode=TwoWay}"
                                     IsEnabled="{Binding PauseMediaDuringBreak}" />
+                                <TextBlock Text="{Binding PauseMediaHint}" Foreground="{StaticResource RcTextSecondary}" TextWrapping="Wrap" />
                                 <CheckBox Content="{Binding DarkenAllScreensLabel}" IsChecked="{Binding DarkenAllScreens, Mode=TwoWay}" />
                             </StackPanel>
                         </Border>

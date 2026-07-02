@@ -42,6 +42,7 @@ forts de la série 1.1 :
   pause, affiche le compte à rebours et l'objectif d'exercice, et se ferme à tout moment avec
   **ÉCHAP** ; en option sur **tous les moniteurs** et dans une **couleur librement choisie**
 - **Actions de pause** – assombrir l'écran (DDC/CI) et mettre en pause la lecture multimédia
+  (uniquement les lecteurs intégrés aux commandes multimédias de Windows comme Spotify, l'application Musique, Chrome/Edge/Firefox ; VLC n'est pas pris en charge)
 - **Mises à jour automatiques** – vérification optionnelle via l'API des versions GitHub ; sur demande,
   LookAway télécharge et installe lui-même les nouvelles versions (voir [Mises à jour](#mises-à-jour))
 - **Trilingue** – allemand, anglais, français, commutable à chaud

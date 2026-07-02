@@ -8,6 +8,16 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+## [1.2.5] – 2026-07-02
+
+### Modifié
+
+- **Indication sur la pause multimédia :** les actions de pause incluent désormais une note
+  expliquant quels lecteurs sont mis en pause automatiquement. Seules les applications intégrées
+  aux commandes multimédias de Windows (SMTC) peuvent être contrôlées (par ex. Spotify,
+  l'application Musique et la lecture dans Chrome, Edge et Firefox). **VLC ne le prend pas en
+  charge** et ne sera pas mis en pause.
+
 ## [1.2.4] – 2026-07-01
 
 ### Modifié

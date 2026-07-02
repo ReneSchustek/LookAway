@@ -58,6 +58,7 @@
   "Settings.PauseActions.DimBrightness": "Luminosité pendant la pause (%)",
   "Settings.PauseActions.PauseMedia": "Mettre les médias en pause",
   "Settings.PauseActions.ResumeMedia": "Reprendre les médias après la pause",
+  "Settings.PauseActions.PauseMediaHint": "Seuls les lecteurs intégrés aux commandes multimédias de Windows sont mis en pause automatiquement (par ex. Spotify, l'application Musique et la lecture dans Chrome, Edge et Firefox). VLC ne le prend pas en charge et ne sera pas mis en pause.",
   "Settings.PauseActions.DarkenAllScreens": "Assombrir tous les écrans (plusieurs moniteurs)",
   "Settings.PauseActions.OverlayColor": "Couleur de l'écran de pause",
   "Settings.PauseActions.OverlayColorHint": "Couleur qui recouvre l'écran pendant la pause.",

@@ -122,6 +122,9 @@ public static class SettingsTextKeys
     /// <summary>Beschriftung "Medien fortsetzen".</summary>
     public const string PauseActionsResumeMedia = "Settings.PauseActions.ResumeMedia";
 
+    /// <summary>Hinweistext, welche Player automatisch pausiert werden.</summary>
+    public const string PauseActionsPauseMediaHint = "Settings.PauseActions.PauseMediaHint";
+
     /// <summary>Beschriftung "Alle Bildschirme abdunkeln".</summary>
     public const string PauseActionsDarkenAllScreens = "Settings.PauseActions.DarkenAllScreens";
 

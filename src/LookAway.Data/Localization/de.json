@@ -58,6 +58,7 @@
   "Settings.PauseActions.DimBrightness": "Helligkeit während der Pause (%)",
   "Settings.PauseActions.PauseMedia": "Medien-Wiedergabe pausieren",
   "Settings.PauseActions.ResumeMedia": "Medien nach der Pause fortsetzen",
+  "Settings.PauseActions.PauseMediaHint": "Automatisch pausiert werden nur Player, die sich in die Windows-Mediensteuerung einklinken (z. B. Spotify, die Musik-App sowie Wiedergabe in Chrome, Edge und Firefox). VLC unterstützt dies nicht und wird nicht pausiert.",
   "Settings.PauseActions.DarkenAllScreens": "Alle Bildschirme abdunkeln (mehrere Monitore)",
   "Settings.PauseActions.OverlayColor": "Farbe des Pausen-Bildschirms",
   "Settings.PauseActions.OverlayColorHint": "Farbe, mit der der Bildschirm während der Pause überdeckt wird.",

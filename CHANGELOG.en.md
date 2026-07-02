@@ -8,6 +8,15 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.5] – 2026-07-02
+
+### Changed
+
+- **Media pause hint:** The break actions now include a hint explaining which players are
+  paused automatically. Only applications that integrate with the Windows media controls
+  (SMTC) can be controlled (e.g. Spotify, the Music app, and playback in Chrome, Edge and
+  Firefox). **VLC does not support this** and will not be paused.
+
 ## [1.2.4] – 2026-07-01
 
 ### Changed

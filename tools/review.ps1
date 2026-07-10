@@ -15,7 +15,7 @@
       all         - build + test + security
 
 .PARAMETER Mode
-    build | test | security | all | enterprise
+    build | test | security | all
 
 .EXAMPLE
     ./tools/review.ps1 -Mode all
@@ -25,7 +25,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $false)]
-    [ValidateSet('build', 'test', 'security', 'all', 'enterprise')]
+    [ValidateSet('build', 'test', 'security', 'all')]
     [string]$Mode = 'all'
 )
 
@@ -110,117 +110,6 @@ function Invoke-Security {
     return $hits
 }
 
-function New-EnterpriseReportSkeleton {
-    param([array]$SecurityHits)
-
-    $reviewDir = Join-Path $SolutionRoot '.ai\reviews'
-    if (-not (Test-Path $reviewDir)) {
-        New-Item -ItemType Directory -Path $reviewDir -Force | Out-Null
-    }
-
-    $datestamp = (Get-Date).ToString('yyyy-MM-dd-HHmmss')
-    $reportPath = Join-Path $reviewDir "review-$datestamp-enterprise.md"
-
-    $secCount = if ($SecurityHits) { $SecurityHits.Count } else { 0 }
-    $secSummary = if ($secCount -eq 0) {
-        'Keine verdächtigen Patterns durch automatischen Scan gefunden.'
-    }
-    else {
-        "Automatischer Scan hat $secCount Treffer gefunden — siehe Tabelle unten."
-    }
-
-    $hitsTable = ''
-    if ($secCount -gt 0) {
-        $hitsTable = "`n| Pattern | Datei | Zeile |`n|---|---|---|`n"
-        foreach ($h in $SecurityHits) {
-            $hitsTable += "| $($h.Pattern) | $($h.File) | $($h.Line) |`n"
-        }
-    }
-
-    $template = @"
-# Review-Report: LookAway
-
-> Stand: $((Get-Date).ToString('yyyy-MM-dd'))
-> Reviewer: Architektur-Review (manuell) + Ollama (Pattern-Scans)
-> Scope: gesamter Solution-Stand zum Stichtag
-
-## Zusammenfassung
-<3-5 Zeilen — was ist der Stand>
-
-## Vorabscans (review.ps1)
-- Build mit ``TreatWarningsAsErrors``: grün (siehe Konsole)
-- Tests: grün (siehe Konsole)
-- Security: $secSummary
-$hitsTable
-## Säulen-Audit
-
-### Resilienz
-- **Befund:** ...
-- **Fehlend:** ...
-- **Punkte:** X/10
-
-### Observability
-- **Befund:** ...
-- **Fehlend:** ...
-- **Punkte:** X/10
-
-### Resource Stewardship
-- **Befund:** ...
-- **Fehlend:** ...
-- **Punkte:** X/10
-
-## Bewertungs-Tabelle
-
-| Dimension | Gewicht | Punkte (0-10) | Beitrag |
-|---|---|---|---|
-| Architektur-Klarheit | 10% |  |  |
-| Resilienz | 15% |  |  |
-| Observability | 15% |  |  |
-| Resource Stewardship | 10% |  |  |
-| Sicherheit | 15% |  |  |
-| Test-Substanz | 15% |  |  |
-| Operations-Bereitschaft | 10% |  |  |
-| Wartbarkeit | 10% |  |  |
-| **Gesamt** | **100%** | – |  |
-
-## Production-Readiness-Score: **% — Ampel**
-
-## Top-3 Maßnahmen vor GO
-
-1. ...
-2. ...
-3. ...
-
-## Was nach GO als Tech-Debt akzeptabel ist
-
-- ...
-
-## Prinzipien-Check
-
-| Prinzip | Status | Befund |
-|---|---|---|
-| KISS | ? |  |
-| DRY | ? |  |
-| YAGNI | ? |  |
-| SOLID | ? |  |
-| POLS | ? |  |
-| TDA | ? |  |
-| SoC | ? |  |
-| Code for the next person | ? |  |
-| FCoI | ? |  |
-| LoD | ? |  |
-| CoC | ? |  |
-| TDD | ? |  |
-| Guard Clauses | ? |  |
-| Aussagekräftige Namen | ? |  |
-| Stepdown Rule | ? |  |
-"@
-
-    Set-Content -Path $reportPath -Value $template -Encoding utf8
-    Write-Host "Report-Skeleton geschrieben: $reportPath" -ForegroundColor Green
-    return $reportPath
-}
-
 switch ($Mode) {
     'build' {
         Invoke-Build
@@ -236,13 +125,6 @@ switch ($Mode) {
         Invoke-Build
         Invoke-Tests
         $null = Invoke-Security
-    }
-    'enterprise' {
-        Invoke-Build
-        Invoke-Tests
-        $hits = Invoke-Security
-        Write-Section 'Enterprise-Report-Skeleton'
-        $null = New-EnterpriseReportSkeleton -SecurityHits $hits
     }
 }
 

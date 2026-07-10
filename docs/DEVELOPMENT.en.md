@@ -17,13 +17,13 @@ A lightweight Windows tray application that discreetly reminds you to take scree
 ```
 LookAway/
 ├── src/
-│   ├── LookAway.App/             WinUI 3 app, views, view models, services
-│   ├── LookAway.Application/     Use cases, DTOs, application services
-│   ├── LookAway.Core/            Entities, value objects, interfaces, enums
-│   └── LookAway.Data/            Repositories, persistence, external access
+│   ├── LookAway.App/             WinUI 3 app, views, view models, composition root
+│   ├── LookAway.Core/            Entities, value objects, services, interfaces, enums
+│   └── LookAway.Data/            Repositories, persistence, Windows adapters
 ├── tests/
-│   ├── LookAway.Tests.Unit/         xUnit, isolated domain tests
-│   └── LookAway.Tests.Integration/  xUnit, real file system / registry
+│   ├── LookAway.App.Tests/       xUnit, view models
+│   ├── LookAway.Core.Tests/      xUnit, domain and services
+│   └── LookAway.Data.Tests/      xUnit, real file system / registry
 ├── Directory.Build.props         Global build settings
 ├── .editorconfig                 Code-style conventions
 └── LookAway.slnx                 Solution file
@@ -61,13 +61,12 @@ msbuild src/LookAway.App/LookAway.App.csproj -p:Configuration=Release -p:Platfor
 The project follows a classic layered architecture with a strict dependency direction from the outside inward:
 
 ```
-App  →  Application  →  Core  ←  Data
+App  →  Core  ←  Data
 ```
 
-- **Core** is independent and knows nothing about the outer layers
-- **Application** orchestrates use cases via Core interfaces
-- **Data** implements persistence adapters for Core interfaces
-- **App** wires everything together via dependency injection
+- **Core** is independent and knows nothing about the outer layers; it holds the domain and the services
+- **Data** implements the Core interfaces against the file system, the registry and Windows APIs
+- **App** holds views and view models and wires everything together via dependency injection
 
 ## Configuration
 
@@ -105,7 +104,7 @@ The implementation is Microsoft-standard (no Serilog/NLog): a custom `RollingFil
 
 ## Timer engine
 
-Domain model of the break reminder in `LookAway.Application/Services/TimerService.cs`. Pure logic, no UI or platform dependency; it consumes platform services via interfaces:
+Domain model of the break reminder in `LookAway.Core/Services/TimerService.cs`. Pure logic, no UI or platform dependency; it consumes platform services via interfaces:
 
 - `IClock` (Core) → `SystemClock` (Data)
 - `IPowerModeWatcher` (Core) → `WindowsPowerModeWatcher` (Data, `Microsoft.Win32.SystemEvents`)
@@ -131,7 +130,7 @@ State machine: `Idle` → `Working` ↔ `OnBreak` (with `Paused` as a cross-cutt
 
 System sleep is consistently treated as a pause: `WindowsPowerModeWatcher` translates `PowerModeChanged` into platform-neutral events, the `TimerService` freezes the remaining time and resumes it after wake-up. A user pause takes precedence over system resume.
 
-Tests: deterministic via `FakeClock` and `FakePowerModeWatcher` in `LookAway.Tests.Unit`. The real background loop is quiesced in tests with a high tick interval; phase transitions are triggered via `internal void Tick` (visible via `InternalsVisibleTo`).
+Tests: deterministic via `FakeClock` and `FakePowerModeWatcher` in `LookAway.Core.Tests`. The real background loop is quiesced in tests with a high tick interval; phase transitions are triggered via `internal void Tick` (visible via `InternalsVisibleTo`).
 
 ## Tray integration and single instance
 
@@ -143,9 +142,9 @@ LookAway runs as a background application with a tray icon (no foreground main w
 - A double click on the tray icon opens the settings window (not yet filled)
 - The main window is hidden at startup (`AppWindow.Hide`) and only becomes visible on user action
 
-Status display: the icon reflects the timer state (working/break/paused/DND), a tooltip shows the live remaining time and active model. The UI-free translation state → icon variant + tooltip lives in `TrayStatusPresenter` (Application) and is testable without the tray control; the `TrayIconService` polls the `ITimerService` once per second via a `DispatcherQueueTimer` and swaps the icon variant (`tray-working/onbreak/paused/disabled.ico`) only on a state change. The timer is started at app launch with the configured model (`BreakModelRegistry.GetEffective`).
+Status display: the icon reflects the timer state (working/break/paused/DND), a tooltip shows the live remaining time and active model. The UI-free translation state → icon variant + tooltip lives in `TrayStatusPresenter` (Core) and is testable without the tray control; the `TrayIconService` polls the `ITimerService` once per second via a `DispatcherQueueTimer` and swaps the icon variant (`tray-working/onbreak/paused/disabled.ico`) only on a state change. The timer is started at app launch with the configured model (`BreakModelRegistry.GetEffective`).
 
-Single-instance lock via `SingleInstanceLock` (Application):
+Single-instance lock via `SingleInstanceLock` (Core):
 
 - Mutex in the `Local\` namespace per Windows user (`Local\LookAway-{userName}`)
 - A second instance detects the running one, signals it via an `EventWaitHandle` (`Local\LookAway-Activate-{userName}`) and exits
@@ -162,20 +161,20 @@ LookAway can optionally start with the Windows login — as a per-user opt-in, w
 
 The abstraction is in `IAutoStartService` (Core); `RegistryAutoStartService` (Data) is the Windows implementation. Errors (e.g. a Run key locked by group policy) are signaled as `AutoStartException` (Core) so callers can handle them deliberately.
 
-`AutoStartCoordinator` (Application) keeps the setting and the registry in sync:
+`AutoStartCoordinator` (Core) keeps the setting and the registry in sync:
 
 - **User change → registry:** when the option is toggled, the registry entry is written or removed immediately and the setting is persisted (`SetEnabledAsync`)
 - **Startup reconciliation registry → setting:** at app launch the registry is the leading source (`SynchronizeFromRegistryAsync`). A manual change — e.g. disabling via the Task Manager autostart tab — is adopted into the setting
 - **Path correction:** if the application was moved, the next launch brings the stored path back up to date. `Enable` is idempotent and only writes when the value differs
 - The reconciliation is optional and not startup-critical: if it fails, this is logged and startup continues
 
-Tests: `AutoStartCoordinator` deterministic via `FakeAutoStartService` and `InMemorySettingsRepository` in `LookAway.Tests.Unit`; `RegistryAutoStartService` against the real registry in `LookAway.Tests.Integration` (a unique entry name per test with cleanup, so no admin rights are needed).
+Tests: `AutoStartCoordinator` deterministic via `FakeAutoStartService` and `InMemorySettingsRepository` in `LookAway.Core.Tests`; `RegistryAutoStartService` against the real registry in `LookAway.Data.Tests` (a unique entry name per test with cleanup, so no admin rights are needed).
 
 ## Break reminder
 
 When a break becomes due (`BreakDueEvent`), LookAway shows a discreet overlay window:
 
-- The UI-free action logic lives in `BreakReminderViewModel` (Application) and is testable without WinUI: three actions (start break / 5 min later / skip), timeout default after 30 s = "start break", the first action wins (no override by a double click or a timeout race).
+- The UI-free action logic lives in `BreakReminderViewModel` (App) and is testable without WinUI: three actions (start break / 5 min later / skip), timeout default after 30 s = "start break", the first action wins (no override by a double click or a timeout race).
 - `BreakReminderWindow` (App/Views) is a standalone, non-minimizable `Window` instance (480×320, centered, color palette indigo `#4361EE` / white / dark gray). `IReminderPresenter`/`ReminderPresenter` (App) create it on the UI thread and prevent stacking (a second message while a window is open is ignored, `_isReminderOpen`).
 - The app event loop consumes the `ITimerService.Events` stream; on `BreakDue` the reminder is only shown when no DND is active (`FullscreenDetectionService.TryShowReminder`), otherwise it is deferred. Snooze starts a 5-min work cycle, skip starts the regular one. Texts are placeholders.
 
@@ -183,8 +182,8 @@ When a break becomes due (`BreakDueEvent`), LookAway shows a discreet overlay wi
 
 LookAway pauses the timer on prolonged inactivity and suppresses reminders during full-screen apps:
 
-- **Idle:** `IIdleDetector` (Core) → `WindowsIdleDetector` (Data, Win32 `GetLastInputInfo` via `LibraryImport` P/Invoke). `IdleDetectionService` (Application) pauses the timer on inactivity above the threshold (default 5 min, configurable 1–30) and resumes it on returning activity. A self-triggered idle pause is remembered so a user pause is not resumed by mistake.
-- **Full-screen/DND:** `IFullscreenDetector` (Core) → `WindowsFullscreenDetector` (Data, `GetForegroundWindow` + monitor comparison, shell/lock screen excluded). `FullscreenDetectionService` (Application) sets the DND state, suppresses due reminders and defers at most one missed reminder until after leaving full-screen mode.
+- **Idle:** `IIdleDetector` (Core) → `WindowsIdleDetector` (Data, Win32 `GetLastInputInfo` via `LibraryImport` P/Invoke). `IdleDetectionService` (Core) pauses the timer on inactivity above the threshold (default 5 min, configurable 1–30) and resumes it on returning activity. A self-triggered idle pause is remembered so a user pause is not resumed by mistake.
+- **Full-screen/DND:** `IFullscreenDetector` (Core) → `WindowsFullscreenDetector` (Data, `GetForegroundWindow` + monitor comparison, shell/lock screen excluded). `FullscreenDetectionService` (Core) sets the DND state, suppresses due reminders and defers at most one missed reminder until after leaving full-screen mode.
 - Both services are evaluated in a background `PeriodicTimer` (5 s, not on the UI thread); the DND state is mirrored to the tray icon (`SetDndActive`). Settings: `PauseOnIdle`, `IdleThresholdMinutes`, `SuppressOnFullscreen`. The platform calls are isolated as P/Invoke in the Data layer; the decision logic is testable via fakes without Win32.
 
 ## Settings window
@@ -192,7 +191,7 @@ LookAway pauses the timer on prolonged inactivity and suppresses reminders durin
 Via the tray menu ("Settings…", double or left click) a WinUI 3 window opens with four areas (pivot): General, Break model, Custom intervals and About LookAway.
 
 - All loading, validation and persistence logic lives in the UI-free `SettingsViewModel`
-  (Application, `CommunityToolkit.Mvvm`) and is testable without WinUI. The window
+  (App, `CommunityToolkit.Mvvm`) and is testable without WinUI. The window
   (`SettingsWindow`, App/Views) only binds to it; `ISettingsPresenter`/`SettingsPresenter`
   create it on the UI thread and prevent multiple windows.
 - **General:** language (DE/EN/FR), autostart, auto-pause on inactivity including the threshold, DND in full-screen.
@@ -222,7 +221,7 @@ LookAway is fully trilingual (German, English, French) with runtime language swi
 
 On the very first launch (no `settings.json` present, `Settings.IsFirstRun`) a three-step wizard guides the initial configuration: language, break model and autostart.
 
-- UI-free `WelcomeViewModel` (Application, tested state machine: steps forward/back, completion only
+- UI-free `WelcomeViewModel` (App, tested state machine: steps forward/back, completion only
   in the last step). `WelcomeWindow` (App/Views, not resizable, centered) binds to it;
   `WelcomePresenter` shows it and reports via `Task<bool>` whether the wizard was completed.
 - The starting language is detected from `CultureInfo.CurrentUICulture` (de/fr, otherwise English), the default
@@ -270,7 +269,7 @@ LookAway records every offered break and shows statistics in the settings tab "S
   `IBreakHistoryRepository` (Core) → `JsonBreakHistoryRepository` (Data): append-only to
   `%APPDATA%\LookAway\history.json`, written atomically; entries older than 365 days are removed on
   startup.
-- `StatisticsService` (Application, UI-free, tested via `IClock`/fakes) aggregates today (count,
+- `StatisticsService` (Core, UI-free, tested via `IClock`/fakes) aggregates today (count,
   break time, skipped), this week (7 day bars) and this year (12 month bars).
 - The tab visualizes the bars with simple `Border` elements (no chart framework) and offers a CSV
   export (`CsvExporter`, UTF-8 with BOM, columns `StartedAt,EndedAt,Duration,Model,Outcome`) via the
@@ -318,7 +317,7 @@ Optionally LookAway reinforces the break character (both opt-in and reversible):
   (many laptops) the call has no effect; errors are swallowed and logged.
 - **Pause media:** `IMediaController` (Core) → `WindowsMediaController` (App) pauses all running
   playback sessions via the SMTC API and resumes only the previously running ones at the end of the break.
-- The UI-free `PauseActionService` (Application, tested) coordinates both based on the settings
+- The UI-free `PauseActionService` (Core, tested) coordinates both based on the settings
   (`BeginBreakAsync`/`EndBreakAsync`); the app calls it at the break start (a taken break) and on the
   `BreakCompletedEvent`. Settings tab "Break actions": dim + brightness (10–80 %), pause media + resume
   after the break.
@@ -363,7 +362,6 @@ it as a GitHub release artifact (`.github/workflows/ci.yml`, job `release`).
 ./tools/review.ps1 -Mode all         # build + tests + security
 ```
 
-`enterprise` creates a Markdown report skeleton under `.ai/reviews/` for the reviewer to fill in.
 The script paths are relative to the solution root.
 
 ## Continuous integration

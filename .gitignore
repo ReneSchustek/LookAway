@@ -114,3 +114,6 @@ installer/setup-icon.ico
 *.pem
 *.sig
 *signing-key*
+
+# Lokales Entwickler-Werkzeug (nicht Bestandteil des Repos)
+tools/install-pre-commit-hook.ps1

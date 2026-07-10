@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using Windows.Media.Core;
 using Windows.Media.Playback;
 
-namespace LookAway.Services;
+namespace LookAway.App.Services;
 
 /// <summary>
 /// Spielt die eingebetteten Erinnerungstöne über einen wiederverwendeten

@@ -1,9 +1,10 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using LookAway.Application.Services;
+using LookAway.Core.Services;
+using LookAway.Core.ValueObjects;
 
-namespace LookAway.Services;
+namespace LookAway.App.Services;
 
 /// <summary>
 /// Startet die zwei Prozess-Rollen der automatischen Aktualisierung: den

@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using Microsoft.UI.Xaml;
 
-namespace LookAway;
+namespace LookAway.App;
 
 /// <summary>
 /// Hauptfenster der Anwendung. Bleibt beim Start verborgen — die App lebt im Tray-Icon.

@@ -1,13 +1,12 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
-using LookAway.Application.Coordination;
-using LookAway.Application.ViewModels;
 using LookAway.Core.Domain;
 using LookAway.Core.Enums;
 using LookAway.Core.Interfaces;
+using LookAway.App.ViewModels;
 using Microsoft.UI.Dispatching;
 
-namespace LookAway.Services;
+namespace LookAway.App.Services;
 
 /// <summary>
 /// WinUI-Implementierung von <see cref="IReminderPresenter"/>: erzeugt das

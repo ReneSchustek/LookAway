@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using LookAway.Application.Coordination;
-using LookAway.Application.ViewModels;
 using LookAway.Core.Domain;
 using LookAway.Core.Enums;
 using LookAway.Core.Interfaces;
+using LookAway.App.ViewModels;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using WinColor = Windows.UI.Color;
 
-namespace LookAway.Services;
+namespace LookAway.App.Services;
 
 /// <summary>
 /// WinUI-Implementierung von <see cref="IBreakOverlayPresenter"/>: erzeugt je

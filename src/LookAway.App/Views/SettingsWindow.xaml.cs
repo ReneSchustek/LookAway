@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
-using LookAway.Application.ViewModels;
 using LookAway.Core.Domain;
+using LookAway.App.ViewModels;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -13,7 +13,7 @@ using Windows.Storage;
 using Windows.Storage.Pickers;
 using WinColor = Windows.UI.Color;
 
-namespace LookAway.Views;
+namespace LookAway.App.Views;
 
 /// <summary>
 /// Settings-Fenster mit Seitenmenü (<see cref="NavigationView"/>). Bindet an das

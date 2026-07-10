@@ -1,10 +1,10 @@
 using System;
 using System.Threading.Tasks;
-using LookAway.Application.ViewModels;
 using LookAway.Core.Entities;
+using LookAway.App.ViewModels;
 using Microsoft.UI.Dispatching;
 
-namespace LookAway.Services;
+namespace LookAway.App.Services;
 
 /// <summary>
 /// Zeigt den First-Run-Wizard und meldet zurück, ob er abgeschlossen wurde.

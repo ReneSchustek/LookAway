@@ -1,9 +1,9 @@
 using System;
-using LookAway.Application.ViewModels;
 using LookAway.Core.Entities;
+using LookAway.App.ViewModels;
 using Microsoft.UI.Dispatching;
 
-namespace LookAway.Services;
+namespace LookAway.App.Services;
 
 /// <summary>
 /// Öffnet das Settings-Fenster und stellt sicher, dass nie zwei Fenster

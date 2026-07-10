@@ -1,9 +1,22 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <!-- Plattformneutral: die Core-Schicht spricht nur eigene Verträge an;
+         Windows-spezifische Adapter (Registry, P/Invoke, SMTC, Dateisystem)
+         liegen vollständig in der Data-Schicht. -->
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Nur die Logging-Abstraktion (ILogger&lt;T&gt;), keine Sink-Implementierung:
+         die konkrete Log-Pipeline wird in der Composition Root verdrahtet. -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="LookAway.Core.Tests" />
+  </ItemGroup>
 
 </Project>

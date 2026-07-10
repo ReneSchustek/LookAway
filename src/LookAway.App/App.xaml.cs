@@ -21,36 +21,36 @@ using LookAway.Data.Power;
 using LookAway.Data.Repositories;
 using LookAway.Data.Services;
 using LookAway.Data.Time;
-using LookAway.Services;
+using LookAway.App.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 
 // Aliase auflösen Namespace-Kollisionen mit Microsoft.UI.Xaml und System.
-using AutoStartCoordinator = LookAway.Application.Services.AutoStartCoordinator;
-using BreakReminderViewModel = LookAway.Application.ViewModels.BreakReminderViewModel;
-using SettingsViewModel = LookAway.Application.ViewModels.SettingsViewModel;
-using StatisticsViewModel = LookAway.Application.ViewModels.StatisticsViewModel;
-using WelcomeViewModel = LookAway.Application.ViewModels.WelcomeViewModel;
-using StatisticsService = LookAway.Application.Statistics.StatisticsService;
-using CsvExporter = LookAway.Application.Statistics.CsvExporter;
-using FullscreenDetectionService = LookAway.Application.Services.FullscreenDetectionService;
-using IdleDetectionService = LookAway.Application.Services.IdleDetectionService;
-using LogService = LookAway.Application.Services.LogService;
-using PauseActionService = LookAway.Application.Services.PauseActionService;
-using BreakCoordinator = LookAway.Application.Coordination.BreakCoordinator;
-using UpdateInstallerService = LookAway.Application.Services.UpdateInstallerService;
-using IUpdateInstaller = LookAway.Application.Services.IUpdateInstaller;
-using UpdateApplyArgs = LookAway.Application.Services.UpdateApplyArgs;
-using StagedUpdate = LookAway.Application.Services.StagedUpdate;
-using TrayStatusPresenter = LookAway.Application.Services.TrayStatusPresenter;
+using AutoStartCoordinator = LookAway.Core.Services.AutoStartCoordinator;
+using BreakReminderViewModel = LookAway.App.ViewModels.BreakReminderViewModel;
+using SettingsViewModel = LookAway.App.ViewModels.SettingsViewModel;
+using StatisticsViewModel = LookAway.App.ViewModels.StatisticsViewModel;
+using WelcomeViewModel = LookAway.App.ViewModels.WelcomeViewModel;
+using StatisticsService = LookAway.Core.Services.StatisticsService;
+using CsvExporter = LookAway.Core.Services.CsvExporter;
+using FullscreenDetectionService = LookAway.Core.Services.FullscreenDetectionService;
+using IdleDetectionService = LookAway.Core.Services.IdleDetectionService;
+using LogService = LookAway.Core.Services.LogService;
+using PauseActionService = LookAway.Core.Services.PauseActionService;
+using BreakCoordinator = LookAway.Core.Services.BreakCoordinator;
+using UpdateInstallerService = LookAway.Data.Update.UpdateInstallerService;
+using IUpdateInstaller = LookAway.Core.Interfaces.IUpdateInstaller;
+using UpdateApplyArgs = LookAway.Core.ValueObjects.UpdateApplyArgs;
+using StagedUpdate = LookAway.Core.ValueObjects.StagedUpdate;
+using TrayStatusPresenter = LookAway.Core.Services.TrayStatusPresenter;
 using SingleInstanceLock = LookAway.Data.Services.SingleInstanceLock;
-using TimerService = LookAway.Application.Services.TimerService;
+using TimerService = LookAway.Core.Services.TimerService;
 using XamlUnhandledExceptionEventArgs = Microsoft.UI.Xaml.UnhandledExceptionEventArgs;
 using SystemUnhandledExceptionEventArgs = System.UnhandledExceptionEventArgs;
 
-namespace LookAway;
+namespace LookAway.App;
 
 /// <summary>
 /// Anwendungs-Bootstrap. Konfiguriert das DI-Container, das Logging
@@ -60,12 +60,12 @@ namespace LookAway;
 [SuppressMessage(
     "Design",
     "CA1515:Consider making public types internal",
-    Justification = "WinUI-3-XAML-Compiler erfordert eine 'public partial'-App-Klasse für den generierten Activator.")]
+    Justification = "Der WinUI-3-XAML-Compiler erzeugt die zweite Partialklasse als 'public'; ein abweichender Modifizierer ist nicht kompilierbar.")]
 [SuppressMessage(
     "Design",
     "CA1001:Types that own disposable fields should be disposable",
     Justification = "Die App-Klasse implementiert keinen IDisposable-Vertrag. Die gehaltenen Felder und der DI-ServiceProvider werden im RequestExit-Pfad explizit freigegeben.")]
-public partial class App : global::Microsoft.UI.Xaml.Application
+public partial class LookAwayApp : global::Microsoft.UI.Xaml.Application
 {
     private const string LogFolderName = "logs";
     private const string CrashFolderName = "crashes";
@@ -85,7 +85,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
     private Window? _window;
     private LogService? _logService;
-    private ILogger<App>? _logger;
+    private ILogger<LookAwayApp>? _logger;
     private SingleInstanceLock? _instanceLock;
     private TrayIconService? _trayIcon;
     private CancellationTokenSource? _detectionCts;
@@ -99,14 +99,14 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     /// <summary>
     /// Initialisiert die Anwendung, das DI-Container und die globalen Handler.
     /// </summary>
-    public App()
+    public LookAwayApp()
     {
         try
         {
             InitializeComponent();
             Services = ConfigureServices();
             _logService = Services.GetRequiredService<LogService>();
-            _logger = Services.GetRequiredService<ILogger<App>>();
+            _logger = Services.GetRequiredService<ILogger<LookAwayApp>>();
 
             RegisterGlobalCrashHandlers();
             UnhandledException += OnApplicationUnhandledException;

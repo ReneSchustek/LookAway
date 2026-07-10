@@ -2,18 +2,17 @@ using System;
 using System.Collections.Generic;
 using H.NotifyIcon;
 using H.NotifyIcon.Core;
-using LookAway.Application.Coordination;
-using LookAway.Application.Localization;
-using LookAway.Application.Services;
 using LookAway.Core.Enums;
 using LookAway.Core.Interfaces;
+using LookAway.Core.Localization;
+using LookAway.Core.Services;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
-using Microsoft.Extensions.Logging;
 
-namespace LookAway.Services;
+namespace LookAway.App.Services;
 
 /// <summary>
 /// Stellt das LookAway-Tray-Icon mit Kontextmenü bereit. Vereint die

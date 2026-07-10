@@ -3,7 +3,7 @@
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
-    <RootNamespace>LookAway</RootNamespace>
+    <RootNamespace>LookAway.App</RootNamespace>
     <AssemblyName>LookAway</AssemblyName>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <!-- Icon der EXE (Explorer, Taskleiste, Alt+Tab) im unpackaged-Betrieb. -->
@@ -104,9 +104,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LookAway.Application\LookAway.Application.csproj" />
     <ProjectReference Include="..\LookAway.Core\LookAway.Core.csproj" />
     <ProjectReference Include="..\LookAway.Data\LookAway.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="LookAway.App.Tests" />
   </ItemGroup>
 
   <!--

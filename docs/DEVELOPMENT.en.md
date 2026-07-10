@@ -99,7 +99,7 @@ LookAway logs into a per-day file per Windows user:
 - **Sanitization:** the Windows user name and paths under `%LOCALAPPDATA%`, `%APPDATA%`, `%USERPROFILE%` are replaced with generic placeholders before writing
 - **Robustness:** IO errors in the logger are swallowed — the application does not crash when the disk is full
 - **Global crash hook:** unhandled exceptions from `AppDomain.UnhandledException`, `TaskScheduler.UnobservedTaskException` and WinUI's `Application.UnhandledException` are persisted as a JSON crash report in the `crashes/` folder (sanitized)
-- **Detection:** on the next launch `LogService` reports via `ICrashReporter.HasUnresolvedCrashes()` whether the previous run crashed; the result is written to the startup log
+- **Detection:** on the next launch `LogService` reports via `ICrashReporter.HasUnresolvedCrashes` whether the previous run crashed; the result is written to the startup log
 
 The implementation is Microsoft-standard (no Serilog/NLog): a custom `RollingFileLoggerProvider` (Data) with `LoggerMessage` source-generator callers in the consumers.
 
@@ -131,7 +131,7 @@ State machine: `Idle` → `Working` ↔ `OnBreak` (with `Paused` as a cross-cutt
 
 System sleep is consistently treated as a pause: `WindowsPowerModeWatcher` translates `PowerModeChanged` into platform-neutral events, the `TimerService` freezes the remaining time and resumes it after wake-up. A user pause takes precedence over system resume.
 
-Tests: deterministic via `FakeClock` and `FakePowerModeWatcher` in `LookAway.Tests.Unit`. The real background loop is quiesced in tests with a high tick interval; phase transitions are triggered via `internal void Tick()` (visible via `InternalsVisibleTo`).
+Tests: deterministic via `FakeClock` and `FakePowerModeWatcher` in `LookAway.Tests.Unit`. The real background loop is quiesced in tests with a high tick interval; phase transitions are triggered via `internal void Tick` (visible via `InternalsVisibleTo`).
 
 ## Tray integration and single instance
 
@@ -140,8 +140,8 @@ LookAway runs as a background application with a tray icon (no foreground main w
 - `H.NotifyIcon.WinUI` (`TaskbarIcon` control) provides the tray icon
 - `TrayIconService` (`internal` in App) binds the context menu to the `ITimerService` and to settings/exit callbacks
 - Menu items: "Settings…", "Start break now", "Pause"/"Resume" (state-dependent), "About LookAway", "Exit"
-- A double click on the tray icon opens the settings window
-- The main window is hidden at startup (`AppWindow.Hide()`) and only becomes visible on user action
+- A double click on the tray icon opens the settings window (not yet filled)
+- The main window is hidden at startup (`AppWindow.Hide`) and only becomes visible on user action
 
 Status display: the icon reflects the timer state (working/break/paused/DND), a tooltip shows the live remaining time and active model. The UI-free translation state → icon variant + tooltip lives in `TrayStatusPresenter` (Application) and is testable without the tray control; the `TrayIconService` polls the `ITimerService` once per second via a `DispatcherQueueTimer` and swaps the icon variant (`tray-working/onbreak/paused/disabled.ico`) only on a state change. The timer is started at app launch with the configured model (`BreakModelRegistry.GetEffective`).
 
@@ -158,7 +158,7 @@ LookAway can optionally start with the Windows login — as a per-user opt-in, w
 
 - The entry is written exclusively under `HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run` (never `HKLM`)
 - Entry name `LookAway`, value = the full, quoted path to `LookAway.App.exe` plus `--minimized` (quoting because of possible spaces, e.g. `C:\Program Files\…`)
-- The path is determined via `Process.GetCurrentProcess().MainModule.FileName`
+- The path is determined via `Process.GetCurrentProcess.MainModule.FileName`
 
 The abstraction is in `IAutoStartService` (Core); `RegistryAutoStartService` (Data) is the Windows implementation. Errors (e.g. a Run key locked by group policy) are signaled as `AutoStartException` (Core) so callers can handle them deliberately.
 
@@ -166,7 +166,7 @@ The abstraction is in `IAutoStartService` (Core); `RegistryAutoStartService` (Da
 
 - **User change → registry:** when the option is toggled, the registry entry is written or removed immediately and the setting is persisted (`SetEnabledAsync`)
 - **Startup reconciliation registry → setting:** at app launch the registry is the leading source (`SynchronizeFromRegistryAsync`). A manual change — e.g. disabling via the Task Manager autostart tab — is adopted into the setting
-- **Path correction:** if the application was moved, the next launch brings the stored path back up to date. `Enable()` is idempotent and only writes when the value differs
+- **Path correction:** if the application was moved, the next launch brings the stored path back up to date. `Enable` is idempotent and only writes when the value differs
 - The reconciliation is optional and not startup-critical: if it fails, this is logged and startup continues
 
 Tests: `AutoStartCoordinator` deterministic via `FakeAutoStartService` and `InMemorySettingsRepository` in `LookAway.Tests.Unit`; `RegistryAutoStartService` against the real registry in `LookAway.Tests.Integration` (a unique entry name per test with cleanup, so no admin rights are needed).

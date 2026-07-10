@@ -105,7 +105,7 @@ environment-dependent items remain.
    properties (runtime-only risk the test suite can't catch) for marginal gain.
 5. **Localised hotkey labels (✔).** `HotkeyDefinition.Format(...)` + `KeyLabel`
    render modifiers via `HotkeyTextKeys.Format`/`ILocalizationService`
-   (Strg/Ctrl, Umschalt/Shift/Maj); modifier keys added to de/en/fr. `ToString()`
+   (Strg/Ctrl, Umschalt/Shift/Maj); modifier keys added to de/en/fr. `ToString`
    stays as a culture-neutral fallback.
 6. **Corrupt-file backup (✔).** `settings.json`/`history.json` are copied to a
    `*.corrupt` sidecar before defaults replace them on a parse failure

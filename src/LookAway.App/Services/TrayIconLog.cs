@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 
-namespace LookAway.Services;
+namespace LookAway.App.Services;
 
 /// <summary>
 /// Source-generierte Logging-Methoden für den <see cref="TrayIconService"/>.

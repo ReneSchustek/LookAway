@@ -44,7 +44,7 @@ internal sealed class ReminderPresenter : IReminderPresenter
     public bool IsReminderOpen => _isReminderOpen;
 
     /// <inheritdoc />
-    public void Show(BreakModel model, Action<ReminderResult> onResult)
+    public void Show(BreakModel model, TimeSpan? autoStartAfter, Action<ReminderResult> onResult)
     {
         ArgumentNullException.ThrowIfNull(onResult);
 
@@ -55,18 +55,21 @@ internal sealed class ReminderPresenter : IReminderPresenter
 
         _isReminderOpen = true;
 
-        _ = _dispatcher.TryEnqueue(() => TryShowWindow(model, onResult));
+        _ = _dispatcher.TryEnqueue(() => TryShowWindow(model, autoStartAfter, onResult));
     }
 
     // Erzeugt das Erinnerungsfenster auf dem UI-Thread. Scheitert der Aufbau, wird das
     // Offen-Flag zurückgesetzt, damit künftige Erinnerungen nicht dauerhaft
     // unterdrückt bleiben; die verpasste Erinnerung gilt als „übersprungen".
-    private void TryShowWindow(BreakModel model, Action<ReminderResult> onResult)
+    private void TryShowWindow(BreakModel model, TimeSpan? autoStartAfter, Action<ReminderResult> onResult)
     {
         try
         {
             string hintKey = BreakModelRegistry.GetHintKey(model);
-            BreakReminderViewModel viewModel = new(hintKey);
+            int? autoStartSeconds = autoStartAfter is { } delay
+                ? (int)Math.Ceiling(delay.TotalSeconds)
+                : null;
+            BreakReminderViewModel viewModel = new(hintKey, autoStartSeconds);
             viewModel.Completed += (_, e) =>
             {
                 _isReminderOpen = false;

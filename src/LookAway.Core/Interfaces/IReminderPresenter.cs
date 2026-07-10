@@ -13,6 +13,10 @@ public interface IReminderPresenter
 
     /// <summary>Zeigt eine Erinnerung; bei bereits offener passiert nichts.</summary>
     /// <param name="model">Aktives Pausenmodell (für den Hinweistext).</param>
+    /// <param name="autoStartAfter">
+    /// Verzögerung, nach der die Pause ohne Benutzeraktion automatisch startet, oder
+    /// <c>null</c>, wenn die Erinnerung bis zu einer Benutzeraktion offen bleiben soll.
+    /// </param>
     /// <param name="onResult">Callback mit der gewählten Aktion.</param>
-    void Show(BreakModel model, Action<ReminderResult> onResult);
+    void Show(BreakModel model, TimeSpan? autoStartAfter, Action<ReminderResult> onResult);
 }

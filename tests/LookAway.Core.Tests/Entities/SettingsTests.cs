@@ -21,8 +21,33 @@ public sealed class SettingsTests
         Assert.True(settings.PauseOnIdle);
         Assert.Equal(5, settings.IdleThresholdMinutes);
         Assert.True(settings.SuppressOnFullscreen);
+        Assert.True(settings.AutoStartBreakEnabled);
+        Assert.Equal(15, settings.AutoStartBreakSeconds);
         Assert.Null(settings.CustomDurations);
         Assert.False(settings.IsFirstRun);
+    }
+
+    [Theory]
+    [InlineData(Settings.MinAutoStartBreakSeconds)]
+    [InlineData(30)]
+    [InlineData(Settings.MaxAutoStartBreakSeconds)]
+    public void AutoStartBreakSeconds_AcceptsBoundaryValues(int seconds)
+    {
+        Settings settings = new() { AutoStartBreakSeconds = seconds };
+        Assert.Equal(seconds, settings.AutoStartBreakSeconds);
+    }
+
+    [Theory]
+    [InlineData(Settings.MinAutoStartBreakSeconds - 1)]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(Settings.MaxAutoStartBreakSeconds + 1)]
+    public void AutoStartBreakSeconds_ThrowsOnOutOfRange(int seconds)
+    {
+        Settings settings = new();
+
+        _ = Assert.Throws<ArgumentOutOfRangeException>(
+            () => settings.AutoStartBreakSeconds = seconds);
     }
 
     [Theory]

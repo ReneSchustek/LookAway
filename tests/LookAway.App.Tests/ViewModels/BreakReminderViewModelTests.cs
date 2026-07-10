@@ -59,24 +59,57 @@ public sealed class BreakReminderViewModelTests
     }
 
     [Fact]
-    public void TimeoutElapsed_WithoutAction_DefaultsToStartBreak()
+    public void Tick_ZaehltHerunterUndStartetPauseBeiNull()
     {
-        BreakReminderViewModel vm = new(HintKey);
+        BreakReminderViewModel vm = new(HintKey, autoStartSeconds: 3);
 
-        vm.TimeoutElapsed();
+        vm.Tick();
+        Assert.Equal(2, vm.RemainingSeconds);
+        Assert.False(vm.IsCompleted);
 
+        vm.Tick();
+        Assert.Equal(1, vm.RemainingSeconds);
+        Assert.False(vm.IsCompleted);
+
+        vm.Tick();
+        Assert.Equal(0, vm.RemainingSeconds);
         Assert.Equal(ReminderResult.StartBreak, vm.Result);
     }
 
     [Fact]
-    public void TimeoutElapsed_AfterUserAction_DoesNotOverride()
+    public void Tick_OhneAutoStart_WirktNicht()
     {
         BreakReminderViewModel vm = new(HintKey);
+
+        Assert.False(vm.AutoStartsAutomatically);
+
+        for (int i = 0; i < 5; i++)
+        {
+            vm.Tick();
+        }
+
+        Assert.False(vm.IsCompleted);
+        Assert.Null(vm.Result);
+    }
+
+    [Fact]
+    public void Tick_NachBenutzeraktion_UeberschreibtNicht()
+    {
+        BreakReminderViewModel vm = new(HintKey, autoStartSeconds: 1);
         vm.Snooze();
 
-        vm.TimeoutElapsed();
+        vm.Tick();
 
         Assert.Equal(ReminderResult.Snooze, vm.Result);
+    }
+
+    [Fact]
+    public void Constructor_MitAutoStart_SetztAnfangswerte()
+    {
+        BreakReminderViewModel vm = new(HintKey, autoStartSeconds: 15);
+
+        Assert.True(vm.AutoStartsAutomatically);
+        Assert.Equal(15, vm.RemainingSeconds);
     }
 
     [Fact]

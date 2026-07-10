@@ -14,12 +14,15 @@ internal sealed class FakeReminderPresenter : IReminderPresenter
 
     public BreakModel? LastModel { get; private set; }
 
+    public TimeSpan? LastAutoStartAfter { get; private set; }
+
     private Action<ReminderResult>? _onResult;
 
-    public void Show(BreakModel model, Action<ReminderResult> onResult)
+    public void Show(BreakModel model, TimeSpan? autoStartAfter, Action<ReminderResult> onResult)
     {
         ShowCount++;
         LastModel = model;
+        LastAutoStartAfter = autoStartAfter;
         _onResult = onResult;
     }
 

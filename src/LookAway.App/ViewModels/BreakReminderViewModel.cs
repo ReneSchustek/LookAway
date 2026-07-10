@@ -5,33 +5,38 @@ namespace LookAway.App.ViewModels;
 
 /// <summary>
 /// Zustand und Aktionslogik der Pause-Erinnerung — UI-frei und damit ohne WinUI
-/// testbar. Die View (App-Schicht) bindet daran und ruft bei Timeout
-/// <see cref="TimeoutElapsed"/> auf.
+/// testbar. Ist ein automatischer Pausenstart konfiguriert, zählt das ViewModel die
+/// verbleibenden Sekunden herunter (die View taktet <see cref="Tick"/> im
+/// Sekundentakt) und startet die Pause selbsttätig, sobald der Zähler 0 erreicht.
 /// </summary>
 /// <remarks>
-/// Die erste gewählte Aktion gewinnt; weitere Aufrufe (auch ein später Timeout)
-/// werden ignoriert. So können Doppelklicks oder ein Timeout-Race die Aktion
-/// nicht überschreiben.
+/// Die erste gewählte Aktion gewinnt; weitere Aufrufe (auch ein ablaufender
+/// Countdown) werden ignoriert. So können Doppelklicks oder ein Timeout-Race die
+/// Aktion nicht überschreiben.
 /// </remarks>
 internal sealed class BreakReminderViewModel
 {
-    /// <summary>Sekunden bis zur automatischen Default-Aktion.</summary>
-    public const int DefaultTimeoutSeconds = 30;
-
     // Einzige Quelle der Wahrheit ist ReminderTextKeys; hier nur als Alias gespiegelt.
     /// <summary>Lokalisierungs-Schlüssel des Titels.</summary>
     public const string TitleKey = ReminderTextKeys.Title;
 
     private bool _completed;
+    private int _remainingSeconds;
 
     /// <summary>
     /// Erzeugt das ViewModel für ein Pausenmodell.
     /// </summary>
     /// <param name="hintKey">Lokalisierungs-Schlüssel des Übungs-Hinweises.</param>
-    public BreakReminderViewModel(string hintKey)
+    /// <param name="autoStartSeconds">
+    /// Verbleibende Sekunden bis zum automatischen Pausenstart, oder <c>null</c>, wenn
+    /// die Erinnerung bis zu einer Benutzeraktion offen bleibt (kein Countdown).
+    /// </param>
+    public BreakReminderViewModel(string hintKey, int? autoStartSeconds = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(hintKey);
         HintKey = hintKey;
+        AutoStartsAutomatically = autoStartSeconds is > 0;
+        _remainingSeconds = autoStartSeconds is > 0 ? autoStartSeconds.Value : 0;
     }
 
     /// <summary>Wird ausgelöst, sobald eine Aktion feststeht (genau einmal).</summary>
@@ -42,6 +47,12 @@ internal sealed class BreakReminderViewModel
 
     /// <summary>Wahr, sobald eine Aktion gewählt wurde.</summary>
     public bool IsCompleted => _completed;
+
+    /// <summary>Startet die Pause nach Ablauf des Countdowns von selbst?</summary>
+    public bool AutoStartsAutomatically { get; }
+
+    /// <summary>Verbleibende Sekunden bis zum automatischen Pausenstart.</summary>
+    public int RemainingSeconds => _remainingSeconds;
 
     /// <summary>Die gewählte Aktion, oder <c>null</c> solange offen.</summary>
     public ReminderResult? Result { get; private set; }
@@ -56,12 +67,23 @@ internal sealed class BreakReminderViewModel
     public void Skip() => Complete(ReminderResult.Skip);
 
     /// <summary>
-    /// Wird vom UI-Timeout aufgerufen. Ohne vorherige Benutzeraktion gilt die
-    /// Default-Aktion <see cref="ReminderResult.StartBreak"/>.
+    /// Zählt den Countdown eine Sekunde herunter (von der View im Sekundentakt
+    /// aufgerufen). Erreicht der Zähler 0, startet die Pause automatisch. Ohne
+    /// konfigurierten Auto-Start oder nach einer Benutzeraktion wirkungslos.
     /// </summary>
-    public void TimeoutElapsed()
+    public void Tick()
     {
-        if (!_completed)
+        if (_completed || !AutoStartsAutomatically)
+        {
+            return;
+        }
+
+        if (_remainingSeconds > 0)
+        {
+            _remainingSeconds--;
+        }
+
+        if (_remainingSeconds <= 0)
         {
             Complete(ReminderResult.StartBreak);
         }

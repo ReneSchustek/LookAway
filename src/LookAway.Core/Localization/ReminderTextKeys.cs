@@ -16,4 +16,7 @@ public static class ReminderTextKeys
 
     /// <summary>Button "Überspringen".</summary>
     public const string Skip = "Reminder.Skip";
+
+    /// <summary>Countdown-Hinweis „Pause startet automatisch in {0} s".</summary>
+    public const string AutoStartCountdown = "Reminder.AutoStartCountdown";
 }

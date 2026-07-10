@@ -97,6 +97,46 @@ public sealed class Settings
         }
     }
 
+    /// <summary>Untergrenze der Auto-Pausenstart-Verzögerung in Sekunden.</summary>
+    public const int MinAutoStartBreakSeconds = 15;
+
+    /// <summary>Obergrenze der Auto-Pausenstart-Verzögerung in Sekunden (3 Minuten).</summary>
+    public const int MaxAutoStartBreakSeconds = 180;
+
+    /// <summary>Schrittweite der Auto-Pausenstart-Verzögerung in Sekunden.</summary>
+    public const int AutoStartBreakSecondsStep = 5;
+
+    private int _autoStartBreakSeconds = 15;
+
+    /// <summary>
+    /// Soll die Pause automatisch starten, wenn der Benutzer die Erinnerung nach
+    /// <see cref="AutoStartBreakSeconds"/> Sekunden nicht bedient? Ist dies
+    /// <c>false</c>, bleibt die Erinnerung offen, bis der Benutzer eine Aktion wählt.
+    /// Default: <c>true</c>.
+    /// </summary>
+    public bool AutoStartBreakEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Verzögerung in Sekunden, nach der die Pause ohne Benutzeraktion automatisch
+    /// startet (gültig <see cref="MinAutoStartBreakSeconds"/>–<see cref="MaxAutoStartBreakSeconds"/>).
+    /// Nur wirksam, wenn <see cref="AutoStartBreakEnabled"/>. Default: 15.
+    /// </summary>
+    public int AutoStartBreakSeconds
+    {
+        get => _autoStartBreakSeconds;
+        set
+        {
+            if (value is < MinAutoStartBreakSeconds or > MaxAutoStartBreakSeconds)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
+                    value,
+                    $"AutoStartBreakSeconds muss zwischen {MinAutoStartBreakSeconds} und {MaxAutoStartBreakSeconds} liegen.");
+            }
+            _autoStartBreakSeconds = value;
+        }
+    }
+
     /// <summary>
     /// Sollen Pause-Erinnerungen unterdrückt werden, solange eine Vollbild-App
     /// läuft (DND)? Default: <c>true</c>.

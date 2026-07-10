@@ -70,6 +70,12 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public partial bool SuppressOnFullscreen { get; set; }
 
     [ObservableProperty]
+    public partial bool AutoStartBreakEnabled { get; set; }
+
+    [ObservableProperty]
+    public partial int AutoStartBreakSeconds { get; set; }
+
+    [ObservableProperty]
     public partial string? WorkError { get; set; }
 
     [ObservableProperty]
@@ -198,6 +204,15 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Obere Grenze der Inaktivitätsschwelle (Minuten).</summary>
     public int IdleMaxMinutes => Settings.MaxIdleThresholdMinutes;
 
+    /// <summary>Untere Grenze der Auto-Pausenstart-Verzögerung (Sekunden).</summary>
+    public int AutoStartBreakMinSeconds => Settings.MinAutoStartBreakSeconds;
+
+    /// <summary>Obere Grenze der Auto-Pausenstart-Verzögerung (Sekunden).</summary>
+    public int AutoStartBreakMaxSeconds => Settings.MaxAutoStartBreakSeconds;
+
+    /// <summary>Schrittweite der Auto-Pausenstart-Verzögerung (Sekunden).</summary>
+    public int AutoStartBreakStepSeconds => Settings.AutoStartBreakSecondsStep;
+
     /// <summary>Wahr, wenn das aktive Modell die Arbeitsdauer nur in einem Bereich erlaubt.</summary>
     public bool HasWorkRange { get; private set; }
 
@@ -248,6 +263,12 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     /// <summary>Beschriftung der DND-Option.</summary>
     public string FullscreenSuppressLabel => _localization.GetText(SettingsTextKeys.FullscreenSuppressLabel);
+
+    /// <summary>Beschriftung der Auto-Pausenstart-Option.</summary>
+    public string AutoStartBreakLabel => _localization.GetText(SettingsTextKeys.AutoStartBreakLabel);
+
+    /// <summary>Beschriftung der Auto-Pausenstart-Verzögerung.</summary>
+    public string AutoStartBreakSecondsLabel => _localization.GetText(SettingsTextKeys.AutoStartBreakSecondsLabel);
 
     /// <summary>Beschriftung der Modellauswahl.</summary>
     public string ModelLabel => _localization.GetText(SettingsTextKeys.ModelLabel);
@@ -367,6 +388,8 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
             PauseOnIdle = settings.PauseOnIdle;
             IdleThresholdMinutes = settings.IdleThresholdMinutes;
             SuppressOnFullscreen = settings.SuppressOnFullscreen;
+            AutoStartBreakEnabled = settings.AutoStartBreakEnabled;
+            AutoStartBreakSeconds = settings.AutoStartBreakSeconds;
 
             SoundEnabled = settings.SoundEnabled;
             SelectSound(settings.ReminderSound);
@@ -463,6 +486,8 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         settings.PauseOnIdle = PauseOnIdle;
         settings.IdleThresholdMinutes = Math.Clamp(IdleThresholdMinutes, IdleMinMinutes, IdleMaxMinutes);
         settings.SuppressOnFullscreen = SuppressOnFullscreen;
+        settings.AutoStartBreakEnabled = AutoStartBreakEnabled;
+        settings.AutoStartBreakSeconds = Math.Clamp(AutoStartBreakSeconds, AutoStartBreakMinSeconds, AutoStartBreakMaxSeconds);
         settings.CustomDurations = UseCustomDurations
             ? new CustomDurations { WorkMinutes = WorkMinutes, BreakMinutes = BreakMinutes }
             : null;

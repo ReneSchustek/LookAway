@@ -68,6 +68,8 @@
   "Settings.Idle.PauseLabel": "Suspendre automatiquement en cas d'inactivité",
   "Settings.Idle.ThresholdLabel": "Seuil d'inactivité (minutes)",
   "Settings.Fullscreen.SuppressLabel": "Ne pas déranger en plein écran",
+  "Settings.AutoStartBreak.Label": "Démarrer la pause automatiquement si rien n’est cliqué",
+  "Settings.AutoStartBreak.SecondsLabel": "Démarrage automatique de la pause après (secondes)",
 
   "Settings.Model.Label": "Modèle de pause actif",
   "Settings.Model.ShortBreaks": "Pauses courtes (60 / 5 min)",
@@ -130,6 +132,7 @@
   "Reminder.StartBreak": "Démarrer la pause",
   "Reminder.Snooze": "5 min plus tard",
   "Reminder.Skip": "Ignorer",
+  "Reminder.AutoStartCountdown": "La pause démarre automatiquement dans {0} s",
 
   "Overlay.Title": "Pause – regardez au loin",
   "Overlay.EndHint": "Appuyez sur ÉCHAP pour terminer la pause",

@@ -8,6 +8,15 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.6] – 2026-07-10
+
+### Added
+
+- **Automatic break start:** The break now starts automatically after a configurable delay
+  (default 15 seconds, in 5-second steps up to 3 minutes) if the reminder is left untouched.
+  A countdown in the reminder window shows the remaining time. It can be enabled or disabled
+  in the settings — when disabled, the reminder stays open until you choose an action.
+
 ## [1.2.5] – 2026-07-02
 
 ### Changed

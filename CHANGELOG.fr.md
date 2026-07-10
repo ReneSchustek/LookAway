@@ -8,6 +8,16 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+## [1.2.6] – 2026-07-10
+
+### Ajouté
+
+- **Démarrage automatique de la pause :** La pause démarre désormais automatiquement après un
+  délai configurable (15 secondes par défaut, par pas de 5 secondes jusqu'à 3 minutes) si le
+  rappel n'est pas utilisé. Un compte à rebours dans la fenêtre de rappel affiche le temps
+  restant. Activable ou désactivable dans les paramètres — désactivé, le rappel reste ouvert
+  jusqu'à ce que vous choisissiez une action.
+
 ## [1.2.5] – 2026-07-02
 
 ### Modifié

@@ -8,6 +8,16 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+## [1.2.6] – 2026-07-10
+
+### Hinzugefügt
+
+- **Automatischer Pausenstart:** Die Pause startet nach einer einstellbaren Verzögerung
+  (Standard 15 Sekunden, in 5-Sekunden-Schritten bis zu 3 Minuten) automatisch, wenn die
+  Erinnerung nicht bedient wird. Ein Countdown im Erinnerungsfenster zeigt die verbleibende
+  Zeit an. Über die Einstellungen an- oder abschaltbar — deaktiviert bleibt die Erinnerung
+  offen, bis eine Aktion gewählt wird.
+
 ## [1.2.5] – 2026-07-02
 
 ### Geändert

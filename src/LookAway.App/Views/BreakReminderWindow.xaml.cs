@@ -1,13 +1,13 @@
 using System;
-using LookAway.Application.Localization;
-using LookAway.Application.ViewModels;
 using LookAway.Core.Interfaces;
+using LookAway.Core.Localization;
+using LookAway.App.ViewModels;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Windows.Graphics;
 
-namespace LookAway.Views;
+namespace LookAway.App.Views;
 
 /// <summary>
 /// Eigenständiges, dezentes Erinnerungsfenster. Bindet an das UI-freie

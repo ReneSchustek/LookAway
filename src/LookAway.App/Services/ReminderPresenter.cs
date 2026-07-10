@@ -1,13 +1,12 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
-using LookAway.Application.Coordination;
-using LookAway.Application.ViewModels;
+using LookAway.App.ViewModels;
 using LookAway.Core.Domain;
 using LookAway.Core.Enums;
 using LookAway.Core.Interfaces;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 
-namespace LookAway.Services;
+namespace LookAway.App.Services;
 
 /// <summary>
 /// WinUI-Implementierung von <see cref="IReminderPresenter"/>: erzeugt das
@@ -19,6 +18,7 @@ internal sealed class ReminderPresenter : IReminderPresenter
 {
     private readonly DispatcherQueue _dispatcher;
     private readonly ILocalizationService _localization;
+    private readonly ILogger<ReminderPresenter> _logger;
     // Wird vom Timer-Consumer-Thread gesetzt/gelesen (Show/IsReminderOpen) und im
     // UI-Thread zurückgesetzt (Completed-Handler) — daher volatile für korrekte
     // Sichtbarkeit über Threads hinweg (analog zu BreakOverlayPresenter._isOverlayOpen).
@@ -29,12 +29,15 @@ internal sealed class ReminderPresenter : IReminderPresenter
     /// </summary>
     /// <param name="dispatcher">Dispatcher des Hauptfensters.</param>
     /// <param name="localization">Liefert die sprachabhängigen Texte.</param>
-    public ReminderPresenter(DispatcherQueue dispatcher, ILocalizationService localization)
+    /// <param name="logger">Protokolliert fehlgeschlagene Fenster-Aufbauten.</param>
+    public ReminderPresenter(DispatcherQueue dispatcher, ILocalizationService localization, ILogger<ReminderPresenter> logger)
     {
         ArgumentNullException.ThrowIfNull(dispatcher);
         ArgumentNullException.ThrowIfNull(localization);
+        ArgumentNullException.ThrowIfNull(logger);
         _dispatcher = dispatcher;
         _localization = localization;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -58,10 +61,6 @@ internal sealed class ReminderPresenter : IReminderPresenter
     // Erzeugt das Erinnerungsfenster auf dem UI-Thread. Scheitert der Aufbau, wird das
     // Offen-Flag zurückgesetzt, damit künftige Erinnerungen nicht dauerhaft
     // unterdrückt bleiben; die verpasste Erinnerung gilt als „übersprungen".
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Der Fenster-Aufbau darf die Erinnerungen nie dauerhaft blockieren: bei jedem Fehler wird das Offen-Flag zurückgesetzt und die Erinnerung als übersprungen behandelt.")]
     private void TryShowWindow(BreakModel model, Action<ReminderResult> onResult)
     {
         try
@@ -77,10 +76,28 @@ internal sealed class ReminderPresenter : IReminderPresenter
             Views.BreakReminderWindow window = new(viewModel, _localization);
             window.Activate();
         }
-        catch (Exception)
+        catch (Exception ex) when (LogWindowFailure(ex))
         {
             _isReminderOpen = false;
             onResult(ReminderResult.Skip);
         }
     }
+
+    // Der Fenster-Aufbau darf die Erinnerungen nie dauerhaft blockieren. Der Filter
+    // protokolliert den Fehler, bevor der Stack abgebaut wird, und lässt den
+    // Aufräumpfad laufen; die verpasste Erinnerung gilt als übersprungen.
+    private bool LogWindowFailure(Exception exception)
+    {
+        ReminderPresenterLog.WindowCreationFailed(_logger, exception);
+        return true;
+    }
+}
+
+/// <summary>
+/// Source-generierte Logging-Methoden des Erinnerungs-Presenters.
+/// </summary>
+internal static partial class ReminderPresenterLog
+{
+    [LoggerMessage(EventId = 1810, Level = LogLevel.Error, Message = "Erinnerungsfenster konnte nicht erzeugt werden; Erinnerung gilt als übersprungen.")]
+    public static partial void WindowCreationFailed(ILogger logger, Exception exception);
 }

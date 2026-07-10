@@ -1,10 +1,10 @@
 using System;
-using LookAway.Application.ViewModels;
+using LookAway.App.ViewModels;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Windows.Graphics;
 
-namespace LookAway.Views;
+namespace LookAway.App.Views;
 
 /// <summary>
 /// First-Run-Wizard-Fenster. Bindet an das UI-freie

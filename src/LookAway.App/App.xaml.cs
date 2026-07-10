@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
@@ -21,36 +22,36 @@ using LookAway.Data.Power;
 using LookAway.Data.Repositories;
 using LookAway.Data.Services;
 using LookAway.Data.Time;
-using LookAway.Services;
+using LookAway.App.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 
 // Aliase auflösen Namespace-Kollisionen mit Microsoft.UI.Xaml und System.
-using AutoStartCoordinator = LookAway.Application.Services.AutoStartCoordinator;
-using BreakReminderViewModel = LookAway.Application.ViewModels.BreakReminderViewModel;
-using SettingsViewModel = LookAway.Application.ViewModels.SettingsViewModel;
-using StatisticsViewModel = LookAway.Application.ViewModels.StatisticsViewModel;
-using WelcomeViewModel = LookAway.Application.ViewModels.WelcomeViewModel;
-using StatisticsService = LookAway.Application.Statistics.StatisticsService;
-using CsvExporter = LookAway.Application.Statistics.CsvExporter;
-using FullscreenDetectionService = LookAway.Application.Services.FullscreenDetectionService;
-using IdleDetectionService = LookAway.Application.Services.IdleDetectionService;
-using LogService = LookAway.Application.Services.LogService;
-using PauseActionService = LookAway.Application.Services.PauseActionService;
-using BreakCoordinator = LookAway.Application.Coordination.BreakCoordinator;
-using UpdateInstallerService = LookAway.Application.Services.UpdateInstallerService;
-using IUpdateInstaller = LookAway.Application.Services.IUpdateInstaller;
-using UpdateApplyArgs = LookAway.Application.Services.UpdateApplyArgs;
-using StagedUpdate = LookAway.Application.Services.StagedUpdate;
-using TrayStatusPresenter = LookAway.Application.Services.TrayStatusPresenter;
+using AutoStartCoordinator = LookAway.Core.Services.AutoStartCoordinator;
+using BreakReminderViewModel = LookAway.App.ViewModels.BreakReminderViewModel;
+using SettingsViewModel = LookAway.App.ViewModels.SettingsViewModel;
+using StatisticsViewModel = LookAway.App.ViewModels.StatisticsViewModel;
+using WelcomeViewModel = LookAway.App.ViewModels.WelcomeViewModel;
+using StatisticsService = LookAway.Core.Services.StatisticsService;
+using CsvExporter = LookAway.Core.Services.CsvExporter;
+using FullscreenDetectionService = LookAway.Core.Services.FullscreenDetectionService;
+using IdleDetectionService = LookAway.Core.Services.IdleDetectionService;
+using LogService = LookAway.Core.Services.LogService;
+using PauseActionService = LookAway.Core.Services.PauseActionService;
+using BreakCoordinator = LookAway.Core.Services.BreakCoordinator;
+using UpdateInstallerService = LookAway.Data.Update.UpdateInstallerService;
+using IUpdateInstaller = LookAway.Core.Interfaces.IUpdateInstaller;
+using UpdateApplyArgs = LookAway.Core.ValueObjects.UpdateApplyArgs;
+using StagedUpdate = LookAway.Core.ValueObjects.StagedUpdate;
+using TrayStatusPresenter = LookAway.Core.Services.TrayStatusPresenter;
 using SingleInstanceLock = LookAway.Data.Services.SingleInstanceLock;
-using TimerService = LookAway.Application.Services.TimerService;
+using TimerService = LookAway.Core.Services.TimerService;
 using XamlUnhandledExceptionEventArgs = Microsoft.UI.Xaml.UnhandledExceptionEventArgs;
 using SystemUnhandledExceptionEventArgs = System.UnhandledExceptionEventArgs;
 
-namespace LookAway;
+namespace LookAway.App;
 
 /// <summary>
 /// Anwendungs-Bootstrap. Konfiguriert das DI-Container, das Logging
@@ -60,12 +61,8 @@ namespace LookAway;
 [SuppressMessage(
     "Design",
     "CA1515:Consider making public types internal",
-    Justification = "WinUI-3-XAML-Compiler erfordert eine 'public partial'-App-Klasse für den generierten Activator.")]
-[SuppressMessage(
-    "Design",
-    "CA1001:Types that own disposable fields should be disposable",
-    Justification = "Die App-Klasse implementiert keinen IDisposable-Vertrag. Die gehaltenen Felder und der DI-ServiceProvider werden im RequestExit-Pfad explizit freigegeben.")]
-public partial class App : global::Microsoft.UI.Xaml.Application
+    Justification = "Der WinUI-3-XAML-Compiler erzeugt die zweite Partialklasse als 'public'; ein abweichender Modifizierer ist nicht kompilierbar.")]
+public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application, IDisposable
 {
     private const string LogFolderName = "logs";
     private const string CrashFolderName = "crashes";
@@ -75,17 +72,16 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     private const string ShutdownReasonUserExit = "UserRequested";
     private const string ShutdownReasonSecondInstance = "SecondInstanceDetected";
 
-    /// <summary>
-    /// Globaler Service-Provider, über den alle Schichten ihre Abhängigkeiten beziehen.
-    /// </summary>
-    public static IServiceProvider Services { get; private set; } = null!;
+    // Service-Provider der Composition Root. Bewusst privat: außerhalb dieser Klasse
+    // werden Abhängigkeiten per Konstruktor injiziert, nicht nachgeschlagen.
+    private static IServiceProvider Services { get; set; } = null!;
 
     private const int DetectionPollSeconds = 5;
     private const int HistoryRetentionDays = 365;
 
     private Window? _window;
     private LogService? _logService;
-    private ILogger<App>? _logger;
+    private ILogger<LookAwayApp>? _logger;
     private SingleInstanceLock? _instanceLock;
     private TrayIconService? _trayIcon;
     private CancellationTokenSource? _detectionCts;
@@ -99,14 +95,14 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     /// <summary>
     /// Initialisiert die Anwendung, das DI-Container und die globalen Handler.
     /// </summary>
-    public App()
+    public LookAwayApp()
     {
         try
         {
             InitializeComponent();
             Services = ConfigureServices();
             _logService = Services.GetRequiredService<LogService>();
-            _logger = Services.GetRequiredService<ILogger<App>>();
+            _logger = Services.GetRequiredService<ILogger<LookAwayApp>>();
 
             RegisterGlobalCrashHandlers();
             UnhandledException += OnApplicationUnhandledException;
@@ -128,10 +124,6 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         }
     }
 
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Letzte Diagnose-Chance für Startfehler: jede Ausnahme wird in eine Datei geschrieben und anschließend weitergereicht.")]
     private static void WriteStartupError(Exception exception)
     {
         try
@@ -177,14 +169,21 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             return;
         }
 
+        // Der Rest des Starts liest die Einstellungen und darf den UI-Thread nicht
+        // blockieren; OnLaunched ist ein synchroner Framework-Einstiegspunkt.
+        _ = ContinueLaunchAsync();
+    }
+
+    private async Task ContinueLaunchAsync()
+    {
         // Ausstehendes Update beim Start anwenden (Datei-Tausch via Helfer-Prozess);
         // beendet diese Instanz, falls ein Update eingespielt wird.
-        if (TryApplyPendingUpdateOnStartup())
+        if (await TryApplyPendingUpdateOnStartupAsync().ConfigureAwait(true))
         {
             return;
         }
 
-        _instanceLock.ActivationRequested += OnActivationRequested;
+        _instanceLock!.ActivationRequested += OnActivationRequested;
 
         _window = new MainWindow();
         // Hauptfenster bleibt verborgen — die App lebt im Tray.
@@ -192,16 +191,18 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
         _reminderPresenter = new ReminderPresenter(
             _window.DispatcherQueue,
-            Services.GetRequiredService<ILocalizationService>());
+            Services.GetRequiredService<ILocalizationService>(),
+            Services.GetRequiredService<ILogger<ReminderPresenter>>());
         _overlayPresenter = new BreakOverlayPresenter(
             _window.DispatcherQueue,
-            Services.GetRequiredService<ILocalizationService>());
+            Services.GetRequiredService<ILocalizationService>(),
+            Services.GetRequiredService<ILogger<BreakOverlayPresenter>>());
         _settingsPresenter = new SettingsPresenter(
             _window.DispatcherQueue,
             CreateSettingsViewModel,
             ApplySettingsLive);
 
-        _ = StartAsync();
+        await StartAsync().ConfigureAwait(true);
     }
 
     /// <summary>
@@ -320,10 +321,6 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         }
     }
 
-    [SuppressMessage(
-        "Reliability",
-        "CA1031:Do not catch general exception types",
-        Justification = "Das Öffnen des Browsers ist unkritisch; jeder Fehler wird geloggt, statt die App zu beenden.")]
     private void OpenUpdatePage()
     {
         if (_updateDownloadUrl is null)
@@ -335,7 +332,13 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         {
             _ = Process.Start(new ProcessStartInfo(_updateDownloadUrl.ToString()) { UseShellExecute = true });
         }
-        catch (Exception ex)
+        // Fehlt ein Standardbrowser oder verweigert die Shell den Start, meldet
+        // Process.Start genau diese Typen; die App läuft unbeeindruckt weiter.
+        catch (Win32Exception ex)
+        {
+            AppLog.BrowserOpenFailed(_logger!, ex);
+        }
+        catch (InvalidOperationException ex)
         {
             AppLog.BrowserOpenFailed(_logger!, ex);
         }
@@ -345,10 +348,6 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     // über den Helfer-Prozess sofort einspielen (App startet danach neu).
     private void OnUpdateRequested() => _ = HandleUpdateRequestedAsync();
 
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Die manuelle Aktualisierung darf nie abstürzen: bei jedem Fehler wird auf das Öffnen der Release-Seite zurückgefallen.")]
     private async Task HandleUpdateRequestedAsync()
     {
         try
@@ -375,11 +374,29 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             // Vom Nutzer angestossen und gerade frisch geladen -> direkt einspielen.
             RelaunchToApply(staged.Directory, target);
         }
-        catch (Exception ex)
+        // Datei- und Prozessfehler beim Bereitstellen: auf die Release-Seite zurückfallen.
+        catch (IOException ex)
         {
-            AppLog.UpdateApplyFailed(_logger!, ex);
-            OpenUpdatePage();
+            OnManualUpdateFailed(ex);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            OnManualUpdateFailed(ex);
+        }
+        catch (Win32Exception ex)
+        {
+            OnManualUpdateFailed(ex);
+        }
+        catch (InvalidOperationException ex)
+        {
+            OnManualUpdateFailed(ex);
+        }
+    }
+
+    private void OnManualUpdateFailed(Exception exception)
+    {
+        AppLog.UpdateApplyFailed(_logger!, exception);
+        OpenUpdatePage();
     }
 
     // Lädt/entpackt das Update im Hintergrund und vermerkt Version + Datei-Hash in
@@ -446,11 +463,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     /// über den Helfer-Prozess ein. Gibt <c>true</c> zurück, wenn diese Instanz
     /// dafür beendet wird.
     /// </summary>
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Der Start darf nie an der Aktualisierung scheitern: jeder Fehler wird geloggt und der normale Start fortgesetzt.")]
-    private bool TryApplyPendingUpdateOnStartup()
+    private async Task<bool> TryApplyPendingUpdateOnStartupAsync()
     {
         try
         {
@@ -460,8 +473,8 @@ public partial class App : global::Microsoft.UI.Xaml.Application
 
             // Nur ein Update einspielen, das diese Installation selbst vermerkt hat
             // (Version + Datei-Hash) — nie einen einfach untergeschobenen Ordner.
-            Settings settings = Services.GetRequiredService<ISettingsRepository>()
-                .LoadAsync().GetAwaiter().GetResult();
+            Settings settings = await Services.GetRequiredService<ISettingsRepository>()
+                .LoadAsync().ConfigureAwait(true);
 
             string? staged = installer.FindVerifiedPendingUpdateDirectory(
                 current, settings.PendingUpdateVersion, settings.PendingUpdateSha256);
@@ -490,7 +503,24 @@ public partial class App : global::Microsoft.UI.Xaml.Application
             Exit();
             return true;
         }
-        catch (Exception ex)
+        // Ein fehlgeschlagenes Update darf den Start nie verhindern: protokollieren
+        // und regulär weiterstarten.
+        catch (IOException ex)
+        {
+            AppLog.UpdateApplyFailed(_logger!, ex);
+            return false;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            AppLog.UpdateApplyFailed(_logger!, ex);
+            return false;
+        }
+        catch (Win32Exception ex)
+        {
+            AppLog.UpdateApplyFailed(_logger!, ex);
+            return false;
+        }
+        catch (InvalidOperationException ex)
         {
             AppLog.UpdateApplyFailed(_logger!, ex);
             return false;
@@ -501,45 +531,68 @@ public partial class App : global::Microsoft.UI.Xaml.Application
     /// Helfer-Modus: wartet auf das Ende der alten Instanz, ersetzt die Dateien im
     /// Zielordner und startet die neue Version. Beendet danach den Helfer-Prozess.
     /// </summary>
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Der Helfer darf nicht abstürzen; bei Fehlern wird best-effort die installierte App gestartet.")]
     private void RunUpdateApply(UpdateApplyArgs apply)
     {
-        _ = Task.Run(() =>
+        _ = Task.Run(async () =>
         {
+            // Das Ziel ist immer das eigene Programmverzeichnis; der Helfer akzeptiert
+            // keinen frei übergebenen Zielpfad.
+            string target = AppContext.BaseDirectory;
             try
             {
+                UpdateInstallerService installer = Services.GetRequiredService<UpdateInstallerService>();
+
+                // Die Signaturprüfung des Hauptprozesses hier erneut durchsetzen: Der
+                // Helfer vertraut seinen Argumenten nicht, sondern verifiziert, dass der
+                // Quellordner im Staging-Bereich liegt und die Programmdatei den zuvor
+                // signaturgeprüft vermerkten Hash trägt.
+                Settings settings = await Services.GetRequiredService<ISettingsRepository>()
+                    .LoadAsync().ConfigureAwait(false);
+                if (!installer.IsTrustedStagingDirectory(apply.Source, settings.PendingUpdateSha256))
+                {
+                    AppLog.UpdateApplyRejected(_logger!, apply.Source);
+                    return;
+                }
+
                 WaitForProcessExit(apply.Pid, TimeSpan.FromSeconds(30));
-                Services.GetRequiredService<UpdateInstallerService>().ApplyStagedFiles(apply.Source, apply.Target);
+                installer.ApplyStagedFiles(apply.Source, target);
             }
-            catch (Exception ex)
+            // Bei Fehler hat ApplyStagedFiles auf den vorigen Stand zurückgerollt.
+            catch (IOException ex)
             {
-                // Bei Fehler hat ApplyStagedFiles auf den vorigen Stand zurückgerollt.
+                AppLog.UpdateApplyFailed(_logger!, ex);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                AppLog.UpdateApplyFailed(_logger!, ex);
+            }
+            catch (InvalidOperationException ex)
+            {
                 AppLog.UpdateApplyFailed(_logger!, ex);
             }
             finally
             {
                 // In jedem Fall die installierte App starten (neuer Stand bei Erfolg,
                 // zurückgerollter, lauffähiger Stand bei Fehler), dann den Helfer beenden.
-                TryStartInstalledApp(apply.Target);
+                TryStartInstalledApp(target);
                 Environment.Exit(0);
             }
         });
     }
 
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Best-effort-Neustart der App im Helfer-Prozess; ein Fehler darf den Helfer nur am Beenden nicht hindern.")]
     private void TryStartInstalledApp(string targetDir)
     {
         try
         {
             UpdateProcess.StartApp(UpdateInstallerService.ExecutablePathIn(targetDir));
         }
-        catch (Exception ex)
+        // Der Helfer beendet sich anschließend ohnehin; ein fehlgeschlagener Neustart
+        // wird nur protokolliert.
+        catch (Win32Exception ex)
+        {
+            AppLog.UpdateApplyFailed(_logger!, ex);
+        }
+        catch (InvalidOperationException ex)
         {
             AppLog.UpdateApplyFailed(_logger!, ex);
         }
@@ -873,6 +926,17 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         // Neustart in derselben Sitzung (z. B. Aktualisierung) ihn fortsetzt.
         PersistTimerSnapshot();
 
+        Dispose();
+        Exit();
+    }
+
+    /// <summary>
+    /// Gibt Tray-Icon, Instanz-Sperre, Hintergrund-Token und alle per DI gehaltenen
+    /// Singletons frei. Stellt dabei u. a. die Bildschirmhelligkeit wieder her, gibt
+    /// die Hotkeys frei und leert den Log-Puffer. Mehrfachaufrufe sind unschädlich.
+    /// </summary>
+    public void Dispose()
+    {
         _detectionCts?.Cancel();
         _detectionCts?.Dispose();
         _detectionCts = null;
@@ -881,11 +945,7 @@ public partial class App : global::Microsoft.UI.Xaml.Application
         _instanceLock?.Dispose();
         _instanceLock = null;
 
-        // Gibt alle per DI gehaltenen Singletons frei: stellt u. a. die
-        // Bildschirmhelligkeit wieder her, gibt Hotkeys frei und leert den Log-Puffer.
         (Services as IDisposable)?.Dispose();
-
-        Exit();
     }
 
     private void OnActivationRequested(object? sender, EventArgs e)
@@ -1106,4 +1166,10 @@ internal static partial class AppLog
         Level = LogLevel.Warning,
         Message = "Automatische Aktualisierung fehlgeschlagen.")]
     public static partial void UpdateApplyFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(
+        EventId = 1173,
+        Level = LogLevel.Error,
+        Message = "Update-Helfer abgelehnt: Quelle {Source} nicht vertrauenswürdig (Signatur/Hash-Prüfung).")]
+    public static partial void UpdateApplyRejected(ILogger logger, string source);
 }

@@ -1,7 +1,7 @@
 using System;
-using LookAway.Application.Localization;
-using LookAway.Application.ViewModels;
 using LookAway.Core.Interfaces;
+using LookAway.Core.Localization;
+using LookAway.App.ViewModels;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
@@ -9,7 +9,7 @@ using Microsoft.UI.Xaml.Media;
 using Windows.Graphics;
 using WinColor = Windows.UI.Color;
 
-namespace LookAway.Views;
+namespace LookAway.App.Views;
 
 /// <summary>
 /// Abgedunkeltes Vollbild-Overlay während einer Pause — eine Instanz je Monitor.

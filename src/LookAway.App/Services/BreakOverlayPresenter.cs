@@ -1,16 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using LookAway.Application.Coordination;
-using LookAway.Application.ViewModels;
 using LookAway.Core.Domain;
 using LookAway.Core.Enums;
 using LookAway.Core.Interfaces;
+using LookAway.App.ViewModels;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using WinColor = Windows.UI.Color;
 
-namespace LookAway.Services;
+namespace LookAway.App.Services;
 
 /// <summary>
 /// WinUI-Implementierung von <see cref="IBreakOverlayPresenter"/>: erzeugt je
@@ -23,6 +22,7 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
 {
     private readonly DispatcherQueue _dispatcher;
     private readonly ILocalizationService _localization;
+    private readonly ILogger<BreakOverlayPresenter> _logger;
     private readonly List<Views.BreakOverlayWindow> _windows = new();
     private DispatcherQueueTimer? _countdownTimer;
     // Wird auf dem UI-Thread gesetzt, aber vom Timer-Consumer-Thread gelesen
@@ -34,12 +34,15 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
     /// </summary>
     /// <param name="dispatcher">Dispatcher des Hauptfensters.</param>
     /// <param name="localization">Liefert die sprachabhängigen Texte.</param>
-    public BreakOverlayPresenter(DispatcherQueue dispatcher, ILocalizationService localization)
+    /// <param name="logger">Protokolliert fehlgeschlagene Fenster-Aufbauten.</param>
+    public BreakOverlayPresenter(DispatcherQueue dispatcher, ILocalizationService localization, ILogger<BreakOverlayPresenter> logger)
     {
         ArgumentNullException.ThrowIfNull(dispatcher);
         ArgumentNullException.ThrowIfNull(localization);
+        ArgumentNullException.ThrowIfNull(logger);
         _dispatcher = dispatcher;
         _localization = localization;
+        _logger = logger;
     }
 
     /// <inheritdoc />
@@ -64,10 +67,6 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
     // Fenster-/Vollbild-Fehler auf ungewöhnlichen Monitor-Konfigurationen), wird
     // sauber aufgeräumt und das Pausenende signalisiert — so bleibt die App bedienbar,
     // statt mit gesetztem Overlay-Flag und aktiven Pause-Aktionen hängenzubleiben.
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Der Overlay-Aufbau darf die App nie hängen lassen: jeder Fehler wird geloggt-frei aufgeräumt und als Pausenende behandelt.")]
     private void TryShowWindows(BreakModel model, TimeSpan breakDuration, string overlayColorHex, bool allScreens, Action<BreakEndReason> onEnded)
     {
         try
@@ -119,7 +118,7 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
 
             StartCountdown(viewModel);
         }
-        catch (Exception)
+        catch (Exception ex) when (LogWindowFailure(ex))
         {
             TeardownWindows();
             _isOverlayOpen = false;
@@ -127,6 +126,14 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
             // zurückgenommen und eine frische Arbeitsphase gestartet.
             onEnded(BreakEndReason.Elapsed);
         }
+    }
+
+    // Der Overlay-Aufbau darf die App nie hängen lassen. Der Filter protokolliert den
+    // Fehler und lässt anschließend den Aufräumpfad laufen.
+    private bool LogWindowFailure(Exception exception)
+    {
+        BreakOverlayPresenterLog.WindowCreationFailed(_logger, exception);
+        return true;
     }
 
     /// <inheritdoc />
@@ -170,4 +177,13 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
 
         _windows.Clear();
     }
+}
+
+/// <summary>
+/// Source-generierte Logging-Methoden des Overlay-Presenters.
+/// </summary>
+internal static partial class BreakOverlayPresenterLog
+{
+    [LoggerMessage(EventId = 1820, Level = LogLevel.Error, Message = "Pausen-Overlay konnte nicht erzeugt werden; die Pause wird als beendet behandelt.")]
+    public static partial void WindowCreationFailed(ILogger logger, Exception exception);
 }

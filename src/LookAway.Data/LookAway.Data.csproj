@@ -5,6 +5,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="LookAway.Data.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- Sprachtabellen werden ins Assembly eingebettet und zur Laufzeit über
          den Manifest-Ressourcennamen geladen (JsonLocalizationService). -->
     <EmbeddedResource Include="Localization\de.json" />

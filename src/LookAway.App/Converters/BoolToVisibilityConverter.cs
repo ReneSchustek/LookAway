@@ -2,7 +2,7 @@ using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 
-namespace LookAway.Converters;
+namespace LookAway.App.Converters;
 
 /// <summary>
 /// Wandelt einen <see cref="bool"/> in <see cref="Visibility"/>:

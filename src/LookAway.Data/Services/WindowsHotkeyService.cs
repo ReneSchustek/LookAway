@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using LookAway.Core.Domain;
 using LookAway.Core.Enums;
@@ -11,17 +10,15 @@ namespace LookAway.Data.Services;
 
 /// <summary>
 /// Registriert globale Hotkeys über die Win32-API <c>RegisterHotKey</c>.
-/// Ein eigener Hintergrund-Thread betreibt ein nachrichtenfreies Fenster
-/// (<c>HWND_MESSAGE</c>) mit Message-Loop und empfängt <c>WM_HOTKEY</c>.
+/// Ein eigener Hintergrund-Thread betreibt die Nachrichtenschleife und empfängt
+/// <c>WM_HOTKEY</c>.
 /// </summary>
 /// <remarks>
-/// Registrierung und Freigabe laufen auf dem Thread, dem das Fenster gehört;
-/// Aufrufe von aussen werden über eine gepostete Nachricht dorthin marshalled.
+/// Ohne Fensterhandle stellt Windows <c>WM_HOTKEY</c> direkt in die Nachrichten-
+/// warteschlange des registrierenden Threads. Der Dienst hält deshalb kein natives
+/// Handle; Registrierung und Freigabe sind thread-affin und werden über
+/// <c>PostThreadMessage</c> auf den Nachrichten-Thread marshalled.
 /// </remarks>
-[SuppressMessage(
-    "Usage",
-    "CA2216:Disposable types should declare finalizer",
-    Justification = "Das einzige native Handle (Nachrichtenfenster) gehört einem Hintergrund-Thread mit Prozess-Lebensdauer und wird in Dispose freigegeben; ein Finalizer könnte nicht sicher auf diesen Thread marshallen.")]
 [System.Runtime.Versioning.SupportedOSPlatform("windows")]
 public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
 {
@@ -29,20 +26,20 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
     private const uint WmApplyBindings = 0x0400; // WM_APP
     private const uint WmQuitLoop = 0x0401;      // WM_APP + 1 — beendet den Message-Loop
     private const uint ModNoRepeat = 0x4000;
-    private const int GwlpWndProc = -4;
+    private const uint PmNoRemove = 0x0000;
 
-    private static readonly nint HwndMessage = -3;
+    // Ohne Fenster: RegisterHotKey/UnregisterHotKey adressieren den Thread selbst.
+    private const nint NoWindow = 0;
 
     private readonly ILogger<WindowsHotkeyService> _logger;
     private readonly Lock _gate = new();
     private readonly List<HotkeyAction> _registered = new();
+    private readonly ManualResetEventSlim _queueReady = new(initialState: false);
 
     private Dictionary<HotkeyAction, HotkeyDefinition> _pending = new();
     private Thread? _thread;
-    private nint _hwnd;
-    private nint _originalWndProc;
-    private WndProcDelegate? _wndProc; // Feld hält das Delegate vor dem GC.
-    private bool _disposed;
+    private uint _threadId;
+    private volatile bool _disposed;
 
     /// <summary>
     /// Erzeugt den Service und startet den Nachrichten-Thread.
@@ -97,67 +94,80 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
         SignalApply();
     }
 
-    private void SignalApply()
+    private void SignalApply() => PostToMessageThread(WmApplyBindings);
+
+    // Eine Thread-Nachricht geht verloren, solange der Thread noch keine Warteschlange
+    // besitzt. Deshalb erst auf deren Erzeugung warten (der Thread signalisiert sie).
+    private void PostToMessageThread(uint message)
     {
-        nint hwnd = Volatile.Read(ref _hwnd);
-        if (hwnd != 0)
+        if (!_queueReady.Wait(TimeSpan.FromSeconds(2)))
         {
-            _ = PostMessageW(hwnd, WmApplyBindings, 0, 0);
+            return;
+        }
+
+        uint threadId = Volatile.Read(ref _threadId);
+        if (threadId != 0)
+        {
+            _ = PostThreadMessageW(threadId, message, 0, 0);
         }
     }
 
     private void RunMessageLoop()
     {
-        nint hwnd = CreateWindowExW(0, "STATIC", null, 0, 0, 0, 0, 0, HwndMessage, 0, 0, 0);
-        if (hwnd == 0)
-        {
-            WindowsHotkeyServiceLog.WindowCreationFailed(_logger);
-            return;
-        }
+        Volatile.Write(ref _threadId, GetCurrentThreadId());
 
-        _wndProc = WindowProc;
-        _originalWndProc = SetWindowProc(hwnd, Marshal.GetFunctionPointerForDelegate(_wndProc));
-        Volatile.Write(ref _hwnd, hwnd);
+        // Erzwingt die Erzeugung der Nachrichtenwarteschlange, bevor der erste
+        // PostThreadMessage-Aufruf eintreffen kann.
+        _ = PeekMessageW(out _, NoWindow, 0, 0, PmNoRemove);
+        _queueReady.Set();
 
-        // Falls vor dem Fensteraufbau bereits Bindings gesetzt wurden.
+        // Falls vor dem Start des Loops bereits Bindings gesetzt wurden.
         ApplyPending();
 
-        while (GetMessageW(out Msg message, 0, 0, 0) > 0)
+        while (true)
         {
-            _ = TranslateMessage(ref message);
-            _ = DispatchMessageW(ref message);
+            int result = GetMessageW(out Msg message, NoWindow, 0, 0);
+            if (result == 0)
+            {
+                // WM_QUIT — regulärer Abbau (falls nicht bereits über WmQuitLoop erfolgt).
+                break;
+            }
+
+            if (result == -1)
+            {
+                // Fehler in der Nachrichtenschleife: Hotkeys freigeben, damit sie nicht
+                // bis Prozessende global belegt bleiben, dann geordnet beenden.
+                WindowsHotkeyServiceLog.MessageLoopFailed(_logger);
+                break;
+            }
+
+            switch (message.Message)
+            {
+                case WmHotkey:
+                    OnHotkey((int)message.WParam);
+                    break;
+                case WmApplyBindings:
+                    ApplyPending();
+                    break;
+                case WmQuitLoop:
+                    UnregisterAllOnMessageThread();
+                    return;
+                default:
+                    break;
+            }
         }
+
+        UnregisterAllOnMessageThread();
     }
 
-    private nint WindowProc(nint hWnd, uint msg, nint wParam, nint lParam)
-    {
-        switch (msg)
-        {
-            case WmHotkey:
-                OnHotkey((int)wParam);
-                return 0;
-            case WmApplyBindings:
-                ApplyPending();
-                return 0;
-            case WmQuitLoop:
-                // Abbau auf dem Thread, dem das Fenster gehört (Hotkeys sind thread-affin).
-                TeardownOnMessageThread(hWnd);
-                return 0;
-            default:
-                return CallWindowProcW(_originalWndProc, hWnd, msg, wParam, lParam);
-        }
-    }
-
-    private void TeardownOnMessageThread(nint hWnd)
+    private void UnregisterAllOnMessageThread()
     {
         foreach (HotkeyAction action in _registered)
         {
-            _ = UnregisterHotKey(hWnd, (int)action);
+            _ = UnregisterHotKey(NoWindow, (int)action);
         }
 
         _registered.Clear();
-        _ = DestroyWindow(hWnd);
-        PostQuitMessage(0);
     }
 
     private void OnHotkey(int id)
@@ -170,12 +180,7 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
 
     private void ApplyPending()
     {
-        foreach (HotkeyAction action in _registered)
-        {
-            _ = UnregisterHotKey(_hwnd, (int)action);
-        }
-
-        _registered.Clear();
+        UnregisterAllOnMessageThread();
 
         Dictionary<HotkeyAction, HotkeyDefinition> snapshot;
         lock (_gate)
@@ -191,7 +196,7 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
             }
 
             uint modifiers = (uint)definition.Modifiers | ModNoRepeat;
-            if (RegisterHotKey(_hwnd, (int)action, modifiers, (uint)definition.VirtualKey))
+            if (RegisterHotKey(NoWindow, (int)action, modifiers, (uint)definition.VirtualKey))
             {
                 _registered.Add(action);
             }
@@ -212,20 +217,13 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
 
         _disposed = true;
 
-        // Abbau auf dem Message-Thread anstossen (Hotkeys sind thread-affin); der
-        // Handler gibt die Hotkeys frei, zerstört das Fenster und beendet den Loop.
-        nint hwnd = Volatile.Read(ref _hwnd);
-        if (hwnd != 0)
-        {
-            _ = PostMessageW(hwnd, WmQuitLoop, 0, 0);
-        }
+        // Abbau auf dem Nachrichten-Thread anstossen (Hotkeys sind thread-affin).
+        PostToMessageThread(WmQuitLoop);
 
         _ = _thread?.Join(TimeSpan.FromSeconds(2));
         _thread = null;
+        _queueReady.Dispose();
     }
-
-    [UnmanagedFunctionPointer(CallingConvention.Winapi)]
-    private delegate nint WndProcDelegate(nint hWnd, uint msg, nint wParam, nint lParam);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct Msg
@@ -249,50 +247,6 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool UnregisterHotKey(nint hWnd, int id);
 
-    [LibraryImport("user32.dll", SetLastError = true, StringMarshalling = StringMarshalling.Utf16)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    private static partial nint CreateWindowExW(
-        uint dwExStyle,
-        string lpClassName,
-        string? lpWindowName,
-        uint dwStyle,
-        int x,
-        int y,
-        int width,
-        int height,
-        nint hWndParent,
-        nint hMenu,
-        nint hInstance,
-        nint lpParam);
-
-    // SetWindowLongPtrW existiert nur in der 64-bit-user32.dll; in 32-bit-Prozessen
-    // muss SetWindowLongW verwendet werden. Die Wahl erfolgt zur Laufzeit.
-    private static nint SetWindowProc(nint hWnd, nint newWndProc)
-        => IntPtr.Size == 8
-            ? SetWindowLongPtrW(hWnd, GwlpWndProc, newWndProc)
-            : SetWindowLongW(hWnd, GwlpWndProc, newWndProc.ToInt32());
-
-    [LibraryImport("user32.dll", SetLastError = true, EntryPoint = "SetWindowLongPtrW")]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    private static partial nint SetWindowLongPtrW(nint hWnd, int nIndex, nint dwNewLong);
-
-    [LibraryImport("user32.dll", SetLastError = true, EntryPoint = "SetWindowLongW")]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    private static partial int SetWindowLongW(nint hWnd, int nIndex, int dwNewLong);
-
-    [LibraryImport("user32.dll", SetLastError = true)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool DestroyWindow(nint hWnd);
-
-    [LibraryImport("user32.dll")]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    private static partial void PostQuitMessage(int nExitCode);
-
-    [LibraryImport("user32.dll")]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    private static partial nint CallWindowProcW(nint lpPrevWndFunc, nint hWnd, uint msg, nint wParam, nint lParam);
-
     [LibraryImport("user32.dll")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static partial int GetMessageW(out Msg lpMsg, nint hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
@@ -300,16 +254,16 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
     [LibraryImport("user32.dll")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool TranslateMessage(ref Msg lpMsg);
-
-    [LibraryImport("user32.dll")]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
-    private static partial nint DispatchMessageW(ref Msg lpMsg);
+    private static partial bool PeekMessageW(out Msg lpMsg, nint hWnd, uint wMsgFilterMin, uint wMsgFilterMax, uint wRemoveMsg);
 
     [LibraryImport("user32.dll", SetLastError = true)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static partial bool PostMessageW(nint hWnd, uint msg, nint wParam, nint lParam);
+    private static partial bool PostThreadMessageW(uint threadId, uint msg, nint wParam, nint lParam);
+
+    [LibraryImport("kernel32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    private static partial uint GetCurrentThreadId();
 }
 
 /// <summary>
@@ -317,9 +271,9 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
 /// </summary>
 internal static partial class WindowsHotkeyServiceLog
 {
-    [LoggerMessage(EventId = 1500, Level = LogLevel.Warning, Message = "Hotkey-Nachrichtenfenster konnte nicht erstellt werden — globale Hotkeys sind inaktiv.")]
-    public static partial void WindowCreationFailed(ILogger logger);
-
     [LoggerMessage(EventId = 1501, Level = LogLevel.Warning, Message = "Hotkey für {Action} konnte nicht registriert werden (vermutlich von einer anderen App belegt).")]
     public static partial void RegistrationFailed(ILogger logger, string action);
+
+    [LoggerMessage(EventId = 1502, Level = LogLevel.Warning, Message = "Hotkey-Nachrichtenschleife mit Fehler beendet — globale Hotkeys sind bis zum Neustart inaktiv.")]
+    public static partial void MessageLoopFailed(ILogger logger);
 }

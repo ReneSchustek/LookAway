@@ -1,7 +1,6 @@
 # ============================================================
 # .gitignore – LookAway
 # ============================================================
-# Hinweis: interne Arbeitsdateien, STATUS.md, DEPLOYMENT.md,
 # zugaenge.md usw. sind in ~/.gitignore_global eingetragen
 # und müssen hier NICHT wiederholt werden.
 # ============================================================
@@ -9,7 +8,6 @@
 # ============================================================
 # Lokale Werkzeug-/Vorlagendateien (nicht versionieren)
 # ============================================================
-.gitignore-template
 
 # ============================================================
 # SCRIPTE nie committen — Ausnahme: tools/ liefert Repo-Skripte
@@ -97,7 +95,6 @@ $RECYCLE.BIN/
 
 # Lokale Hilfs-/Arbeitsverzeichnisse (nicht versionieren)
 
-
 # MSIX-Build-Artefakte
 **/AppPackages/
 
@@ -117,3 +114,6 @@ installer/setup-icon.ico
 *.pem
 *.sig
 *signing-key*
+
+# Lokales Entwickler-Werkzeug (nicht Bestandteil des Repos)
+tools/install-pre-commit-hook.ps1

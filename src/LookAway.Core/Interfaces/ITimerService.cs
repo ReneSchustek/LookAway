@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using LookAway.Core.Domain;
 using LookAway.Core.Enums;
 using LookAway.Core.ValueObjects;
@@ -9,10 +8,6 @@ namespace LookAway.Core.Interfaces;
 /// Domain-Service für Pausen-Erinnerungen. Reine Logik ohne UI- oder
 /// Plattform-Abhängigkeit. Lifecycle: Start → (Working ↔ OnBreak) ... → Stop.
 /// </summary>
-[SuppressMessage(
-    "Naming",
-    "CA1716:Identifiers should not match keywords",
-    Justification = "Die Member 'Stop()' und 'Resume()' sind bewusst so benannt; die Konflikte mit VB.NET-Schlüsselwörtern werden in einer Single-Language-C#-Codebasis akzeptiert.")]
 public interface ITimerService
 {
     /// <summary>Aktueller Zustand der State-Machine.</summary>
@@ -54,13 +49,13 @@ public interface ITimerService
     void RestoreWorking(BreakInterval interval, TimeSpan workRemaining);
 
     /// <summary>Beendet den Timer und kehrt in den Idle-Zustand zurück.</summary>
-    void Stop();
+    void StopCycle();
 
     /// <summary>Pausiert den Timer durch den Benutzer; Restzeit wird gemerkt.</summary>
     void Pause();
 
     /// <summary>Setzt einen pausierten Timer fort.</summary>
-    void Resume();
+    void ResumeAfterPause();
 
     /// <summary>
     /// Setzt den Timer nach einer automatischen Abwesenheit (z. B. Inaktivität)

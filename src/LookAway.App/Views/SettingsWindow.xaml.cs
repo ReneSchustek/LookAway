@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using LookAway.Application.ViewModels;
 using LookAway.Core.Domain;
+using LookAway.App.ViewModels;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -13,7 +14,7 @@ using Windows.Storage;
 using Windows.Storage.Pickers;
 using WinColor = Windows.UI.Color;
 
-namespace LookAway.Views;
+namespace LookAway.App.Views;
 
 /// <summary>
 /// Settings-Fenster mit Seitenmenü (<see cref="NavigationView"/>). Bindet an das
@@ -133,24 +134,26 @@ internal sealed partial class SettingsWindow : Window
 
     private async void OnCsvExportRequested(object? sender, CsvExportRequestedEventArgs e)
     {
-        FileSavePicker picker = new()
-        {
-            SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
-            SuggestedFileName = "lookaway-history",
-        };
-        picker.FileTypeChoices.Add("CSV", CsvFileExtensions);
-
-        nint hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-        WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-
-        StorageFile? file = await picker.PickSaveFileAsync();
-        if (file is null)
-        {
-            return;
-        }
-
+        // Als async-void-Event-Handler muss der gesamte Rumpf gegen Ausnahmen
+        // abgesichert sein — eine unbehandelte Ausnahme würde sonst den Prozess beenden.
         try
         {
+            FileSavePicker picker = new()
+            {
+                SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
+                SuggestedFileName = "lookaway-history",
+            };
+            picker.FileTypeChoices.Add("CSV", CsvFileExtensions);
+
+            nint hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+            StorageFile? file = await picker.PickSaveFileAsync();
+            if (file is null)
+            {
+                return;
+            }
+
             // UTF-8 mit BOM, damit Excel die Datei korrekt erkennt.
             byte[] bytes = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true).GetBytes(e.Content);
             await FileIO.WriteBytesAsync(file, bytes);
@@ -163,6 +166,11 @@ internal sealed partial class SettingsWindow : Window
         catch (UnauthorizedAccessException)
         {
             // Fehlende Schreibrechte am Zielort — bewusst toleriert.
+        }
+        catch (COMException)
+        {
+            // Datei-Dialog/Storage-Interop kann bei Abbruch oder Shell-Fehlern
+            // einen COM-Fehler melden — der Export bleibt dann einfach aus.
         }
     }
 

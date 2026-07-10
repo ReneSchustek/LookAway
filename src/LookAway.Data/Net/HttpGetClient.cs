@@ -34,10 +34,6 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
     }
 
     /// <inheritdoc />
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Die Update-Prüfung ist unkritisch: jeder Fehler wird geloggt und als 'kein Ergebnis' (null) behandelt, damit Netzwerkprobleme die App nie blockieren.")]
     public async Task<string?> GetStringAsync(Uri requestUri, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(requestUri);
@@ -47,8 +43,14 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
         {
             return await _httpClient.GetStringAsync(requestUri, cancellationToken).ConfigureAwait(false);
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
         {
+            HttpGetClientLog.RequestFailed(_logger, ex, requestUri.ToString());
+            return null;
+        }
+        catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Nicht der Aufrufer hat abgebrochen, sondern der Client-Timeout ist abgelaufen.
             HttpGetClientLog.RequestFailed(_logger, ex, requestUri.ToString());
             return null;
         }
@@ -62,10 +64,6 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
     private const int DownloadBufferSize = 81920;
 
     /// <inheritdoc />
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Der Download ist unkritisch: jeder Fehler wird geloggt und als Misserfolg (false) behandelt, damit Netzwerk-/Dateifehler die App nie zum Absturz bringen.")]
     public async Task<bool> DownloadFileAsync(Uri requestUri, string destinationPath, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(requestUri);
@@ -128,7 +126,23 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
 
             return true;
         }
-        catch (Exception ex)
+        catch (HttpRequestException ex)
+        {
+            HttpGetClientLog.DownloadFailed(_logger, ex, requestUri.ToString());
+            return false;
+        }
+        catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+        {
+            // Der großzügige Download-Timeout ist abgelaufen, nicht der Aufrufer-Token.
+            HttpGetClientLog.DownloadFailed(_logger, ex, requestUri.ToString());
+            return false;
+        }
+        catch (IOException ex)
+        {
+            HttpGetClientLog.DownloadFailed(_logger, ex, requestUri.ToString());
+            return false;
+        }
+        catch (UnauthorizedAccessException ex)
         {
             HttpGetClientLog.DownloadFailed(_logger, ex, requestUri.ToString());
             return false;

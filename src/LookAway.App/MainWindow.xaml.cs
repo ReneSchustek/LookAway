@@ -1,16 +1,11 @@
-using System.Diagnostics.CodeAnalysis;
 using Microsoft.UI.Xaml;
 
-namespace LookAway;
+namespace LookAway.App;
 
 /// <summary>
 /// Hauptfenster der Anwendung. Bleibt beim Start verborgen — die App lebt im Tray-Icon.
 /// </summary>
-[SuppressMessage(
-    "Design",
-    "CA1515:Consider making public types internal",
-    Justification = "WinUI-3-XAML-Compiler erfordert eine 'public partial'-Window-Klasse für die generierte InitializeComponent-Methode.")]
-public sealed partial class MainWindow : Window
+internal sealed partial class MainWindow : Window
 {
     /// <summary>
     /// Initialisiert das Hauptfenster.

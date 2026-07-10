@@ -1,12 +1,8 @@
 using System;
-using System.ComponentModel;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
-using System.Net.Http;
 using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 using LookAway.Core.Domain;
 using LookAway.Core.Entities;
@@ -30,7 +26,6 @@ using Microsoft.UI.Xaml;
 
 // Aliase auflösen Namespace-Kollisionen mit Microsoft.UI.Xaml und System.
 using AutoStartCoordinator = LookAway.Core.Services.AutoStartCoordinator;
-using BreakReminderViewModel = LookAway.App.ViewModels.BreakReminderViewModel;
 using SettingsViewModel = LookAway.App.ViewModels.SettingsViewModel;
 using StatisticsViewModel = LookAway.App.ViewModels.StatisticsViewModel;
 using WelcomeViewModel = LookAway.App.ViewModels.WelcomeViewModel;
@@ -44,7 +39,6 @@ using BreakCoordinator = LookAway.Core.Services.BreakCoordinator;
 using UpdateInstallerService = LookAway.Data.Update.UpdateInstallerService;
 using IUpdateInstaller = LookAway.Core.Interfaces.IUpdateInstaller;
 using UpdateApplyArgs = LookAway.Core.ValueObjects.UpdateApplyArgs;
-using StagedUpdate = LookAway.Core.ValueObjects.StagedUpdate;
 using TrayStatusPresenter = LookAway.Core.Services.TrayStatusPresenter;
 using SingleInstanceLock = LookAway.Data.Services.SingleInstanceLock;
 using TimerService = LookAway.Core.Services.TimerService;
@@ -65,7 +59,6 @@ namespace LookAway.App;
 public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application, IDisposable
 {
     private const string LogFolderName = "logs";
-    private const string CrashFolderName = "crashes";
     private const string CrashSourceAppDomain = "AppDomain.UnhandledException";
     private const string CrashSourceTaskScheduler = "TaskScheduler.UnobservedTaskException";
     private const string CrashSourceWinUi = "Application.UnhandledException";
@@ -76,7 +69,6 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
     // werden Abhängigkeiten per Konstruktor injiziert, nicht nachgeschlagen.
     private static IServiceProvider Services { get; set; } = null!;
 
-    private const int DetectionPollSeconds = 5;
     private const int HistoryRetentionDays = 365;
 
     private Window? _window;
@@ -84,13 +76,12 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
     private ILogger<LookAwayApp>? _logger;
     private SingleInstanceLock? _instanceLock;
     private TrayIconService? _trayIcon;
-    private CancellationTokenSource? _detectionCts;
+    private DetectionLoopHost? _detectionLoop;
     private ReminderPresenter? _reminderPresenter;
     private BreakOverlayPresenter? _overlayPresenter;
     private SettingsPresenter? _settingsPresenter;
     private BreakCoordinator? _coordinator;
-    private Uri? _updateDownloadUrl;
-    private UpdateInfo? _pendingUpdate;
+    private UpdateOrchestrator? _updateOrchestrator;
 
     /// <summary>
     /// Initialisiert die Anwendung, das DI-Container und die globalen Handler.
@@ -100,12 +91,17 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
         try
         {
             InitializeComponent();
-            Services = ConfigureServices();
+            Services = ServiceRegistration.Build(
+                AppDataLocation.GetDataDirectory(),
+                ParseVersion(GetVersion()),
+                IsDebugBuild());
             _logService = Services.GetRequiredService<LogService>();
             _logger = Services.GetRequiredService<ILogger<LookAwayApp>>();
 
             RegisterGlobalCrashHandlers();
             UnhandledException += OnApplicationUnhandledException;
+
+            _updateOrchestrator = CreateUpdateOrchestrator();
 
             Services.GetRequiredService<IPowerModeWatcher>().Start();
 
@@ -122,6 +118,22 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
             WriteStartupError(ex);
             throw;
         }
+    }
+
+    private UpdateOrchestrator CreateUpdateOrchestrator()
+    {
+        UpdateOrchestrator orchestrator = new(
+            Services.GetRequiredService<UpdateInstallerService>(),
+            Services.GetRequiredService<IUpdateChecker>(),
+            Services.GetRequiredService<ISettingsRepository>(),
+            Services.GetRequiredService<IClock>(),
+            ParseVersion(GetVersion()),
+            Services.GetRequiredService<ILogger<UpdateOrchestrator>>())
+        {
+            UpdateAvailableChanged = available => _trayIcon?.SetUpdateAvailable(available),
+            RelaunchRequested = RequestExit,
+        };
+        return orchestrator;
     }
 
     private static void WriteStartupError(Exception exception)
@@ -155,7 +167,7 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
         // alten Instanz die Programmdateien zu ersetzen und neu zu starten.
         if (UpdateApplyArgs.TryParse(Environment.GetCommandLineArgs(), out UpdateApplyArgs applyArgs))
         {
-            RunUpdateApply(applyArgs);
+            _updateOrchestrator!.RunHelperApply(applyArgs);
             return;
         }
 
@@ -178,8 +190,13 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
     {
         // Ausstehendes Update beim Start anwenden (Datei-Tausch via Helfer-Prozess);
         // beendet diese Instanz, falls ein Update eingespielt wird.
-        if (await TryApplyPendingUpdateOnStartupAsync().ConfigureAwait(true))
+        if (await _updateOrchestrator!.TryApplyPendingUpdateOnStartupAsync().ConfigureAwait(true))
         {
+            // Lock freigeben und beenden, damit der Helfer die Dateien ersetzen kann.
+            _instanceLock?.Dispose();
+            _instanceLock = null;
+            _logService?.LogShutdown(ShutdownReasonUserExit);
+            Exit();
             return;
         }
 
@@ -246,7 +263,7 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
             StartTimer(settings);
 
             // Update-Prüfung im Hintergrund — nicht startkritisch.
-            _ = CheckForUpdatesAtStartupAsync(settings);
+            _ = _updateOrchestrator!.CheckAtStartupAsync(settings);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -255,363 +272,6 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
         catch (IOException ex)
         {
             AppLog.TimerStartFailed(_logger!, ex);
-        }
-    }
-
-    private async Task CheckForUpdatesAtStartupAsync(Settings settings)
-    {
-        if (!settings.UpdateCheckEnabled)
-        {
-            return;
-        }
-
-        DateTimeOffset now = Services.GetRequiredService<IClock>().UtcNow;
-        if (!UpdateSchedule.IsDue(settings.UpdateCheckFrequency, settings.LastUpdateCheck, now))
-        {
-            return;
-        }
-
-        UpdateInfo info;
-        try
-        {
-            info = await Services.GetRequiredService<IUpdateChecker>()
-                .CheckForUpdateAsync()
-                .ConfigureAwait(true);
-        }
-        catch (HttpRequestException ex)
-        {
-            // Routinemäßiger Offline-Start darf nicht als unbeobachteter Fehler enden.
-            AppLog.UpdateCheckPersistFailed(_logger!, ex);
-            return;
-        }
-        catch (OperationCanceledException)
-        {
-            return;
-        }
-
-        try
-        {
-            ISettingsRepository repository = Services.GetRequiredService<ISettingsRepository>();
-            Settings current = await repository.LoadAsync().ConfigureAwait(true);
-            current.LastUpdateCheck = now;
-            await repository.SaveAsync(current).ConfigureAwait(true);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            AppLog.UpdateCheckPersistFailed(_logger!, ex);
-        }
-        catch (IOException ex)
-        {
-            AppLog.UpdateCheckPersistFailed(_logger!, ex);
-        }
-
-        if (info.IsUpdateAvailable)
-        {
-            _pendingUpdate = info;
-            _updateDownloadUrl = info.DownloadUrl;
-            _trayIcon?.SetUpdateAvailable(true);
-
-            // Auto-Update: Paket im Hintergrund herunterladen, entpacken und Version
-            // + Datei-Hash vermerken; das eigentliche Einspielen erfolgt beim
-            // nächsten Start nur für genau dieses (verifizierte) Paket.
-            if (settings.AutoUpdate && info.PackageUrl is not null && !IsAlreadyStaged(info, settings))
-            {
-                _ = AutoStageUpdateAsync(info);
-            }
-        }
-    }
-
-    private void OpenUpdatePage()
-    {
-        if (_updateDownloadUrl is null)
-        {
-            return;
-        }
-
-        try
-        {
-            _ = Process.Start(new ProcessStartInfo(_updateDownloadUrl.ToString()) { UseShellExecute = true });
-        }
-        // Fehlt ein Standardbrowser oder verweigert die Shell den Start, meldet
-        // Process.Start genau diese Typen; die App läuft unbeeindruckt weiter.
-        catch (Win32Exception ex)
-        {
-            AppLog.BrowserOpenFailed(_logger!, ex);
-        }
-        catch (InvalidOperationException ex)
-        {
-            AppLog.BrowserOpenFailed(_logger!, ex);
-        }
-    }
-
-    // Tray-Aktion "Update": gefundene Aktualisierung herunterladen, entpacken und
-    // über den Helfer-Prozess sofort einspielen (App startet danach neu).
-    private void OnUpdateRequested() => _ = HandleUpdateRequestedAsync();
-
-    private async Task HandleUpdateRequestedAsync()
-    {
-        try
-        {
-            UpdateInfo? info = _pendingUpdate;
-            string target = AppContext.BaseDirectory;
-
-            // Ohne Paket-URL oder bei schreibgeschütztem Programmordner: Release-Seite öffnen.
-            if (info?.PackageUrl is null || !UpdateInstallerService.IsDirectoryWritable(target))
-            {
-                OpenUpdatePage();
-                return;
-            }
-
-            StagedUpdate? staged = await Services.GetRequiredService<UpdateInstallerService>()
-                .DownloadAndStageAsync(info)
-                .ConfigureAwait(true);
-            if (staged is null)
-            {
-                OpenUpdatePage();
-                return;
-            }
-
-            // Vom Nutzer angestossen und gerade frisch geladen -> direkt einspielen.
-            RelaunchToApply(staged.Directory, target);
-        }
-        // Datei- und Prozessfehler beim Bereitstellen: auf die Release-Seite zurückfallen.
-        catch (IOException ex)
-        {
-            OnManualUpdateFailed(ex);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            OnManualUpdateFailed(ex);
-        }
-        catch (Win32Exception ex)
-        {
-            OnManualUpdateFailed(ex);
-        }
-        catch (InvalidOperationException ex)
-        {
-            OnManualUpdateFailed(ex);
-        }
-    }
-
-    private void OnManualUpdateFailed(Exception exception)
-    {
-        AppLog.UpdateApplyFailed(_logger!, exception);
-        OpenUpdatePage();
-    }
-
-    // Lädt/entpackt das Update im Hintergrund und vermerkt Version + Datei-Hash in
-    // den Einstellungen, damit es beim nächsten Start verifiziert eingespielt wird.
-    private async Task AutoStageUpdateAsync(UpdateInfo info)
-    {
-        StagedUpdate? staged = await Services.GetRequiredService<UpdateInstallerService>()
-            .DownloadAndStageAsync(info)
-            .ConfigureAwait(true);
-        if (staged is null)
-        {
-            return;
-        }
-
-        try
-        {
-            ISettingsRepository repository = Services.GetRequiredService<ISettingsRepository>();
-            Settings settings = await repository.LoadAsync().ConfigureAwait(true);
-            settings.PendingUpdateVersion = staged.Version;
-            settings.PendingUpdateSha256 = staged.ExecutableSha256;
-            await repository.SaveAsync(settings).ConfigureAwait(true);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            AppLog.UpdateCheckPersistFailed(_logger!, ex);
-        }
-        catch (IOException ex)
-        {
-            AppLog.UpdateCheckPersistFailed(_logger!, ex);
-        }
-    }
-
-    /// <summary>
-    /// Liegt für genau diese Aktualisierung bereits ein verifiziertes Paket im
-    /// Staging-Ordner? Dann nicht erneut laden. Sonst würde die entpackte EXE bei
-    /// jedem Start neu geschrieben und vom Virenscanner erneut geprüft — solange
-    /// dieser Scan das Einspielen (kurzzeitig „Zugriff verweigert") blockiert, käme
-    /// das Update nie durch. Ein einmal gestagetes Paket „kühlt ab" und wird beim
-    /// nächsten Start eingespielt.
-    /// </summary>
-    private static bool IsAlreadyStaged(UpdateInfo info, Settings settings)
-    {
-        if (!string.Equals(settings.PendingUpdateVersion, info.LatestVersion, StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        Version current = ParseVersion(GetVersion());
-        return Services.GetRequiredService<UpdateInstallerService>()
-            .FindVerifiedPendingUpdateDirectory(current, settings.PendingUpdateVersion, settings.PendingUpdateSha256)
-            is not null;
-    }
-
-    private void RelaunchToApply(string stagedDir, string target)
-    {
-        UpdateProcess.StartApply(
-            UpdateInstallerService.ExecutablePathIn(stagedDir),
-            new UpdateApplyArgs(Environment.ProcessId, stagedDir, target));
-        RequestExit();
-    }
-
-    /// <summary>
-    /// Prüft beim Start auf ein bereits entpacktes, neueres Paket und spielt es
-    /// über den Helfer-Prozess ein. Gibt <c>true</c> zurück, wenn diese Instanz
-    /// dafür beendet wird.
-    /// </summary>
-    private async Task<bool> TryApplyPendingUpdateOnStartupAsync()
-    {
-        try
-        {
-            UpdateInstallerService installer = Services.GetRequiredService<UpdateInstallerService>();
-            Version current = ParseVersion(GetVersion());
-            string target = AppContext.BaseDirectory;
-
-            // Nur ein Update einspielen, das diese Installation selbst vermerkt hat
-            // (Version + Datei-Hash) — nie einen einfach untergeschobenen Ordner.
-            Settings settings = await Services.GetRequiredService<ISettingsRepository>()
-                .LoadAsync().ConfigureAwait(true);
-
-            string? staged = installer.FindVerifiedPendingUpdateDirectory(
-                current, settings.PendingUpdateVersion, settings.PendingUpdateSha256);
-            if (staged is null)
-            {
-                installer.CleanObsolete(current);
-                return false;
-            }
-
-            if (!UpdateInstallerService.IsDirectoryWritable(target))
-            {
-                // z. B. "für alle Benutzer"-Installation in Programme — kein Auto-Tausch.
-                AppLog.UpdateTargetNotWritable(_logger!, target);
-                return false;
-            }
-
-            AppLog.ApplyingPendingUpdate(_logger!, staged);
-            UpdateProcess.StartApply(
-                UpdateInstallerService.ExecutablePathIn(staged),
-                new UpdateApplyArgs(Environment.ProcessId, staged, target));
-
-            // Lock freigeben und beenden, damit der Helfer die Dateien ersetzen kann.
-            _instanceLock?.Dispose();
-            _instanceLock = null;
-            _logService?.LogShutdown(ShutdownReasonUserExit);
-            Exit();
-            return true;
-        }
-        // Ein fehlgeschlagenes Update darf den Start nie verhindern: protokollieren
-        // und regulär weiterstarten.
-        catch (IOException ex)
-        {
-            AppLog.UpdateApplyFailed(_logger!, ex);
-            return false;
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            AppLog.UpdateApplyFailed(_logger!, ex);
-            return false;
-        }
-        catch (Win32Exception ex)
-        {
-            AppLog.UpdateApplyFailed(_logger!, ex);
-            return false;
-        }
-        catch (InvalidOperationException ex)
-        {
-            AppLog.UpdateApplyFailed(_logger!, ex);
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Helfer-Modus: wartet auf das Ende der alten Instanz, ersetzt die Dateien im
-    /// Zielordner und startet die neue Version. Beendet danach den Helfer-Prozess.
-    /// </summary>
-    private void RunUpdateApply(UpdateApplyArgs apply)
-    {
-        _ = Task.Run(async () =>
-        {
-            // Das Ziel ist immer das eigene Programmverzeichnis; der Helfer akzeptiert
-            // keinen frei übergebenen Zielpfad.
-            string target = AppContext.BaseDirectory;
-            try
-            {
-                UpdateInstallerService installer = Services.GetRequiredService<UpdateInstallerService>();
-
-                // Die Signaturprüfung des Hauptprozesses hier erneut durchsetzen: Der
-                // Helfer vertraut seinen Argumenten nicht, sondern verifiziert, dass der
-                // Quellordner im Staging-Bereich liegt und die Programmdatei den zuvor
-                // signaturgeprüft vermerkten Hash trägt.
-                Settings settings = await Services.GetRequiredService<ISettingsRepository>()
-                    .LoadAsync().ConfigureAwait(false);
-                if (!installer.IsTrustedStagingDirectory(apply.Source, settings.PendingUpdateSha256))
-                {
-                    AppLog.UpdateApplyRejected(_logger!, apply.Source);
-                    return;
-                }
-
-                WaitForProcessExit(apply.Pid, TimeSpan.FromSeconds(30));
-                installer.ApplyStagedFiles(apply.Source, target);
-            }
-            // Bei Fehler hat ApplyStagedFiles auf den vorigen Stand zurückgerollt.
-            catch (IOException ex)
-            {
-                AppLog.UpdateApplyFailed(_logger!, ex);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                AppLog.UpdateApplyFailed(_logger!, ex);
-            }
-            catch (InvalidOperationException ex)
-            {
-                AppLog.UpdateApplyFailed(_logger!, ex);
-            }
-            finally
-            {
-                // In jedem Fall die installierte App starten (neuer Stand bei Erfolg,
-                // zurückgerollter, lauffähiger Stand bei Fehler), dann den Helfer beenden.
-                TryStartInstalledApp(target);
-                Environment.Exit(0);
-            }
-        });
-    }
-
-    private void TryStartInstalledApp(string targetDir)
-    {
-        try
-        {
-            UpdateProcess.StartApp(UpdateInstallerService.ExecutablePathIn(targetDir));
-        }
-        // Der Helfer beendet sich anschließend ohnehin; ein fehlgeschlagener Neustart
-        // wird nur protokolliert.
-        catch (Win32Exception ex)
-        {
-            AppLog.UpdateApplyFailed(_logger!, ex);
-        }
-        catch (InvalidOperationException ex)
-        {
-            AppLog.UpdateApplyFailed(_logger!, ex);
-        }
-    }
-
-    private static void WaitForProcessExit(int pid, TimeSpan timeout)
-    {
-        try
-        {
-            using Process process = Process.GetProcessById(pid);
-            _ = process.WaitForExit((int)timeout.TotalMilliseconds);
-        }
-        catch (ArgumentException)
-        {
-            // Prozess existiert nicht mehr — bereits beendet.
-        }
-        catch (InvalidOperationException)
-        {
-            // Prozess bereits beendet.
         }
     }
 
@@ -628,7 +288,7 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
             Services.GetRequiredService<ILogger<TrayIconService>>(),
             OpenSettings,
             RequestExit,
-            OnUpdateRequested,
+            _updateOrchestrator!.HandleManualUpdateRequested,
             () => _coordinator?.RequestReminder());
 
         _trayIcon.Show();
@@ -657,8 +317,13 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
         // (neue Sitzung) startet er regulär neu.
         _coordinator.ApplySchedule(settings, LoadResumeRemaining(settings));
 
-        StartDetectionLoop(settings);
-        _ = ConsumeTimerEventsAsync(timerService, _detectionCts!.Token);
+        _detectionLoop = new DetectionLoopHost(
+            Services.GetRequiredService<IdleDetectionService>(),
+            Services.GetRequiredService<FullscreenDetectionService>(),
+            timerService,
+            _coordinator);
+        _detectionLoop.ApplySettings(settings);
+        _detectionLoop.Start();
 
         RegisterHotkeys(settings);
     }
@@ -777,69 +442,6 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
             _ => Language.English,
         };
 
-    private void StartDetectionLoop(Settings settings)
-    {
-        IdleDetectionService idle = Services.GetRequiredService<IdleDetectionService>();
-        FullscreenDetectionService fullscreen = Services.GetRequiredService<FullscreenDetectionService>();
-
-        idle.IsEnabled = settings.PauseOnIdle;
-        idle.Threshold = TimeSpan.FromMinutes(settings.IdleThresholdMinutes);
-        fullscreen.IsEnabled = settings.SuppressOnFullscreen;
-
-        _detectionCts = new CancellationTokenSource();
-        _ = RunDetectionLoopAsync(idle, fullscreen, _detectionCts.Token);
-    }
-
-    private async Task RunDetectionLoopAsync(
-        IdleDetectionService idle,
-        FullscreenDetectionService fullscreen,
-        CancellationToken cancellationToken)
-    {
-        using PeriodicTimer timer = new(TimeSpan.FromSeconds(DetectionPollSeconds));
-        try
-        {
-            while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))
-            {
-                idle.Evaluate();
-                bool surfaceMissedReminder = fullscreen.Evaluate();
-                _coordinator?.UpdateDndIndicator(fullscreen.IsDndActive);
-
-                if (surfaceMissedReminder)
-                {
-                    // DND wurde beendet: verpasste Erinnerung nachholen.
-                    _coordinator?.RequestReminder();
-                }
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            // Erwartetes Ende beim Shutdown.
-        }
-        catch (ObjectDisposedException)
-        {
-            // Tray/Services beim Shutdown bereits freigegeben — unkritisch.
-        }
-    }
-
-    private async Task ConsumeTimerEventsAsync(ITimerService timerService, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await foreach (TimerEvent timerEvent in timerService.Events.WithCancellation(cancellationToken))
-            {
-                _coordinator?.HandleTimerEvent(timerEvent);
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            // Erwartetes Ende beim Shutdown.
-        }
-        catch (ObjectDisposedException)
-        {
-            // Container/Services beim Shutdown bereits freigegeben — unkritisch.
-        }
-    }
-
     private async Task PurgeHistoryAsync()
     {
         try
@@ -907,14 +509,7 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
     private void ApplySettingsLive(Settings settings)
     {
         _coordinator?.ApplySchedule(settings);
-
-        IdleDetectionService idle = Services.GetRequiredService<IdleDetectionService>();
-        idle.IsEnabled = settings.PauseOnIdle;
-        idle.Threshold = TimeSpan.FromMinutes(settings.IdleThresholdMinutes);
-
-        FullscreenDetectionService fullscreen = Services.GetRequiredService<FullscreenDetectionService>();
-        fullscreen.IsEnabled = settings.SuppressOnFullscreen;
-
+        _detectionLoop?.ApplySettings(settings);
         RegisterHotkeys(settings);
     }
 
@@ -937,9 +532,8 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
     /// </summary>
     public void Dispose()
     {
-        _detectionCts?.Cancel();
-        _detectionCts?.Dispose();
-        _detectionCts = null;
+        _detectionLoop?.Dispose();
+        _detectionLoop = null;
         _trayIcon?.Dispose();
         _trayIcon = null;
         _instanceLock?.Dispose();
@@ -954,92 +548,6 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
         // Zweitstart öffnet die Einstellungen — das einzige echte Fenster der
         // Tray-App; das verborgene Hauptfenster bliebe sonst leer.
         OpenSettings();
-    }
-
-    private static ServiceProvider ConfigureServices()
-    {
-        ServiceCollection services = new();
-
-        string dataDirectory = AppDataLocation.GetDataDirectory();
-        string logDirectory = Path.Combine(dataDirectory, LogFolderName);
-        string crashDirectory = Path.Combine(logDirectory, CrashFolderName);
-
-        LogLevel minimumLevel = IsDebugBuild() ? LogLevel.Debug : LogLevel.Information;
-
-        _ = services.AddSingleton(_ => new RollingFileSink(logDirectory));
-        _ = services.AddSingleton(sp => new RollingFileLoggerProvider(
-            sp.GetRequiredService<RollingFileSink>(),
-            minimumLevel,
-            ownsSink: false));
-        _ = services.AddSingleton<ILoggerProvider>(sp => sp.GetRequiredService<RollingFileLoggerProvider>());
-
-        _ = services.AddLogging(builder =>
-        {
-            _ = builder.SetMinimumLevel(minimumLevel);
-            _ = builder.AddFilter("Microsoft", LogLevel.Warning);
-            _ = builder.AddFilter("System", LogLevel.Warning);
-        });
-
-        _ = services.AddSingleton<ICrashReporter>(_ => new CrashReporter(crashDirectory));
-        _ = services.AddSingleton<LogService>();
-        _ = services.AddSingleton<ISettingsRepository, JsonSettingsRepository>();
-
-        // Timer-Momentaufnahme: setzt den Countdown nach einem Neustart in derselben
-        // Windows-Sitzung (z. B. Aktualisierung) fort.
-        _ = services.AddSingleton<ITimerStateStore, JsonTimerStateStore>();
-
-        // Lokalisierung: Deutsch ist die Referenzsprache.
-        _ = services.AddSingleton<ILocalizationService>(_ => new JsonLocalizationService(Language.German));
-
-        // Sound-Optionen
-        _ = services.AddSingleton<ISoundService>(sp =>
-            new SoundService(sp.GetRequiredService<ILogger<SoundService>>()));
-
-        // Statistiken / History / CSV
-        _ = services.AddSingleton<IBreakHistoryRepository, JsonBreakHistoryRepository>();
-        _ = services.AddSingleton<CsvExporter>();
-        _ = services.AddSingleton<StatisticsService>();
-
-        // Globale Hotkeys
-        _ = services.AddSingleton<IHotkeyService, WindowsHotkeyService>();
-
-        // Pause-Aktionen
-        _ = services.AddSingleton<IScreenDimmer>(sp => new WindowsScreenDimmer(sp.GetRequiredService<ILogger<WindowsScreenDimmer>>()));
-        _ = services.AddSingleton<IMediaController>(sp => new WindowsMediaController(sp.GetRequiredService<ILogger<WindowsMediaController>>()));
-        _ = services.AddSingleton<PauseActionService>();
-
-        // Update-Prüfung und automatische Installation
-        _ = services.AddSingleton<IHttpGetClient>(sp => new HttpGetClient(sp.GetRequiredService<ILogger<HttpGetClient>>()));
-        _ = services.AddSingleton<IUpdateChecker>(sp => new GitHubUpdateChecker(
-            sp.GetRequiredService<IHttpGetClient>(),
-            ParseVersion(GetVersion()),
-            sp.GetRequiredService<ILogger<GitHubUpdateChecker>>()));
-        _ = services.AddSingleton<UpdateInstallerService>(sp => new UpdateInstallerService(
-            sp.GetRequiredService<IHttpGetClient>(),
-            sp.GetRequiredService<ILogger<UpdateInstallerService>>()));
-        // Schmale Sicht für das Settings-ViewModel (Ein-Klick-Installation).
-        _ = services.AddSingleton<IUpdateInstaller>(sp => sp.GetRequiredService<UpdateInstallerService>());
-
-        // Autostart
-        _ = services.AddSingleton<IAutoStartService, RegistryAutoStartService>();
-        _ = services.AddSingleton<AutoStartCoordinator>();
-
-        // Tray-Status
-        _ = services.AddSingleton<TrayStatusPresenter>();
-
-        // Idle-/Vollbild-Erkennung
-        _ = services.AddSingleton<IIdleDetector, WindowsIdleDetector>();
-        _ = services.AddSingleton<IFullscreenDetector, WindowsFullscreenDetector>();
-        _ = services.AddSingleton<IdleDetectionService>();
-        _ = services.AddSingleton<FullscreenDetectionService>();
-
-        // Timer-Engine
-        _ = services.AddSingleton<IClock, SystemClock>();
-        _ = services.AddSingleton<IPowerModeWatcher, WindowsPowerModeWatcher>();
-        _ = services.AddSingleton<TimerService>();
-        _ = services.AddSingleton<ITimerService>(sp => sp.GetRequiredService<TimerService>());
-
-        return services.BuildServiceProvider();
     }
 
     private void RegisterGlobalCrashHandlers()
@@ -1136,40 +644,4 @@ internal static partial class AppLog
         Level = LogLevel.Warning,
         Message = "Pausen-Historie konnte nicht geschrieben werden — Statistik bleibt unverändert.")]
     public static partial void HistoryWriteFailed(ILogger logger, Exception exception);
-
-    [LoggerMessage(
-        EventId = 1160,
-        Level = LogLevel.Warning,
-        Message = "Update-Prüfung konnte nicht abgeschlossen werden.")]
-    public static partial void UpdateCheckPersistFailed(ILogger logger, Exception exception);
-
-    [LoggerMessage(
-        EventId = 1161,
-        Level = LogLevel.Warning,
-        Message = "Die Update-Seite konnte nicht im Browser geöffnet werden.")]
-    public static partial void BrowserOpenFailed(ILogger logger, Exception exception);
-
-    [LoggerMessage(
-        EventId = 1170,
-        Level = LogLevel.Information,
-        Message = "Ausstehendes Update wird eingespielt: {Directory}.")]
-    public static partial void ApplyingPendingUpdate(ILogger logger, string directory);
-
-    [LoggerMessage(
-        EventId = 1171,
-        Level = LogLevel.Warning,
-        Message = "Programmordner {Directory} ist nicht beschreibbar — automatische Aktualisierung nicht möglich.")]
-    public static partial void UpdateTargetNotWritable(ILogger logger, string directory);
-
-    [LoggerMessage(
-        EventId = 1172,
-        Level = LogLevel.Warning,
-        Message = "Automatische Aktualisierung fehlgeschlagen.")]
-    public static partial void UpdateApplyFailed(ILogger logger, Exception exception);
-
-    [LoggerMessage(
-        EventId = 1173,
-        Level = LogLevel.Error,
-        Message = "Update-Helfer abgelehnt: Quelle {Source} nicht vertrauenswürdig (Signatur/Hash-Prüfung).")]
-    public static partial void UpdateApplyRejected(ILogger logger, string source);
 }

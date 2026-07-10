@@ -65,7 +65,6 @@ namespace LookAway.App;
 public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application, IDisposable
 {
     private const string LogFolderName = "logs";
-    private const string CrashFolderName = "crashes";
     private const string CrashSourceAppDomain = "AppDomain.UnhandledException";
     private const string CrashSourceTaskScheduler = "TaskScheduler.UnobservedTaskException";
     private const string CrashSourceWinUi = "Application.UnhandledException";
@@ -100,7 +99,10 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
         try
         {
             InitializeComponent();
-            Services = ConfigureServices();
+            Services = ServiceRegistration.Build(
+                AppDataLocation.GetDataDirectory(),
+                ParseVersion(GetVersion()),
+                IsDebugBuild());
             _logService = Services.GetRequiredService<LogService>();
             _logger = Services.GetRequiredService<ILogger<LookAwayApp>>();
 
@@ -954,92 +956,6 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
         // Zweitstart öffnet die Einstellungen — das einzige echte Fenster der
         // Tray-App; das verborgene Hauptfenster bliebe sonst leer.
         OpenSettings();
-    }
-
-    private static ServiceProvider ConfigureServices()
-    {
-        ServiceCollection services = new();
-
-        string dataDirectory = AppDataLocation.GetDataDirectory();
-        string logDirectory = Path.Combine(dataDirectory, LogFolderName);
-        string crashDirectory = Path.Combine(logDirectory, CrashFolderName);
-
-        LogLevel minimumLevel = IsDebugBuild() ? LogLevel.Debug : LogLevel.Information;
-
-        _ = services.AddSingleton(_ => new RollingFileSink(logDirectory));
-        _ = services.AddSingleton(sp => new RollingFileLoggerProvider(
-            sp.GetRequiredService<RollingFileSink>(),
-            minimumLevel,
-            ownsSink: false));
-        _ = services.AddSingleton<ILoggerProvider>(sp => sp.GetRequiredService<RollingFileLoggerProvider>());
-
-        _ = services.AddLogging(builder =>
-        {
-            _ = builder.SetMinimumLevel(minimumLevel);
-            _ = builder.AddFilter("Microsoft", LogLevel.Warning);
-            _ = builder.AddFilter("System", LogLevel.Warning);
-        });
-
-        _ = services.AddSingleton<ICrashReporter>(_ => new CrashReporter(crashDirectory));
-        _ = services.AddSingleton<LogService>();
-        _ = services.AddSingleton<ISettingsRepository, JsonSettingsRepository>();
-
-        // Timer-Momentaufnahme: setzt den Countdown nach einem Neustart in derselben
-        // Windows-Sitzung (z. B. Aktualisierung) fort.
-        _ = services.AddSingleton<ITimerStateStore, JsonTimerStateStore>();
-
-        // Lokalisierung: Deutsch ist die Referenzsprache.
-        _ = services.AddSingleton<ILocalizationService>(_ => new JsonLocalizationService(Language.German));
-
-        // Sound-Optionen
-        _ = services.AddSingleton<ISoundService>(sp =>
-            new SoundService(sp.GetRequiredService<ILogger<SoundService>>()));
-
-        // Statistiken / History / CSV
-        _ = services.AddSingleton<IBreakHistoryRepository, JsonBreakHistoryRepository>();
-        _ = services.AddSingleton<CsvExporter>();
-        _ = services.AddSingleton<StatisticsService>();
-
-        // Globale Hotkeys
-        _ = services.AddSingleton<IHotkeyService, WindowsHotkeyService>();
-
-        // Pause-Aktionen
-        _ = services.AddSingleton<IScreenDimmer>(sp => new WindowsScreenDimmer(sp.GetRequiredService<ILogger<WindowsScreenDimmer>>()));
-        _ = services.AddSingleton<IMediaController>(sp => new WindowsMediaController(sp.GetRequiredService<ILogger<WindowsMediaController>>()));
-        _ = services.AddSingleton<PauseActionService>();
-
-        // Update-Prüfung und automatische Installation
-        _ = services.AddSingleton<IHttpGetClient>(sp => new HttpGetClient(sp.GetRequiredService<ILogger<HttpGetClient>>()));
-        _ = services.AddSingleton<IUpdateChecker>(sp => new GitHubUpdateChecker(
-            sp.GetRequiredService<IHttpGetClient>(),
-            ParseVersion(GetVersion()),
-            sp.GetRequiredService<ILogger<GitHubUpdateChecker>>()));
-        _ = services.AddSingleton<UpdateInstallerService>(sp => new UpdateInstallerService(
-            sp.GetRequiredService<IHttpGetClient>(),
-            sp.GetRequiredService<ILogger<UpdateInstallerService>>()));
-        // Schmale Sicht für das Settings-ViewModel (Ein-Klick-Installation).
-        _ = services.AddSingleton<IUpdateInstaller>(sp => sp.GetRequiredService<UpdateInstallerService>());
-
-        // Autostart
-        _ = services.AddSingleton<IAutoStartService, RegistryAutoStartService>();
-        _ = services.AddSingleton<AutoStartCoordinator>();
-
-        // Tray-Status
-        _ = services.AddSingleton<TrayStatusPresenter>();
-
-        // Idle-/Vollbild-Erkennung
-        _ = services.AddSingleton<IIdleDetector, WindowsIdleDetector>();
-        _ = services.AddSingleton<IFullscreenDetector, WindowsFullscreenDetector>();
-        _ = services.AddSingleton<IdleDetectionService>();
-        _ = services.AddSingleton<FullscreenDetectionService>();
-
-        // Timer-Engine
-        _ = services.AddSingleton<IClock, SystemClock>();
-        _ = services.AddSingleton<IPowerModeWatcher, WindowsPowerModeWatcher>();
-        _ = services.AddSingleton<TimerService>();
-        _ = services.AddSingleton<ITimerService>(sp => sp.GetRequiredService<TimerService>());
-
-        return services.BuildServiceProvider();
     }
 
     private void RegisterGlobalCrashHandlers()

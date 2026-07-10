@@ -117,3 +117,6 @@ installer/setup-icon.ico
 
 # Lokales Entwickler-Werkzeug (nicht Bestandteil des Repos)
 tools/install-pre-commit-hook.ps1
+
+# Interne Konfiguration des Spurenscanners (nicht Bestandteil des Repos)
+.ai-trace-ignore

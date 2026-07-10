@@ -169,14 +169,21 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
             return;
         }
 
+        // Der Rest des Starts liest die Einstellungen und darf den UI-Thread nicht
+        // blockieren; OnLaunched ist ein synchroner Framework-Einstiegspunkt.
+        _ = ContinueLaunchAsync();
+    }
+
+    private async Task ContinueLaunchAsync()
+    {
         // Ausstehendes Update beim Start anwenden (Datei-Tausch via Helfer-Prozess);
         // beendet diese Instanz, falls ein Update eingespielt wird.
-        if (TryApplyPendingUpdateOnStartup())
+        if (await TryApplyPendingUpdateOnStartupAsync().ConfigureAwait(true))
         {
             return;
         }
 
-        _instanceLock.ActivationRequested += OnActivationRequested;
+        _instanceLock!.ActivationRequested += OnActivationRequested;
 
         _window = new MainWindow();
         // Hauptfenster bleibt verborgen — die App lebt im Tray.
@@ -195,7 +202,7 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
             CreateSettingsViewModel,
             ApplySettingsLive);
 
-        _ = StartAsync();
+        await StartAsync().ConfigureAwait(true);
     }
 
     /// <summary>
@@ -456,7 +463,7 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
     /// über den Helfer-Prozess ein. Gibt <c>true</c> zurück, wenn diese Instanz
     /// dafür beendet wird.
     /// </summary>
-    private bool TryApplyPendingUpdateOnStartup()
+    private async Task<bool> TryApplyPendingUpdateOnStartupAsync()
     {
         try
         {
@@ -466,8 +473,8 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
 
             // Nur ein Update einspielen, das diese Installation selbst vermerkt hat
             // (Version + Datei-Hash) — nie einen einfach untergeschobenen Ordner.
-            Settings settings = Services.GetRequiredService<ISettingsRepository>()
-                .LoadAsync().GetAwaiter().GetResult();
+            Settings settings = await Services.GetRequiredService<ISettingsRepository>()
+                .LoadAsync().ConfigureAwait(true);
 
             string? staged = installer.FindVerifiedPendingUpdateDirectory(
                 current, settings.PendingUpdateVersion, settings.PendingUpdateSha256);

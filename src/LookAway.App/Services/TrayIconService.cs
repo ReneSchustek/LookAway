@@ -364,7 +364,7 @@ internal sealed class TrayIconService : ITrayController, IDisposable
         if (_timerService.State == TimerState.Paused)
         {
             TrayIconLog.ResumeRequested(_logger);
-            _timerService.Resume();
+            _timerService.ResumeAfterPause();
         }
         else if (_timerService.State == TimerState.Working || _timerService.State == TimerState.OnBreak)
         {

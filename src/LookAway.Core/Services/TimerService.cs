@@ -164,7 +164,7 @@ public sealed class TimerService : ITimerService, IDisposable
     }
 
     /// <inheritdoc />
-    public void Stop()
+    public void StopCycle()
     {
         ThrowIfDisposed();
 
@@ -200,7 +200,7 @@ public sealed class TimerService : ITimerService, IDisposable
     }
 
     /// <inheritdoc />
-    public void Resume()
+    public void ResumeAfterPause()
     {
         ThrowIfDisposed();
 
@@ -224,7 +224,7 @@ public sealed class TimerService : ITimerService, IDisposable
         lock (_lock)
         {
             // Betrifft nur automatische Pausen (Idle). System-Pausen werden über
-            // den Power-Resume-Pfad behandelt; Benutzer-Pausen über Resume().
+            // den Power-Resume-Pfad behandelt; Benutzer-Pausen über ResumeAfterPause().
             if (_state == TimerState.Paused && !_pausedBySystem)
             {
                 ResumeOrRestart(awayDuration);
@@ -454,7 +454,7 @@ public sealed class TimerService : ITimerService, IDisposable
 
         _loopCts?.Dispose();
         _loopCts = new CancellationTokenSource();
-        // Token lokal festhalten: ein zwischenzeitliches Stop()+Start() darf den
+        // Token lokal festhalten: ein zwischenzeitliches StopCycle()+Start() darf den
         // gerade gestarteten Loop nicht mit dem Token einer neuen CTS laufen lassen.
         CancellationToken token = _loopCts.Token;
         _loopTask = Task.Run(() => RunLoopAsync(token));
@@ -483,10 +483,6 @@ public sealed class TimerService : ITimerService, IDisposable
         }
     }
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Der Loop ist die letzte Verteidigungslinie. Eine unbehandelte Exception darf den Service nicht stillschweigend beenden — sie wird strukturiert geloggt und der Loop terminiert kontrolliert.")]
     private async Task RunLoopAsync(CancellationToken cancellationToken)
     {
         try
@@ -501,10 +497,19 @@ public sealed class TimerService : ITimerService, IDisposable
         {
             // erwarteter Beendigungspfad
         }
-        catch (Exception ex)
+        // Letzte Verteidigungslinie: der Tick-Loop trägt den gesamten Pausen-Zyklus.
+        // Ein unerwarteter Fehler wird strukturiert protokolliert, damit der Loop nicht
+        // stillschweigend endet; der Filter hält den Fehler diagnostizierbar.
+        catch (Exception ex) when (LogLoopCrash(ex))
         {
-            TimerServiceLog.LoopCrashed(_logger, ex);
+            // Der Filter hat bereits protokolliert; der Loop terminiert kontrolliert.
         }
+    }
+
+    private bool LogLoopCrash(Exception exception)
+    {
+        TimerServiceLog.LoopCrashed(_logger, exception);
+        return true;
     }
 
     private void EnqueueEvent(TimerEvent evt)

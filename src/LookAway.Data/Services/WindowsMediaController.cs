@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using LookAway.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 using Windows.Media.Control;
@@ -24,8 +24,6 @@ public sealed class WindowsMediaController : IMediaController
     }
 
     /// <inheritdoc />
-    [SuppressMessage("Design", "CA1031:Do not catch general exception types",
-        Justification = "SMTC ist optional: jeder Fehler wird geloggt und ignoriert, damit die App nie abstürzt.")]
     public async Task PauseAllAsync(CancellationToken cancellationToken = default)
     {
         _pausedSources.Clear();
@@ -45,15 +43,24 @@ public sealed class WindowsMediaController : IMediaController
                 }
             }
         }
-        catch (Exception ex)
+        // Die SMTC-Projektion meldet fehlende Unterstützung, abgemeldete Sessions und
+        // Rechteprobleme über diese drei Typen; ein Abbruch-Token wird bewusst nicht
+        // verschluckt.
+        catch (COMException ex)
+        {
+            MediaControllerLog.PauseFailed(_logger, ex);
+        }
+        catch (TypeLoadException ex)
+        {
+            MediaControllerLog.PauseFailed(_logger, ex);
+        }
+        catch (UnauthorizedAccessException ex)
         {
             MediaControllerLog.PauseFailed(_logger, ex);
         }
     }
 
     /// <inheritdoc />
-    [SuppressMessage("Design", "CA1031:Do not catch general exception types",
-        Justification = "SMTC ist optional: jeder Fehler wird geloggt und ignoriert, damit die App nie abstürzt.")]
     public async Task ResumeAllAsync(CancellationToken cancellationToken = default)
     {
         if (_pausedSources.Count == 0)
@@ -74,7 +81,15 @@ public sealed class WindowsMediaController : IMediaController
                 }
             }
         }
-        catch (Exception ex)
+        catch (COMException ex)
+        {
+            MediaControllerLog.ResumeFailed(_logger, ex);
+        }
+        catch (TypeLoadException ex)
+        {
+            MediaControllerLog.ResumeFailed(_logger, ex);
+        }
+        catch (UnauthorizedAccessException ex)
         {
             MediaControllerLog.ResumeFailed(_logger, ex);
         }

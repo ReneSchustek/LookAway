@@ -25,8 +25,6 @@ public sealed partial class WindowsScreenDimmer : IScreenDimmer, IDisposable
     }
 
     /// <inheritdoc />
-    [SuppressMessage("Design", "CA1031:Do not catch general exception types",
-        Justification = "Helligkeitssteuerung ist unkritisch: jeder Hardware-/Interop-Fehler wird geloggt und ignoriert, damit die App nie abstürzt.")]
     public void DimTo(int targetPercent)
     {
         if (_disposed)
@@ -54,16 +52,30 @@ public sealed partial class WindowsScreenDimmer : IScreenDimmer, IDisposable
                 _ = DestroyPhysicalMonitor(monitor.Handle);
             }
         }
-        catch (Exception ex)
+        catch (DllNotFoundException ex)
         {
-            ScreenDimmerLog.DimFailed(_logger, ex);
-            Restore();
+            OnDimFailed(ex);
+        }
+        catch (EntryPointNotFoundException ex)
+        {
+            OnDimFailed(ex);
+        }
+        catch (SEHException ex)
+        {
+            OnDimFailed(ex);
         }
     }
 
+    // Hardware-Fehler melden die Dxva2-Aufrufe über ihren Rückgabewert. Werfen können sie
+    // nur, wenn die Bibliothek oder der Einsprungpunkt fehlt (Server-Kern, Windows-to-Go)
+    // oder der Treiber im nativen Code fehlschlägt (SEHException).
+    private void OnDimFailed(Exception exception)
+    {
+        ScreenDimmerLog.DimFailed(_logger, exception);
+        Restore();
+    }
+
     /// <inheritdoc />
-    [SuppressMessage("Design", "CA1031:Do not catch general exception types",
-        Justification = "Wiederherstellung ist unkritisch: Fehler werden geloggt und ignoriert.")]
     public void Restore()
     {
         foreach (MonitorBrightness monitor in _dimmed)
@@ -72,7 +84,15 @@ public sealed partial class WindowsScreenDimmer : IScreenDimmer, IDisposable
             {
                 _ = SetMonitorBrightness(monitor.Handle, monitor.Original);
             }
-            catch (Exception ex)
+            catch (DllNotFoundException ex)
+            {
+                ScreenDimmerLog.RestoreFailed(_logger, ex);
+            }
+            catch (EntryPointNotFoundException ex)
+            {
+                ScreenDimmerLog.RestoreFailed(_logger, ex);
+            }
+            catch (SEHException ex)
             {
                 ScreenDimmerLog.RestoreFailed(_logger, ex);
             }

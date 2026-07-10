@@ -196,7 +196,7 @@ public sealed class TimerServiceTests
             _ = await ReadEventAsync<TimerPausedEvent>(service);
 
             clock.Advance(TimeSpan.FromMinutes(7));
-            service.Resume();
+            service.ResumeAfterPause();
 
             Assert.Equal(TimerState.Working, service.State);
             Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
@@ -235,13 +235,13 @@ public sealed class TimerServiceTests
     }
 
     [Fact]
-    public void Resume_WhenNotPaused_HasNoEffect()
+    public void ResumeAfterPause_WhenNotPaused_HasNoEffect()
     {
         (TimerService service, _, _) = CreateService();
         try
         {
             service.Start(ClassicPomodoro);
-            service.Resume();
+            service.ResumeAfterPause();
             Assert.Equal(TimerState.Working, service.State);
         }
         finally
@@ -484,7 +484,7 @@ public sealed class TimerServiceTests
         try
         {
             service.Start(ClassicPomodoro);
-            service.Stop();
+            service.StopCycle();
 
             Assert.Equal(TimerState.Idle, service.State);
             Assert.Null(service.CurrentInterval);
@@ -502,7 +502,7 @@ public sealed class TimerServiceTests
         (TimerService service, _, _) = CreateService();
         try
         {
-            service.Stop();
+            service.StopCycle();
 
             Assert.Equal(TimerState.Idle, service.State);
 
@@ -562,8 +562,8 @@ public sealed class TimerServiceTests
 
         _ = Assert.Throws<ObjectDisposedException>(() => service.Start(ClassicPomodoro));
         _ = Assert.Throws<ObjectDisposedException>(service.Pause);
-        _ = Assert.Throws<ObjectDisposedException>(service.Resume);
-        _ = Assert.Throws<ObjectDisposedException>(service.Stop);
+        _ = Assert.Throws<ObjectDisposedException>(service.ResumeAfterPause);
+        _ = Assert.Throws<ObjectDisposedException>(service.StopCycle);
     }
 
     private static async Task<T> ReadEventAsync<T>(TimerService service) where T : TimerEvent

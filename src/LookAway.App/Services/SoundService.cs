@@ -1,5 +1,5 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using LookAway.Core.Enums;
 using LookAway.Core.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -33,10 +33,6 @@ internal sealed class SoundService : ISoundService, IDisposable
     }
 
     /// <inheritdoc />
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Audiowiedergabe ist unkritisch: jeder Fehler (fehlendes Gerät, Gerätewechsel, COM-Fehler) wird geloggt und geschluckt, damit die App nie abstürzt.")]
     public void Play(SoundType soundType, int volumePercent)
     {
         if (_disposed)
@@ -63,10 +59,18 @@ internal sealed class SoundService : ISoundService, IDisposable
             _player.Volume = clamped / VolumeDivisor;
             _player.Play();
         }
-        catch (Exception ex)
+        // Der WinRT-MediaPlayer meldet fehlende oder gewechselte Audiogeräte über
+        // COM-Fehler; ein bereits freigegebener Player wirft ObjectDisposedException.
+        catch (COMException ex)
         {
-            // Audiowiedergabe darf die App nie zum Absturz bringen
-            // (z. B. fehlendes Gerät oder Gerätewechsel zur Laufzeit).
+            SoundServiceLog.PlaybackFailed(_logger, ex);
+        }
+        catch (ObjectDisposedException ex)
+        {
+            SoundServiceLog.PlaybackFailed(_logger, ex);
+        }
+        catch (InvalidOperationException ex)
+        {
             SoundServiceLog.PlaybackFailed(_logger, ex);
         }
     }

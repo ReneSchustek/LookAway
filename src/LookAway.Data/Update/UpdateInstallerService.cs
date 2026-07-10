@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using LookAway.Core.Domain;
@@ -94,10 +93,6 @@ public sealed class UpdateInstallerService : IUpdateInstaller
     /// <param name="info">Die zu installierende Aktualisierung (mit <see cref="UpdateInfo.PackageUrl"/>).</param>
     /// <param name="cancellationToken">Abbruch-Token.</param>
     /// <returns>Staging-Ordner, Version und Datei-Hash bei Erfolg, sonst <c>null</c>.</returns>
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Die Aktualisierung ist unkritisch: Download-/Entpackfehler werden geloggt und als Misserfolg behandelt, damit die laufende App nie abstürzt.")]
     public async Task<StagedUpdate?> DownloadAndStageAsync(UpdateInfo info, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(info);
@@ -159,7 +154,9 @@ public sealed class UpdateInstallerService : IUpdateInstaller
             UpdateInstallerLog.Staged(_logger, info.LatestVersion, stagingDir);
             return new StagedUpdate(stagingDir, info.LatestVersion, sha);
         }
-        catch (Exception ex)
+        // Datei-, Zugriffs-, Archiv- und Signaturfehler bedeuten alle dasselbe:
+        // das Paket ist unbrauchbar. Die laufende App darf daran nie scheitern.
+        catch (Exception ex) when (IsStagingFailure(ex))
         {
             UpdateInstallerLog.StageFailed(_logger, ex, info.LatestVersion);
             TryDelete(tempZip);
@@ -168,6 +165,13 @@ public sealed class UpdateInstallerService : IUpdateInstaller
             return null;
         }
     }
+
+    private static bool IsStagingFailure(Exception exception) => exception
+        is IOException
+        or UnauthorizedAccessException
+        or InvalidDataException
+        or NotSupportedException
+        or CryptographicException;
 
     /// <summary>
     /// Lädt die losgelöste Signatur und prüft sie gegen das heruntergeladene Paket.
@@ -212,7 +216,7 @@ public sealed class UpdateInstallerService : IUpdateInstaller
 
         if (archive.Entries.Count > MaxEntries)
         {
-            throw new InvalidOperationException($"ZIP enthält zu viele Einträge ({archive.Entries.Count}).");
+            throw new InvalidDataException($"ZIP enthält zu viele Einträge ({archive.Entries.Count}).");
         }
 
         long totalWritten = 0;
@@ -221,7 +225,7 @@ public sealed class UpdateInstallerService : IUpdateInstaller
             string targetPath = Path.GetFullPath(Path.Combine(destinationDir, entry.FullName));
             if (!targetPath.StartsWith(destFull, StringComparison.Ordinal))
             {
-                throw new InvalidOperationException($"Unsicherer ZIP-Eintrag (Pfadverlassen): {entry.FullName}");
+                throw new InvalidDataException($"Unsicherer ZIP-Eintrag (Pfadverlassen): {entry.FullName}");
             }
 
             // Verzeichniseintrag (endet auf '/').
@@ -244,7 +248,7 @@ public sealed class UpdateInstallerService : IUpdateInstaller
                 totalWritten += read;
                 if (totalWritten > MaxExtractedBytes)
                 {
-                    throw new InvalidOperationException("Entpackte Gesamtgröße überschreitet das Limit.");
+                    throw new InvalidDataException("Entpackte Gesamtgröße überschreitet das Limit.");
                 }
 
                 destination.Write(buffer, 0, read);
@@ -262,10 +266,6 @@ public sealed class UpdateInstallerService : IUpdateInstaller
     /// <param name="expectedVersion">Vermerkte Version des ausstehenden Updates.</param>
     /// <param name="expectedSha256">Vermerkter SHA-256 der Programmdatei.</param>
     /// <returns>Staging-Ordner, oder <c>null</c>, wenn keiner sicher passt.</returns>
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Das Suchen ist unkritisch: jeder Datei-/Zugriffsfehler wird geloggt und als 'kein Update' behandelt.")]
     public string? FindVerifiedPendingUpdateDirectory(Version current, string? expectedVersion, string? expectedSha256)
     {
         ArgumentNullException.ThrowIfNull(current);
@@ -299,7 +299,12 @@ public sealed class UpdateInstallerService : IUpdateInstaller
 
             return dir;
         }
-        catch (Exception ex)
+        catch (IOException ex)
+        {
+            UpdateInstallerLog.ScanFailed(_logger, ex);
+            return null;
+        }
+        catch (UnauthorizedAccessException ex)
         {
             UpdateInstallerLog.ScanFailed(_logger, ex);
             return null;
@@ -399,10 +404,6 @@ public sealed class UpdateInstallerService : IUpdateInstaller
 
     /// <summary>Entfernt Staging-Ordner, die nicht neuer als die aktuelle Version sind.</summary>
     /// <param name="current">Aktuell laufende Version.</param>
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Aufräumen ist unkritisch: Fehler werden geloggt und ignoriert.")]
     public void CleanObsolete(Version current)
     {
         ArgumentNullException.ThrowIfNull(current);
@@ -422,7 +423,11 @@ public sealed class UpdateInstallerService : IUpdateInstaller
                 }
             }
         }
-        catch (Exception ex)
+        catch (IOException ex)
+        {
+            UpdateInstallerLog.ScanFailed(_logger, ex);
+        }
+        catch (UnauthorizedAccessException ex)
         {
             UpdateInstallerLog.ScanFailed(_logger, ex);
         }
@@ -431,10 +436,6 @@ public sealed class UpdateInstallerService : IUpdateInstaller
     /// <summary>Prüft, ob in das Verzeichnis geschrieben werden darf (Probe-Datei).</summary>
     /// <param name="directory">Zu prüfendes Verzeichnis.</param>
     /// <returns><c>true</c>, wenn beschreibbar.</returns>
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Die Schreibprobe darf nicht werfen; jeder Fehler bedeutet schlicht 'nicht beschreibbar'.")]
     public static bool IsDirectoryWritable(string directory)
     {
         if (string.IsNullOrWhiteSpace(directory) || !Directory.Exists(directory))
@@ -449,7 +450,16 @@ public sealed class UpdateInstallerService : IUpdateInstaller
             File.Delete(probe);
             return true;
         }
-        catch (Exception)
+        // Jeder Datei- oder Rechtefehler bedeutet schlicht: nicht beschreibbar.
+        catch (IOException)
+        {
+            return false;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+        catch (NotSupportedException)
         {
             return false;
         }
@@ -473,10 +483,6 @@ public sealed class UpdateInstallerService : IUpdateInstaller
         }
     }
 
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Best-effort-Aufräumen; Fehler sind unkritisch.")]
     private static void TryDelete(string path)
     {
         try
@@ -486,25 +492,29 @@ public sealed class UpdateInstallerService : IUpdateInstaller
                 File.Delete(path);
             }
         }
-        catch (Exception)
+        catch (IOException)
         {
-            // bewusst ignoriert
+            // Aufräumen ist best-effort: eine gesperrte Datei wird beim nächsten Lauf entfernt.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // dito
         }
     }
 
-    [SuppressMessage(
-        "Design",
-        "CA1031:Do not catch general exception types",
-        Justification = "Best-effort-Aufräumen; Fehler sind unkritisch.")]
     private static void TryDeleteDirectory(string path)
     {
         try
         {
             Directory.Delete(path, recursive: true);
         }
-        catch (Exception)
+        catch (IOException)
         {
-            // bewusst ignoriert
+            // Aufräumen ist best-effort: ein gesperrter Ordner wird beim nächsten Lauf entfernt.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // dito
         }
     }
 }

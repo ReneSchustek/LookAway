@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using LookAway.Core.Interfaces;
 using LookAway.Core.Localization;
 using LookAway.App.ViewModels;
@@ -19,18 +20,20 @@ internal sealed partial class BreakReminderWindow : Window
     private const int WindowHeight = 320;
 
     private readonly BreakReminderViewModel _viewModel;
-    private DispatcherQueueTimer? _timeoutTimer;
+    private readonly string _countdownTemplate;
+    private DispatcherQueueTimer? _countdownTimer;
 
     /// <summary>
     /// Erzeugt das Fenster für das angegebene ViewModel.
     /// </summary>
-    /// <param name="viewModel">Aktionslogik der Erinnerung.</param>
+    /// <param name="viewModel">Aktionslogik der Erinnerung (inkl. Countdown-Zustand).</param>
     /// <param name="localization">Liefert die sprachabhängigen Texte.</param>
     public BreakReminderWindow(BreakReminderViewModel viewModel, ILocalizationService localization)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
         ArgumentNullException.ThrowIfNull(localization);
         _viewModel = viewModel;
+        _countdownTemplate = localization.GetText(ReminderTextKeys.AutoStartCountdown);
 
         InitializeComponent();
 
@@ -45,7 +48,7 @@ internal sealed partial class BreakReminderWindow : Window
         Closed += OnWindowClosed;
 
         ConfigureWindow();
-        StartTimeoutTimer();
+        StartCountdown();
     }
 
     private void ConfigureWindow()
@@ -72,26 +75,44 @@ internal sealed partial class BreakReminderWindow : Window
         AppWindow.Move(new PointInt32(left, top));
     }
 
-    private void StartTimeoutTimer()
+    private void StartCountdown()
     {
-        _timeoutTimer = DispatcherQueue.CreateTimer();
-        _timeoutTimer.Interval = TimeSpan.FromSeconds(BreakReminderViewModel.DefaultTimeoutSeconds);
-        _timeoutTimer.IsRepeating = false;
-        _timeoutTimer.Tick += (_, _) => _viewModel.TimeoutElapsed();
-        _timeoutTimer.Start();
+        // Ohne konfigurierten Auto-Start bleibt die Erinnerung offen, bis der Benutzer
+        // eine Aktion wählt — dann keinen Countdown anzeigen.
+        if (!_viewModel.AutoStartsAutomatically)
+        {
+            return;
+        }
+
+        CountdownText.Visibility = Visibility.Visible;
+        UpdateCountdownText();
+
+        _countdownTimer = DispatcherQueue.CreateTimer();
+        _countdownTimer.Interval = TimeSpan.FromSeconds(1);
+        _countdownTimer.IsRepeating = true;
+        _countdownTimer.Tick += (_, _) =>
+        {
+            _viewModel.Tick();
+            UpdateCountdownText();
+        };
+        _countdownTimer.Start();
     }
+
+    private void UpdateCountdownText()
+        => CountdownText.Text = string.Format(
+            CultureInfo.CurrentCulture, _countdownTemplate, _viewModel.RemainingSeconds);
 
     private void OnViewModelCompleted(object? sender, ReminderCompletedEventArgs e)
     {
-        _timeoutTimer?.Stop();
-        _timeoutTimer = null;
+        _countdownTimer?.Stop();
+        _countdownTimer = null;
         Close();
     }
 
     private void OnWindowClosed(object sender, WindowEventArgs args)
     {
-        _timeoutTimer?.Stop();
-        _timeoutTimer = null;
+        _countdownTimer?.Stop();
+        _countdownTimer = null;
         _viewModel.Completed -= OnViewModelCompleted;
         Closed -= OnWindowClosed;
 

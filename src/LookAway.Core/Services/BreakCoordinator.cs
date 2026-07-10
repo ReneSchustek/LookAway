@@ -41,6 +41,9 @@ public sealed class BreakCoordinator
     private bool _soundEnabled;
     private SoundType _soundType = SoundType.Chime;
     private int _soundVolume;
+    // Verzögerung bis zum automatischen Pausenstart, oder null wenn deaktiviert
+    // (dann bleibt die Erinnerung offen, bis der Benutzer eine Aktion wählt).
+    private TimeSpan? _autoStartBreakAfter = TimeSpan.FromSeconds(15);
     private string _overlayColor = HexColor.Default;
     private bool _darkenAllScreens = true;
     private bool _manualDnd;
@@ -165,6 +168,10 @@ public sealed class BreakCoordinator
         _overlayColor = settings.BreakOverlayColor;
         _darkenAllScreens = settings.DarkenAllScreens;
 
+        _autoStartBreakAfter = settings.AutoStartBreakEnabled
+            ? TimeSpan.FromSeconds(settings.AutoStartBreakSeconds)
+            : null;
+
         _tray.SetActiveModel(settings.BreakModel);
 
         if (resumeWorkRemaining is { } remaining && _timer.State == TimerState.Idle)
@@ -273,7 +280,7 @@ public sealed class BreakCoordinator
         }
 
         _reminderShownAt = _clock.UtcNow;
-        _reminder.Show(_model, OnReminderResult);
+        _reminder.Show(_model, _autoStartBreakAfter, OnReminderResult);
     }
 
     private void OnReminderResult(ReminderResult result)

@@ -168,6 +168,12 @@ public static class SettingsTextKeys
     /// <summary>Beschriftung der DND-Checkbox.</summary>
     public const string FullscreenSuppressLabel = "Settings.Fullscreen.SuppressLabel";
 
+    /// <summary>Beschriftung der Auto-Pausenstart-Checkbox.</summary>
+    public const string AutoStartBreakLabel = "Settings.AutoStartBreak.Label";
+
+    /// <summary>Beschriftung der Auto-Pausenstart-Verzögerung.</summary>
+    public const string AutoStartBreakSecondsLabel = "Settings.AutoStartBreak.SecondsLabel";
+
     /// <summary>Beschriftung der Modellauswahl.</summary>
     public const string ModelLabel = "Settings.Model.Label";
 

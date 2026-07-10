@@ -92,6 +92,26 @@ public sealed class BreakCoordinatorTests
     });
 
     [Fact]
+    public void BreakDue_ReichtAutoStartVerzoegerungAusDenSettingsDurch() => Run(
+        h =>
+        {
+            h.Coordinator.RequestReminder();
+
+            Assert.Equal(TimeSpan.FromSeconds(45), h.Reminder.LastAutoStartAfter);
+        },
+        settings: new Settings { AutoStartBreakEnabled = true, AutoStartBreakSeconds = 45 });
+
+    [Fact]
+    public void BreakDue_OhneAutoStart_ReichtKeineVerzoegerungDurch() => Run(
+        h =>
+        {
+            h.Coordinator.RequestReminder();
+
+            Assert.Null(h.Reminder.LastAutoStartAfter);
+        },
+        settings: new Settings { AutoStartBreakEnabled = false });
+
+    [Fact]
     public void Snooze_RestartsTimerWithSnoozeWindow_AndRecordsSnoozed() => Run(h =>
     {
         h.Coordinator.RequestReminder();

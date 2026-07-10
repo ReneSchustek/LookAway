@@ -122,6 +122,20 @@
                                 <CheckBox
                                     Content="{Binding FullscreenSuppressLabel}"
                                     IsChecked="{Binding SuppressOnFullscreen, Mode=TwoWay}" />
+                                <CheckBox
+                                    Content="{Binding AutoStartBreakLabel}"
+                                    IsChecked="{Binding AutoStartBreakEnabled, Mode=TwoWay}" />
+                                <NumberBox
+                                    Header="{Binding AutoStartBreakSecondsLabel}"
+                                    Value="{Binding AutoStartBreakSeconds, Mode=TwoWay}"
+                                    Minimum="{Binding AutoStartBreakMinSeconds}"
+                                    Maximum="{Binding AutoStartBreakMaxSeconds}"
+                                    SmallChange="{Binding AutoStartBreakStepSeconds}"
+                                    LargeChange="{Binding AutoStartBreakStepSeconds}"
+                                    IsEnabled="{Binding AutoStartBreakEnabled}"
+                                    SpinButtonPlacementMode="Inline"
+                                    MinWidth="160"
+                                    HorizontalAlignment="Left" />
                             </StackPanel>
                         </Border>
                     </StackPanel>

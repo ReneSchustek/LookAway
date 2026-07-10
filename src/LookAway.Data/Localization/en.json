@@ -68,6 +68,8 @@
   "Settings.Idle.PauseLabel": "Automatically pause when idle",
   "Settings.Idle.ThresholdLabel": "Idle threshold (minutes)",
   "Settings.Fullscreen.SuppressLabel": "Do not disturb in full-screen mode",
+  "Settings.AutoStartBreak.Label": "Start the break automatically if nothing is clicked",
+  "Settings.AutoStartBreak.SecondsLabel": "Automatic break start after (seconds)",
 
   "Settings.Model.Label": "Active break model",
   "Settings.Model.ShortBreaks": "Short breaks (60 / 5 min)",
@@ -130,6 +132,7 @@
   "Reminder.StartBreak": "Start break",
   "Reminder.Snooze": "5 min later",
   "Reminder.Skip": "Skip",
+  "Reminder.AutoStartCountdown": "Break starts automatically in {0} s",
 
   "Overlay.Title": "Break – look into the distance",
   "Overlay.EndHint": "Press ESC to end the break",

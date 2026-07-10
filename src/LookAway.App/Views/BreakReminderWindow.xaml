@@ -25,6 +25,15 @@
             Grid.Row="1"
             FontSize="{StaticResource RcFontSizeH3}" />
 
+        <TextBlock
+            x:Name="CountdownText"
+            Grid.Row="2"
+            TextWrapping="NoWrap"
+            VerticalAlignment="Bottom"
+            HorizontalAlignment="Left"
+            Foreground="{StaticResource RcTextSecondary}"
+            Visibility="Collapsed" />
+
         <StackPanel
             Grid.Row="3"
             Orientation="Horizontal"

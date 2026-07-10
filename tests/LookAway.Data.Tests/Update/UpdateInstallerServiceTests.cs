@@ -303,6 +303,67 @@ public sealed class UpdateInstallerServiceTests : IDisposable
         Assert.False(UpdateInstallerService.IsDirectoryWritable(Path.Combine(_root, "gibt-es-nicht")));
     }
 
+    [Fact]
+    public void IsTrustedStagingDirectory_akzeptiert_Staging_Ordner_mit_passendem_Hash()
+    {
+        string stagingRoot = Path.Combine(_root, "staging");
+        string source = Path.Combine(stagingRoot, "1.5.0");
+        _ = Directory.CreateDirectory(source);
+        string exe = Path.Combine(source, "LookAway.exe");
+        File.WriteAllText(exe, "neue-exe");
+        string sha = UpdateInstallerService.ComputeFileHash(exe);
+
+        UpdateInstallerService service = CreateService(stagingRoot);
+
+        Assert.True(service.IsTrustedStagingDirectory(source, sha));
+    }
+
+    [Fact]
+    public void IsTrustedStagingDirectory_lehnt_Ordner_ausserhalb_des_Staging_ab()
+    {
+        string stagingRoot = Path.Combine(_root, "staging");
+        _ = Directory.CreateDirectory(stagingRoot);
+        string outside = Path.Combine(_root, "attacker");
+        _ = Directory.CreateDirectory(outside);
+        string exe = Path.Combine(outside, "LookAway.exe");
+        File.WriteAllText(exe, "boese-exe");
+        string sha = UpdateInstallerService.ComputeFileHash(exe);
+
+        UpdateInstallerService service = CreateService(stagingRoot);
+
+        // Trotz passendem Hash abgelehnt, weil der Ordner nicht im Staging-Bereich liegt.
+        Assert.False(service.IsTrustedStagingDirectory(outside, sha));
+    }
+
+    [Fact]
+    public void IsTrustedStagingDirectory_lehnt_bei_Hash_Abweichung_ab()
+    {
+        string stagingRoot = Path.Combine(_root, "staging");
+        string source = Path.Combine(stagingRoot, "1.5.0");
+        _ = Directory.CreateDirectory(source);
+        File.WriteAllText(Path.Combine(source, "LookAway.exe"), "manipuliert");
+
+        UpdateInstallerService service = CreateService(stagingRoot);
+
+        Assert.False(service.IsTrustedStagingDirectory(source, "0000000000000000000000000000000000000000000000000000000000000000"));
+    }
+
+    [Fact]
+    public void IsTrustedStagingDirectory_lehnt_Traversal_ueber_Staging_hinaus_ab()
+    {
+        string stagingRoot = Path.Combine(_root, "staging");
+        _ = Directory.CreateDirectory(stagingRoot);
+        string exe = Path.Combine(_root, "LookAway.exe");
+        File.WriteAllText(exe, "boese-exe");
+        string sha = UpdateInstallerService.ComputeFileHash(exe);
+
+        UpdateInstallerService service = CreateService(stagingRoot);
+
+        // "staging\..\" führt aus dem Staging-Wurzelordner heraus und wird abgewiesen.
+        string traversal = Path.Combine(stagingRoot, "..");
+        Assert.False(service.IsTrustedStagingDirectory(traversal, sha));
+    }
+
     private static void StageVersion(string stagingRoot, string version)
     {
         string dir = Path.Combine(stagingRoot, version);

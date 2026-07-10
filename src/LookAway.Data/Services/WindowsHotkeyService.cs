@@ -39,7 +39,7 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
     private Dictionary<HotkeyAction, HotkeyDefinition> _pending = new();
     private Thread? _thread;
     private uint _threadId;
-    private bool _disposed;
+    private volatile bool _disposed;
 
     /// <summary>
     /// Erzeugt den Service und startet den Nachrichten-Thread.
@@ -124,8 +124,23 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
         // Falls vor dem Start des Loops bereits Bindings gesetzt wurden.
         ApplyPending();
 
-        while (GetMessageW(out Msg message, NoWindow, 0, 0) > 0)
+        while (true)
         {
+            int result = GetMessageW(out Msg message, NoWindow, 0, 0);
+            if (result == 0)
+            {
+                // WM_QUIT — regulärer Abbau (falls nicht bereits über WmQuitLoop erfolgt).
+                break;
+            }
+
+            if (result == -1)
+            {
+                // Fehler in der Nachrichtenschleife: Hotkeys freigeben, damit sie nicht
+                // bis Prozessende global belegt bleiben, dann geordnet beenden.
+                WindowsHotkeyServiceLog.MessageLoopFailed(_logger);
+                break;
+            }
+
             switch (message.Message)
             {
                 case WmHotkey:
@@ -141,6 +156,8 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
                     break;
             }
         }
+
+        UnregisterAllOnMessageThread();
     }
 
     private void UnregisterAllOnMessageThread()
@@ -256,4 +273,7 @@ internal static partial class WindowsHotkeyServiceLog
 {
     [LoggerMessage(EventId = 1501, Level = LogLevel.Warning, Message = "Hotkey für {Action} konnte nicht registriert werden (vermutlich von einer anderen App belegt).")]
     public static partial void RegistrationFailed(ILogger logger, string action);
+
+    [LoggerMessage(EventId = 1502, Level = LogLevel.Warning, Message = "Hotkey-Nachrichtenschleife mit Fehler beendet — globale Hotkeys sind bis zum Neustart inaktiv.")]
+    public static partial void MessageLoopFailed(ILogger logger);
 }

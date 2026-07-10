@@ -533,12 +533,29 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
     /// </summary>
     private void RunUpdateApply(UpdateApplyArgs apply)
     {
-        _ = Task.Run(() =>
+        _ = Task.Run(async () =>
         {
+            // Das Ziel ist immer das eigene Programmverzeichnis; der Helfer akzeptiert
+            // keinen frei übergebenen Zielpfad.
+            string target = AppContext.BaseDirectory;
             try
             {
+                UpdateInstallerService installer = Services.GetRequiredService<UpdateInstallerService>();
+
+                // Die Signaturprüfung des Hauptprozesses hier erneut durchsetzen: Der
+                // Helfer vertraut seinen Argumenten nicht, sondern verifiziert, dass der
+                // Quellordner im Staging-Bereich liegt und die Programmdatei den zuvor
+                // signaturgeprüft vermerkten Hash trägt.
+                Settings settings = await Services.GetRequiredService<ISettingsRepository>()
+                    .LoadAsync().ConfigureAwait(false);
+                if (!installer.IsTrustedStagingDirectory(apply.Source, settings.PendingUpdateSha256))
+                {
+                    AppLog.UpdateApplyRejected(_logger!, apply.Source);
+                    return;
+                }
+
                 WaitForProcessExit(apply.Pid, TimeSpan.FromSeconds(30));
-                Services.GetRequiredService<UpdateInstallerService>().ApplyStagedFiles(apply.Source, apply.Target);
+                installer.ApplyStagedFiles(apply.Source, target);
             }
             // Bei Fehler hat ApplyStagedFiles auf den vorigen Stand zurückgerollt.
             catch (IOException ex)
@@ -557,7 +574,7 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
             {
                 // In jedem Fall die installierte App starten (neuer Stand bei Erfolg,
                 // zurückgerollter, lauffähiger Stand bei Fehler), dann den Helfer beenden.
-                TryStartInstalledApp(apply.Target);
+                TryStartInstalledApp(target);
                 Environment.Exit(0);
             }
         });
@@ -1149,4 +1166,10 @@ internal static partial class AppLog
         Level = LogLevel.Warning,
         Message = "Automatische Aktualisierung fehlgeschlagen.")]
     public static partial void UpdateApplyFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(
+        EventId = 1173,
+        Level = LogLevel.Error,
+        Message = "Update-Helfer abgelehnt: Quelle {Source} nicht vertrauenswürdig (Signatur/Hash-Prüfung).")]
+    public static partial void UpdateApplyRejected(ILogger logger, string source);
 }

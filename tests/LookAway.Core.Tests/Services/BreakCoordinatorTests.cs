@@ -32,7 +32,7 @@ public sealed class BreakCoordinatorTests
         FakeClock clock = new(Start);
         using FakePowerModeWatcher power = new();
         using TimerService timer = new(clock, power, NullLogger<TimerService>.Instance, TimeSpan.FromHours(24));
-        PauseActionService pauseActions = new(new FakeScreenDimmer(), new FakeMediaController());
+        using PauseActionService pauseActions = new(new FakeScreenDimmer(), new FakeMediaController());
         FakeReminderPresenter reminder = new();
         FakeBreakOverlayPresenter overlay = new();
         FakeTrayController tray = new();

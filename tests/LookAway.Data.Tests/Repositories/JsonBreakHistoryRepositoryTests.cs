@@ -31,7 +31,7 @@ public sealed class JsonBreakHistoryRepositoryTests : IDisposable
     public async Task Append_und_LoadAll_speichern_die_Sitzungen()
     {
         using JsonBreakHistoryRepository repository = CreateRepository();
-        DateTimeOffset now = DateTimeOffset.UtcNow;
+        DateTimeOffset now = new(2026, 6, 28, 12, 0, 0, TimeSpan.Zero);
 
         await repository.AppendAsync(Session(now));
         await repository.AppendAsync(Session(now.AddMinutes(30), BreakOutcome.Skipped));
@@ -55,7 +55,7 @@ public sealed class JsonBreakHistoryRepositoryTests : IDisposable
     public async Task PurgeOlderThan_entfernt_alte_Einträge()
     {
         using JsonBreakHistoryRepository repository = CreateRepository();
-        DateTimeOffset now = DateTimeOffset.UtcNow;
+        DateTimeOffset now = new(2026, 6, 28, 12, 0, 0, TimeSpan.Zero);
         await repository.AppendAsync(Session(now.AddDays(-400)));
         await repository.AppendAsync(Session(now));
 

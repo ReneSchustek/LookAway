@@ -80,6 +80,62 @@ public sealed class UpdateInstallerService : IUpdateInstaller
     /// <summary>Pfad der ausführbaren Datei innerhalb eines Staging-Ordners.</summary>
     public static string ExecutablePathIn(string directory) => Path.Combine(directory, ExecutableName);
 
+    /// <summary>
+    /// Prüft, ob ein Staging-Ordner vertrauenswürdig ist: Er muss innerhalb des
+    /// bekannten Staging-Wurzelordners liegen (kein untergeschobener Fremdpfad) und
+    /// seine Programmdatei muss den erwarteten, zuvor signaturgeprüft vermerkten
+    /// SHA-256 tragen. Der Helfer-Prozess ruft dies auf, bevor er Dateien ersetzt —
+    /// so wird die Signaturprüfung des Hauptprozesses auch im Helfer durchgesetzt.
+    /// </summary>
+    /// <param name="sourceDir">Zu prüfender Quell-/Staging-Ordner.</param>
+    /// <param name="expectedSha256">Erwarteter SHA-256 der Programmdatei (aus den Einstellungen).</param>
+    /// <returns><c>true</c>, wenn Ordner und Datei-Hash vertrauenswürdig sind.</returns>
+    public bool IsTrustedStagingDirectory(string? sourceDir, string? expectedSha256)
+    {
+        if (string.IsNullOrWhiteSpace(sourceDir) || string.IsNullOrWhiteSpace(expectedSha256))
+        {
+            return false;
+        }
+
+        try
+        {
+            string rootFull = Path.TrimEndingDirectorySeparator(Path.GetFullPath(_stagingRoot));
+            string sourceFull = Path.TrimEndingDirectorySeparator(Path.GetFullPath(sourceDir));
+
+            // Der Quellpfad muss echt unterhalb des Staging-Wurzelordners liegen.
+            if (!sourceFull.StartsWith(rootFull + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            {
+                UpdateInstallerLog.UntrustedSource(_logger, sourceFull);
+                return false;
+            }
+
+            string exe = ExecutablePathIn(sourceFull);
+            if (!File.Exists(exe))
+            {
+                return false;
+            }
+
+            string actual = ComputeFileHash(exe);
+            if (!string.Equals(actual, expectedSha256, StringComparison.OrdinalIgnoreCase))
+            {
+                UpdateInstallerLog.HashMismatch(_logger, sourceFull);
+                return false;
+            }
+
+            return true;
+        }
+        catch (IOException ex)
+        {
+            UpdateInstallerLog.ScanFailed(_logger, ex);
+            return false;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            UpdateInstallerLog.ScanFailed(_logger, ex);
+            return false;
+        }
+    }
+
     private static string DefaultStagingRoot()
         => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -545,6 +601,9 @@ internal static partial class UpdateInstallerLog
 
     [LoggerMessage(EventId = 1657, Level = LogLevel.Warning, Message = "Ausstehendes Update in {Directory} abgelehnt: Datei-Hash stimmt nicht mit dem vermerkten überein.")]
     public static partial void HashMismatch(ILogger logger, string directory);
+
+    [LoggerMessage(EventId = 1660, Level = LogLevel.Error, Message = "Update-Helfer abgelehnt: Quellordner {Source} liegt außerhalb des Staging-Bereichs.")]
+    public static partial void UntrustedSource(ILogger logger, string source);
 
     [LoggerMessage(EventId = 1658, Level = LogLevel.Warning, Message = "Update {Version} abgelehnt: keine losgelöste Signatur vorhanden oder ladbar.")]
     public static partial void SignatureMissing(ILogger logger, string version);

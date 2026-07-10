@@ -10,6 +10,7 @@ namespace LookAway.Data.Tests;
 /// </summary>
 public sealed class RollingFileSinkTests : IDisposable
 {
+    private static readonly DateTimeOffset FixedTimestamp = new(2026, 6, 28, 12, 0, 0, TimeSpan.Zero);
     private readonly string _logDirectory;
 
     /// <summary>
@@ -70,7 +71,7 @@ public sealed class RollingFileSinkTests : IDisposable
         using RollingFileSink sink = CreateSink();
         InvalidOperationException ex = new("kapow");
 
-        sink.Write(DateTimeOffset.UtcNow, LogLevel.Error, "Cat", "Was fehlerhaft", ex);
+        sink.Write(FixedTimestamp, LogLevel.Error, "Cat", "Was fehlerhaft", ex);
 
         string content = ReadAllLogs();
         Assert.Contains("InvalidOperationException", content, StringComparison.Ordinal);
@@ -102,7 +103,7 @@ public sealed class RollingFileSinkTests : IDisposable
         using RollingFileSink sink = new(_logDirectory, retentionDays: 7, sanitizer);
 
         sink.Write(
-            DateTimeOffset.UtcNow,
+            FixedTimestamp,
             LogLevel.Information,
             "Cat",
             @"User testuser hat C:\Users\testuser\AppData\Roaming\LookAway geöffnet",
@@ -118,6 +119,8 @@ public sealed class RollingFileSinkTests : IDisposable
     public void PruneNow_DeletesFilesOlderThanRetention()
     {
         using RollingFileSink sink = new(_logDirectory, retentionDays: 7);
+        // RollingFileSink vergleicht Dateidaten mit der realen Uhr; die Testdaten sind
+        // deshalb bewusst relativ zu heute (kein injizierbarer IClock in der Sink-Klasse).
         DateTime today = DateTime.UtcNow.Date;
 
         string oldFile = WriteLogFileWithDate(today.AddDays(-10), "old content");
@@ -137,6 +140,7 @@ public sealed class RollingFileSinkTests : IDisposable
         using RollingFileSink sink = new(_logDirectory, retentionDays: 7);
         string foreignFile = Path.Combine(_logDirectory, "fremde-datei.txt");
         File.WriteAllText(foreignFile, "kein log");
+        // Reale Uhr, siehe PruneNow_DeletesFilesOlderThanRetention.
         File.SetLastWriteTimeUtc(foreignFile, DateTime.UtcNow.AddDays(-30));
 
         sink.PruneNow();
@@ -151,7 +155,7 @@ public sealed class RollingFileSinkTests : IDisposable
         sink.Dispose();
 
         // Darf keine Exception werfen.
-        sink.Write(DateTimeOffset.UtcNow, LogLevel.Error, "Cat", "After dispose", null);
+        sink.Write(FixedTimestamp, LogLevel.Error, "Cat", "After dispose", null);
 
         Assert.False(Directory.EnumerateFiles(_logDirectory, "lookaway-*.log").Any());
     }
@@ -162,7 +166,7 @@ public sealed class RollingFileSinkTests : IDisposable
         using RollingFileSink sink = CreateSink();
         IEnumerable<Task> writers = Enumerable.Range(0, 50)
             .Select(i => Task.Run(() => sink.Write(
-                DateTimeOffset.UtcNow,
+                FixedTimestamp,
                 LogLevel.Information,
                 "Cat",
                 "msg-" + i.ToString(CultureInfo.InvariantCulture),

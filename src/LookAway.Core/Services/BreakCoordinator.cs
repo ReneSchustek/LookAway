@@ -29,6 +29,13 @@ public sealed class BreakCoordinator
     private readonly FullscreenDetectionService _fullscreen;
     private readonly ILogger<BreakCoordinator> _logger;
 
+    // Der Coordinator wird aus zwei Threads bedient: Timer-Ereignisse, Hotkeys und
+    // Presenter-Callbacks laufen auf dem UI-Thread, die Erkennungs-Schleife
+    // (UpdateDndIndicator, RequestReminder) auf einem Hintergrund-Thread. Der Lock
+    // hält den veränderlichen Zustand konsistent. Er ist reentrant, sodass
+    // HandleTimerEvent gefahrlos ShowReminder aufrufen darf.
+    private readonly Lock _gate = new();
+
     private BreakModel _model = BreakModel.ClassicPomodoro;
     private BreakInterval? _interval;
     private bool _soundEnabled;
@@ -76,10 +83,28 @@ public sealed class BreakCoordinator
     }
 
     /// <summary>Manuelles Nicht-stören aktiv? (Nur für Tests/Diagnose.)</summary>
-    public bool IsManualDndActive => _manualDnd;
+    public bool IsManualDndActive
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _manualDnd;
+            }
+        }
+    }
 
     /// <summary>Aktuell aktives Pausenmodell.</summary>
-    public BreakModel ActiveModel => _model;
+    public BreakModel ActiveModel
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _model;
+            }
+        }
+    }
 
     /// <summary>Läuft gerade eine Arbeitsphase (für die Momentaufnahme beim Beenden)?</summary>
     public bool IsWorking => _timer.State == TimerState.Working;
@@ -106,6 +131,14 @@ public sealed class BreakCoordinator
 
         BreakInterval interval = BreakModelRegistry.GetEffective(settings.BreakModel, settings.CustomDurations);
 
+        lock (_gate)
+        {
+            ApplyScheduleLocked(settings, interval, resumeWorkRemaining);
+        }
+    }
+
+    private void ApplyScheduleLocked(Settings settings, BreakInterval interval, TimeSpan? resumeWorkRemaining)
+    {
         // Den laufenden Countdown nur dann (neu) starten, wenn sich das effektive
         // Intervall (Arbeits-/Pausendauer) tatsächlich geändert hat oder der Timer
         // noch nicht läuft. So setzt das bloße Speichern unveränderter Intervalle —
@@ -153,49 +186,64 @@ public sealed class BreakCoordinator
     {
         ArgumentNullException.ThrowIfNull(timerEvent);
 
-        switch (timerEvent)
+        lock (_gate)
         {
-            case BreakDueEvent:
-                // Vollbild-/DND-Erkennung entscheidet, ob jetzt erinnert werden darf.
-                if (_fullscreen.TryShowReminder())
-                {
-                    ShowReminder();
-                }
+            switch (timerEvent)
+            {
+                case BreakDueEvent:
+                    // Vollbild-/DND-Erkennung entscheidet, ob jetzt erinnert werden darf.
+                    if (_fullscreen.TryShowReminder())
+                    {
+                        ShowReminder();
+                    }
 
-                break;
-            case BreakCompletedEvent:
-                // Ist das Overlay offen, ist es maßgeblich für das Pausenende
-                // (siehe OnOverlayEnded); sonst (ignorierte Erinnerung) hier aufräumen.
-                if (!_overlay.IsOverlayOpen)
-                {
-                    _ = _pauseActions.EndBreakAsync();
-                }
+                    break;
+                case BreakCompletedEvent:
+                    // Ist das Overlay offen, ist es maßgeblich für das Pausenende
+                    // (siehe OnOverlayEnded); sonst (ignorierte Erinnerung) hier aufräumen.
+                    if (!_overlay.IsOverlayOpen)
+                    {
+                        _ = _pauseActions.EndBreakAsync();
+                    }
 
-                break;
-            default:
-                break;
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
     /// <summary>
     /// Zeigt die Erinnerung an (Hotkey „Pause starten" oder Nachholen nach DND).
     /// </summary>
-    public void RequestReminder() => ShowReminder();
+    public void RequestReminder()
+    {
+        lock (_gate)
+        {
+            ShowReminder();
+        }
+    }
 
     /// <summary>Hotkey „Überspringen/Snooze": startet das aktuelle Intervall neu.</summary>
     public void SkipOrSnooze()
     {
-        if (_interval is not null)
+        lock (_gate)
         {
-            _timer.Start(_interval);
+            if (_interval is not null)
+            {
+                _timer.Start(_interval);
+            }
         }
     }
 
     /// <summary>Schaltet das manuelle Nicht-stören um und aktualisiert das Tray.</summary>
     public void ToggleManualDnd()
     {
-        _manualDnd = !_manualDnd;
-        _tray.SetDndActive(_manualDnd);
+        lock (_gate)
+        {
+            _manualDnd = !_manualDnd;
+            _tray.SetDndActive(_manualDnd);
+        }
     }
 
     /// <summary>
@@ -204,8 +252,14 @@ public sealed class BreakCoordinator
     /// </summary>
     /// <param name="fullscreenDndActive">Ist durch Vollbild aktuell DND aktiv?</param>
     public void UpdateDndIndicator(bool fullscreenDndActive)
-        => _tray.SetDndActive(fullscreenDndActive || _manualDnd);
+    {
+        lock (_gate)
+        {
+            _tray.SetDndActive(fullscreenDndActive || _manualDnd);
+        }
+    }
 
+    // Erwartet den gehaltenen _gate-Lock.
     private void ShowReminder()
     {
         if (_reminder.IsReminderOpen || _manualDnd)
@@ -223,6 +277,14 @@ public sealed class BreakCoordinator
     }
 
     private void OnReminderResult(ReminderResult result)
+    {
+        lock (_gate)
+        {
+            OnReminderResultLocked(result);
+        }
+    }
+
+    private void OnReminderResultLocked(ReminderResult result)
     {
         RecordSession(result);
 
@@ -257,10 +319,13 @@ public sealed class BreakCoordinator
         // Egal ob abgelaufen oder per ESC beendet: Pause-Aktionen zurücknehmen und
         // eine frische Arbeitsphase starten.
         _ = reason;
-        _ = _pauseActions.EndBreakAsync();
-        if (_interval is not null)
+        lock (_gate)
         {
-            _timer.Start(_interval);
+            _ = _pauseActions.EndBreakAsync();
+            if (_interval is not null)
+            {
+                _timer.Start(_interval);
+            }
         }
     }
 

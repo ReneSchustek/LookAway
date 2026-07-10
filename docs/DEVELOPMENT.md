@@ -314,7 +314,7 @@ LookAway prüft optional auf neue Versionen über die GitHub-Releases-API (Stand
 - Einstellungen (Über-Tab): Aktivieren, Häufigkeit, "Jetzt prüfen" mit Statusanzeige sowie die
   Option "Automatisch aktualisieren".
 - **Automatische Installation:** Findet die Prüfung ein Update, kann LookAway es selbst einspielen.
-  `UpdateInstallerService` (Core) lädt die Portable-ZIP aus den Release-Assets (nur HTTPS auf
+  `UpdateInstallerService` (Data) lädt die Portable-ZIP aus den Release-Assets (nur HTTPS auf
   GitHub-Hosts, mit Größen-/Zip-Bomben-Limit), entpackt sie in `%LOCALAPPDATA%\LookAway\updates\<Version>`
   und tauscht beim nächsten Start über einen kurzlebigen Helfer-Prozess (`--apply-update`, in
   `UpdateProcess`/`UpdateApplyArgs`) die Programmdateien — mit Backup/Rollback, ohne `portable.flag` zu

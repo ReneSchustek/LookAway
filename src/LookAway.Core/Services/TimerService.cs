@@ -256,18 +256,37 @@ public sealed class TimerService : ITimerService, IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_disposed)
+        lock (_lock)
         {
-            return;
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            _powerWatcher.Suspending -= OnSystemSuspending;
+            _powerWatcher.Resuming -= OnSystemResuming;
+
+            // Abbrechen und Entsorgen der Loop-CTS unter demselben Lock wie
+            // EnsureLoopStarted, damit kein paralleler Start eine bereits entsorgte
+            // (oder frisch erzeugte) CTS trifft.
+            if (_loopCts is not null)
+            {
+                try
+                {
+                    _loopCts.Cancel();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Bereits entsorgt — nichts zu tun.
+                }
+
+                _loopCts.Dispose();
+                _loopCts = null;
+            }
+
+            _ = _events.Writer.TryComplete();
         }
-
-        _disposed = true;
-        _powerWatcher.Suspending -= OnSystemSuspending;
-        _powerWatcher.Resuming -= OnSystemResuming;
-
-        StopLoop();
-        _loopCts?.Dispose();
-        _ = _events.Writer.TryComplete();
     }
 
     private void EvaluatePhase()
@@ -445,6 +464,13 @@ public sealed class TimerService : ITimerService, IDisposable
 
     private void EnsureLoopStarted()
     {
+        // Nach Dispose keinen neuen Loop mehr aufsetzen (aufrufende Methoden halten
+        // bereits den Lock; Dispose entsorgt die CTS unter demselben Lock).
+        if (_disposed)
+        {
+            return;
+        }
+
         // Nur weiterlaufen lassen, wenn der Loop aktiv UND nicht bereits abgebrochen
         // ist (sonst würde ein Start nach Stop keinen neuen Loop aufsetzen).
         if (_loopTask is { IsCompleted: false } && _loopCts is { IsCancellationRequested: false })

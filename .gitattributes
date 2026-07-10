@@ -1,0 +1,20 @@
+* text=auto eol=crlf
+
+# Binärdateien — nicht normalisieren
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.wav binary
+*.ttf binary
+*.otf binary
+*.pdf binary
+*.zip binary
+*.msix binary
+*.pfx binary
+*.sig binary
+*.exe binary
+*.dll binary
+
+# Shell-Scripts bleiben LF (laufen in Git-Bash, \r im Shebang bricht sie)
+*.sh text eol=lf

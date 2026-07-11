@@ -1,7 +1,10 @@
 name: CI-Diagnose (App.Tests-Hänger)
 
-# Temporärer Workflow: klärt, warum LookAway.App.Tests auf dem Runner hängt.
-# Wird nach der Ursachenklärung wieder entfernt.
+# Temporärer Workflow: prüft zwei Kandidaten gegen den App.Tests-Hänger.
+# Ursache: LookAway.App trägt (WindowsPackageType=None) einen Modul-Initialisierer
+# des Windows App SDK, der beim Laden der Assembly eine passende Windows App Runtime
+# sucht. Der Runner hat nur 1.8, das Projekt braucht 2.2 -> Bootstrap blockiert.
+# Wird nach der Klärung wieder entfernt.
 
 on:
   workflow_dispatch:
@@ -17,58 +20,66 @@ env:
   SOLUTION_FILE: 'LookAway.slnx'
 
 jobs:
-  diagnose:
-    name: Diagnose
+  # Kandidat A: passende Windows App Runtime (2.2) auf dem Runner installieren.
+  fix-runtime-install:
+    name: A — Runtime 2.2 installieren
     runs-on: windows-latest
     timeout-minutes: 20
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-
-      - name: Setup .NET ${{ env.DOTNET_VERSION }}
-        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Ist die Windows App Runtime installiert?
+      - name: Windows App Runtime 2.2 installieren
         shell: pwsh
         run: |
-          Write-Host '--- Appx-Pakete (WindowsAppRuntime) ---'
+          $url = 'https://aka.ms/windowsappsdk/2.2/latest/windowsappruntimeinstall-x64.exe'
+          $exe = Join-Path $env:RUNNER_TEMP 'windowsappruntimeinstall-x64.exe'
+          Invoke-WebRequest -Uri $url -OutFile $exe
+          & $exe --quiet
+          Write-Host "Installer-Exitcode: $LASTEXITCODE"
           Get-AppxPackage -Name 'Microsoft.WindowsAppRuntime*' |
             Select-Object Name, Version | Format-Table | Out-String | Write-Host
-          Write-Host '--- Registrierte Runtime-Verzeichnisse ---'
-          $dirs = Get-ChildItem 'C:\Program Files\WindowsApps' -Directory -ErrorAction SilentlyContinue |
-            Where-Object Name -like '*WindowsAppRuntime*'
-          if ($dirs) { $dirs.Name | Write-Host } else { Write-Host 'KEINE gefunden' }
 
-      - name: Restore workloads
-        run: dotnet workload restore ${{ env.SOLUTION_FILE }}
+      - run: dotnet workload restore ${{ env.SOLUTION_FILE }}
+      - run: dotnet restore ${{ env.SOLUTION_FILE }}
+      - run: dotnet build ${{ env.SOLUTION_FILE }} --configuration ${{ env.CONFIGURATION }} --no-restore
 
-      - name: Restore
-        run: dotnet restore ${{ env.SOLUTION_FILE }}
-
-      - name: Build
-        run: dotnet build ${{ env.SOLUTION_FILE }} --configuration ${{ env.CONFIGURATION }} --no-restore
-
-      - name: Nur App.Tests — mit Hang-Abbruch nach 2 Minuten
-        # --blame-hang bricht den hängenden Testlauf ab und benennt den Test,
-        # der beim Abbruch lief (statt 15 Minuten ins Job-Timeout zu laufen).
+      - name: Tests (Hang-Abbruch nach 3 Minuten)
         run: >
-          dotnet test tests/LookAway.App.Tests/LookAway.App.Tests.csproj
+          dotnet test ${{ env.SOLUTION_FILE }}
           --configuration ${{ env.CONFIGURATION }}
           --no-build
-          --logger "console;verbosity=detailed"
-          --results-directory test-results
+          --logger "console;verbosity=normal"
           --blame-hang
-          --blame-hang-timeout 120s
-          --blame-hang-dump-type mini
+          --blame-hang-timeout 180s
 
-      - name: Diagnose-Artefakte sichern
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+  # Kandidat B: das Testprojekt bringt die Runtime selbst mit (wie das Release-Publish).
+  fix-selfcontained:
+    name: B — WinAppSDK self-contained im Test
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
         with:
-          name: diagnose-app-tests
-          path: test-results/**/*
-          if-no-files-found: warn
-          retention-days: 7
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - run: dotnet workload restore ${{ env.SOLUTION_FILE }}
+      - run: dotnet restore ${{ env.SOLUTION_FILE }} -p:WindowsAppSDKSelfContained=true
+      - run: >
+          dotnet build ${{ env.SOLUTION_FILE }}
+          --configuration ${{ env.CONFIGURATION }}
+          --no-restore
+          -p:WindowsAppSDKSelfContained=true
+
+      - name: Tests (Hang-Abbruch nach 3 Minuten)
+        run: >
+          dotnet test ${{ env.SOLUTION_FILE }}
+          --configuration ${{ env.CONFIGURATION }}
+          --no-build
+          --logger "console;verbosity=normal"
+          -p:WindowsAppSDKSelfContained=true
+          --blame-hang
+          --blame-hang-timeout 180s

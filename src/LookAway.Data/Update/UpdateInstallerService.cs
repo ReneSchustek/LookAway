@@ -136,6 +136,51 @@ public sealed class UpdateInstallerService : IUpdateInstaller
         }
     }
 
+    /// <summary>
+    /// Prüft, ob der Zielordner eine echte Installation ist, die ersetzt werden darf.
+    /// Der Helfer läuft aus dem Staging-Ordner und kann sein Ziel deshalb nicht aus dem
+    /// eigenen Programmpfad ableiten — er bekommt es übergeben und darf ihm nicht blind
+    /// vertrauen. Erlaubt ist nur ein vorhandener, ohne erhöhte Rechte beschreibbarer
+    /// Ordner, der bereits die Programmdatei enthält und außerhalb des Staging-Bereichs
+    /// liegt (sonst wäre die Quelle ihr eigenes Ziel).
+    /// </summary>
+    /// <param name="targetDir">Zu prüfender Zielordner (Programmverzeichnis).</param>
+    /// <returns><c>true</c>, wenn der Ordner ersetzt werden darf.</returns>
+    public bool IsTrustedTargetDirectory(string? targetDir)
+    {
+        if (string.IsNullOrWhiteSpace(targetDir))
+        {
+            return false;
+        }
+
+        try
+        {
+            string rootFull = Path.TrimEndingDirectorySeparator(Path.GetFullPath(_stagingRoot));
+            string targetFull = Path.TrimEndingDirectorySeparator(Path.GetFullPath(targetDir));
+
+            bool insideStaging = targetFull.Equals(rootFull, StringComparison.OrdinalIgnoreCase)
+                || targetFull.StartsWith(rootFull + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+
+            if (insideStaging || !File.Exists(ExecutablePathIn(targetFull)) || !IsDirectoryWritable(targetFull))
+            {
+                UpdateInstallerLog.UntrustedTarget(_logger, targetFull);
+                return false;
+            }
+
+            return true;
+        }
+        catch (IOException ex)
+        {
+            UpdateInstallerLog.ScanFailed(_logger, ex);
+            return false;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            UpdateInstallerLog.ScanFailed(_logger, ex);
+            return false;
+        }
+    }
+
     private static string DefaultStagingRoot()
         => Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -288,6 +333,16 @@ public sealed class UpdateInstallerService : IUpdateInstaller
             if (entry.FullName.EndsWith('/') || entry.FullName.EndsWith('\\'))
             {
                 _ = Directory.CreateDirectory(targetPath);
+                continue;
+            }
+
+            // Die Portable-Markierung des Pakets nie in den Staging-Ordner übernehmen:
+            // Der Helfer startet von dort und würde sich sonst für eine portable
+            // Installation halten — er läse seine Einstellungen aus dem Staging-Ordner
+            // statt aus dem Datenverzeichnis der laufenden Installation, fände dort den
+            // vermerkten Datei-Hash nicht und lehnte das eigene Update ab.
+            if (string.Equals(entry.FullName, AppPaths.PortableFlagFileName, StringComparison.OrdinalIgnoreCase))
+            {
                 continue;
             }
 
@@ -602,8 +657,11 @@ internal static partial class UpdateInstallerLog
     [LoggerMessage(EventId = 1657, Level = LogLevel.Warning, Message = "Ausstehendes Update in {Directory} abgelehnt: Datei-Hash stimmt nicht mit dem vermerkten überein.")]
     public static partial void HashMismatch(ILogger logger, string directory);
 
-    [LoggerMessage(EventId = 1660, Level = LogLevel.Error, Message = "Update-Helfer abgelehnt: Quellordner {Source} liegt außerhalb des Staging-Bereichs.")]
+    [LoggerMessage(EventId = 1661, Level = LogLevel.Error, Message = "Update-Helfer abgelehnt: Quellordner {Source} liegt außerhalb des Staging-Bereichs.")]
     public static partial void UntrustedSource(ILogger logger, string source);
+
+    [LoggerMessage(EventId = 1662, Level = LogLevel.Error, Message = "Update-Helfer abgelehnt: Zielordner {Target} ist keine beschreibbare Installation.")]
+    public static partial void UntrustedTarget(ILogger logger, string target);
 
     [LoggerMessage(EventId = 1658, Level = LogLevel.Warning, Message = "Update {Version} abgelehnt: keine losgelöste Signatur vorhanden oder ladbar.")]
     public static partial void SignatureMissing(ILogger logger, string version);

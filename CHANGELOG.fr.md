@@ -8,6 +8,22 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+## [1.2.7] – 2026-07-11
+
+### Corrigé
+
+- **La mise à jour automatique n'installait pas le paquet.** La mise à jour était vérifiée et
+  téléchargée, mais jamais appliquée — l'ancienne version restait installée. Deux causes :
+  - Le marqueur portable du paquet se retrouvait dans le dossier intermédiaire. Le processus
+    auxiliaire démarre depuis ce dossier et se croyait donc être une installation portable : il
+    cherchait ses paramètres à côté de lui au lieu du répertoire de données, ne trouvait pas
+    l'empreinte de fichier enregistrée et refusait sa propre mise à jour. Le marqueur n'est plus
+    copié dans le dossier intermédiaire.
+  - Le processus auxiliaire utilisait son propre dossier de programme (le dossier intermédiaire)
+    comme cible au lieu du dossier d'installation, se copiant ainsi sur lui-même. Le dossier
+    cible transmis est désormais utilisé et vérifié au préalable (installation existante et
+    accessible en écriture, hors du dossier intermédiaire).
+
 ## [1.2.6] – 2026-07-10
 
 ### Ajouté

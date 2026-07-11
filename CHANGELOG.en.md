@@ -8,6 +8,20 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.7] – 2026-07-11
+
+### Fixed
+
+- **Automatic update did not install the package.** The update was verified and downloaded but
+  never applied — the old version stayed installed. Two causes:
+  - The package's portable marker ended up in the staging folder. The helper process starts from
+    there and therefore considered itself a portable installation: it looked for its settings
+    next to itself instead of in the data directory, did not find the recorded file hash, and
+    rejected its own update. The marker is no longer staged.
+  - The helper used its own program folder (the staging folder) as the target instead of the
+    installation folder, copying onto itself. The target folder passed to it is now used and
+    validated beforehand (an existing, writable installation outside the staging area).
+
 ## [1.2.6] – 2026-07-10
 
 ### Added

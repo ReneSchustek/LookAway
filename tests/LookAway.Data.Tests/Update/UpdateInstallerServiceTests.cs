@@ -131,6 +131,23 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task DownloadAndStage_uebernimmt_die_Portable_Markierung_nicht()
+    {
+        // Der Helfer startet aus dem Staging-Ordner. Läge dort die Portable-Markierung,
+        // hielte er sich für eine portable Installation, läse die Einstellungen neben sich
+        // statt aus dem Datenverzeichnis der laufenden Installation — und lehnte sein
+        // eigenes Update ab, weil er den vermerkten Datei-Hash dort nicht findet.
+        string stagingRoot = Path.Combine(_root, "staging");
+        UpdateInstallerService service = CreateSigningService(stagingRoot, BuildPackageZip());
+
+        StagedUpdate? staged = await service.DownloadAndStageAsync(SignedInfo());
+
+        Assert.NotNull(staged);
+        Assert.False(File.Exists(Path.Combine(staged!.Directory, "portable.flag")));
+        Assert.True(File.Exists(Path.Combine(staged.Directory, "LookAway.exe")));
+    }
+
+    [Fact]
     public async Task DownloadAndStage_ohne_Paket_URL_liefert_null()
     {
         UpdateInstallerService service = CreateService(Path.Combine(_root, "staging"), BuildPackageZip());
@@ -362,6 +379,60 @@ public sealed class UpdateInstallerServiceTests : IDisposable
         // "staging\..\" führt aus dem Staging-Wurzelordner heraus und wird abgewiesen.
         string traversal = Path.Combine(stagingRoot, "..");
         Assert.False(service.IsTrustedStagingDirectory(traversal, sha));
+    }
+
+    [Fact]
+    public void IsTrustedTargetDirectory_akzeptiert_bestehende_Installation()
+    {
+        string stagingRoot = Path.Combine(_root, "staging");
+        _ = Directory.CreateDirectory(stagingRoot);
+        string install = Path.Combine(_root, "Programs", "LookAway");
+        _ = Directory.CreateDirectory(install);
+        File.WriteAllText(Path.Combine(install, "LookAway.exe"), "alte-exe");
+
+        UpdateInstallerService service = CreateService(stagingRoot);
+
+        Assert.True(service.IsTrustedTargetDirectory(install));
+    }
+
+    [Fact]
+    public void IsTrustedTargetDirectory_lehnt_den_Staging_Ordner_selbst_ab()
+    {
+        // Der Helfer läuft aus dem Staging-Ordner. Nähme er sein eigenes Programm-
+        // verzeichnis als Ziel, kopierte er auf sich selbst und die Installation bliebe
+        // unverändert — genau so blieb das Update wirkungslos.
+        string stagingRoot = Path.Combine(_root, "staging");
+        string staged = Path.Combine(stagingRoot, "1.5.0");
+        _ = Directory.CreateDirectory(staged);
+        File.WriteAllText(Path.Combine(staged, "LookAway.exe"), "neue-exe");
+
+        UpdateInstallerService service = CreateService(stagingRoot);
+
+        Assert.False(service.IsTrustedTargetDirectory(staged));
+        Assert.False(service.IsTrustedTargetDirectory(stagingRoot));
+    }
+
+    [Fact]
+    public void IsTrustedTargetDirectory_lehnt_Ordner_ohne_Programmdatei_ab()
+    {
+        string stagingRoot = Path.Combine(_root, "staging");
+        _ = Directory.CreateDirectory(stagingRoot);
+        string fremd = Path.Combine(_root, "beliebiger-ordner");
+        _ = Directory.CreateDirectory(fremd);
+
+        UpdateInstallerService service = CreateService(stagingRoot);
+
+        Assert.False(service.IsTrustedTargetDirectory(fremd));
+    }
+
+    [Fact]
+    public void IsTrustedTargetDirectory_lehnt_fehlenden_Pfad_ab()
+    {
+        UpdateInstallerService service = CreateService(Path.Combine(_root, "staging"));
+
+        Assert.False(service.IsTrustedTargetDirectory(null));
+        Assert.False(service.IsTrustedTargetDirectory("  "));
+        Assert.False(service.IsTrustedTargetDirectory(Path.Combine(_root, "gibt-es-nicht")));
     }
 
     private static void StageVersion(string stagingRoot, string version)

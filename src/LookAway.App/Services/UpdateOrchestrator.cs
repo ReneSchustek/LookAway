@@ -251,9 +251,11 @@ internal sealed class UpdateOrchestrator
     {
         _ = Task.Run(async () =>
         {
-            // Das Ziel ist immer das eigene Programmverzeichnis; der Helfer akzeptiert
-            // keinen frei übergebenen Zielpfad.
-            string target = AppContext.BaseDirectory;
+            // Das Ziel kommt aus den Argumenten: Der Helfer läuft aus dem Staging-Ordner,
+            // sein eigenes Programmverzeichnis ist also nicht die Installation. Vertraut
+            // wird dem Pfad trotzdem nicht — er muss eine vorhandene, beschreibbare
+            // Installation außerhalb des Staging-Bereichs sein.
+            string target = apply.Target;
             try
             {
                 // Die Signaturprüfung des Hauptprozesses hier erneut durchsetzen: Der
@@ -261,7 +263,8 @@ internal sealed class UpdateOrchestrator
                 // Quellordner im Staging-Bereich liegt und die Programmdatei den zuvor
                 // signaturgeprüft vermerkten Hash trägt.
                 Settings settings = await _settingsRepository.LoadAsync().ConfigureAwait(false);
-                if (!_installer.IsTrustedStagingDirectory(apply.Source, settings.PendingUpdateSha256))
+                if (!_installer.IsTrustedStagingDirectory(apply.Source, settings.PendingUpdateSha256)
+                    || !_installer.IsTrustedTargetDirectory(target))
                 {
                     UpdateOrchestratorLog.ApplyRejected(_logger, apply.Source);
                     return;

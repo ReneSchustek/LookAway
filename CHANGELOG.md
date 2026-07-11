@@ -8,6 +8,22 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+## [1.2.7] – 2026-07-11
+
+### Behoben
+
+- **Automatische Aktualisierung installierte das Paket nicht.** Das Update wurde geprüft und
+  heruntergeladen, aber nie eingespielt — die alte Version blieb installiert. Zwei Ursachen:
+  - Die Portable-Markierung aus dem Paket landete im Zwischenspeicher. Der Hilfsprozess startet
+    von dort und hielt sich deshalb für eine portable Installation: Er suchte seine
+    Einstellungen neben sich statt im Datenverzeichnis, fand den vermerkten Datei-Hash nicht
+    und lehnte sein eigenes Update ab. Die Markierung wird jetzt nicht mehr mit
+    zwischengespeichert.
+  - Der Hilfsprozess verwendete seinen eigenen Programmordner (den Zwischenspeicher) als Ziel
+    statt des Installationsordners und kopierte damit auf sich selbst. Der übergebene
+    Zielordner wird jetzt verwendet und vorher geprüft (vorhandene, beschreibbare Installation
+    außerhalb des Zwischenspeichers).
+
 ## [1.2.6] – 2026-07-10
 
 ### Hinzugefügt

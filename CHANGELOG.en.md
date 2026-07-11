@@ -8,6 +8,12 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Record of an applied update was left behind:** After an update was applied, the settings kept
+  its version and checksum. Harmless, but every start went looking for a package that had long
+  been cleaned up. The record is now discarded as soon as no applicable package belongs to it.
+
 ## [1.2.7] – 2026-07-11
 
 ### Fixed

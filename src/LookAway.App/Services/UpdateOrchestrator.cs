@@ -201,6 +201,12 @@ internal sealed class UpdateOrchestrator
             if (staged is null)
             {
                 _installer.CleanObsolete(_appVersion);
+
+                // Zu diesem Vermerk gehört kein einspielbarer Staging-Ordner (mehr): Er ist
+                // entweder erledigt — der häufigste Fall, denn nach erfolgreichem Einspielen
+                // läuft genau diese Version — oder unbrauchbar. Stehen bleiben darf er nicht,
+                // sonst wird bei jedem Start ein längst eingespieltes Update erneut gesucht.
+                await ClearPendingUpdateAsync(settings).ConfigureAwait(true);
                 return false;
             }
 
@@ -294,6 +300,37 @@ internal sealed class UpdateOrchestrator
                 Environment.Exit(0);
             }
         });
+    }
+
+    /// <summary>
+    /// Löscht den Vermerk eines ausstehenden Updates. Schreibt nur, wenn tatsächlich
+    /// einer gesetzt ist, damit ein regulärer Start die Einstellungen nicht anfasst.
+    /// </summary>
+    private async Task ClearPendingUpdateAsync(Settings settings)
+    {
+        if (string.IsNullOrWhiteSpace(settings.PendingUpdateVersion)
+            && string.IsNullOrWhiteSpace(settings.PendingUpdateSha256))
+        {
+            return;
+        }
+
+        try
+        {
+            Settings current = await _settingsRepository.LoadAsync().ConfigureAwait(true);
+            current.PendingUpdateVersion = null;
+            current.PendingUpdateSha256 = null;
+            await _settingsRepository.SaveAsync(current).ConfigureAwait(true);
+        }
+        // Ein misslungenes Aufräumen darf den Start nie verhindern — der Vermerk bleibt
+        // dann eben stehen und wird beim nächsten Start erneut verworfen.
+        catch (UnauthorizedAccessException ex)
+        {
+            UpdateOrchestratorLog.CheckPersistFailed(_logger, ex);
+        }
+        catch (IOException ex)
+        {
+            UpdateOrchestratorLog.CheckPersistFailed(_logger, ex);
+        }
     }
 
     private async Task PersistLastCheckAsync(DateTimeOffset now)

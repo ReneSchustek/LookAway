@@ -8,6 +8,13 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+### Behoben
+
+- **Vermerk eines eingespielten Updates blieb stehen:** Nach dem Einspielen behielten die
+  Einstellungen Version und Prüfsumme des Updates. Folgenlos, aber bei jedem Start wurde
+  erneut nach einem längst abgeräumten Paket gesucht. Der Vermerk wird jetzt verworfen,
+  sobald kein einspielbares Paket mehr dazu gehört.
+
 ## [1.2.7] – 2026-07-11
 
 ### Behoben

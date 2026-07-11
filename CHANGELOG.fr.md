@@ -8,6 +8,13 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+### Corrigé
+
+- **L'enregistrement d'une mise à jour appliquée subsistait :** après l'application d'une mise à
+  jour, les paramètres conservaient sa version et sa somme de contrôle. Sans conséquence, mais
+  chaque démarrage recherchait un paquet supprimé depuis longtemps. L'enregistrement est
+  désormais abandonné dès qu'aucun paquet applicable ne lui correspond.
+
 ## [1.2.7] – 2026-07-11
 
 ### Corrigé

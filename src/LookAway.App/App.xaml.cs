@@ -91,6 +91,16 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
         try
         {
             InitializeComponent();
+
+            // Update-Helfer: Er startet aus dem Staging-Ordner, bedient aber die Installation
+            // im Zielordner. Sein Datenort muss deshalb der der Installation sein — sonst läse
+            // er Einstellungen und Logs neben sich und fände den vermerkten Datei-Hash nicht,
+            // mit dem er die Quelle prüft. Muss vor dem Aufbau der Dienste geschehen.
+            if (UpdateApplyArgs.TryParse(Environment.GetCommandLineArgs(), out UpdateApplyArgs helperArgs))
+            {
+                AppDataLocation.UseBaseDirectory(helperArgs.Target);
+            }
+
             Services = ServiceRegistration.Build(
                 AppDataLocation.GetDataDirectory(),
                 ParseVersion(GetVersion()),

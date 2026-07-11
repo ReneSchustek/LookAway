@@ -13,16 +13,18 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 ### Corrigé
 
 - **La mise à jour automatique n'installait pas le paquet.** La mise à jour était vérifiée et
-  téléchargée, mais jamais appliquée — l'ancienne version restait installée. Deux causes :
-  - Le marqueur portable du paquet se retrouvait dans le dossier intermédiaire. Le processus
-    auxiliaire démarre depuis ce dossier et se croyait donc être une installation portable : il
-    cherchait ses paramètres à côté de lui au lieu du répertoire de données, ne trouvait pas
-    l'empreinte de fichier enregistrée et refusait sa propre mise à jour. Le marqueur n'est plus
-    copié dans le dossier intermédiaire.
-  - Le processus auxiliaire utilisait son propre dossier de programme (le dossier intermédiaire)
-    comme cible au lieu du dossier d'installation, se copiant ainsi sur lui-même. Le dossier
-    cible transmis est désormais utilisé et vérifié au préalable (installation existante et
-    accessible en écriture, hors du dossier intermédiaire).
+  téléchargée, mais jamais appliquée — l'ancienne version restait installée. Le processus
+  auxiliaire qui remplace les fichiers démarre depuis le dossier intermédiaire et en déduisait
+  deux choses à tort :
+  - **Son répertoire de données :** le paquet contenant un marqueur portable, il se croyait être
+    une installation portable et cherchait ses paramètres à côté de lui. Il n'y trouvait pas
+    l'empreinte de fichier enregistrée servant à vérifier le paquet — et refusait sa propre mise
+    à jour. Il utilise désormais le répertoire de données de l'installation qu'il dessert. De
+    plus, le marqueur portable n'est plus copié dans le dossier intermédiaire.
+  - **Sa cible :** il utilisait son propre dossier de programme (le dossier intermédiaire) comme
+    cible, se copiant ainsi sur lui-même. Il utilise désormais le dossier d'installation transmis
+    et le vérifie au préalable (installation existante et accessible en écriture, hors du dossier
+    intermédiaire).
 
 ## [1.2.6] – 2026-07-10
 

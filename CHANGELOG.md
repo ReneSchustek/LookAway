@@ -13,16 +13,18 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 ### Behoben
 
 - **Automatische Aktualisierung installierte das Paket nicht.** Das Update wurde geprüft und
-  heruntergeladen, aber nie eingespielt — die alte Version blieb installiert. Zwei Ursachen:
-  - Die Portable-Markierung aus dem Paket landete im Zwischenspeicher. Der Hilfsprozess startet
-    von dort und hielt sich deshalb für eine portable Installation: Er suchte seine
-    Einstellungen neben sich statt im Datenverzeichnis, fand den vermerkten Datei-Hash nicht
-    und lehnte sein eigenes Update ab. Die Markierung wird jetzt nicht mehr mit
-    zwischengespeichert.
-  - Der Hilfsprozess verwendete seinen eigenen Programmordner (den Zwischenspeicher) als Ziel
-    statt des Installationsordners und kopierte damit auf sich selbst. Der übergebene
-    Zielordner wird jetzt verwendet und vorher geprüft (vorhandene, beschreibbare Installation
-    außerhalb des Zwischenspeichers).
+  heruntergeladen, aber nie eingespielt — die alte Version blieb installiert. Der Hilfsprozess,
+  der die Programmdateien austauscht, startet aus dem Zwischenspeicher und leitete daraus zwei
+  Dinge falsch ab:
+  - **Seinen Datenort:** Weil das Paket eine Portable-Markierung enthält, hielt er sich für eine
+    portable Installation und suchte die Einstellungen neben sich. Dort fand er den vermerkten
+    Datei-Hash nicht, mit dem er das Paket gegenprüft — und lehnte sein eigenes Update ab. Er
+    verwendet jetzt den Datenort der Installation, die er bedient. Zusätzlich wird die
+    Portable-Markierung gar nicht mehr mit zwischengespeichert.
+  - **Sein Ziel:** Er nahm seinen eigenen Programmordner (also den Zwischenspeicher) als Ziel
+    und kopierte damit auf sich selbst. Er verwendet jetzt den übergebenen Installationsordner
+    und prüft ihn vorher (vorhandene, beschreibbare Installation außerhalb des
+    Zwischenspeichers).
 
 ## [1.2.6] – 2026-07-10
 

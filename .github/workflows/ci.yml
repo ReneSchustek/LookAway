@@ -65,6 +65,8 @@ jobs:
       - name: Test
         # 'trx'-Logger ohne fixen Dateinamen → dotnet legt pro Test-Projekt
         # eine eigene Datei an (sonst überschreibt das zweite Projekt das erste).
+        # --blame-hang bricht einen blockierten Test-Host nach 5 Minuten ab und nennt
+        # den laufenden Test. Ohne das läuft ein Hänger stumm ins Job-Timeout.
         run: >
           dotnet test ${{ env.SOLUTION_FILE }}
           --configuration ${{ env.CONFIGURATION }}
@@ -73,6 +75,8 @@ jobs:
           --logger "console;verbosity=normal"
           --results-directory test-results
           --collect "XPlat Code Coverage"
+          --blame-hang
+          --blame-hang-timeout 5m
 
       - name: Security-Scan (review.ps1)
         # Lokales Pattern-Audit aus tools/review.ps1 — ergänzt die Compiler-Analyzer

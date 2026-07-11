@@ -18,6 +18,12 @@
          die portable Variante laufen ohne Deploy. Für ein MSIX-Paket explizit
          mit -p:WindowsPackageType=MSIX bauen. -->
     <WindowsPackageType Condition="'$(WindowsPackageType)' == ''">None</WindowsPackageType>
+    <!-- Das Windows App SDK wird immer mitgeliefert, nicht systemweit erwartet — so wie
+         die portable Variante ohnehin publiziert wird. Ohne das baut das SDK in den
+         unpackaged-Build einen Modul-Initialisierer ein, der beim Laden der Assembly
+         eine passende Runtime sucht und ohne Treffer einen modalen Dialog öffnet. Im
+         Test-Host (kein Desktop) blockiert dieser Dialog den Prozess endlos. -->
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <!-- MSIX-Tooling (und damit der Deploy-Zwang in Visual Studio, DEP1560) nur im
          Paket-Modus aktivieren. Muss nach WindowsPackageType ausgewertet werden. -->
     <EnableMsixTooling Condition="'$(WindowsPackageType)' != 'None'">true</EnableMsixTooling>

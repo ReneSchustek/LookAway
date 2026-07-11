@@ -1,0 +1,74 @@
+name: CI-Diagnose (App.Tests-Hänger)
+
+# Temporärer Workflow: klärt, warum LookAway.App.Tests auf dem Runner hängt.
+# Wird nach der Ursachenklärung wieder entfernt.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: 'true'
+  DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+  DOTNET_VERSION: '10.0.x'
+  CONFIGURATION: 'Release'
+  SOLUTION_FILE: 'LookAway.slnx'
+
+jobs:
+  diagnose:
+    name: Diagnose
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Ist die Windows App Runtime installiert?
+        shell: pwsh
+        run: |
+          Write-Host '--- Appx-Pakete (WindowsAppRuntime) ---'
+          Get-AppxPackage -Name 'Microsoft.WindowsAppRuntime*' |
+            Select-Object Name, Version | Format-Table | Out-String | Write-Host
+          Write-Host '--- Registrierte Runtime-Verzeichnisse ---'
+          $dirs = Get-ChildItem 'C:\Program Files\WindowsApps' -Directory -ErrorAction SilentlyContinue |
+            Where-Object Name -like '*WindowsAppRuntime*'
+          if ($dirs) { $dirs.Name | Write-Host } else { Write-Host 'KEINE gefunden' }
+
+      - name: Restore workloads
+        run: dotnet workload restore ${{ env.SOLUTION_FILE }}
+
+      - name: Restore
+        run: dotnet restore ${{ env.SOLUTION_FILE }}
+
+      - name: Build
+        run: dotnet build ${{ env.SOLUTION_FILE }} --configuration ${{ env.CONFIGURATION }} --no-restore
+
+      - name: Nur App.Tests — mit Hang-Abbruch nach 2 Minuten
+        # --blame-hang bricht den hängenden Testlauf ab und benennt den Test,
+        # der beim Abbruch lief (statt 15 Minuten ins Job-Timeout zu laufen).
+        run: >
+          dotnet test tests/LookAway.App.Tests/LookAway.App.Tests.csproj
+          --configuration ${{ env.CONFIGURATION }}
+          --no-build
+          --logger "console;verbosity=detailed"
+          --results-directory test-results
+          --blame-hang
+          --blame-hang-timeout 120s
+          --blame-hang-dump-type mini
+
+      - name: Diagnose-Artefakte sichern
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: diagnose-app-tests
+          path: test-results/**/*
+          if-no-files-found: warn
+          retention-days: 7

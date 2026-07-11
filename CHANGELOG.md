@@ -8,6 +8,8 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+## [1.2.8] – 2026-07-11
+
 ### Behoben
 
 - **Vermerk eines eingespielten Updates blieb stehen:** Nach dem Einspielen behielten die

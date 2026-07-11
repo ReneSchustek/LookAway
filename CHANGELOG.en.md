@@ -8,6 +8,8 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.8] – 2026-07-11
+
 ### Fixed
 
 - **Record of an applied update was left behind:** After an update was applied, the settings kept

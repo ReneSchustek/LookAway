@@ -8,6 +8,8 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+## [1.2.8] – 2026-07-11
+
 ### Corrigé
 
 - **L'enregistrement d'une mise à jour appliquée subsistait :** après l'application d'une mise à

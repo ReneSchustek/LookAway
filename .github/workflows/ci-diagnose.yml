@@ -1,9 +1,7 @@
 name: CI-Diagnose (App.Tests-Hänger)
 
-# Temporärer Workflow: prüft zwei Kandidaten gegen den App.Tests-Hänger.
-# Ursache: LookAway.App trägt (WindowsPackageType=None) einen Modul-Initialisierer
-# des Windows App SDK, der beim Laden der Assembly eine passende Windows App Runtime
-# sucht. Der Runner hat nur 1.8, das Projekt braucht 2.2 -> Bootstrap blockiert.
+# Temporärer Workflow: sichert einen Hang-Dump des blockierten Test-Hosts, damit der
+# Stack zeigt, worauf der Modul-Initialisierer von LookAway.App wartet.
 # Wird nach der Klärung wieder entfernt.
 
 on:
@@ -20,9 +18,8 @@ env:
   SOLUTION_FILE: 'LookAway.slnx'
 
 jobs:
-  # Kandidat A: passende Windows App Runtime (2.2) auf dem Runner installieren.
-  fix-runtime-install:
-    name: A — Runtime 2.2 installieren
+  hangdump:
+    name: Hang-Dump sichern
     runs-on: windows-latest
     timeout-minutes: 20
     steps:
@@ -30,56 +27,30 @@ jobs:
       - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Windows App Runtime 2.2 installieren
-        shell: pwsh
-        run: |
-          $url = 'https://aka.ms/windowsappsdk/2.2/latest/windowsappruntimeinstall-x64.exe'
-          $exe = Join-Path $env:RUNNER_TEMP 'windowsappruntimeinstall-x64.exe'
-          Invoke-WebRequest -Uri $url -OutFile $exe
-          & $exe --quiet
-          Write-Host "Installer-Exitcode: $LASTEXITCODE"
-          Get-AppxPackage -Name 'Microsoft.WindowsAppRuntime*' |
-            Select-Object Name, Version | Format-Table | Out-String | Write-Host
 
       - run: dotnet workload restore ${{ env.SOLUTION_FILE }}
       - run: dotnet restore ${{ env.SOLUTION_FILE }}
       - run: dotnet build ${{ env.SOLUTION_FILE }} --configuration ${{ env.CONFIGURATION }} --no-restore
 
-      - name: Tests (Hang-Abbruch nach 3 Minuten)
+      # Unveränderte Runner-Umgebung (kein Runtime-Install) — das ist der echte CI-Fall.
+      - name: Nur App.Tests, Hang-Dump nach 2 Minuten
+        # -p:Platform=x64 muss mit dem Solution-Build übereinstimmen, sonst sucht
+        # --no-build die Assembly unter bin/ statt bin/x64/ und findet sie nicht.
         run: >
-          dotnet test ${{ env.SOLUTION_FILE }}
+          dotnet test tests/LookAway.App.Tests/LookAway.App.Tests.csproj
           --configuration ${{ env.CONFIGURATION }}
           --no-build
+          -p:Platform=x64
           --logger "console;verbosity=normal"
           --blame-hang
-          --blame-hang-timeout 180s
+          --blame-hang-timeout 120s
+          --blame-hang-dump-type full
 
-  # Kandidat B: das Testprojekt bringt die Runtime selbst mit (wie das Release-Publish).
-  fix-selfcontained:
-    name: B — WinAppSDK self-contained im Test
-    runs-on: windows-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
-      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+      - name: Dump sichern
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - run: dotnet workload restore ${{ env.SOLUTION_FILE }}
-      - run: dotnet restore ${{ env.SOLUTION_FILE }} -p:WindowsAppSDKSelfContained=true
-      - run: >
-          dotnet build ${{ env.SOLUTION_FILE }}
-          --configuration ${{ env.CONFIGURATION }}
-          --no-restore
-          -p:WindowsAppSDKSelfContained=true
-
-      - name: Tests (Hang-Abbruch nach 3 Minuten)
-        run: >
-          dotnet test ${{ env.SOLUTION_FILE }}
-          --configuration ${{ env.CONFIGURATION }}
-          --no-build
-          --logger "console;verbosity=normal"
-          -p:WindowsAppSDKSelfContained=true
-          --blame-hang
-          --blame-hang-timeout 180s
+          name: hangdump
+          path: tests/LookAway.App.Tests/TestResults/**/*
+          if-no-files-found: warn
+          retention-days: 7

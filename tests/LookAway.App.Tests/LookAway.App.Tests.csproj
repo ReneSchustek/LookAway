@@ -8,7 +8,10 @@
     <IsPackable>false</IsPackable>
     <!-- Kein WinUI-Host: getestet werden die UI-freien ViewModels der App-Schicht. -->
     <UseWinUI>false</UseWinUI>
-    <!-- LookAway.App wird als x64 gebaut; das Testprojekt muss dieselbe Architektur führen. -->
+    <!-- LookAway.App wird als x64 gebaut; das Testprojekt muss dieselbe Architektur führen.
+         Platforms deklariert x64 auch gegenüber der Solution — ohne das zeigt deren
+         Plattform-Zuordnung auf eine Plattform, die das Projekt nicht kennt. -->
+    <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   </PropertyGroup>

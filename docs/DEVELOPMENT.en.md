@@ -331,7 +331,7 @@ maintained centrally in `Directory.Build.props` (`<Version>`); the CI can overri
 ### Portable
 
 ```powershell
-./tools/publish.ps1 -Version 1.0.0
+./tools/publish-portable.ps1 -Version 1.0.0
 ```
 
 The script runs a self-contained `dotnet publish` (win-x64), places the marker `portable.flag` next to
@@ -353,7 +353,7 @@ attaches them to the GitHub release (`.github/workflows/ci.yml`, job `release`):
 
 | Artifact | Built by | Signature |
 |----------|----------|-----------|
-| `LookAway-Portable-v<version>.zip` | `tools/publish.ps1` | `.zip.sig`, if the secret `LOOKAWAY_SIGNING_KEY` is present |
+| `LookAway-Portable-v<version>.zip` | `tools/publish-portable.ps1` | `.zip.sig`, if the secret `LOOKAWAY_SIGNING_KEY` is present |
 | `LookAway-Setup-v<version>.exe` | `tools/publish-setup.ps1` (Inno Setup from the runner) | none — SHA-256 in the release text |
 
 The Setup.exe deliberately gets **no** `.sig`: the updater picks the first `.sig` of a release

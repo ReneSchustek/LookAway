@@ -84,8 +84,11 @@ The ready-to-run application is published in two flavours on the
 Both artefacts can also be produced locally, plus an **MSIX package** that is not published:
 
 ```powershell
+# Program folder AND Setup.exe for handing on (requires Inno Setup):
+tools\publish.ps1
+
 # Portable ZIP:
-tools\publish.ps1 -Version <version>
+tools\publish-portable.ps1 -Version <version>
 
 # Setup.exe (requires Inno Setup):
 tools\publish-setup.ps1 -Version <version>

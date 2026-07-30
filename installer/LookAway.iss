@@ -14,7 +14,12 @@
 #define MyAppPublisher "Rene Schustek"
 #define MyAppURL "https://github.com/ReneSchustek/LookAway"
 #define MyAppExeName "LookAway.exe"
-#define PublishDir "..\dist\setup-publish"
+; Ueberschreibbar (/DPublishDir=...), damit die Auslieferung aus einem eigenen
+; Zwischenordner bauen kann. Ohne die Guard-Klammer waere der Pfad fest verdrahtet
+; und ein zweiter Aufrufer muesste die Datei aendern.
+#ifndef PublishDir
+  #define PublishDir "..\dist\setup-publish"
+#endif
 
 [Setup]
 ; Stabile AppId (nicht ändern — identifiziert Installation für Upgrade/Deinstallation).

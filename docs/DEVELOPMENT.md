@@ -360,7 +360,7 @@ zentral in `Directory.Build.props` (`<Version>`) gepflegt; die CI kann sie beim 
 ### Portable
 
 ```powershell
-./tools/publish.ps1 -Version 1.0.0
+./tools/publish-portable.ps1 -Version 1.0.0
 ```
 
 Das Skript führt ein Self-Contained-`dotnet publish` (win-x64) aus, legt die Markierung
@@ -383,7 +383,7 @@ hängt sie an das GitHub-Release (`.github/workflows/ci.yml`, Job `release`):
 
 | Artefakt | Erzeugt von | Signatur |
 |----------|-------------|----------|
-| `LookAway-Portable-v<Version>.zip` | `tools/publish.ps1` | `.zip.sig`, sofern das Secret `LOOKAWAY_SIGNING_KEY` hinterlegt ist |
+| `LookAway-Portable-v<Version>.zip` | `tools/publish-portable.ps1` | `.zip.sig`, sofern das Secret `LOOKAWAY_SIGNING_KEY` hinterlegt ist |
 | `LookAway-Setup-v<Version>.exe` | `tools/publish-setup.ps1` (Inno Setup vom Runner) | keine — SHA-256 im Release-Text |
 
 Die Setup.exe bekommt bewusst **keine** `.sig`: Der Updater greift sich die erste `.sig` des Releases

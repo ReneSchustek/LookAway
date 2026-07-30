@@ -88,8 +88,11 @@ L'application prête à l'emploi est publiée en deux variantes sur la
 Les deux artefacts se génèrent aussi localement, ainsi qu'un **paquet MSIX** qui n'est pas publié :
 
 ```powershell
+# Dossier du programme ET Setup.exe pour la distribution (nécessite Inno Setup) :
+tools\publish.ps1
+
 # ZIP portable :
-tools\publish.ps1 -Version <version>
+tools\publish-portable.ps1 -Version <version>
 
 # Setup.exe (nécessite Inno Setup) :
 tools\publish-setup.ps1 -Version <version>

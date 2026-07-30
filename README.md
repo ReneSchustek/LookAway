@@ -86,10 +86,13 @@ als **portables ZIP**.
 Beide Artefakte entstehen auch lokal, dazu ein **MSIX-Paket**, das nicht veröffentlicht wird:
 
 ```powershell
-# Portable ZIP:
-tools\publish.ps1 -Version <Version>
+# Programmordner UND Setup.exe zur Weitergabe (benötigt Inno Setup):
+tools\publish.ps1
 
-# Setup.exe (benötigt Inno Setup):
+# Portable ZIP:
+tools\publish-portable.ps1 -Version <Version>
+
+# nur die Setup.exe nach dist\ (benötigt Inno Setup):
 tools\publish-setup.ps1 -Version <Version>
 
 # MSIX-Paket:

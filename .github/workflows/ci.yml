@@ -140,7 +140,7 @@ jobs:
 
       - name: Portable-Artefakt erstellen
         shell: pwsh
-        run: ./tools/publish.ps1 -Version ${{ steps.version.outputs.value }}
+        run: ./tools/publish-portable.ps1 -Version ${{ steps.version.outputs.value }}
 
       # Der Installer gehört an das Release, nicht nur in die Anleitung: Wer LookAway
       # nicht portable betreibt, soll ihn nicht selbst kompilieren müssen. Inno Setup

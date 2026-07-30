@@ -1,57 +1,102 @@
 <#
 .SYNOPSIS
-    Erzeugt die Verteil-Artefakte von LookAway: ein Self-Contained-
-    Publish und eine portable ZIP-Variante.
+    Baut die auslieferbare Fassung: den direkt startbaren Programmordner UND die
+    Setup.exe zur Weitergabe.
 
 .DESCRIPTION
-    Führt 'dotnet publish' für LookAway.App (Self-Contained, win-x64) aus,
-    legt die Portable-Markierung 'portable.flag' an und packt das Ergebnis als
-    'LookAway-Portable-v<Version>.zip' nach dist/.
+    Ergebnis unter -OutputDir (Standard: F:\Entwicklung\publish\LookAway):
 
-    Das MSIX-Paket wird nicht hier erzeugt: Es entsteht über die
-    Windows-Packaging-Tools (Visual Studio: "Paket erstellen" oder
-    'msbuild /p:WindowsPackageType=MSIX /p:GenerateAppxPackageOnBuild=true').
-    Ein signiertes MSIX benötigt ein Code-Signing-Zertifikat (Self-Signed für
-    Tests genügt).
+      * alle Programmdateien – ein Doppelklick auf LookAway.exe genügt, ohne
+        Installation und ohne vorinstalliertes .NET oder Windows App SDK
+        (self-contained),
+      * LookAway-Setup-v<Version>.exe – die Installation zum Weitergeben.
+
+    Der Installer wird bewusst aus einem getrennten Zwischenordner gebaut
+    (dist\setup-publish): Läge seine Quelle im Ausgabeordner, packte ein zweiter
+    Lauf die Setup.exe des ersten mit ein.
+
+    Abgrenzung zu den beiden anderen Skripten:
+      * publish-portable.ps1 – die portable ZIP für das GitHub-Release (CI),
+      * publish-setup.ps1    – nur die Setup.exe nach dist\ (CI).
+    Dieses Skript ist der Weg für die Weitergabe von Hand.
 
 .PARAMETER Version
-    Versionsnummer der Artefakte (Default: 1.0.0).
+    Versionsnummer. Standard: der Wert aus der Datei VERSION.
+
+.PARAMETER OutputDir
+    Zielordner der Auslieferung.
 
 .PARAMETER Runtime
-    Ziel-RID (Default: win-x64).
+    Ziel-Architektur (Standard: win-x64).
+
+.EXAMPLE
+    ./tools/publish.ps1
 #>
+[CmdletBinding()]
 param(
-    [string]$Version = "1.0.0",
-    [string]$Runtime = "win-x64"
+    [string] $Version,
+    [string] $OutputDir = 'F:\Entwicklung\publish\LookAway',
+    [string] $Runtime = 'win-x64'
 )
 
-$ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
 
 $root = Split-Path -Parent $PSScriptRoot
-$appProject = Join-Path $root "src/LookAway.App/LookAway.App.csproj"
-$distDir = Join-Path $root "dist"
-$publishDir = Join-Path $distDir "publish-$Runtime"
+if (-not $Version) {
+    $Version = (Get-Content -LiteralPath (Join-Path $root 'VERSION') -Raw).Trim()
+}
 
-New-Item -ItemType Directory -Force $distDir | Out-Null
-if (Test-Path $publishDir) { Remove-Item -Recurse -Force $publishDir }
+$platform = switch ($Runtime) {
+    'win-x64' { 'x64' }
+    'win-x86' { 'x86' }
+    'win-arm64' { 'ARM64' }
+    default { throw "Unbekannte Architektur: $Runtime" }
+}
 
-Write-Host "Publish (Self-Contained, $Runtime) ..." -ForegroundColor Cyan
-& dotnet publish $appProject `
+$project = Join-Path $root 'src\LookAway.App\LookAway.App.csproj'
+$staging = Join-Path $root 'dist\setup-publish'
+$script = Join-Path $root 'installer\LookAway.iss'
+
+$iscc = @(
+    "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
+    "$env:ProgramFiles\Inno Setup 6\ISCC.exe"
+) | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+if (-not $iscc) {
+    throw 'Inno Setup 6 (ISCC.exe) nicht gefunden. Installation: winget install JRSoftware.InnoSetup'
+}
+
+Write-Host "LookAway $Version ($Runtime) veroeffentlichen ..." -ForegroundColor Cyan
+if (Test-Path -LiteralPath $staging) { Remove-Item -LiteralPath $staging -Recurse -Force }
+
+& dotnet publish $project `
     -c Release `
     -r $Runtime `
-    --self-contained `
-    -p:Platform=x64 `
+    -p:Platform=$platform `
     -p:Version=$Version `
     -p:WindowsAppSDKSelfContained=true `
-    -o $publishDir
+    --self-contained true `
+    -o $staging
+if ($LASTEXITCODE -ne 0) { throw "dotnet publish fehlgeschlagen ($LASTEXITCODE)." }
 
-# Portable-Markierung: lässt die App ihre Daten neben der EXE ablegen.
-New-Item -ItemType File -Force (Join-Path $publishDir "portable.flag") | Out-Null
+Write-Host 'Programmdateien in den Ausgabeordner kopieren ...' -ForegroundColor Cyan
+if (Test-Path -LiteralPath $OutputDir) { Remove-Item -LiteralPath $OutputDir -Recurse -Force }
+New-Item -ItemType Directory -Force -Path $OutputDir | Out-Null
+Copy-Item -Path (Join-Path $staging '*') -Destination $OutputDir -Recurse -Force
 
-$zipPath = Join-Path $distDir "LookAway-Portable-v$Version.zip"
-if (Test-Path $zipPath) { Remove-Item -Force $zipPath }
+Write-Host 'Setup-Icon erzeugen ...' -ForegroundColor Cyan
+& (Join-Path $PSScriptRoot 'make-setup-icon.ps1')
 
-Write-Host "Packe portable ZIP ..." -ForegroundColor Cyan
-Compress-Archive -Path (Join-Path $publishDir "*") -DestinationPath $zipPath
+Write-Host 'Setup.exe kompilieren ...' -ForegroundColor Cyan
+& $iscc "/DMyAppVersion=$Version" "/DPublishDir=$staging" "/O$OutputDir" $script | Out-Null
+if ($LASTEXITCODE -ne 0) { throw "ISCC fehlgeschlagen ($LASTEXITCODE)." }
 
-Write-Host "Fertig: $zipPath" -ForegroundColor Green
+$setup = Join-Path $OutputDir "LookAway-Setup-v$Version.exe"
+$size = (Get-Item -LiteralPath $setup).Length / 1MB
+$files = (Get-ChildItem -LiteralPath $OutputDir -Recurse -File | Measure-Object).Count
+
+Write-Host ''
+Write-Host "Fertig: $OutputDir" -ForegroundColor Green
+Write-Host ("  Direkt startbar : {0}" -f (Join-Path $OutputDir 'LookAway.exe'))
+Write-Host ("  Zum Weitergeben : {0} ({1:N1} MB)" -f $setup, $size)
+Write-Host ("  Dateien gesamt  : {0}" -f $files)

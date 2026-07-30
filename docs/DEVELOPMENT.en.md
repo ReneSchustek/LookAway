@@ -348,8 +348,17 @@ trusted CA is required. Capabilities remain minimal (no `broadFileSystemAccess`)
 
 ### CI release
 
-On a tag push `v*.*.*` the CI, after the green `build-test` job, builds the portable ZIP and publishes
-it as a GitHub release artifact (`.github/workflows/ci.yml`, job `release`).
+On a tag push `v*.*.*` the CI, after the green `build-test` job, builds both distribution artifacts and
+attaches them to the GitHub release (`.github/workflows/ci.yml`, job `release`):
+
+| Artifact | Built by | Signature |
+|----------|----------|-----------|
+| `LookAway-Portable-v<version>.zip` | `tools/publish.ps1` | `.zip.sig`, if the secret `LOOKAWAY_SIGNING_KEY` is present |
+| `LookAway-Setup-v<version>.exe` | `tools/publish-setup.ps1` (Inno Setup from the runner) | none — SHA-256 in the release text |
+
+The Setup.exe deliberately gets **no** `.sig`: the updater picks the first `.sig` of a release
+(`GitHubUpdateChecker.FindSignatureAssetUrl`) and could mistake a second one for the ZIP's signature.
+Both hashes go into the release text instead, which the job puts in front of the generated notes.
 
 ## Review
 
@@ -359,10 +368,15 @@ it as a GitHub release artifact (`.github/workflows/ci.yml`, job `release`).
 ./tools/review.ps1 -Mode build       # build only
 ./tools/review.ps1 -Mode test        # build + tests
 ./tools/review.ps1 -Mode security    # secret scan + sensitive patterns
-./tools/review.ps1 -Mode all         # build + tests + security
+./tools/review.ps1 -Mode docs        # README version against Directory.Build.props
+./tools/review.ps1 -Mode all         # build + tests + security + docs
 ```
 
 The script paths are relative to the solution root.
+
+Mode `docs` calls `tools/check-readme-version.ps1`: the three READMEs state a version in their "latest
+release" section that is derived from nothing — it read v1.1.1 while v1.2.8 was published. The check
+compares it against `Directory.Build.props` and also runs in CI.
 
 ## Continuous integration
 

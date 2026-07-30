@@ -84,6 +84,13 @@ jobs:
         shell: pwsh
         run: ./tools/review.ps1 -Mode security
 
+      # Die READMEs nennen die aktuelle Version im Abschnitt "Aktuelles Release". Sie stand
+      # dort auf v1.1.1, während v1.2.8 veröffentlicht war — eine Angabe, die niemand prüft,
+      # veraltet zuverlässig. Der Abgleich gegen Directory.Build.props kostet Sekunden.
+      - name: Doku-Abgleich (README-Version)
+        shell: pwsh
+        run: ./tools/review.ps1 -Mode docs
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -135,6 +142,18 @@ jobs:
         shell: pwsh
         run: ./tools/publish.ps1 -Version ${{ steps.version.outputs.value }}
 
+      # Der Installer gehört an das Release, nicht nur in die Anleitung: Wer LookAway
+      # nicht portable betreibt, soll ihn nicht selbst kompilieren müssen. Inno Setup
+      # ist auf dem windows-latest-Image vorhanden; publish-setup.ps1 sucht es über
+      # Standardpfad und PATH und bricht mit klarer Meldung ab, falls es fehlt.
+      - name: Setup.exe erstellen
+        shell: pwsh
+        run: ./tools/publish-setup.ps1 -Version ${{ steps.version.outputs.value }}
+
+      # Bewusst nur das ZIP: Der Updater greift sich die erste '.sig' im Release. Eine
+      # zweite Signatur — etwa für die Setup.exe — würde er womöglich als Signatur des
+      # Pakets lesen und die Prüfung fehlschlagen lassen. Die Setup.exe weist stattdessen
+      # ihren SHA-256 im Release-Text aus.
       - name: Portable-Paket signieren (falls Schlüssel hinterlegt)
         # Signiert das ZIP mit dem offline gehaltenen Release-Schlüssel, sofern er als
         # Repository-Secret LOOKAWAY_SIGNING_KEY (privates PKCS#8-PEM) hinterlegt ist.
@@ -158,9 +177,45 @@ jobs:
             Remove-Item -LiteralPath $keyPath -Force -ErrorAction SilentlyContinue
           }
 
+      # Ohne Code-Signing-Zertifikat ist der Hash die einzige Kontrolle, die ein Nutzer
+      # gegen ein manipuliertes Archiv in der Hand hat. Er gehört deshalb sichtbar in den
+      # Release-Text, nicht nur ins Job-Protokoll.
+      - name: SHA-256 der Artefakte ermitteln
+        id: hashes
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.value }}'
+          $setup    = "dist/LookAway-Setup-v$version.exe"
+          $portable = "dist/LookAway-Portable-v$version.zip"
+          foreach ($datei in @($setup, $portable)) {
+              if (-not (Test-Path -LiteralPath $datei)) { throw "Artefakt fehlt: $datei" }
+          }
+          "setup=$((Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+          "portable=$((Get-FileHash -LiteralPath $portable -Algorithm SHA256).Hash.ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
       - name: Release veröffentlichen
         uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         with:
-          # Der Glob '...zip*' lädt das Paket und – falls vorhanden – die '.sig' mit hoch.
-          files: dist/LookAway-Portable-v${{ steps.version.outputs.value }}.zip*
+          # Der Glob '...zip*' lädt das Paket und – falls vorhanden – die '.sig' mit hoch,
+          # die Setup.exe kommt als eigener Eintrag dazu.
+          files: |
+            dist/LookAway-Portable-v${{ steps.version.outputs.value }}.zip*
+            dist/LookAway-Setup-v${{ steps.version.outputs.value }}.exe
           generate_release_notes: true
+          # Steht vor den generierten Notizen.
+          body: |
+            ## Downloads
+
+            - **LookAway-Setup-v${{ steps.version.outputs.value }}.exe** — Installer (Inno Setup): freie Wahl des Zielordners, Startmenü-Eintrag, optionaler Autostart.
+            - **LookAway-Portable-v${{ steps.version.outputs.value }}.zip** — portable Variante, entpacken und starten. Alle Daten liegen neben der EXE.
+
+            Die automatische Update-Funktion verwendet weiterhin die portable ZIP samt beiliegender Signatur (`.zip.sig`).
+
+            ## Integritätsprüfung
+
+            Die Builds tragen kein CA-Zertifikat; SmartScreen kann beim ersten Start warnen. Prüfbar sind sie über den SHA-256:
+
+            ```
+            SHA256 (LookAway-Setup-v${{ steps.version.outputs.value }}.exe)     ${{ steps.hashes.outputs.setup }}
+            SHA256 (LookAway-Portable-v${{ steps.version.outputs.value }}.zip)  ${{ steps.hashes.outputs.portable }}
+            ```

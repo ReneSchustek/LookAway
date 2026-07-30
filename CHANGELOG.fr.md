@@ -8,6 +8,14 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+### Ajouté
+
+- **Le Setup.exe accompagne de nouveau chaque version :** depuis la 1.2.5, les versions ne contenaient
+  plus que le ZIP portable et l'installateur devait être compilé soi-même. Il est désormais généré lors
+  de la publication et téléversé avec le ZIP. Le texte de la version indique le SHA-256 des deux
+  fichiers. Seul le ZIP est signé — le module de mise à jour retient la première signature d'une
+  version et pourrait attribuer une seconde au paquet, faisant échouer la vérification.
+
 ## [1.2.8] – 2026-07-11
 
 ### Corrigé

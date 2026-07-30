@@ -8,6 +8,14 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- **Setup.exe liegt wieder an jedem Release:** Seit 1.2.5 enthielten die Releases nur noch die
+  portable ZIP; der Installer musste selbst kompiliert werden. Er entsteht jetzt im Release-Lauf
+  und wird mit hochgeladen. Der Release-Text nennt zu beiden Dateien den SHA-256. Signiert wird
+  weiterhin ausschließlich die ZIP — der Updater greift sich die erste Signatur eines Releases,
+  eine zweite könnte er dem Paket zuordnen und die Prüfung fehlschlagen lassen.
+
 ## [1.2.8] – 2026-07-11
 
 ### Behoben

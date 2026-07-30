@@ -135,6 +135,18 @@ jobs:
         shell: pwsh
         run: ./tools/publish.ps1 -Version ${{ steps.version.outputs.value }}
 
+      # Der Installer gehört an das Release, nicht nur in die Anleitung: Wer LookAway
+      # nicht portable betreibt, soll ihn nicht selbst kompilieren müssen. Inno Setup
+      # ist auf dem windows-latest-Image vorhanden; publish-setup.ps1 sucht es über
+      # Standardpfad und PATH und bricht mit klarer Meldung ab, falls es fehlt.
+      - name: Setup.exe erstellen
+        shell: pwsh
+        run: ./tools/publish-setup.ps1 -Version ${{ steps.version.outputs.value }}
+
+      # Bewusst nur das ZIP: Der Updater greift sich die erste '.sig' im Release. Eine
+      # zweite Signatur — etwa für die Setup.exe — würde er womöglich als Signatur des
+      # Pakets lesen und die Prüfung fehlschlagen lassen. Die Setup.exe weist stattdessen
+      # ihren SHA-256 im Release-Text aus.
       - name: Portable-Paket signieren (falls Schlüssel hinterlegt)
         # Signiert das ZIP mit dem offline gehaltenen Release-Schlüssel, sofern er als
         # Repository-Secret LOOKAWAY_SIGNING_KEY (privates PKCS#8-PEM) hinterlegt ist.
@@ -158,9 +170,79 @@ jobs:
             Remove-Item -LiteralPath $keyPath -Force -ErrorAction SilentlyContinue
           }
 
+      # Ohne Code-Signing-Zertifikat ist der Hash die einzige Kontrolle, die ein Nutzer
+      # gegen ein manipuliertes Archiv in der Hand hat. Er gehört deshalb sichtbar in den
+      # Release-Text, nicht nur ins Job-Protokoll.
+      - name: SHA-256 der Artefakte ermitteln
+        id: hashes
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.value }}'
+          $setup    = "dist/LookAway-Setup-v$version.exe"
+          $portable = "dist/LookAway-Portable-v$version.zip"
+          foreach ($datei in @($setup, $portable)) {
+              if (-not (Test-Path -LiteralPath $datei)) { throw "Artefakt fehlt: $datei" }
+          }
+          "setup=$((Get-FileHash -LiteralPath $setup -Algorithm SHA256).Hash.ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+          "portable=$((Get-FileHash -LiteralPath $portable -Algorithm SHA256).Hash.ToLowerInvariant())" >> $env:GITHUB_OUTPUT
+
       - name: Release veröffentlichen
         uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         with:
-          # Der Glob '...zip*' lädt das Paket und – falls vorhanden – die '.sig' mit hoch.
-          files: dist/LookAway-Portable-v${{ steps.version.outputs.value }}.zip*
+          # Der Glob '...zip*' lädt das Paket und – falls vorhanden – die '.sig' mit hoch,
+          # die Setup.exe kommt als eigener Eintrag dazu.
+          files: |
+            dist/LookAway-Portable-v${{ steps.version.outputs.value }}.zip*
+            dist/LookAway-Setup-v${{ steps.version.outputs.value }}.exe
           generate_release_notes: true
+          # Steht vor den generierten Notizen.
+          body: |
+            ## Downloads
+
+            - **LookAway-Setup-v${{ steps.version.outputs.value }}.exe** — Installer (Inno Setup): freie Wahl des Zielordners, Startmenü-Eintrag, optionaler Autostart.
+            - **LookAway-Portable-v${{ steps.version.outputs.value }}.zip** — portable Variante, entpacken und starten. Alle Daten liegen neben der EXE.
+
+            Die automatische Update-Funktion verwendet weiterhin die portable ZIP samt beiliegender Signatur (`.zip.sig`).
+
+            ## Integritätsprüfung
+
+            Die Builds tragen kein CA-Zertifikat; SmartScreen kann beim ersten Start warnen. Prüfbar sind sie über den SHA-256:
+
+            ```
+            SHA256 (LookAway-Setup-v${{ steps.version.outputs.value }}.exe)     ${{ steps.hashes.outputs.setup }}
+            SHA256 (LookAway-Portable-v${{ steps.version.outputs.value }}.zip)  ${{ steps.hashes.outputs.portable }}
+            ```
+
+  # VORÜBERGEHEND: belegt vor dem Merge, dass die Setup.exe auch auf dem Runner entsteht.
+  # Der Release-Job selbst läuft nur bei einem Tag-Push und wäre sonst erst beim nächsten
+  # echten Release erprobt. Wird nach dem erfolgreichen Lauf wieder entfernt.
+  setup-probe:
+    name: Probe - Setup.exe auf dem Runner
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: windows-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+
+      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+        uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5.4.0
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore workloads (Windows App SDK)
+        run: dotnet workload restore ${{ env.SOLUTION_FILE }}
+
+      - name: Setup.exe erstellen
+        shell: pwsh
+        # Numerisch, weil die .iss die Nummer an VersionInfoVersion durchreicht und
+        # Inno dort keinen Suffix akzeptiert.
+        run: ./tools/publish-setup.ps1 -Version 9.9.9
+
+      - name: Ergebnis prüfen
+        shell: pwsh
+        run: |
+          $datei = Get-ChildItem dist -Filter 'LookAway-Setup-*.exe' | Select-Object -First 1
+          if (-not $datei) { throw 'Keine Setup.exe entstanden.' }
+          "{0}: {1:N1} MB, SHA256 {2}" -f $datei.Name, ($datei.Length / 1MB), (Get-FileHash $datei.FullName -Algorithm SHA256).Hash

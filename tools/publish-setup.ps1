@@ -31,12 +31,26 @@ $appProject = Join-Path $root 'src\LookAway.App\LookAway.App.csproj'
 $publishDir = Join-Path $root 'dist\setup-publish'
 $iss = Join-Path $root 'installer\LookAway.iss'
 
-# Inno-Setup-Compiler finden
+# Inno-Setup-Compiler finden. Die beiden Standardpfade zuerst, danach der PATH —
+# auf dem GitHub-Runner liegt Inno Setup zwar unter Program Files (x86), aber die
+# Version wandert mit dem Image, und eine feste Pfadliste wäre genau die Sorte
+# Annahme, die dann still bricht.
 $iscc = @(
     "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe",
     "$env:ProgramFiles\Inno Setup 6\ISCC.exe"
 ) | Where-Object { Test-Path $_ } | Select-Object -First 1
-if (-not $iscc) { throw 'Inno Setup 6 (ISCC.exe) nicht gefunden. Installation: winget install JRSoftware.InnoSetup' }
+
+if (-not $iscc) {
+    $iscc = (Get-Command 'ISCC.exe' -ErrorAction SilentlyContinue | Select-Object -First 1).Source
+}
+
+if (-not $iscc) {
+    $iscc = Get-ChildItem -Path @("${env:ProgramFiles(x86)}", $env:ProgramFiles) -Filter 'ISCC.exe' -Recurse -Depth 2 -ErrorAction SilentlyContinue |
+        Select-Object -First 1 -ExpandProperty FullName
+}
+
+if (-not $iscc) { throw 'Inno Setup (ISCC.exe) nicht gefunden. Installation: winget install JRSoftware.InnoSetup' }
+Write-Host "Inno Setup: $iscc" -ForegroundColor DarkGray
 
 if (-not (Test-Path $OutputDir)) { New-Item -ItemType Directory -Force $OutputDir | Out-Null }
 

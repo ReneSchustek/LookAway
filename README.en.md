@@ -20,14 +20,18 @@ eyes, posture and focus.
 
 ## Latest release
 
-**[v1.1.1](https://github.com/ReneSchustek/LookAway/releases/latest)** is the current version.
-Highlights of the 1.1 line:
+**[v1.2.8](https://github.com/ReneSchustek/LookAway/releases/latest)** is the current version –
+available as a Setup.exe and as a portable ZIP. Highlights of the 1.2 line:
 
-- **Break screen across multiple monitors** – optionally every display is dimmed.
-- **Freely selectable break colour** including transparency.
-- **Modern side menu** in the settings and a light, eye-friendly mint/teal design.
-- **Automatic updates** – LookAway downloads and installs new versions itself (verified via version
-  and file hash).
+- **Signed updates** – every package is checked against an ECDSA P-256 signature before it is applied
+  and rejected without a valid one.
+- **One-click install** – "Check for updates" applies a package it finds directly, with no detour via
+  the release page.
+- **Automatic break start** – if the reminder is left untouched, the break starts by itself after a
+  configurable delay; a countdown shows the remaining time.
+- **Break screen across multiple monitors** – every display is dimmed, title and countdown appear on
+  the primary monitor.
+- **Freely selectable break colour** with automatically contrasting text colour.
 
 ## Features
 
@@ -56,24 +60,33 @@ Highlights of the 1.1 line:
 
 ## Installation
 
-The ready-to-run application is published as a **portable ZIP** on the
-[releases page](https://github.com/ReneSchustek/LookAway/releases/latest).
+The ready-to-run application is published in two flavours on the
+[releases page](https://github.com/ReneSchustek/LookAway/releases/latest): a **Setup.exe** and a
+**portable ZIP**.
 
-### Portable (recommended)
+### Setup.exe
+
+1. Download `LookAway-Setup-<version>.exe` and run it.
+2. The installer asks for the target folder, a Start-menu entry and optional autostart. Uninstall via
+   "Apps & features".
+
+### Portable
 
 1. Download `LookAway-Portable-<version>.zip` from the releases page and extract it into any folder.
 2. Run `LookAway.exe`. In portable mode all data lives next to the EXE – ideal for a USB stick.
 
 > Note: the builds are not signed with a CA certificate – Windows SmartScreen may warn on first run
-> ("More info" → "Run anyway").
+> ("More info" → "Run anyway"). The release text lists the SHA-256 of every file, so a download can be
+> checked before running it: `Get-FileHash .\LookAway-Setup-<version>.exe -Algorithm SHA256`.
 
-### Setup.exe or MSIX (optional, build it yourself)
+### Build it yourself
 
-A convenient **Setup.exe installer** (Inno Setup, freely selectable location, Start-menu entry,
-optional autostart) and an **MSIX package** can be built locally – the automatic release deliberately
-contains only the portable ZIP:
+Both artefacts can also be produced locally, plus an **MSIX package** that is not published:
 
 ```powershell
+# Portable ZIP:
+tools\publish.ps1 -Version <version>
+
 # Setup.exe (requires Inno Setup):
 tools\publish-setup.ps1 -Version <version>
 

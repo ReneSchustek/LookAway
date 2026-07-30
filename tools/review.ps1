@@ -12,10 +12,11 @@
       build       - dotnet build (TreatWarningsAsErrors greift global)
       test        - build + dotnet test
       security    - sucht nach Secret-Mustern und gefährlichen Aufrufen
-      all         - build + test + security
+      docs        - prüft die Versionsangaben der READMEs gegen Directory.Build.props
+      all         - build + test + security + docs
 
 .PARAMETER Mode
-    build | test | security | all
+    build | test | security | docs | all
 
 .EXAMPLE
     ./tools/review.ps1 -Mode all
@@ -25,7 +26,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $false)]
-    [ValidateSet('build', 'test', 'security', 'all')]
+    [ValidateSet('build', 'test', 'security', 'docs', 'all')]
     [string]$Mode = 'all'
 )
 
@@ -110,6 +111,13 @@ function Invoke-Security {
     return $hits
 }
 
+function Invoke-Docs {
+    Write-Section 'Doku-Abgleich (README-Version)'
+
+    & (Join-Path $ScriptDir 'check-readme-version.ps1') -Root $SolutionRoot
+    if ($LASTEXITCODE -ne 0) { throw 'Versionsangabe in einer README weicht von Directory.Build.props ab.' }
+}
+
 switch ($Mode) {
     'build' {
         Invoke-Build
@@ -121,10 +129,14 @@ switch ($Mode) {
     'security' {
         $null = Invoke-Security
     }
+    'docs' {
+        Invoke-Docs
+    }
     'all' {
         Invoke-Build
         Invoke-Tests
         $null = Invoke-Security
+        Invoke-Docs
     }
 }
 

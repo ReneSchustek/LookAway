@@ -378,8 +378,17 @@ Zertifikat einer vertrauenswürdigen CA nötig. Capabilities bleiben minimal (ke
 
 ### CI-Release
 
-Bei einem Tag-Push `v*.*.*` baut die CI nach dem grünen `build-test`-Job die portable ZIP und
-veröffentlicht sie als GitHub-Release-Artefakt (`.github/workflows/ci.yml`, Job `release`).
+Bei einem Tag-Push `v*.*.*` baut die CI nach dem grünen `build-test`-Job beide Verteil-Artefakte und
+hängt sie an das GitHub-Release (`.github/workflows/ci.yml`, Job `release`):
+
+| Artefakt | Erzeugt von | Signatur |
+|----------|-------------|----------|
+| `LookAway-Portable-v<Version>.zip` | `tools/publish.ps1` | `.zip.sig`, sofern das Secret `LOOKAWAY_SIGNING_KEY` hinterlegt ist |
+| `LookAway-Setup-v<Version>.exe` | `tools/publish-setup.ps1` (Inno Setup vom Runner) | keine — SHA-256 im Release-Text |
+
+Die Setup.exe bekommt bewusst **keine** `.sig`: Der Updater greift sich die erste `.sig` des Releases
+(`GitHubUpdateChecker.FindSignatureAssetUrl`) und würde eine zweite womöglich als Signatur des ZIPs
+lesen. Beide Hashes stehen stattdessen im Release-Text, den der Job vor die generierten Notizen setzt.
 
 ## Lokale Qualitäts-Checks
 
@@ -389,8 +398,13 @@ veröffentlicht sie als GitHub-Release-Artefakt (`.github/workflows/ci.yml`, Job
 ./tools/review.ps1 -Mode build       # nur Build
 ./tools/review.ps1 -Mode test        # Build + Tests
 ./tools/review.ps1 -Mode security    # Secret-Scan + sensible Patterns
-./tools/review.ps1 -Mode all         # Build + Tests + Security
+./tools/review.ps1 -Mode docs        # README-Version gegen Directory.Build.props
+./tools/review.ps1 -Mode all         # Build + Tests + Security + Docs
 ```
+
+Der Modus `docs` ruft `tools/check-readme-version.ps1` auf: Die drei READMEs nennen im Abschnitt
+„Aktuelles Release" eine Versionsnummer, die sich von nichts ableitet — sie stand auf v1.1.1, während
+v1.2.8 veröffentlicht war. Der Abgleich gegen `Directory.Build.props` läuft auch in der CI.
 
 Die Skript-Pfade gehen vom Solution-Root aus.
 

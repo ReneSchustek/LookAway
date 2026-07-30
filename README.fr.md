@@ -21,14 +21,18 @@ et leur concentration.
 
 ## Version actuelle
 
-**[v1.1.1](https://github.com/ReneSchustek/LookAway/releases/latest)** est la version actuelle. Points
-forts de la série 1.1 :
+**[v1.2.8](https://github.com/ReneSchustek/LookAway/releases/latest)** est la version actuelle –
+disponible en Setup.exe et en ZIP portable. Points forts de la série 1.2 :
 
-- **Écran de pause sur plusieurs moniteurs** – chaque écran peut être assombri.
-- **Couleur de pause librement configurable**, transparence comprise.
-- **Menu latéral moderne** dans les paramètres et un thème clair menthe/sarcelle reposant pour les yeux.
-- **Mise à jour automatique** – LookAway télécharge et installe lui-même les nouvelles versions
-  (vérifiées par version et empreinte de fichier).
+- **Mises à jour signées** – chaque paquet est vérifié avant son installation contre une signature
+  ECDSA P-256 et refusé sans signature valide.
+- **Installation en un clic** – « Rechercher des mises à jour » installe directement le paquet trouvé,
+  sans détour par la page des versions.
+- **Démarrage automatique de la pause** – si le rappel reste sans réponse, la pause démarre d'elle-même
+  après un délai configurable ; un compte à rebours affiche le temps restant.
+- **Écran de pause sur plusieurs moniteurs** – chaque écran est assombri, le titre et le compte à
+  rebours s'affichent sur le moniteur principal.
+- **Couleur de pause librement configurable**, avec une couleur de texte contrastée automatiquement.
 
 ## Fonctionnalités
 
@@ -57,10 +61,17 @@ forts de la série 1.1 :
 
 ## Installation
 
-L'application prête à l'emploi est publiée sous forme de **ZIP portable** sur la
-[page des versions](https://github.com/ReneSchustek/LookAway/releases/latest).
+L'application prête à l'emploi est publiée en deux variantes sur la
+[page des versions](https://github.com/ReneSchustek/LookAway/releases/latest) : un **Setup.exe** et un
+**ZIP portable**.
 
-### Portable (recommandé)
+### Setup.exe
+
+1. Téléchargez `LookAway-Setup-<version>.exe` et exécutez-le.
+2. L'installateur demande le dossier cible, l'entrée au menu Démarrer et le démarrage automatique en
+   option. La désinstallation passe par « Applications et fonctionnalités ».
+
+### Portable
 
 1. Téléchargez `LookAway-Portable-<version>.zip` depuis la page des versions et décompressez-le dans un
    dossier quelconque.
@@ -68,15 +79,18 @@ L'application prête à l'emploi est publiée sous forme de **ZIP portable** sur
    une clé USB.
 
 > Remarque : les builds ne sont pas signés avec un certificat d'autorité – Windows SmartScreen peut
-> avertir au premier lancement (« Informations complémentaires » → « Exécuter quand même »).
+> avertir au premier lancement (« Informations complémentaires » → « Exécuter quand même »). Le texte de
+> la version indique le SHA-256 de chaque fichier, ce qui permet de vérifier un téléchargement avant de
+> l'exécuter : `Get-FileHash .\LookAway-Setup-<version>.exe -Algorithm SHA256`.
 
-### Setup.exe ou MSIX (en option, à compiler soi-même)
+### Compiler soi-même
 
-Un **installateur Setup.exe** pratique (Inno Setup, emplacement librement choisi, entrée au menu
-Démarrer, démarrage automatique en option) et un **paquet MSIX** peuvent être générés localement – la
-publication automatique ne contient volontairement que le ZIP portable :
+Les deux artefacts se génèrent aussi localement, ainsi qu'un **paquet MSIX** qui n'est pas publié :
 
 ```powershell
+# ZIP portable :
+tools\publish.ps1 -Version <version>
+
 # Setup.exe (nécessite Inno Setup) :
 tools\publish-setup.ps1 -Version <version>
 

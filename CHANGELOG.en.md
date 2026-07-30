@@ -8,6 +8,14 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Setup.exe is attached to every release again:** since 1.2.5 the releases carried only the portable
+  ZIP, so the installer had to be compiled by hand. It is now built during the release run and uploaded
+  along with the ZIP. The release text lists the SHA-256 of both files. Only the ZIP is signed — the
+  updater picks the first signature of a release, and a second one could be mistaken for the package's
+  and fail the check.
+
 ## [1.2.8] – 2026-07-11
 
 ### Fixed

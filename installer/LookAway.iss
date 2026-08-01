@@ -14,9 +14,9 @@
 #define MyAppPublisher "Rene Schustek"
 #define MyAppURL "https://github.com/ReneSchustek/LookAway"
 #define MyAppExeName "LookAway.exe"
-; Ueberschreibbar (/DPublishDir=...), damit die Auslieferung aus einem eigenen
-; Zwischenordner bauen kann. Ohne die Guard-Klammer waere der Pfad fest verdrahtet
-; und ein zweiter Aufrufer muesste die Datei aendern.
+; Überschreibbar (/DPublishDir=...), damit die Auslieferung aus einem eigenen
+; Zwischenordner bauen kann. Ohne die Guard-Klammer wäre der Pfad fest verdrahtet
+; und ein zweiter Aufrufer müsste die Datei ändern.
 #ifndef PublishDir
   #define PublishDir "..\dist\setup-publish"
 #endif

@@ -131,7 +131,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task DownloadAndStage_uebernimmt_die_Portable_Markierung_nicht()
+    public async Task DownloadAndStage_übernimmt_die_Portable_Markierung_nicht()
     {
         // Der Helfer startet aus dem Staging-Ordner. Läge dort die Portable-Markierung,
         // hielte er sich für eine portable Installation, läse die Einstellungen neben sich
@@ -366,7 +366,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public void IsTrustedStagingDirectory_lehnt_Traversal_ueber_Staging_hinaus_ab()
+    public void IsTrustedStagingDirectory_lehnt_Traversal_über_Staging_hinaus_ab()
     {
         string stagingRoot = Path.Combine(_root, "staging");
         _ = Directory.CreateDirectory(stagingRoot);

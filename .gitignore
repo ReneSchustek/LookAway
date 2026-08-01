@@ -1,7 +1,7 @@
 # ============================================================
 # .gitignore – LookAway
 # ============================================================
-# zugaenge.md usw. sind in ~/.gitignore_global eingetragen
+# Persoenliche Notizdateien sind in ~/.gitignore_global eingetragen
 # und müssen hier NICHT wiederholt werden.
 # ============================================================
 
@@ -108,8 +108,8 @@ $RECYCLE.BIN/
 # Generiertes Setup-Icon (via installer/make-setup-icon.ps1)
 installer/setup-icon.ico
 
-# Private Signaturschluessel duerfen NIE ins Repo (Release-Signierung).
-# Der oeffentliche Schluessel ist in ReleaseSignatureVerifier eingebettet; der
+# Private Signaturschlüssel dürfen NIE ins Repo (Release-Signierung).
+# Der öffentliche Schlüssel ist in ReleaseSignatureVerifier eingebettet; der
 # private bleibt offline. Detached-Signaturen (*.sig) sind Release-Artefakte.
 *.pem
 *.sig

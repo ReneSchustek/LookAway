@@ -45,7 +45,7 @@ public sealed class UpdateOrchestratorTests : IDisposable
             NullLogger<UpdateOrchestrator>.Instance);
 
     [Fact]
-    public async Task Eingespieltes_Update_raeumt_seinen_Vermerk_beim_naechsten_Start_ab()
+    public async Task Eingespieltes_Update_raeumt_seinen_Vermerk_beim_nächsten_Start_ab()
     {
         // Nach erfolgreichem Einspielen läuft genau die vermerkte Version, ihr Staging-Ordner
         // ist abgeräumt. Bliebe der Vermerk stehen, suchte ihn jeder Start erneut.

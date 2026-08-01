@@ -94,7 +94,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task CheckForUpdates_mit_verfuegbarem_Paket_bietet_Installation_an()
+    public async Task CheckForUpdates_mit_verfügbarem_Paket_bietet_Installation_an()
     {
         UpdateInfo info = UpdateInfo.Create(
             new Version(1, 0, 0), "v2.0.0", "https://example.com/r", null,

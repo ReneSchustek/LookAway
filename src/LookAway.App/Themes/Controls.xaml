@@ -28,7 +28,7 @@
         <Setter Property="BorderThickness" Value="0,1,0,0" />
     </Style>
 
-    <!-- Karte: weisse Fläche mit feinem Rahmen und abgerundeten Ecken für eine
+    <!-- Karte: weiße Fläche mit feinem Rahmen und abgerundeten Ecken für eine
          moderne, klar gegliederte Optik auf dem leicht getönten Hintergrund. -->
     <Style x:Key="RcCardStyle" TargetType="Border">
         <Setter Property="Background" Value="{StaticResource RcCardBackground}" />

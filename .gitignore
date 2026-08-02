@@ -120,3 +120,8 @@ tools/install-pre-commit-hook.ps1
 
 # Lokale Ausnahmeliste eines Entwickler-Werkzeugs (nicht Bestandteil des Repos)
 .ai-trace-ignore
+
+# Die globale Ignorierliste dieses Rechners schließt "docs/" aus. Hier ist das
+# Projektdokumentation samt Screenshots und gehört ins Repository.
+!docs/
+!docs/**

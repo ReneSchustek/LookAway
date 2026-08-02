@@ -80,6 +80,10 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
     private ReminderPresenter? _reminderPresenter;
     private BreakOverlayPresenter? _overlayPresenter;
     private SettingsPresenter? _settingsPresenter;
+
+    // Zuletzt angewendete Einstellungen — Grundlage, um die Hotkeys nach einer
+    // Aufnahme wieder in genau dem Zustand zu registrieren, der vorher galt.
+    private Settings? _currentSettings;
     private BreakCoordinator? _coordinator;
     private UpdateOrchestrator? _updateOrchestrator;
 
@@ -227,7 +231,8 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
         _settingsPresenter = new SettingsPresenter(
             _window.DispatcherQueue,
             CreateSettingsViewModel,
-            ApplySettingsLive);
+            ApplySettingsLive,
+            SuspendHotkeysWhileCapturing);
 
         await StartAsync().ConfigureAwait(true);
     }
@@ -386,8 +391,34 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
             new TimerSnapshot(_coordinator.ActiveModel, _coordinator.WorkRemaining, marker));
     }
 
+    /// <summary>
+    /// Gibt die globalen Hotkeys frei, solange in den Einstellungen eine
+    /// Tastenkombination aufgenommen wird, und registriert sie danach wieder.
+    /// <para>
+    /// Ohne das erreicht die gedrückte Kombination das Fenster nicht: Windows
+    /// liefert einen registrierten Hotkey an den Registrierenden aus, nicht an das
+    /// fokussierte Fenster. Der Benutzer löste damit die Aktion aus, statt sie neu
+    /// zu belegen.
+    /// </para>
+    /// </summary>
+    /// <param name="aufnahmeLaeuft">Wahr bei Beginn, falsch bei Ende der Aufnahme.</param>
+    private void SuspendHotkeysWhileCapturing(bool aufnahmeLaeuft)
+    {
+        if (aufnahmeLaeuft)
+        {
+            Services.GetRequiredService<IHotkeyService>().UnregisterAll();
+            return;
+        }
+
+        if (_currentSettings is not null)
+        {
+            RegisterHotkeys(_currentSettings);
+        }
+    }
+
     private void RegisterHotkeys(Settings settings)
     {
+        _currentSettings = settings;
         IHotkeyService hotkeys = Services.GetRequiredService<IHotkeyService>();
         hotkeys.HotkeyPressed -= OnHotkeyPressed;
         hotkeys.HotkeyPressed += OnHotkeyPressed;

@@ -675,6 +675,7 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         }
 
         _disposed = true;
+        EndCaptureOnDispose();
         _localization.LanguageChanged -= OnLanguageChanged;
     }
 }

@@ -5,13 +5,19 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using LookAway.Core.Domain;
+using LookAway.Core.Enums;
+using LookAway.Core.ValueObjects;
 using LookAway.App.ViewModels;
+using Microsoft.UI.Input;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Windows.Graphics;
 using Windows.Storage;
 using Windows.Storage.Pickers;
+using Windows.System;
+using Windows.UI.Core;
 using WinColor = Windows.UI.Color;
 
 namespace LookAway.App.Views;
@@ -173,6 +179,86 @@ internal sealed partial class SettingsWindow : Window
             // einen COM-Fehler melden — der Export bleibt dann einfach aus.
         }
     }
+
+    private void OnCaptureStartBreak(object sender, RoutedEventArgs e)
+        => _viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.StartBreak);
+
+    private void OnCaptureSkipOrSnooze(object sender, RoutedEventArgs e)
+        => _viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.SkipOrSnooze);
+
+    private void OnCaptureToggleDnd(object sender, RoutedEventArgs e)
+        => _viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.ToggleDnd);
+
+    /// <summary>
+    /// Nimmt den Tastendruck während einer laufenden Aufnahme entgegen und reicht
+    /// ihn unbewertet an das ViewModel weiter. Hier steht bewusst keine Logik: Was
+    /// eine Kombination taugt, entscheidet <see cref="SettingsViewModel"/> — nur so
+    /// bleibt die Regel ohne Fenster prüfbar.
+    /// </summary>
+    private void OnHotkeyCaptureKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        ArgumentNullException.ThrowIfNull(e);
+
+        if (!_viewModel.IsCapturingHotkey)
+        {
+            return;
+        }
+
+        // Modifikatoren allein sind noch keine Kombination — sonst wäre jede
+        // Aufnahme schon mit dem Druck auf Strg beendet.
+        if (IsModifierKey(e.Key))
+        {
+            return;
+        }
+
+        e.Handled = true;
+
+        if (e.Key == VirtualKey.Escape)
+        {
+            _viewModel.CancelHotkeyCaptureCommand.Execute(null);
+            return;
+        }
+
+        // Das Ergebnis interessiert hier nicht: Ob übernommen, abgelehnt oder
+        // kollidiert — die Rückmeldung steht danach im Hinweistext des ViewModels.
+        _ = _viewModel.TryCompleteHotkeyCapture(new HotkeyDefinition(ReadModifiers(), (int)e.Key));
+    }
+
+    private static bool IsModifierKey(VirtualKey key) => key is VirtualKey.Control
+        or VirtualKey.LeftControl or VirtualKey.RightControl
+        or VirtualKey.Menu or VirtualKey.LeftMenu or VirtualKey.RightMenu
+        or VirtualKey.Shift or VirtualKey.LeftShift or VirtualKey.RightShift
+        or VirtualKey.LeftWindows or VirtualKey.RightWindows;
+
+    private static HotkeyModifiers ReadModifiers()
+    {
+        HotkeyModifiers modifiers = HotkeyModifiers.None;
+
+        if (IsDown(VirtualKey.Control))
+        {
+            modifiers |= HotkeyModifiers.Control;
+        }
+
+        if (IsDown(VirtualKey.Menu))
+        {
+            modifiers |= HotkeyModifiers.Alt;
+        }
+
+        if (IsDown(VirtualKey.Shift))
+        {
+            modifiers |= HotkeyModifiers.Shift;
+        }
+
+        if (IsDown(VirtualKey.LeftWindows) || IsDown(VirtualKey.RightWindows))
+        {
+            modifiers |= HotkeyModifiers.Win;
+        }
+
+        return modifiers;
+    }
+
+    private static bool IsDown(VirtualKey key)
+        => InputKeyboardSource.GetKeyStateForCurrentThread(key).HasFlag(CoreVirtualKeyStates.Down);
 
     private void OnWindowClosed(object sender, WindowEventArgs args)
     {

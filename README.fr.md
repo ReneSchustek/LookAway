@@ -166,8 +166,20 @@ LookAway est sobre en données et fonctionne entièrement en local :
 
 ## Captures d'écran
 
-Les captures d'écran de l'interface (icône de la zone de notification, rappel de pause, paramètres,
-statistiques) sont rassemblées sous [`docs/screenshots/`](docs/screenshots/).
+![Paramètres](docs/screenshots/settings.png)
+
+*Paramètres – langue, démarrage automatique, pause automatique et départ automatique de la pause.*
+
+![Raccourcis](docs/screenshots/hotkeys.png)
+
+*Raccourcis globaux – chaque action peut être réattribuée à votre propre combinaison via « Neu belegen ».*
+
+![Statistiques](docs/screenshots/statistics.png)
+
+*Statistiques – pauses par jour, semaine et année, exportables en CSV.*
+
+Les captures montrent l'interface en allemand. D'autres captures sont rassemblées sous
+[`docs/screenshots/`](docs/screenshots/).
 
 ## Journal des modifications
 
@@ -181,3 +193,6 @@ L'architecture, la compilation, les tests et les détails internes sont décrits
 ## Licence
 
 Licence MIT – voir [LICENSE](LICENSE).
+
+La police **Roboto** fournie avec l'application est sous licence Apache 2.0 ; le texte de la
+licence se trouve à côté des fichiers de police, dans `src/LookAway.App/Assets/Fonts/LICENSE.txt`.

@@ -156,7 +156,19 @@ LookAway is data-frugal and works entirely locally:
 
 ## Screenshots
 
-Screenshots of the interface (tray icon, break reminder, settings, statistics) are collected under
+![Settings](docs/screenshots/settings.png)
+
+*Settings – language, autostart, auto-pause and the automatic break start.*
+
+![Hotkeys](docs/screenshots/hotkeys.png)
+
+*Global hotkeys – every action can be bound to your own key combination via "Neu belegen".*
+
+![Statistics](docs/screenshots/statistics.png)
+
+*Statistics – breaks per day, week and year, exportable as CSV.*
+
+The screenshots show the German interface. Further captures are collected under
 [`docs/screenshots/`](docs/screenshots/).
 
 ## Changelog
@@ -171,3 +183,6 @@ Architecture, build, tests and the internal details are described in
 ## License
 
 MIT License – see [LICENSE](LICENSE).
+
+The bundled **Roboto** typeface is licensed under the Apache License 2.0; the licence text sits
+next to the font files in `src/LookAway.App/Assets/Fonts/LICENSE.txt`.

@@ -68,6 +68,24 @@ public static class SettingsTextKeys
     /// <summary>Beschriftung des Zurücksetzen-Buttons.</summary>
     public const string HotkeysReset = "Settings.Hotkeys.Reset";
 
+    /// <summary>Beschriftung der Schaltfläche "Neu belegen".</summary>
+    public const string HotkeysCapture = "Settings.Hotkeys.Capture";
+
+    /// <summary>Aufforderung während der Aufnahme.</summary>
+    public const string HotkeysCapturePrompt = "Settings.Hotkeys.CapturePrompt";
+
+    /// <summary>Rückmeldung: Kombination übernommen.</summary>
+    public const string HotkeysCaptureAssigned = "Settings.Hotkeys.CaptureAssigned";
+
+    /// <summary>Rückmeldung: Kombination ohne Strg/Alt/Win abgelehnt.</summary>
+    public const string HotkeysCaptureInvalid = "Settings.Hotkeys.CaptureInvalid";
+
+    /// <summary>Rückmeldung: Kombination ist bereits belegt.</summary>
+    public const string HotkeysCaptureTaken = "Settings.Hotkeys.CaptureTaken";
+
+    /// <summary>Rückmeldung: Aufnahme abgebrochen.</summary>
+    public const string HotkeysCaptureCancelled = "Settings.Hotkeys.CaptureCancelled";
+
     /// <summary>Beschriftung "Auf Updates prüfen".</summary>
     public const string UpdateEnableLabel = "Settings.Update.EnableLabel";
 

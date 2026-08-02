@@ -35,7 +35,7 @@
                     <TextBlock
                         Text="LookAway"
                         FontSize="19"
-                        FontWeight="SemiBold"
+                        FontWeight="Medium"
                         VerticalAlignment="Center"
                         Foreground="{StaticResource RcAccent}" />
                 </StackPanel>
@@ -279,6 +279,7 @@
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
@@ -286,12 +287,16 @@
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
                                     <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding HotkeyStartBreakLabel}" />
-                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding HotkeyStartBreakText}" FontWeight="SemiBold" Foreground="{StaticResource RcAccent}" />
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding HotkeyStartBreakText}" FontWeight="Medium" Foreground="{StaticResource RcAccent}" />
+                                    <Button Grid.Row="0" Grid.Column="2" Content="{Binding HotkeysCaptureLabel}" Click="OnCaptureStartBreak" KeyDown="OnHotkeyCaptureKeyDown" />
                                     <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding HotkeySkipOrSnoozeLabel}" />
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding HotkeySkipOrSnoozeText}" FontWeight="SemiBold" Foreground="{StaticResource RcAccent}" />
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding HotkeySkipOrSnoozeText}" FontWeight="Medium" Foreground="{StaticResource RcAccent}" />
+                                    <Button Grid.Row="1" Grid.Column="2" Content="{Binding HotkeysCaptureLabel}" Click="OnCaptureSkipOrSnooze" KeyDown="OnHotkeyCaptureKeyDown" />
                                     <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding HotkeyToggleDndLabel}" />
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding HotkeyToggleDndText}" FontWeight="SemiBold" Foreground="{StaticResource RcAccent}" />
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding HotkeyToggleDndText}" FontWeight="Medium" Foreground="{StaticResource RcAccent}" />
+                                    <Button Grid.Row="2" Grid.Column="2" Content="{Binding HotkeysCaptureLabel}" Click="OnCaptureToggleDnd" KeyDown="OnHotkeyCaptureKeyDown" />
                                 </Grid>
+                                <TextBlock Text="{Binding HotkeyCaptureHint}" Style="{StaticResource RcSecondaryTextStyle}" />
                                 <Button Content="{Binding HotkeysResetLabel}" Command="{Binding ResetHotkeysCommand}" HorizontalAlignment="Left" />
                             </StackPanel>
                         </Border>
@@ -377,11 +382,11 @@
                         <Border Style="{StaticResource RcCardStyle}">
                             <StackPanel Spacing="12">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="{Binding AboutVersionLabel}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding AboutVersionLabel}" FontWeight="Medium" />
                                     <TextBlock Text="{Binding Version}" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="{Binding LicenseLabel}" FontWeight="SemiBold" />
+                                    <TextBlock Text="{Binding LicenseLabel}" FontWeight="Medium" />
                                     <TextBlock Text="{Binding LicenseText}" />
                                 </StackPanel>
                                 <HyperlinkButton Content="{Binding DocsLabel}" NavigateUri="{Binding DocsUri}" Padding="0,4" />

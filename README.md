@@ -160,8 +160,19 @@ LookAway ist datensparsam und arbeitet vollständig lokal:
 
 ## Screenshots
 
-Screenshots der Oberfläche (Tray-Icon, Pause-Erinnerung, Einstellungen, Statistik) werden unter
-[`docs/screenshots/`](docs/screenshots/) gesammelt.
+![Einstellungen](docs/screenshots/settings.png)
+
+*Einstellungen – Sprache, Autostart, Auto-Pause und automatischer Pausenstart.*
+
+![Hotkeys](docs/screenshots/hotkeys.png)
+
+*Globale Hotkeys – jede Aktion lässt sich über „Neu belegen" auf eine eigene Tastenkombination legen.*
+
+![Statistik](docs/screenshots/statistics.png)
+
+*Statistik – Pausen pro Tag, Woche und Jahr, als CSV exportierbar.*
+
+Weitere Aufnahmen liegen unter [`docs/screenshots/`](docs/screenshots/).
 
 ## Changelog
 
@@ -175,3 +186,6 @@ beschrieben.
 ## Lizenz
 
 MIT-Lizenz – siehe [LICENSE](LICENSE).
+
+Die mitgelieferte Schrift **Roboto** steht unter der Apache-Lizenz 2.0; der Lizenztext liegt bei
+den Schriftdateien unter `src/LookAway.App/Assets/Fonts/LICENSE.txt`.

@@ -18,7 +18,7 @@
     <Style x:Key="RcPrimaryButtonStyle" TargetType="Button" BasedOn="{StaticResource RcButtonStyle}">
         <Setter Property="Background" Value="{StaticResource RcAccent}" />
         <Setter Property="Foreground" Value="{StaticResource RcAccentForeground}" />
-        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="BorderThickness" Value="0" />
     </Style>
 

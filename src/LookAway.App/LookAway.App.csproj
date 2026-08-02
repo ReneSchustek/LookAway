@@ -84,6 +84,13 @@
     <Content Include="Assets\Sounds\chime.wav" />
     <Content Include="Assets\Sounds\bell.wav" />
     <Content Include="Assets\Sounds\pop.wav" />
+    <!-- Roboto in drei Schnitten. Ohne die Dateien im Paket hängt das Schriftbild
+         davon ab, ob auf dem Zielsystem zufällig eine Roboto installiert ist;
+         Windows liefert keine mit. LICENSE.txt ist Pflicht (Apache-2.0). -->
+    <Content Include="Assets\Fonts\Roboto-Regular.ttf" />
+    <Content Include="Assets\Fonts\Roboto-Medium.ttf" />
+    <Content Include="Assets\Fonts\Roboto-Bold.ttf" />
+    <Content Include="Assets\Fonts\LICENSE.txt" />
   </ItemGroup>
 
   <ItemGroup>

@@ -393,6 +393,16 @@
                             </StackPanel>
                         </Border>
 
+                        <!-- Freiwilliger Spenden-Einstieg. Bleibt ausgeblendet, solange kein
+                             echter PayPal-Handle konfiguriert ist, damit nie ein toter Link steht. -->
+                        <Border Style="{StaticResource RcCardStyle}"
+                                Visibility="{Binding IsSupportVisible, Converter={StaticResource BoolToVisibility}}">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="{Binding SupportHeading}" Style="{StaticResource RcSecondaryTextStyle}" TextWrapping="Wrap" />
+                                <HyperlinkButton Content="{Binding SupportLabel}" NavigateUri="{Binding DonationUri}" Padding="0,4" />
+                            </StackPanel>
+                        </Border>
+
                         <Border Style="{StaticResource RcCardStyle}">
                             <StackPanel Spacing="12">
                                 <CheckBox Content="{Binding UpdateEnableLabel}" IsChecked="{Binding UpdateCheckEnabled, Mode=TwoWay}" />

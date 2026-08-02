@@ -231,6 +231,12 @@ public static class SettingsTextKeys
     /// <summary>URL zur Dokumentation.</summary>
     public const string DocsUrl = "Settings.About.DocsUrl";
 
+    /// <summary>Hinweistext über dem freiwilligen Spenden-Eintrag.</summary>
+    public const string SupportHeading = "Settings.About.SupportHeading";
+
+    /// <summary>Beschriftung des Spenden-Links.</summary>
+    public const string SupportLabel = "Settings.About.SupportLabel";
+
     /// <summary>Beschriftung des Speichern-Buttons.</summary>
     public const string ButtonSave = "Settings.Button.Save";
 

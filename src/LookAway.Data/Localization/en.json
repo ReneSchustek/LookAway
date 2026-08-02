@@ -99,6 +99,8 @@
   "Settings.About.License": "MIT License",
   "Settings.About.DocsLabel": "Documentation",
   "Settings.About.DocsUrl": "https://github.com/ReneSchustek/LookAway",
+  "Settings.About.SupportHeading": "Enjoying LookAway? A coffee is always appreciated – entirely optional.",
+  "Settings.About.SupportLabel": "☕ Buy me a coffee",
 
   "Settings.Button.Save": "Save",
   "Settings.Button.Cancel": "Cancel",

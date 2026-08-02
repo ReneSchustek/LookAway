@@ -10,6 +10,10 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **Optional way to support the project:** the About page in the settings now shows a link below
+  version, licence and documentation for buying the developer a coffee. Entirely optional and
+  without any effect on the feature set.
+
 - **Setup.exe is attached to every release again:** since 1.2.5 the releases carried only the portable
   ZIP, so the installer had to be compiled by hand. It is now built during the release run and uploaded
   along with the ZIP. The release text lists the SHA-256 of both files. Only the ZIP is signed — the

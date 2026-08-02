@@ -10,6 +10,10 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefügt
 
+- **Freiwilliger Spenden-Einstieg:** Die Über-Seite der Einstellungen zeigt unter Version, Lizenz
+  und Dokumentation einen Link, über den sich das Projekt mit einem Kaffee unterstützen lässt.
+  Vollkommen freiwillig, ohne Einfluss auf den Funktionsumfang.
+
 - **Setup.exe liegt wieder an jedem Release:** Seit 1.2.5 enthielten die Releases nur noch die
   portable ZIP; der Installer musste selbst kompiliert werden. Er entsteht jetzt im Release-Lauf
   und wird mit hochgeladen. Der Release-Text nennt zu beiden Dateien den SHA-256. Signiert wird

@@ -99,6 +99,8 @@
   "Settings.About.License": "MIT-Lizenz",
   "Settings.About.DocsLabel": "Dokumentation",
   "Settings.About.DocsUrl": "https://github.com/ReneSchustek/LookAway",
+  "Settings.About.SupportHeading": "Gefällt dir LookAway? Über einen Kaffee freue ich mich – ganz freiwillig.",
+  "Settings.About.SupportLabel": "☕ Kaffee spendieren",
 
   "Settings.Button.Save": "Speichern",
   "Settings.Button.Cancel": "Abbrechen",

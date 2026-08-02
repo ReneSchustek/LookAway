@@ -1,6 +1,7 @@
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using LookAway.App.Services;
 using LookAway.Core.Domain;
 using LookAway.Core.Entities;
 using LookAway.Core.Enums;
@@ -308,6 +309,25 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>URL zur Dokumentation (für einen HyperlinkButton); <c>null</c> bei ungültigem Wert.</summary>
     public Uri? DocsUri =>
         Uri.TryCreate(_localization.GetText(SettingsTextKeys.DocsUrl), UriKind.Absolute, out Uri? uri) ? uri : null;
+
+    /// <summary>Hinweistext über dem freiwilligen Spenden-Eintrag.</summary>
+    public string SupportHeading => _localization.GetText(SettingsTextKeys.SupportHeading);
+
+    /// <summary>Beschriftung des Spenden-Links.</summary>
+    public string SupportLabel => _localization.GetText(SettingsTextKeys.SupportLabel);
+
+    /// <summary>
+    /// Ziel des Spenden-Links. Anders als <see cref="DocsUri"/> stammt die Adresse
+    /// <b>nicht</b> aus den Sprachdateien, sondern aus einer Compile-Zeit-Konstante:
+    /// Ein zur Laufzeit austauschbares Spendenziel würde fremdes Geld umleiten.
+    /// </summary>
+    public Uri DonationUri => new(SupportDonation.PayPalUrl);
+
+    /// <summary>
+    /// Steuert die Sichtbarkeit des Spenden-Eintrags. Ohne echten Handle bleibt er
+    /// verborgen, damit nie ein toter Link auf der Seite steht.
+    /// </summary>
+    public bool IsSupportVisible => SupportDonation.IsConfigured;
 
     /// <summary>Beschriftung des Speichern-Buttons.</summary>
     public string SaveLabel => _localization.GetText(SettingsTextKeys.ButtonSave);

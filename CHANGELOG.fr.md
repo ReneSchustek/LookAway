@@ -10,6 +10,10 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ### Ajouté
 
+- **Soutien facultatif au projet :** la page À propos des paramètres affiche désormais, sous la
+  version, la licence et la documentation, un lien permettant d'offrir un café au développeur.
+  Entièrement facultatif et sans incidence sur les fonctionnalités.
+
 - **Le Setup.exe accompagne de nouveau chaque version :** depuis la 1.2.5, les versions ne contenaient
   plus que le ZIP portable et l'installateur devait être compilé soi-même. Il est désormais généré lors
   de la publication et téléversé avec le ZIP. Le texte de la version indique le SHA-256 des deux

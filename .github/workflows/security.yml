@@ -48,7 +48,18 @@ jobs:
   dependency-review:
     name: Dependency Review (SCA)
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    # Die Prüfung vergleicht zwei Stände miteinander. Beim Pull Request kennt die Aktion beide
+    # selbst, beim Push auf main müssen sie übergeben werden. Ein neu angelegter Branch hat keinen
+    # Vorgänger (Null-SHA) und wird deshalb ausgenommen. Beim Zeitplan-Lauf und bei einer
+    # Handauslösung gibt es keinen Diff — dort prüfen der Vollstand-Check des Jobs
+    # „NuGet Vulnerability Audit" (dotnet list package --vulnerable) und die Dependabot-Alerts,
+    # die neue Advisories auch ohne Lauf melden.
+    # Die Sichtbarkeits-Bedingung sichert gegen einen späteren Wechsel auf privat ab: dort verlangt
+    # die Aktion Advanced Security und bricht sonst ab.
+    if: >-
+      github.event.repository.visibility == 'public'
+      && (github.event_name == 'pull_request'
+      || (github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'))
     permissions:
       contents: read
       pull-requests: write
@@ -57,11 +68,20 @@ jobs:
       - name: Quellcode auschecken
         uses: actions/checkout@v5
 
-      - name: Abhängigkeiten gegen GitHub Advisory Database prüfen
+      - name: Abhängigkeiten eines Pull Requests prüfen
+        if: github.event_name == 'pull_request'
         uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: moderate
           comment-summary-in-pr: always
+
+      - name: Abhängigkeiten des veröffentlichten Standes prüfen
+        if: github.event_name == 'push'
+        uses: actions/dependency-review-action@v5
+        with:
+          fail-on-severity: moderate
+          base-ref: ${{ github.event.before }}
+          head-ref: ${{ github.sha }}
 
   vulnerable-packages:
     name: NuGet Vulnerability Audit (SCA)

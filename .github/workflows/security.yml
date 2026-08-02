@@ -7,7 +7,8 @@ on:
     branches: [main]
   schedule:
     # Wöchentlicher Security-Scan, damit neue CVEs in unveränderten Abhängigkeiten
-    # auch ohne Push gefunden werden. Sonntag 04:00 UTC = außerhalb der Arbeitspaket-Arbeitszeit.
+    # auch ohne Push gefunden werden. Sonntag 04:00 UTC liegt außerhalb der üblichen
+    # Arbeitszeit und kollidiert nicht mit den Push-Läufen der Woche.
     - cron: '0 4 * * 0'
 
 jobs:

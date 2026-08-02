@@ -8,6 +8,8 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+## [1.2.9] – 2026-08-02
+
 ### Hinzugefügt
 
 - **Freiwilliger Spenden-Einstieg:** Die Über-Seite der Einstellungen zeigt unter Version, Lizenz

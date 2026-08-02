@@ -20,7 +20,7 @@ ihre Augen, Haltung und Konzentration schonen möchten.
 
 ## Aktuelles Release
 
-**[v1.2.8](https://github.com/ReneSchustek/LookAway/releases/latest)** ist die aktuelle Version –
+**[v1.2.9](https://github.com/ReneSchustek/LookAway/releases/latest)** ist die aktuelle Version –
 als Setup.exe und als portable ZIP. Highlights der 1.2-Reihe:
 
 - **Signierte Updates** – jedes Paket wird vor dem Einspielen gegen eine ECDSA-P-256-Signatur geprüft

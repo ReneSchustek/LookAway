@@ -20,7 +20,7 @@ eyes, posture and focus.
 
 ## Latest release
 
-**[v1.2.8](https://github.com/ReneSchustek/LookAway/releases/latest)** is the current version –
+**[v1.2.9](https://github.com/ReneSchustek/LookAway/releases/latest)** is the current version –
 available as a Setup.exe and as a portable ZIP. Highlights of the 1.2 line:
 
 - **Signed updates** – every package is checked against an ECDSA P-256 signature before it is applied

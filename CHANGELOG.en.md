@@ -8,6 +8,8 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.9] – 2026-08-02
+
 ### Added
 
 - **Optional way to support the project:** the About page in the settings now shows a link below

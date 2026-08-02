@@ -8,6 +8,8 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+## [1.2.9] – 2026-08-02
+
 ### Ajouté
 
 - **Soutien facultatif au projet :** la page À propos des paramètres affiche désormais, sous la

@@ -21,7 +21,7 @@ et leur concentration.
 
 ## Version actuelle
 
-**[v1.2.8](https://github.com/ReneSchustek/LookAway/releases/latest)** est la version actuelle –
+**[v1.2.9](https://github.com/ReneSchustek/LookAway/releases/latest)** est la version actuelle –
 disponible en Setup.exe et en ZIP portable. Points forts de la série 1.2 :
 
 - **Mises à jour signées** – chaque paquet est vérifié avant son installation contre une signature

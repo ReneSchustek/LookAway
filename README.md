@@ -20,18 +20,19 @@ ihre Augen, Haltung und Konzentration schonen möchten.
 
 ## Aktuelles Release
 
-**[v1.2.9](https://github.com/ReneSchustek/LookAway/releases/latest)** ist die aktuelle Version –
-als Setup.exe und als portable ZIP. Highlights der 1.2-Reihe:
+**[v1.3.0](https://github.com/ReneSchustek/LookAway/releases/latest)** ist die aktuelle Version –
+als Setup.exe und als portable ZIP. Highlights der 1.3-Reihe:
 
+- **Helles und dunkles Erscheinungsbild** – frei wählbar oder der Windows-Einstellung folgend; die
+  Wahl wirkt sofort im offenen Fenster.
+- **Protokoll im Programm** – die zuletzt festgehaltenen Meldungen mit Suche und Filtern nach Stufe
+  und Zeitraum. Bisher lagen sie nur als Datei im Datenverzeichnis.
+- **Pausenmodelle als Kacheln** – mit Suchfeld und Filterleiste; jede Kachel nennt, was in der Pause
+  zu tun ist und wie viele Pausen daraus entstanden sind.
 - **Signierte Updates** – jedes Paket wird vor dem Einspielen gegen eine ECDSA-P-256-Signatur geprüft
   und ohne gültige Signatur abgelehnt.
 - **Ein-Klick-Installation** – „Auf Updates prüfen" spielt ein gefundenes Paket direkt ein, ohne Umweg
   über die Release-Seite.
-- **Automatischer Pausenstart** – wird die Erinnerung nicht bedient, beginnt die Pause nach einer
-  einstellbaren Verzögerung von selbst; ein Countdown zeigt die verbleibende Zeit.
-- **Pausen-Screen auf mehreren Monitoren** – jeder Bildschirm wird abgedunkelt, Titel und Countdown
-  erscheinen auf dem Hauptmonitor.
-- **Frei wählbare Pausen-Farbe** mit automatisch kontrastierender Textfarbe.
 
 ## Funktionen
 

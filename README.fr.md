@@ -21,18 +21,19 @@ et leur concentration.
 
 ## Version actuelle
 
-**[v1.2.9](https://github.com/ReneSchustek/LookAway/releases/latest)** est la version actuelle –
-disponible en Setup.exe et en ZIP portable. Points forts de la série 1.2 :
+**[v1.3.0](https://github.com/ReneSchustek/LookAway/releases/latest)** est la version actuelle –
+disponible en Setup.exe et en ZIP portable. Points forts de la série 1.3 :
 
+- **Apparence claire et sombre** – au choix ou selon le réglage de Windows ; le choix prend effet
+  immédiatement dans la fenêtre ouverte.
+- **Journal dans l'application** – les dernières entrées avec recherche et filtres par niveau et
+  période. Jusqu'ici elles n'existaient que sous forme de fichier dans le dossier de données.
+- **Modèles de pause en cartes** – avec champ de recherche et filtres ; chaque carte indique quoi
+  faire pendant cette pause et combien de pauses en sont issues.
 - **Mises à jour signées** – chaque paquet est vérifié avant son installation contre une signature
   ECDSA P-256 et refusé sans signature valide.
 - **Installation en un clic** – « Rechercher des mises à jour » installe directement le paquet trouvé,
   sans détour par la page des versions.
-- **Démarrage automatique de la pause** – si le rappel reste sans réponse, la pause démarre d'elle-même
-  après un délai configurable ; un compte à rebours affiche le temps restant.
-- **Écran de pause sur plusieurs moniteurs** – chaque écran est assombri, le titre et le compte à
-  rebours s'affichent sur le moniteur principal.
-- **Couleur de pause librement configurable**, avec une couleur de texte contrastée automatiquement.
 
 ## Fonctionnalités
 

@@ -8,6 +8,8 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.0] – 2026-08-11
+
 ### Added
 
 - **Light and dark appearance.** Under "General" you can choose whether windows appear light or

@@ -8,6 +8,8 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+## [1.3.0] – 2026-08-11
+
 ### Hinzugefügt
 
 - **Helles und dunkles Erscheinungsbild.** Unter „Allgemein" lässt sich wählen, ob die Fenster hell

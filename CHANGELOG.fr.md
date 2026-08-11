@@ -8,6 +8,8 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+## [1.3.0] – 2026-08-11
+
 ### Ajouté
 
 - **Apparence claire et sombre.** Sous « Général », vous pouvez choisir si les fenêtres

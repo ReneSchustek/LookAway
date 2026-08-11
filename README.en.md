@@ -20,18 +20,19 @@ eyes, posture and focus.
 
 ## Latest release
 
-**[v1.2.9](https://github.com/ReneSchustek/LookAway/releases/latest)** is the current version –
-available as a Setup.exe and as a portable ZIP. Highlights of the 1.2 line:
+**[v1.3.0](https://github.com/ReneSchustek/LookAway/releases/latest)** is the current version –
+available as a Setup.exe and as a portable ZIP. Highlights of the 1.3 line:
 
+- **Light and dark appearance** – choose freely or follow the Windows setting; the choice takes
+  effect immediately in the open window.
+- **Log inside the app** – the most recent entries with search and filters for level and period.
+  Until now they only existed as a file in the data folder.
+- **Break models as cards** – with a search box and filter chips; each card says what to do during
+  that break and how many breaks have come out of it.
 - **Signed updates** – every package is checked against an ECDSA P-256 signature before it is applied
   and rejected without a valid one.
 - **One-click install** – "Check for updates" applies a package it finds directly, with no detour via
   the release page.
-- **Automatic break start** – if the reminder is left untouched, the break starts by itself after a
-  configurable delay; a countdown shows the remaining time.
-- **Break screen across multiple monitors** – every display is dimmed, title and countdown appear on
-  the primary monitor.
-- **Freely selectable break colour** with automatically contrasting text colour.
 
 ## Features
 

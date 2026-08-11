@@ -92,4 +92,41 @@ public sealed class UpdateOrchestratorTests : IDisposable
         Assert.False(await orchestrator.TryApplyPendingUpdateOnStartupAsync());
         Assert.Equal(0, repository.SaveCallCount);
     }
+
+    /// <remarks>
+    /// Die Prüfung läuft beim Start im Hintergrund. Wird die Anwendung sofort wieder
+    /// beendet, baut sich der Container ab, während sie noch läuft — der Vermerk des
+    /// Prüfzeitpunkts träfe dann auf eine entsorgte Ablage, und zwar in einem Vorgang,
+    /// den niemand mehr beobachtet. Der Abbruch beendet sie vorher.
+    /// </remarks>
+    [Fact]
+    public async Task ShutdownDuringStartupCheck_StopsBeforeWritingAnything()
+    {
+        InMemorySettingsRepository repository = new(new Settings { UpdateCheckEnabled = true });
+        UpdateOrchestrator orchestrator = CreateOrchestrator(repository, new Version(1, 2, 7));
+        Settings settings = await repository.LoadAsync();
+        using CancellationTokenSource shutdown = new();
+        await shutdown.CancelAsync();
+
+        await orchestrator.CheckAtStartupAsync(settings, shutdown.Token);
+
+        Assert.Equal(0, repository.SaveCallCount);
+    }
+
+    /// <remarks>
+    /// Ohne Abbruch läuft sie durch und hält fest, wann zuletzt geprüft wurde — sonst
+    /// prüfte jeder Start erneut.
+    /// </remarks>
+    [Fact]
+    public async Task StartupCheck_RecordsTheTimeOfTheCheck()
+    {
+        InMemorySettingsRepository repository = new(new Settings { UpdateCheckEnabled = true });
+        UpdateOrchestrator orchestrator = CreateOrchestrator(repository, new Version(1, 2, 7));
+        Settings settings = await repository.LoadAsync();
+
+        await orchestrator.CheckAtStartupAsync(settings);
+
+        Settings persisted = await repository.LoadAsync();
+        _ = Assert.NotNull(persisted.LastUpdateCheck);
+    }
 }

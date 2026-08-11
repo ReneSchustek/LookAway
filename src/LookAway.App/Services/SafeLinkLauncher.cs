@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Windows.System;
 
 namespace LookAway.App.Services;
@@ -20,7 +21,12 @@ internal static class SafeLinkLauncher
     /// </summary>
     /// <param name="uri">Zu prüfender Verweis; <c>null</c> ist zulässig und nie erlaubt.</param>
     /// <returns><c>true</c>, wenn er absolut ist und http oder https verwendet.</returns>
-    public static bool IsAllowed(Uri? uri)
+    /// <remarks>
+    /// Die Zusicherung, dass der Verweis bei <c>true</c> nicht <c>null</c> ist, steht als
+    /// Attribut da und nicht als Kommentar: So braucht der Aufrufer hinter der Prüfung
+    /// keine zweite auf <c>null</c>, die nur den Übersetzer beruhigt.
+    /// </remarks>
+    public static bool IsAllowed([NotNullWhen(true)] Uri? uri)
         => uri is { IsAbsoluteUri: true }
             && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
 

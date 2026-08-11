@@ -22,8 +22,15 @@ internal sealed class FakeUpdateChecker : IUpdateChecker
     public int CheckCallCount { get; private set; }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// Der Abbruch wird beachtet wie beim echten Dienst: Eine Attrappe, die ihn
+    /// stillschweigend übergeht, ließe jeden Test grün werden, der das Gegenteil
+    /// belegen soll.
+    /// </remarks>
     public Task<UpdateInfo> CheckForUpdateAsync(CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         CheckCallCount++;
         return Task.FromResult(_result);
     }

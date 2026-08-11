@@ -92,6 +92,12 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
     private BreakCoordinator? _coordinator;
     private UpdateOrchestrator? _updateOrchestrator;
 
+    // Wird beim Beenden ausgelöst und beendet die Vorgänge, die im Hintergrund
+    // weiterlaufen — allen voran die Update-Prüfung beim Start. Ohne sie liefe die
+    // weiter, während der Container schon abgebaut wird; ihr Zugriff auf die dann
+    // entsorgte Ablage endete in einer Ausnahme, die niemand mehr beobachtet.
+    private readonly CancellationTokenSource _shutdown = new();
+
     /// <summary>
     /// Initialisiert die Anwendung, das DI-Container und die globalen Handler.
     /// </summary>
@@ -291,7 +297,7 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
             StartTimer(settings);
 
             // Update-Prüfung im Hintergrund — nicht startkritisch.
-            _ = _updateOrchestrator!.CheckAtStartupAsync(settings);
+            _ = _updateOrchestrator!.CheckAtStartupAsync(settings, _shutdown.Token);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -634,6 +640,10 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
     /// </summary>
     public void Dispose()
     {
+        // Zuerst abbrechen, dann abbauen: Was im Hintergrund läuft, soll aufhören,
+        // bevor ihm die Dienste unter den Händen weggeräumt werden.
+        _shutdown.Cancel();
+
         _detectionLoop?.Dispose();
         _detectionLoop = null;
         _trayIcon?.Dispose();
@@ -642,6 +652,7 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
         _instanceLock = null;
 
         (Services as IDisposable)?.Dispose();
+        _shutdown.Dispose();
     }
 
     private void OnActivationRequested(object? sender, EventArgs e)

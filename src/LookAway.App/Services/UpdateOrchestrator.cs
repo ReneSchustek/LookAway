@@ -74,7 +74,13 @@ internal sealed class UpdateOrchestrator
     /// Hintergrund bereit (Staging).
     /// </summary>
     /// <param name="settings">Aktuelle Konfiguration.</param>
-    public async Task CheckAtStartupAsync(Settings settings)
+    /// <param name="cancellationToken">
+    /// Wird beim Beenden der Anwendung ausgelöst. Ohne ihn liefe die Prüfung weiter,
+    /// während der Container bereits abgebaut wird — der Vermerk des Prüfzeitpunkts
+    /// träfe dann auf eine entsorgte Ablage, und zwar in einem Vorgang, den niemand
+    /// mehr beobachtet.
+    /// </param>
+    public async Task CheckAtStartupAsync(Settings settings, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(settings);
 
@@ -92,7 +98,7 @@ internal sealed class UpdateOrchestrator
         UpdateInfo info;
         try
         {
-            info = await _checker.CheckForUpdateAsync().ConfigureAwait(true);
+            info = await _checker.CheckForUpdateAsync(cancellationToken).ConfigureAwait(true);
         }
         catch (HttpRequestException ex)
         {
@@ -105,7 +111,7 @@ internal sealed class UpdateOrchestrator
             return;
         }
 
-        await PersistLastCheckAsync(now).ConfigureAwait(true);
+        await PersistLastCheckAsync(now, cancellationToken).ConfigureAwait(true);
 
         if (!info.IsUpdateAvailable)
         {
@@ -121,7 +127,7 @@ internal sealed class UpdateOrchestrator
         // nur für genau dieses (verifizierte) Paket.
         if (settings.AutoUpdate && info.PackageUrl is not null && !IsAlreadyStaged(info, settings))
         {
-            await AutoStageAsync(info).ConfigureAwait(true);
+            await AutoStageAsync(info, cancellationToken).ConfigureAwait(true);
         }
     }
 
@@ -333,13 +339,13 @@ internal sealed class UpdateOrchestrator
         }
     }
 
-    private async Task PersistLastCheckAsync(DateTimeOffset now)
+    private async Task PersistLastCheckAsync(DateTimeOffset now, CancellationToken cancellationToken)
     {
         try
         {
-            Settings current = await _settingsRepository.LoadAsync().ConfigureAwait(true);
+            Settings current = await _settingsRepository.LoadAsync(cancellationToken).ConfigureAwait(true);
             current.LastUpdateCheck = now;
-            await _settingsRepository.SaveAsync(current).ConfigureAwait(true);
+            await _settingsRepository.SaveAsync(current, cancellationToken).ConfigureAwait(true);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -353,9 +359,9 @@ internal sealed class UpdateOrchestrator
 
     // Lädt/entpackt das Update im Hintergrund und vermerkt Version + Datei-Hash in den
     // Einstellungen, damit es beim nächsten Start verifiziert eingespielt wird.
-    private async Task AutoStageAsync(UpdateInfo info)
+    private async Task AutoStageAsync(UpdateInfo info, CancellationToken cancellationToken)
     {
-        StagedUpdate? staged = await _installer.DownloadAndStageAsync(info).ConfigureAwait(true);
+        StagedUpdate? staged = await _installer.DownloadAndStageAsync(info, cancellationToken).ConfigureAwait(true);
         if (staged is null)
         {
             return;
@@ -363,10 +369,10 @@ internal sealed class UpdateOrchestrator
 
         try
         {
-            Settings settings = await _settingsRepository.LoadAsync().ConfigureAwait(true);
+            Settings settings = await _settingsRepository.LoadAsync(cancellationToken).ConfigureAwait(true);
             settings.PendingUpdateVersion = staged.Version;
             settings.PendingUpdateSha256 = staged.ExecutableSha256;
-            await _settingsRepository.SaveAsync(settings).ConfigureAwait(true);
+            await _settingsRepository.SaveAsync(settings, cancellationToken).ConfigureAwait(true);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -397,10 +403,19 @@ internal sealed class UpdateOrchestrator
             _appVersion, settings.PendingUpdateVersion, settings.PendingUpdateSha256) is not null;
     }
 
+    /// <remarks>
+    /// Die Adresse stammt aus der Antwort des Release-Dienstes, also von außen.
+    /// <see cref="Uri.TryCreate(string, UriKind, out Uri)"/> nimmt beim Auswerten jedes
+    /// absolute Schema an — auch <c>file:</c> oder ein Anwendungsprotokoll. Mit
+    /// <c>UseShellExecute</c> startete dann nicht der Browser, sondern was auch immer
+    /// das System für dieses Schema hinterlegt hat. Dieselbe Prüfung schützt bereits die
+    /// Verweise der Über-Seite; sie gehört auch hierher.
+    /// </remarks>
     private void OpenReleasePage()
     {
-        if (_downloadUrl is null)
+        if (!SafeLinkLauncher.IsAllowed(_downloadUrl))
         {
+            UpdateOrchestratorLog.ReleasePageRejected(_logger, _downloadUrl?.ToString() ?? string.Empty);
             return;
         }
 
@@ -472,6 +487,12 @@ internal static partial class UpdateOrchestratorLog
 
     [LoggerMessage(EventId = 1161, Level = LogLevel.Warning, Message = "Die Update-Seite konnte nicht im Browser geöffnet werden.")]
     public static partial void BrowserOpenFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(
+        EventId = 1171,
+        Level = LogLevel.Warning,
+        Message = "Adresse der Release-Seite abgelehnt — nur http und https werden geöffnet: {Address}")]
+    public static partial void ReleasePageRejected(ILogger logger, string address);
 
     [LoggerMessage(EventId = 1170, Level = LogLevel.Information, Message = "Ausstehendes Update wird eingespielt: {Directory}.")]
     public static partial void ApplyingPendingUpdate(ILogger logger, string directory);

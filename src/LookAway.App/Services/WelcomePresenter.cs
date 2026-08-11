@@ -13,6 +13,7 @@ internal sealed class WelcomePresenter
 {
     private readonly DispatcherQueue _dispatcher;
     private readonly Func<WelcomeViewModel> _viewModelFactory;
+    private readonly ThemeService _themeService;
     private readonly Action<Settings> _onCompleted;
 
     /// <summary>
@@ -20,18 +21,22 @@ internal sealed class WelcomePresenter
     /// </summary>
     /// <param name="dispatcher">UI-Dispatcher des Hauptfensters.</param>
     /// <param name="viewModelFactory">Erzeugt das Wizard-ViewModel.</param>
+    /// <param name="themeService">Liefert das gewählte Erscheinungsbild.</param>
     /// <param name="onCompleted">Callback mit der gespeicherten Erstkonfiguration.</param>
     public WelcomePresenter(
         DispatcherQueue dispatcher,
         Func<WelcomeViewModel> viewModelFactory,
+        ThemeService themeService,
         Action<Settings> onCompleted)
     {
         ArgumentNullException.ThrowIfNull(dispatcher);
         ArgumentNullException.ThrowIfNull(viewModelFactory);
+        ArgumentNullException.ThrowIfNull(themeService);
         ArgumentNullException.ThrowIfNull(onCompleted);
 
         _dispatcher = dispatcher;
         _viewModelFactory = viewModelFactory;
+        _themeService = themeService;
         _onCompleted = onCompleted;
     }
 
@@ -58,6 +63,7 @@ internal sealed class WelcomePresenter
         };
 
         Views.WelcomeWindow window = new(viewModel);
+        _themeService.Apply(window);
         window.Closed += (_, _) =>
         {
             viewModel.Dispose();

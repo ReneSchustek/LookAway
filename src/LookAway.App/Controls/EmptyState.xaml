@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Leerzustand der Gestaltungslinie.
+
+    „Nichts vorhanden" und „nichts gefunden" sind zwei verschiedene Lagen und
+    brauchen zwei verschiedene Sätze. Welche gerade gilt, entscheidet die Ansicht;
+    dieses Steuerelement stellt nur dar. Im zweiten Fall gehört eine Schaltfläche
+    zum Zurücksetzen dazu — sie kommt über ActionContent hinein.
+-->
+<UserControl
+    x:Class="LookAway.App.Controls.EmptyState"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <StackPanel
+        Spacing="{StaticResource RcSpacingS}"
+        HorizontalAlignment="Center"
+        Padding="0,32">
+
+        <FontIcon
+            Glyph="{x:Bind Glyph, Mode=OneWay}"
+            FontSize="{StaticResource RcIconSizeL}"
+            Foreground="{ThemeResource RcTextMuted}"
+            HorizontalAlignment="Center"
+            AutomationProperties.AccessibilityView="Raw" />
+
+        <TextBlock
+            Text="{x:Bind Title, Mode=OneWay}"
+            Style="{StaticResource RcH3TextStyle}"
+            TextAlignment="Center"
+            HorizontalAlignment="Center" />
+
+        <TextBlock
+            Text="{x:Bind Text, Mode=OneWay}"
+            Style="{StaticResource RcPageSubtitleStyle}"
+            TextAlignment="Center"
+            HorizontalAlignment="Center"
+            MaxWidth="420" />
+
+        <ContentPresenter
+            Content="{x:Bind ActionContent, Mode=OneWay}"
+            HorizontalAlignment="Center"
+            Margin="0,8,0,0" />
+    </StackPanel>
+</UserControl>

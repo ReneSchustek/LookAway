@@ -48,8 +48,11 @@ available as a Setup.exe and as a portable ZIP. Highlights of the 1.2 line:
   (only players with Windows media controls such as Spotify, the Music app, Chrome/Edge/Firefox; VLC is not supported)
 - **Automatic updates** – optional check via the GitHub releases API; on request LookAway downloads
   and installs new versions itself (see [Updates](#updates))
+- **Light and dark appearance** – choose freely or follow the Windows setting
 - **Trilingual** – German, English, French, switchable at runtime
 - **Statistics and CSV export** – breaks per day, week and year, exportable
+- **Log inside the app** – the most recent entries with search and filters for level and period;
+  useful when something does not behave as expected
 - **Global hotkeys** – start break, skip, toggle Do Not Disturb – from anywhere
 - **Optional sound** – a discreet cue on the reminder (choose from three tones)
 - **Autostart** – optionally starts automatically with Windows
@@ -107,8 +110,11 @@ double click opens the settings.
 ## Configuration
 
 All options live in the settings window (tray menu → "Settings…") in the collapsible side menu:
-General, break model, custom intervals, sound, break (incl. screen dimming and colour picker),
-hotkeys, statistics and About (with update options).
+General (incl. appearance), break model, custom intervals, sound, break (incl. screen dimming and
+colour picker), hotkeys, statistics, log and About (with update options).
+
+The break models are shown as cards with a search box and filter chips: each one says what to do
+during that break and how many breaks have come out of it. A click selects the model.
 
 ## Updates
 

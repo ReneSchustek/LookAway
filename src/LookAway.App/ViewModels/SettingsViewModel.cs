@@ -39,6 +39,12 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Statistik-Bereich, als eigenes ViewModel komponiert.</summary>
     public StatisticsViewModel Statistics { get; }
 
+    /// <summary>Pausenmodell-Liste mit Suche und Filter, als eigenes ViewModel komponiert.</summary>
+    public BreakModelListViewModel BreakModels { get; }
+
+    /// <summary>Protokoll-Ansicht mit Suche und Filter, als eigenes ViewModel komponiert.</summary>
+    public LogViewModel Log { get; }
+
     private Language _originalLanguage;
     private bool _isInitializing;
     private bool _disposed;
@@ -48,6 +54,9 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     public partial SettingsOption<BreakModel>? SelectedModelOption { get; set; }
+
+    [ObservableProperty]
+    public partial SettingsOption<AppTheme>? SelectedThemeOption { get; set; }
 
     [ObservableProperty]
     public partial bool AutoStart { get; set; }
@@ -122,6 +131,8 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <param name="updateChecker">Prüft auf Updates.</param>
     /// <param name="updateInstaller">Lädt und stellt ein gefundenes Update bereit (Ein-Klick-Installation).</param>
     /// <param name="statistics">Statistik-ViewModel (komponiert).</param>
+    /// <param name="breakModels">Pausenmodell-Liste (komponiert).</param>
+    /// <param name="log">Protokoll-Ansicht (komponiert).</param>
     /// <param name="logger">Logger.</param>
     /// <param name="applicationVersion">Anzuzeigende Versionsnummer (Über-Bereich).</param>
     public SettingsViewModel(
@@ -132,6 +143,8 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         IUpdateChecker updateChecker,
         IUpdateInstaller updateInstaller,
         StatisticsViewModel statistics,
+        BreakModelListViewModel breakModels,
+        LogViewModel log,
         ILogger<SettingsViewModel> logger,
         string applicationVersion)
     {
@@ -142,6 +155,8 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(updateChecker);
         ArgumentNullException.ThrowIfNull(updateInstaller);
         ArgumentNullException.ThrowIfNull(statistics);
+        ArgumentNullException.ThrowIfNull(breakModels);
+        ArgumentNullException.ThrowIfNull(log);
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentException.ThrowIfNullOrWhiteSpace(applicationVersion);
 
@@ -152,8 +167,15 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _updateChecker = updateChecker;
         _updateInstaller = updateInstaller;
         Statistics = statistics;
+        BreakModels = breakModels;
+        Log = log;
         _logger = logger;
         _applicationVersion = applicationVersion;
+
+        // Die Kachel-Auswahl und das Auswahlfeld führen dieselbe Einstellung. Damit
+        // es dabei nur eine Wahrheit gibt, meldet die Liste ihre Wahl hierher und
+        // bekommt umgekehrt die Marke gesetzt, wenn sie anderswo umgestellt wird.
+        BreakModels.ModelSelected += OnBreakModelSelected;
 
         // Startwerte der gebundenen Eigenschaften; partielle Properties erlauben
         // keine Feld-Initialisierer.
@@ -163,6 +185,7 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         Languages = BuildLanguageOptions();
         Models = BuildModelOptions();
         Sounds = BuildSoundOptions();
+        Appearances = BuildThemeOptions();
         UpdateFrequencies = BuildFrequencyOptions();
 
         _localization.LanguageChanged += OnLanguageChanged;
@@ -186,6 +209,9 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     /// <summary>Auswählbare Erinnerungstöne mit lokalisierter Beschriftung.</summary>
     public IReadOnlyList<SettingsOption<SoundType>> Sounds { get; }
+
+    /// <summary>Auswählbare Erscheinungsbilder mit lokalisierter Beschriftung.</summary>
+    public IReadOnlyList<SettingsOption<AppTheme>> Appearances { get; }
 
     /// <summary>Untere Grenze der Arbeitsdauer (Minuten) für das aktive Modell.</summary>
     public int WorkMinMinutes { get; private set; } = (int)BreakInterval.MinWorkDuration.TotalMinutes;
@@ -226,6 +252,9 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Der aktuell gewählte Erinnerungston.</summary>
     public SoundType SelectedSound => SelectedSoundOption?.Value ?? SoundType.Chime;
 
+    /// <summary>Das aktuell gewählte Erscheinungsbild.</summary>
+    public AppTheme SelectedTheme => SelectedThemeOption?.Value ?? AppTheme.System;
+
     /// <summary>Untere Grenze der Lautstärke.</summary>
     public int SoundVolumeMin => Settings.MinSoundVolumePercent;
 
@@ -249,6 +278,18 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     /// <summary>Tab-Überschrift "Über LookAway".</summary>
     public string TabAboutHeader => _localization.GetText(SettingsTextKeys.TabAbout);
+
+    /// <summary>Tab-Überschrift "Protokoll".</summary>
+    public string TabLogHeader => _localization.GetText(SettingsTextKeys.TabLog);
+
+    /// <summary>Beschriftung der Erscheinungsbild-Auswahl.</summary>
+    public string AppearanceLabel => _localization.GetText(SettingsTextKeys.AppearanceLabel);
+
+    /// <summary>Hinweistext zur Erscheinungsbild-Auswahl.</summary>
+    public string AppearanceHint => _localization.GetText(SettingsTextKeys.AppearanceHint);
+
+    /// <summary>Beschriftung des Löschen-Zeichens in den Suchfeldern.</summary>
+    public string ClearSearchLabel => _localization.GetText(SettingsTextKeys.ClearSearch);
 
     /// <summary>Beschriftung der Sprachauswahl.</summary>
     public string LanguageLabel => _localization.GetText(SettingsTextKeys.LanguageLabel);
@@ -402,6 +443,7 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
             _localization.SetLanguage(settings.Language);
             SelectLanguage(settings.Language);
             SelectModel(settings.BreakModel);
+            SelectTheme(settings.AppTheme);
             UpdateModelRanges(settings.BreakModel);
 
             AutoStart = settings.AutoStart;
@@ -443,6 +485,9 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         }
 
         await Statistics.LoadAsync(cancellationToken).ConfigureAwait(true);
+        BreakModels.SetActiveModel(SelectedModel);
+        await BreakModels.LoadAsync(cancellationToken).ConfigureAwait(true);
+        await Log.LoadAsync(cancellationToken).ConfigureAwait(true);
 
         Validate();
         OnPropertyChanged(string.Empty);
@@ -462,6 +507,11 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <param name="soundType">Zu wählender Ton.</param>
     public void SelectSound(SoundType soundType)
         => SelectedSoundOption = Sounds.First(option => option.Value == soundType);
+
+    /// <summary>Wählt das Erscheinungsbild anhand seines Werts (UI/Test-Hilfe).</summary>
+    /// <param name="theme">Zu wählendes Erscheinungsbild.</param>
+    public void SelectTheme(AppTheme theme)
+        => SelectedThemeOption = Appearances.First(option => option.Value == theme);
 
     private void LoadDurations(Settings settings)
     {
@@ -503,6 +553,7 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         Settings settings = await _settingsRepository.LoadAsync().ConfigureAwait(true);
         settings.Language = SelectedLanguage;
         settings.BreakModel = SelectedModel;
+        settings.AppTheme = SelectedTheme;
         settings.PauseOnIdle = PauseOnIdle;
         settings.IdleThresholdMinutes = Math.Clamp(IdleThresholdMinutes, IdleMinMinutes, IdleMaxMinutes);
         settings.SuppressOnFullscreen = SuppressOnFullscreen;
@@ -590,6 +641,8 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(WorkRangeText));
     }
 
+    private void OnBreakModelSelected(object? sender, BreakModel model) => SelectModel(model);
+
     partial void OnSelectedModelOptionChanged(SettingsOption<BreakModel>? value)
     {
         if (_isInitializing || value is null)
@@ -597,6 +650,7 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
             return;
         }
 
+        BreakModels.SetActiveModel(value.Value);
         UpdateModelRanges(value.Value);
 
         // Bei Modellwechsel die Dauern auf die Modell-Vorgaben zurücksetzen,
@@ -659,9 +713,20 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
             option.RefreshLabel();
         }
 
+        foreach (SettingsOption<AppTheme> option in Appearances)
+        {
+            option.RefreshLabel();
+        }
+
         // Fehlertexte in neuer Sprache, danach alle gebundenen Texte aktualisieren.
         Validate();
         Statistics.RefreshTexts();
+        Log.RefreshTexts();
+
+        // Die Modell-Kacheln tragen übersetzte Namen und Sätze; sie werden neu
+        // aufgebaut, statt nur die Bindungen anzustoßen.
+        _ = BreakModels.RefreshTextsAsync();
+
         OnPropertyChanged(string.Empty);
     }
 
@@ -686,6 +751,13 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
                 () => _localization.GetText(SettingsTextKeys.ForSound(sound))))
             .ToList();
 
+    private List<SettingsOption<AppTheme>> BuildThemeOptions()
+        => Enum.GetValues<AppTheme>()
+            .Select(theme => new SettingsOption<AppTheme>(
+                theme,
+                () => _localization.GetText(SettingsTextKeys.ForTheme(theme))))
+            .ToList();
+
     /// <summary>Meldet den Sprachwechsel-Handler ab.</summary>
     public void Dispose()
     {
@@ -696,6 +768,7 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
         _disposed = true;
         EndCaptureOnDispose();
+        BreakModels.ModelSelected -= OnBreakModelSelected;
         _localization.LanguageChanged -= OnLanguageChanged;
     }
 }

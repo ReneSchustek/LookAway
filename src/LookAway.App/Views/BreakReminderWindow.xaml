@@ -7,7 +7,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid RequestedTheme="Light" Padding="32" RowSpacing="16" Background="{StaticResource RcBackground}">
+    <Grid x:Name="RootGrid" Padding="{StaticResource RcPagePadding}" RowSpacing="16" Background="{ThemeResource RcBackground}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -23,15 +23,15 @@
         <TextBlock
             x:Name="HintText"
             Grid.Row="1"
-            FontSize="{StaticResource RcFontSizeH3}" />
+            Style="{StaticResource RcH3TextStyle}" />
 
         <TextBlock
             x:Name="CountdownText"
             Grid.Row="2"
+            Style="{StaticResource RcMutedTextStyle}"
             TextWrapping="NoWrap"
             VerticalAlignment="Bottom"
             HorizontalAlignment="Left"
-            Foreground="{StaticResource RcTextSecondary}"
             Visibility="Collapsed" />
 
         <StackPanel

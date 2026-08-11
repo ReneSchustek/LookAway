@@ -52,6 +52,8 @@ public sealed class SettingsViewModelHotkeyCaptureTests
             new FakeUpdateChecker(),
             new FakeUpdateInstaller(),
             statistics,
+            new BreakModelListViewModel(localization, history),
+            new LogViewModel(new FakeLogEntryReader(), localization, clock),
             NullLogger<SettingsViewModel>.Instance,
             "1.0.0");
     }

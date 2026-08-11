@@ -18,6 +18,7 @@ public sealed class Settings
 {
     private Language _language = Language.German;
     private BreakModel _breakModel = BreakModel.ClassicPomodoro;
+    private AppTheme _appTheme = AppTheme.System;
 
     /// <summary>
     /// Anzeigesprache der Anwendung. Default: <see cref="Language.German"/>.
@@ -54,6 +55,26 @@ public sealed class Settings
                     "Unbekanntes Pausenmodell.");
             }
             _breakModel = value;
+        }
+    }
+
+    /// <summary>
+    /// Erscheinungsbild der Fenster. Default: <see cref="AppTheme.System"/> —
+    /// die Anwendung folgt Windows, solange der Benutzer nichts anderes wählt.
+    /// </summary>
+    public AppTheme AppTheme
+    {
+        get => _appTheme;
+        set
+        {
+            if (!Enum.IsDefined(value))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(value),
+                    value,
+                    "Unbekanntes Erscheinungsbild.");
+            }
+            _appTheme = value;
         }
     }
 

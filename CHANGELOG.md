@@ -8,6 +8,34 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- **Helles und dunkles Erscheinungsbild.** Unter „Allgemein" lässt sich wählen, ob die Fenster hell
+  oder dunkel erscheinen; „Wie Windows" folgt der Einstellung des Systems. Die Wahl wirkt sofort im
+  offenen Fenster.
+
+- **Protokoll im Programm.** Ein neuer Bereich zeigt, was die Anwendung zuletzt festgehalten hat —
+  mit Suche im Meldungstext und Filtern nach Stufe und Zeitraum. Bisher lagen diese Meldungen nur
+  als Datei im Datenverzeichnis, das man erst finden musste.
+
+- **Suche und Filter bei den Pausenmodellen.** Die Modelle stehen als Kacheln mit Suchfeld und
+  Filterleiste. Jede Kachel nennt, was in dieser Pause zu tun ist, und wie viele Pausen daraus
+  bereits entstanden sind.
+
+### Geändert
+
+- **Durchgängiges Erscheinungsbild.** Fenster, Karten, Schaltflächen, Kontrollkästchen und
+  Schieberegler folgen jetzt einer gemeinsamen Farbgebung. Vorher zogen einige Bedienelemente die
+  in Windows eingestellte Akzentfarbe — je nach Rechner also eine andere.
+
+- **Verweise sind unterstrichen** und dadurch auch dann als solche erkennbar, wenn Farben schwer zu
+  unterscheiden sind.
+
+- **Neues Programmzeichen** in Seitenleiste, Fenster- und Programmsymbol.
+
+- Leere Listen sagen jetzt, ob nichts vorhanden ist oder die Eingabe nichts trifft. Im zweiten Fall
+  gibt es eine Schaltfläche, die Suche und Filter zurücksetzt.
+
 ## [1.2.9] – 2026-08-02
 
 ### Hinzugefügt

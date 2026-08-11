@@ -28,6 +28,8 @@ using Microsoft.UI.Xaml;
 using AutoStartCoordinator = LookAway.Core.Services.AutoStartCoordinator;
 using SettingsViewModel = LookAway.App.ViewModels.SettingsViewModel;
 using StatisticsViewModel = LookAway.App.ViewModels.StatisticsViewModel;
+using BreakModelListViewModel = LookAway.App.ViewModels.BreakModelListViewModel;
+using LogViewModel = LookAway.App.ViewModels.LogViewModel;
 using WelcomeViewModel = LookAway.App.ViewModels.WelcomeViewModel;
 using StatisticsService = LookAway.Core.Services.StatisticsService;
 using CsvExporter = LookAway.Core.Services.CsvExporter;
@@ -223,6 +225,7 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
         _reminderPresenter = new ReminderPresenter(
             _window.DispatcherQueue,
             Services.GetRequiredService<ILocalizationService>(),
+            Services.GetRequiredService<ThemeService>(),
             Services.GetRequiredService<ILogger<ReminderPresenter>>());
         _overlayPresenter = new BreakOverlayPresenter(
             _window.DispatcherQueue,
@@ -231,6 +234,7 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
         _settingsPresenter = new SettingsPresenter(
             _window.DispatcherQueue,
             CreateSettingsViewModel,
+            Services.GetRequiredService<ThemeService>(),
             ApplySettingsLive,
             SuspendHotkeysWhileCapturing);
 
@@ -263,8 +267,10 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
                 settings = await repository.LoadAsync().ConfigureAwait(true);
             }
 
-            // Anzeigesprache aus der Konfiguration übernehmen.
+            // Anzeigesprache und Erscheinungsbild aus der Konfiguration übernehmen,
+            // bevor das erste Fenster aufgebaut wird.
             Services.GetRequiredService<ILocalizationService>().SetLanguage(settings.Language);
+            Services.GetRequiredService<ThemeService>().SetTheme(settings.AppTheme);
 
             InitializeTray();
 
@@ -464,6 +470,7 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
         WelcomePresenter presenter = new(
             _window!.DispatcherQueue,
             CreateWelcomeViewModel,
+            Services.GetRequiredService<ThemeService>(),
             _ => { });
         return presenter.ShowAsync();
     }
@@ -534,6 +541,8 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
         Services.GetRequiredService<IUpdateChecker>(),
         Services.GetRequiredService<IUpdateInstaller>(),
         CreateStatisticsViewModel(),
+        CreateBreakModelListViewModel(),
+        CreateLogViewModel(),
         Services.GetRequiredService<ILogger<SettingsViewModel>>(),
         GetVersion());
 
@@ -543,6 +552,15 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
         Services.GetRequiredService<CsvExporter>(),
         Services.GetRequiredService<ILocalizationService>());
 
+    private BreakModelListViewModel CreateBreakModelListViewModel() => new(
+        Services.GetRequiredService<ILocalizationService>(),
+        Services.GetRequiredService<IBreakHistoryRepository>());
+
+    private LogViewModel CreateLogViewModel() => new(
+        Services.GetRequiredService<ILogEntryReader>(),
+        Services.GetRequiredService<ILocalizationService>(),
+        Services.GetRequiredService<IClock>());
+
     /// <summary>
     /// Übernimmt gespeicherte Einstellungen sofort: startet den Timer mit dem
     /// neuen Modell neu und aktualisiert Idle-/Vollbild-Erkennung sowie das Tray.
@@ -551,6 +569,7 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
     {
         _coordinator?.ApplySchedule(settings);
         _detectionLoop?.ApplySettings(settings);
+        Services.GetRequiredService<ThemeService>().SetTheme(settings.AppTheme);
         RegisterHotkeys(settings);
     }
 

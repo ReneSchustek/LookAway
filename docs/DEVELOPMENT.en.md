@@ -232,20 +232,32 @@ On the very first launch (no `settings.json` present, `Settings.IsFirstRun`) a t
 
 ## Theme and design
 
-The visual design is defined centrally in `src/LookAway.App/Themes/` and merged in `App.xaml`:
+The visual design lives in `src/LookAway.App/Themes/` and is merged in `App.xaml`:
 
-- `Colors.xaml`: the color palette as `SolidColorBrush` resources — `RcBackground` (`#FFFFFF`),
-  `RcAccent` (indigo `#4361EE`), `RcTextPrimary` (`#1F2937`), `RcInteraction` (`#F3F4F6`),
-  `RcDivider` (`#E5E7EB`), `RcError`.
-- `Typography.xaml`: `RcFontFamily` (Roboto with system fallback), font sizes (H1 28, H2 22, H3 18,
-  Body 14, Caption 12) plus an implicit `TextBlock` default format and heading styles.
-- `Controls.xaml`: `RcButtonStyle` (implicit, rounded corners, Roboto) and `RcPrimaryButtonStyle`
-  (full indigo accent for primary actions like Save/Finish/Start break).
+- `Tokens.xaml`: everything that is the same in both appearances — spacing (base unit 8 px),
+  corner radii (4–6 px), border thickness, `RcFontFamily` (Roboto with system fallback) and the
+  font scale (H1 28, H2 22, H3 18, Body 14, Caption 12). **No color value.**
+- `Light.xaml` and `Dark.xaml`: the same keys, two sets of values. Surfaces, text, primary colour
+  (`RcPrimary`), status colours — plus the framework brushes, so that standard controls do not
+  pick up the accent colour configured in Windows.
+- `ControlStyles.xaml`: text styles, buttons, cards, filter chips and the card whose border
+  changes colour on hover.
 
-The views (reminder, settings, wizard) reference these resources exclusively — no more hard-coded
-colors. **Note:** an embedded `Roboto` TTF under `Assets/Fonts/` is still to be added (Open Font
-License); until then the installed Roboto or the Windows default font applies via the fallback chain
-in `RcFontFamily`.
+The recurring building blocks are controls under `Controls/`: `ListPageHeader` (title, one
+explaining line, primary action), `SearchBox` (magnifier, placeholder, clear, Escape empties it)
+and `EmptyState`.
+
+**Views bind colours as `ThemeResource`, never as a value.** `StaticResource` freezes the value at
+load time, so that spot would stay behind when the appearance changes. Measurements stay
+`StaticResource` — they never change at runtime.
+
+`GestaltungslinieGuardTests` in the app test project holds this: no colour value in `Views/` and
+`Controls/`, no colour value in `Tokens.xaml`, and the same set of keys in both palettes. A missing
+key breaks the binding in one palette only — which otherwise surfaces at the user.
+
+The chosen appearance (`Settings.AppTheme`: `System`, `Light`, `Dark`) is held by `ThemeService`;
+the presenters apply it to each window as it is built. WinUI only knows the appearance per element,
+not application-wide.
 
 ## Sound options
 

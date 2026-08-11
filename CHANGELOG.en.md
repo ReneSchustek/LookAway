@@ -8,6 +8,33 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Light and dark appearance.** Under "General" you can choose whether windows appear light or
+  dark; "Match Windows" follows the system setting. The choice takes effect immediately in the
+  open window.
+
+- **Log inside the app.** A new section shows what the application recorded most recently — with
+  a search across the message text and filters for level and period. Until now these entries only
+  existed as a file in the data folder, which you had to find first.
+
+- **Search and filters for the break models.** The models are shown as cards with a search box and
+  filter chips. Each card says what to do during that break and how many breaks have come out of it.
+
+### Changed
+
+- **Consistent appearance.** Windows, cards, buttons, check boxes and sliders now follow one shared
+  set of colours. Previously some controls picked up the accent colour configured in Windows — a
+  different one on every machine.
+
+- **Links are underlined** and therefore recognisable as links even when colours are hard to tell
+  apart.
+
+- **New application icon** in the side menu, the window and the program icon.
+
+- Empty lists now say whether there is nothing at all or whether the input simply matches nothing.
+  In the second case a button resets search and filters.
+
 ## [1.2.9] – 2026-08-02
 
 ### Added

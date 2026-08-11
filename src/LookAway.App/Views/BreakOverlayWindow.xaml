@@ -8,8 +8,9 @@
     mc:Ignorable="d">
 
     <!-- Abgedunkelter Vollbild-Hintergrund; helle Schrift für den Pausen-Inhalt.
-         Die konkrete Hintergrundfarbe setzt der Code-Behind aus den Einstellungen. -->
-    <Grid x:Name="RootGrid" Background="#F20F1115">
+         Die konkrete Hintergrundfarbe setzt der Code-Behind aus den Einstellungen,
+         der Pinsel hier trägt nur so lange, bis das geschehen ist. -->
+    <Grid x:Name="RootGrid" Background="{ThemeResource RcOverlayBackground}">
         <Grid.KeyboardAccelerators>
             <KeyboardAccelerator Key="Escape" Invoked="OnEscapeInvoked" />
         </Grid.KeyboardAccelerators>
@@ -23,35 +24,21 @@
 
             <TextBlock
                 x:Name="TitleText"
-                HorizontalAlignment="Center"
-                TextAlignment="Center"
-                FontSize="40"
-                FontWeight="Medium"
-                AutomationProperties.LiveSetting="Assertive"
-                Foreground="#FFFFFFFF" />
+                Style="{StaticResource RcOverlayTitleStyle}"
+                AutomationProperties.LiveSetting="Assertive" />
 
             <TextBlock
                 x:Name="HintText"
-                HorizontalAlignment="Center"
-                TextAlignment="Center"
-                FontSize="22"
-                Foreground="#FFE5E7EB" />
+                Style="{StaticResource RcOverlayHintStyle}" />
 
             <TextBlock
                 x:Name="CountdownText"
-                HorizontalAlignment="Center"
-                TextAlignment="Center"
-                FontSize="76"
-                FontWeight="Bold"
-                Foreground="#FFFFFFFF" />
+                Style="{StaticResource RcOverlayCountdownStyle}" />
 
             <TextBlock
                 x:Name="EndHintText"
-                HorizontalAlignment="Center"
-                TextAlignment="Center"
-                FontSize="14"
-                Margin="0,24,0,0"
-                Foreground="#FF9CA3AF" />
+                Style="{StaticResource RcOverlayEndHintStyle}"
+                Margin="0,24,0,0" />
         </StackPanel>
     </Grid>
 </Window>

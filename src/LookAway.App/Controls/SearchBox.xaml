@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Suchfeld der Gestaltungslinie: Lupe, Platzhalter, Löschen.
+
+    Eigenes Steuerelement und kein Stil, weil das Löschen einen Handgriff braucht,
+    den ein Stil nicht mitbringt — und weil dieselbe Anordnung sonst in jeder
+    Ansicht neu entstünde.
+-->
+<UserControl
+    x:Class="LookAway.App.Controls.SearchBox"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:LookAway.App.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    MinHeight="{StaticResource RcRowHeight}">
+
+    <UserControl.Resources>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+    </UserControl.Resources>
+
+    <Border
+        Background="{ThemeResource RcInputBackground}"
+        BorderBrush="{ThemeResource RcInputBorder}"
+        BorderThickness="{StaticResource RcHairlineThickness}"
+        CornerRadius="{StaticResource RcControlCornerRadius}">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <FontIcon
+                Grid.Column="0"
+                Glyph="&#xE721;"
+                FontSize="{StaticResource RcIconSizeS}"
+                Foreground="{ThemeResource RcTextMuted}"
+                Margin="10,0,8,0"
+                VerticalAlignment="Center"
+                AutomationProperties.AccessibilityView="Raw" />
+
+            <!-- Der Platzhalter sagt, was durchsucht wird, und ist zugleich die
+                 Beschriftung für die Sprachausgabe. -->
+            <TextBox
+                x:Name="Input"
+                Grid.Column="1"
+                Text="{x:Bind Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                PlaceholderText="{x:Bind Placeholder, Mode=OneWay}"
+                AutomationProperties.Name="{x:Bind Placeholder, Mode=OneWay}"
+                Background="Transparent"
+                BorderThickness="0"
+                VerticalAlignment="Center"
+                KeyDown="OnInputKeyDown" />
+
+            <!-- Ein Löschen-Knopf über einem leeren Feld hat nichts zu tun. -->
+            <Button
+                x:Name="ClearButton"
+                Grid.Column="2"
+                Content="&#xE711;"
+                FontFamily="Segoe MDL2 Assets"
+                FontSize="{StaticResource RcIconSizeS}"
+                Background="Transparent"
+                BorderThickness="0"
+                MinHeight="0"
+                MinWidth="32"
+                Padding="4"
+                Margin="0,2,2,2"
+                Click="OnClearClick"
+                Visibility="{x:Bind HasText, Mode=OneWay, Converter={StaticResource BoolToVisibility}}"
+                AutomationProperties.Name="{x:Bind ClearLabel, Mode=OneWay}"
+                ToolTipService.ToolTip="{x:Bind ClearLabel, Mode=OneWay}" />
+        </Grid>
+    </Border>
+</UserControl>

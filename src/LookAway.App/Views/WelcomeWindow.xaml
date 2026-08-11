@@ -8,7 +8,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid x:Name="RootGrid" RequestedTheme="Light" Padding="32" RowSpacing="16" Background="{StaticResource RcBackground}">
+    <Grid x:Name="RootGrid" Padding="{StaticResource RcPagePadding}" RowSpacing="16" Background="{ThemeResource RcBackground}">
         <Grid.Resources>
             <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
         </Grid.Resources>
@@ -22,7 +22,7 @@
 
         <TextBlock Grid.Row="0" Text="{Binding Title}" Style="{StaticResource RcH1TextStyle}" />
 
-        <TextBlock Grid.Row="1" Text="{Binding Intro}" />
+        <TextBlock Grid.Row="1" Text="{Binding Intro}" Style="{StaticResource RcBodyTextStyle}" />
 
         <!-- Schritt-Inhalt -->
         <Grid Grid.Row="2" VerticalAlignment="Top" Margin="0,12,0,0">
@@ -55,21 +55,20 @@
                 Visibility="{Binding IsStepAutoStart, Converter={StaticResource BoolToVisibility}}">
                 <TextBlock Text="{Binding StepHeader}" Style="{StaticResource RcH3TextStyle}" />
                 <CheckBox Content="{Binding AutoStartLabel}" IsChecked="{Binding AutoStart, Mode=TwoWay}" />
-                <TextBlock Text="{Binding AutoStartHint}" FontSize="{StaticResource RcFontSizeCaption}" />
+                <TextBlock Text="{Binding AutoStartHint}" Style="{StaticResource RcMutedTextStyle}" />
             </StackPanel>
         </Grid>
 
         <TextBlock
             Grid.Row="3"
             Text="{Binding CloseHint}"
-            FontSize="{StaticResource RcFontSizeCaption}"
-            Opacity="0.7" />
+            Style="{StaticResource RcMutedTextStyle}" />
 
         <Grid Grid.Row="4">
             <TextBlock
                 Text="{Binding StepProgress}"
-                VerticalAlignment="Center"
-                FontSize="{StaticResource RcFontSizeCaption}" />
+                Style="{StaticResource RcMutedTextStyle}"
+                VerticalAlignment="Center" />
             <StackPanel Orientation="Horizontal" Spacing="12" HorizontalAlignment="Right">
                 <Button
                     Content="{Binding BackLabel}"

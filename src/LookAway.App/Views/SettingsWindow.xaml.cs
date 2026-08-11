@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 using LookAway.Core.Domain;
 using LookAway.Core.Enums;
 using LookAway.Core.ValueObjects;
+using LookAway.App.Services;
 using LookAway.App.ViewModels;
 using Microsoft.UI.Input;
 using Microsoft.UI.Windowing;
@@ -62,6 +64,7 @@ internal sealed partial class SettingsWindow : Window
             ["Pause"] = PanelPause,
             ["Hotkeys"] = PanelHotkeys,
             ["Statistics"] = PanelStatistics,
+            ["Log"] = PanelLog,
             ["About"] = PanelAbout,
         };
 
@@ -72,6 +75,7 @@ internal sealed partial class SettingsWindow : Window
 
         _viewModel.CloseRequested += OnCloseRequested;
         _viewModel.Statistics.CsvExportRequested += OnCsvExportRequested;
+        _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         Closed += OnWindowClosed;
 
         ConfigureWindow();
@@ -134,6 +138,56 @@ internal sealed partial class SettingsWindow : Window
     {
         (byte a, byte r, byte g, byte b) = HexColor.ParseOrDefault(hex);
         return WinColor.FromArgb(a, r, g, b);
+    }
+
+    /// <summary>
+    /// Stellt das Fenster sofort auf das gewählte Erscheinungsbild um.
+    /// </summary>
+    /// <remarks>
+    /// Eine Wahl, die erst nach dem Speichern sichtbar wird, lässt sich nicht
+    /// beurteilen. Gespeichert wird sie trotzdem erst mit „Übernehmen" oder
+    /// „Speichern"; „Abbrechen" schließt das Fenster und der nächste Aufbau folgt
+    /// wieder der gespeicherten Einstellung.
+    /// </remarks>
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        ArgumentNullException.ThrowIfNull(e);
+
+        // Ein leerer Name bedeutet "alles hat sich geändert" (Sprachwechsel, Laden).
+        if (e.PropertyName is nameof(SettingsViewModel.SelectedThemeOption) or "" or null)
+        {
+            ThemeService.Apply(this, _viewModel.SelectedTheme);
+        }
+    }
+
+    private async void OnOpenDocs(object sender, RoutedEventArgs e)
+        => await OpenLinkAsync(_viewModel.DocsUri).ConfigureAwait(true);
+
+    private async void OnOpenDonation(object sender, RoutedEventArgs e)
+        => await OpenLinkAsync(_viewModel.DonationUri).ConfigureAwait(true);
+
+    private async void OnOpenDownload(object sender, RoutedEventArgs e)
+        => await OpenLinkAsync(_viewModel.DownloadUri).ConfigureAwait(true);
+
+    /// <summary>
+    /// Öffnet einen Verweis über den Starter, der nur http und https zulässt.
+    /// </summary>
+    /// <remarks>
+    /// Als async-void-Ereignisbehandlung muss der gesamte Rumpf gegen Ausnahmen
+    /// abgesichert sein — eine unbehandelte Ausnahme würde den Prozess beenden.
+    /// Ein Verweis, der sich nicht öffnen lässt, ist das nicht wert.
+    /// </remarks>
+    private static async Task OpenLinkAsync(Uri? uri)
+    {
+        try
+        {
+            _ = await SafeLinkLauncher.OpenAsync(uri).ConfigureAwait(true);
+        }
+        catch (COMException)
+        {
+            // Die Shell meldet bei fehlender Zuordnung einen COM-Fehler; dann
+            // passiert nichts, und das ist die richtige Antwort.
+        }
     }
 
     private void OnCloseRequested(object? sender, EventArgs e) => Close();
@@ -264,6 +318,7 @@ internal sealed partial class SettingsWindow : Window
     {
         _viewModel.CloseRequested -= OnCloseRequested;
         _viewModel.Statistics.CsvExportRequested -= OnCsvExportRequested;
+        _viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         Closed -= OnWindowClosed;
         _viewModel.Dispose();
     }

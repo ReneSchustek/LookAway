@@ -57,6 +57,8 @@ public sealed class SettingsViewModelTests
             new FakeUpdateChecker(),
             new FakeUpdateInstaller(),
             statistics,
+            new BreakModelListViewModel(localization, history),
+            new LogViewModel(new FakeLogEntryReader(), localization, clock),
             NullLogger<SettingsViewModel>.Instance,
             TestVersion);
     }
@@ -89,6 +91,8 @@ public sealed class SettingsViewModelTests
             checker,
             installer,
             statistics,
+            new BreakModelListViewModel(localization, history),
+            new LogViewModel(new FakeLogEntryReader(), localization, clock),
             NullLogger<SettingsViewModel>.Instance,
             TestVersion);
     }

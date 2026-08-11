@@ -15,6 +15,7 @@ internal sealed class SettingsPresenter
 {
     private readonly DispatcherQueue _dispatcher;
     private readonly Func<SettingsViewModel> _viewModelFactory;
+    private readonly ThemeService _themeService;
     private readonly Action<Settings> _onSettingsApplied;
     private readonly Action<bool> _onHotkeyCaptureChanged;
     private Views.SettingsWindow? _window;
@@ -25,6 +26,7 @@ internal sealed class SettingsPresenter
     /// </summary>
     /// <param name="dispatcher">UI-Dispatcher des Hauptfensters.</param>
     /// <param name="viewModelFactory">Erzeugt ein frisches Settings-ViewModel.</param>
+    /// <param name="themeService">Liefert das gewählte Erscheinungsbild.</param>
     /// <param name="onSettingsApplied">Callback bei gespeicherten Einstellungen.</param>
     /// <param name="onHotkeyCaptureChanged">
     /// Callback für Beginn und Ende einer Hotkey-Aufnahme. Während der Aufnahme
@@ -34,16 +36,19 @@ internal sealed class SettingsPresenter
     public SettingsPresenter(
         DispatcherQueue dispatcher,
         Func<SettingsViewModel> viewModelFactory,
+        ThemeService themeService,
         Action<Settings> onSettingsApplied,
         Action<bool> onHotkeyCaptureChanged)
     {
         ArgumentNullException.ThrowIfNull(dispatcher);
         ArgumentNullException.ThrowIfNull(viewModelFactory);
+        ArgumentNullException.ThrowIfNull(themeService);
         ArgumentNullException.ThrowIfNull(onSettingsApplied);
         ArgumentNullException.ThrowIfNull(onHotkeyCaptureChanged);
 
         _dispatcher = dispatcher;
         _viewModelFactory = viewModelFactory;
+        _themeService = themeService;
         _onSettingsApplied = onSettingsApplied;
         _onHotkeyCaptureChanged = onHotkeyCaptureChanged;
     }
@@ -66,6 +71,7 @@ internal sealed class SettingsPresenter
         await viewModel.LoadAsync().ConfigureAwait(true);
 
         Views.SettingsWindow window = new(viewModel);
+        _themeService.Apply(window);
         _window = window;
         window.Closed += OnWindowClosed;
         window.Activate();

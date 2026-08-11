@@ -18,6 +18,7 @@ internal sealed class ReminderPresenter : IReminderPresenter
 {
     private readonly DispatcherQueue _dispatcher;
     private readonly ILocalizationService _localization;
+    private readonly ThemeService _themeService;
     private readonly ILogger<ReminderPresenter> _logger;
     // Wird vom Timer-Consumer-Thread gesetzt/gelesen (Show/IsReminderOpen) und im
     // UI-Thread zurückgesetzt (Completed-Handler) — daher volatile für korrekte
@@ -29,14 +30,21 @@ internal sealed class ReminderPresenter : IReminderPresenter
     /// </summary>
     /// <param name="dispatcher">Dispatcher des Hauptfensters.</param>
     /// <param name="localization">Liefert die sprachabhängigen Texte.</param>
+    /// <param name="themeService">Liefert das gewählte Erscheinungsbild.</param>
     /// <param name="logger">Protokolliert fehlgeschlagene Fenster-Aufbauten.</param>
-    public ReminderPresenter(DispatcherQueue dispatcher, ILocalizationService localization, ILogger<ReminderPresenter> logger)
+    public ReminderPresenter(
+        DispatcherQueue dispatcher,
+        ILocalizationService localization,
+        ThemeService themeService,
+        ILogger<ReminderPresenter> logger)
     {
         ArgumentNullException.ThrowIfNull(dispatcher);
         ArgumentNullException.ThrowIfNull(localization);
+        ArgumentNullException.ThrowIfNull(themeService);
         ArgumentNullException.ThrowIfNull(logger);
         _dispatcher = dispatcher;
         _localization = localization;
+        _themeService = themeService;
         _logger = logger;
     }
 
@@ -77,6 +85,7 @@ internal sealed class ReminderPresenter : IReminderPresenter
             };
 
             Views.BreakReminderWindow window = new(viewModel, _localization);
+            _themeService.Apply(window);
             window.Activate();
         }
         catch (Exception ex) when (LogWindowFailure(ex))

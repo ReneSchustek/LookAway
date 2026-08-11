@@ -48,8 +48,11 @@ als Setup.exe und als portable ZIP. Highlights der 1.2-Reihe:
   (nur Player mit Windows-Mediensteuerung wie Spotify, Musik-App, Chrome/Edge/Firefox; VLC wird nicht unterstützt)
 - **Automatische Updates** – optionale Prüfung über die GitHub-Releases-API; auf Wunsch lädt und
   installiert LookAway neue Versionen selbst (siehe [Updates](#updates))
+- **Helles und dunkles Erscheinungsbild** – frei wählbar oder der Windows-Einstellung folgend
 - **Dreisprachig** – Deutsch, Englisch, Französisch, live umschaltbar
 - **Statistiken und CSV-Export** – Pausen pro Tag, Woche und Jahr, exportierbar
+- **Protokoll im Programm** – die zuletzt festgehaltenen Meldungen mit Suche und Filter nach Stufe
+  und Zeitraum; hilfreich, wenn etwas nicht so läuft wie erwartet
 - **Globale Hotkeys** – Pause starten, überspringen, Nicht stören – von überall
 - **Optionaler Ton** – dezenter Hinweis bei der Erinnerung (aus drei Tönen wählbar)
 - **Autostart** – startet auf Wunsch automatisch mit Windows
@@ -109,8 +112,12 @@ ein Doppelklick die Einstellungen.
 ## Konfiguration
 
 Alle Optionen finden sich im Einstellungsfenster (Tray-Menü → „Einstellungen…") im aufklappbaren
-Seitenmenü: Allgemein, Pausenmodell, eigene Intervalle, Sound, Pause (inkl. Bildschirm-Abdunkelung und
-Farbwähler), Hotkeys, Statistik und Über (mit Update-Optionen).
+Seitenmenü: Allgemein (inkl. Erscheinungsbild), Pausenmodell, eigene Intervalle, Sound, Pause
+(inkl. Bildschirm-Abdunkelung und Farbwähler), Hotkeys, Statistik, Protokoll und Über (mit
+Update-Optionen).
+
+Die Pausenmodelle stehen als Kacheln mit Suchfeld und Filterleiste: Jede zeigt, was in der Pause
+zu tun ist und wie viele Pausen daraus bereits entstanden sind. Ein Klick wählt das Modell.
 
 ## Updates
 

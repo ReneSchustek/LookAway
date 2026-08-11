@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Seitenkopf der Gestaltungslinie: Titel, eine Zeile die sagt was man hier tut,
+    Primäraktion rechts oben.
+
+    Die Anordnung ist in jeder Ansicht dieselbe. Wer sie umstellt, nimmt die
+    Wiedererkennung weg, um die es hier geht — deshalb steht sie an einer Stelle
+    und wird nicht je Ansicht nachgebaut.
+-->
+<UserControl
+    x:Class="LookAway.App.Controls.ListPageHeader"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid ColumnSpacing="{StaticResource RcSpacingM}">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.Column="0" Spacing="2">
+            <TextBlock Text="{x:Bind Title, Mode=OneWay}" Style="{StaticResource RcPageTitleStyle}" />
+            <TextBlock Text="{x:Bind Subtitle, Mode=OneWay}" Style="{StaticResource RcPageSubtitleStyle}" />
+        </StackPanel>
+
+        <ContentPresenter
+            Grid.Column="1"
+            Content="{x:Bind ActionContent, Mode=OneWay}"
+            VerticalAlignment="Top" />
+    </Grid>
+</UserControl>

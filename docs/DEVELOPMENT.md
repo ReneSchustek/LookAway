@@ -238,21 +238,33 @@ Assistent durch die Erstkonfiguration: Sprache, Pausenmodell und Autostart.
 
 ## Theme und Design
 
-Das visuelle Design ist zentral in `src/LookAway.App/Themes/` definiert und wird in `App.xaml`
-gemerged:
+Das visuelle Design liegt in `src/LookAway.App/Themes/` und wird in `App.xaml` zusammengeführt:
 
-- `Colors.xaml`: die Farbpalette als `SolidColorBrush`-Ressourcen — `RcBackground` (`#FFFFFF`),
-  `RcAccent` (Indigo `#4361EE`), `RcTextPrimary` (`#1F2937`), `RcInteraction` (`#F3F4F6`),
-  `RcDivider` (`#E5E7EB`), `RcError`.
-- `Typography.xaml`: `RcFontFamily` (Roboto mit System-Fallback), Schriftgrößen (H1 28, H2 22, H3 18,
-  Body 14, Caption 12) sowie ein implizites `TextBlock`-Standardformat und Heading-Styles.
-- `Controls.xaml`: `RcButtonStyle` (implizit, abgerundete Ecken, Roboto) und `RcPrimaryButtonStyle`
-  (voller Indigo-Akzent für Primäraktionen wie Speichern/Fertig/Pause starten).
+- `Tokens.xaml`: alles, was in beiden Erscheinungsbildern gleich ist — Abstände (Grundmaß 8 px),
+  Radien (4–6 px), Kantenstärken, `RcFontFamily` (Roboto mit System-Fallback) und die
+  Schriftstaffel (H1 28, H2 22, H3 18, Body 14, Caption 12). **Kein Farbwert.**
+- `Light.xaml` und `Dark.xaml`: dieselben Schlüssel, zwei Belegungen. Flächen, Text, Primärfarbe
+  (`RcPrimary`), Statusfarben — dazu die Pinsel des Rahmenwerks, damit Standard-Steuerelemente
+  nicht die in Windows eingestellte Akzentfarbe ziehen.
+- `ControlStyles.xaml`: Textstile, Schaltflächen, Karten, Filter-Chips und die Kachel, deren Rand
+  beim Überfahren die Farbe wechselt.
 
-Die Views (Reminder, Settings, Wizard) referenzieren ausschließlich diese Ressourcen — keine
-hartcodierten Farben mehr. **Hinweis:** Eine eingebettete `Roboto`-TTF unter `Assets/Fonts/` ist
-noch nachzulegen (Open Font License); bis dahin greift die installierte Roboto bzw. die
-Windows-Standardschrift über die Fallback-Kette in `RcFontFamily`.
+Die wiederkehrenden Bausteine stehen als Steuerelemente unter `Controls/`: `ListPageHeader`
+(Titel, erklärende Zeile, Primäraktion), `SearchBox` (Lupe, Platzhalter, Löschen, Escape leert)
+und `EmptyState`.
+
+**Farben stehen in den Ansichten als `ThemeResource`, nie als Wert.** `StaticResource` friert den
+Wert beim Laden ein; die Stelle bliebe beim Wechsel des Erscheinungsbilds stehen. Maße dagegen
+bleiben `StaticResource` — sie ändern sich zur Laufzeit nie.
+
+Gehalten wird das von `GestaltungslinieGuardTests` im App-Testprojekt: kein Farbwert in `Views/`
+und `Controls/`, kein Farbwert in `Tokens.xaml`, gleicher Schlüsselsatz in beiden Belegungen. Ein
+fehlender Schlüssel bricht die Bindung nur in einer Belegung — und das fällt sonst erst beim
+Benutzer auf.
+
+Das gewählte Erscheinungsbild (`Settings.AppTheme`: `System`, `Light`, `Dark`) hält der
+`ThemeService`; die Presenter legen es beim Aufbau auf das jeweilige Fenster. WinUI kennt das
+Erscheinungsbild nur je Element, nicht anwendungsweit.
 
 ## Sound-Optionen
 

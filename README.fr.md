@@ -49,8 +49,11 @@ disponible en Setup.exe et en ZIP portable. Points forts de la série 1.2 :
   (uniquement les lecteurs intégrés aux commandes multimédias de Windows comme Spotify, l'application Musique, Chrome/Edge/Firefox ; VLC n'est pas pris en charge)
 - **Mises à jour automatiques** – vérification optionnelle via l'API des versions GitHub ; sur demande,
   LookAway télécharge et installe lui-même les nouvelles versions (voir [Mises à jour](#mises-à-jour))
+- **Apparence claire et sombre** – au choix ou selon le réglage de Windows
 - **Trilingue** – allemand, anglais, français, commutable à chaud
 - **Statistiques et export CSV** – pauses par jour, semaine et année, exportables
+- **Journal dans l'application** – les dernières entrées avec recherche et filtres par niveau et
+  période ; utile lorsque quelque chose ne fonctionne pas comme prévu
 - **Raccourcis globaux** – démarrer une pause, ignorer, basculer Ne pas déranger – depuis partout
 - **Son optionnel** – un signal discret lors du rappel (au choix parmi trois sons)
 - **Démarrage automatique** – démarre au besoin automatiquement avec Windows
@@ -111,9 +114,13 @@ l'icône ouvre le menu, un double-clic ouvre les paramètres.
 ## Configuration
 
 Toutes les options se trouvent dans la fenêtre des paramètres (menu de la zone de notification →
-« Paramètres… ») dans le menu latéral repliable : général, modèle de pause, intervalles personnalisés,
-son, pause (avec assombrissement et sélecteur de couleur), raccourcis, statistiques et À propos (avec
-les options de mise à jour).
+« Paramètres… ») dans le menu latéral repliable : général (avec l'apparence), modèle de pause,
+intervalles personnalisés, son, pause (avec assombrissement et sélecteur de couleur), raccourcis,
+statistiques, journal et À propos (avec les options de mise à jour).
+
+Les modèles de pause se présentent sous forme de cartes avec un champ de recherche et des filtres :
+chacune indique quoi faire pendant cette pause et combien de pauses en sont issues. Un clic
+sélectionne le modèle.
 
 ## Mises à jour
 

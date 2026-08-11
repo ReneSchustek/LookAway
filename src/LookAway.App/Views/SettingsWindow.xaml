@@ -3,23 +3,25 @@
     x:Class="LookAway.App.Views.SettingsWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:LookAway.App.Controls"
     xmlns:converters="using:LookAway.App.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <!-- RequestedTheme=Light erzwingt die hellen Control-Templates passend zur
-         Teal-Palette, unabhängig vom Windows-Systemmodus. -->
-    <Grid x:Name="RootGrid" RequestedTheme="Light" Background="{StaticResource RcBackground}">
+    <!-- Das Erscheinungsbild setzt der ThemeService an dieser Wurzel; erzwungen wird
+         hier nichts, damit die Wahl des Benutzers (oder von Windows) durchkommt. -->
+    <Grid x:Name="RootGrid" Background="{ThemeResource RcBackground}">
         <Grid.Resources>
             <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+            <converters:UpperCaseConverter x:Key="UpperCase" />
         </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Seitenmenü (Hamburger-Button klappt es auf eine Icon-Leiste ein/aus). -->
+        <!-- Seitenleiste (Hamburger-Button klappt sie auf eine Symbolleiste ein/aus). -->
         <NavigationView
             x:Name="NavView"
             Grid.Row="0"
@@ -31,13 +33,23 @@
 
             <NavigationView.PaneHeader>
                 <StackPanel Orientation="Horizontal" Spacing="10" Padding="4,10,4,10">
-                    <Image Source="ms-appx:///Assets/LookAwayLogo.png" Width="26" Height="26" VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw" />
+                    <!-- Das Programmzeichen bringt seine eigene helle Fläche mit. Der
+                         Rahmen mit kleinem Radius macht daraus ein Symbol statt eines
+                         weißen Klotzes, wenn die Seitenleiste dunkel ist. -->
+                    <Border
+                        Width="28"
+                        Height="28"
+                        CornerRadius="{StaticResource RcControlCornerRadius}"
+                        VerticalAlignment="Center">
+                        <Image
+                            Source="ms-appx:///Assets/LookAwayLogo.png"
+                            Stretch="UniformToFill"
+                            AutomationProperties.AccessibilityView="Raw" />
+                    </Border>
                     <TextBlock
                         Text="LookAway"
-                        FontSize="19"
-                        FontWeight="Medium"
-                        VerticalAlignment="Center"
-                        Foreground="{StaticResource RcAccent}" />
+                        Style="{StaticResource RcH3TextStyle}"
+                        VerticalAlignment="Center" />
                 </StackPanel>
             </NavigationView.PaneHeader>
 
@@ -77,6 +89,11 @@
                         <FontIcon Glyph="&#xE9D9;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
+                <NavigationViewItem Content="{Binding TabLogHeader}" Tag="Log">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE9D5;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
             </NavigationView.MenuItems>
 
             <NavigationView.FooterMenuItems>
@@ -89,13 +106,34 @@
 
             <!-- Inhaltsbereich: alle Abschnitte liegen übereinander; nur der zur
                  Menüauswahl passende ist sichtbar (Umschaltung im Code-Behind).
-                 Jeder Abschnitt: Titel + Karte. -->
-            <Grid Padding="32,28,32,16">
+                 Jeder Abschnitt beginnt mit dem Seitenkopf der Gestaltungslinie. -->
+            <Grid Padding="{StaticResource RcPagePadding}">
 
-                <!-- Allgemein -->
+                <!-- ══ Allgemein ══════════════════════════════════════════════ -->
                 <ScrollViewer x:Name="PanelGeneral">
-                    <StackPanel Spacing="12" MaxWidth="660" HorizontalAlignment="Left">
-                        <TextBlock Text="{Binding TabGeneralHeader}" Style="{StaticResource RcSectionHeaderStyle}" />
+                    <StackPanel Spacing="12" MaxWidth="{StaticResource RcContentMaxWidth}" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding TabGeneralHeader}" Style="{StaticResource RcPageTitleStyle}" />
+
+                        <TextBlock
+                            Text="{Binding AppearanceLabel, Converter={StaticResource UpperCase}}"
+                            Style="{StaticResource RcSectionLabelStyle}"
+                            Margin="2,8,0,4" />
+                        <Border Style="{StaticResource RcCardStyle}">
+                            <StackPanel Spacing="12">
+                                <ComboBox
+                                    Header="{Binding AppearanceLabel}"
+                                    ItemsSource="{Binding Appearances}"
+                                    SelectedItem="{Binding SelectedThemeOption, Mode=TwoWay}"
+                                    DisplayMemberPath="Label"
+                                    MinWidth="240" />
+                                <TextBlock Text="{Binding AppearanceHint}" Style="{StaticResource RcPageSubtitleStyle}" />
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock
+                            Text="{Binding TabGeneralHeader, Converter={StaticResource UpperCase}}"
+                            Style="{StaticResource RcSectionLabelStyle}"
+                            Margin="2,8,0,4" />
                         <Border Style="{StaticResource RcCardStyle}">
                             <StackPanel Spacing="16">
                                 <ComboBox
@@ -141,30 +179,114 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- Pausenmodell -->
-                <ScrollViewer x:Name="PanelModel" Visibility="Collapsed">
-                    <StackPanel Spacing="12" MaxWidth="660" HorizontalAlignment="Left">
-                        <TextBlock Text="{Binding TabModelHeader}" Style="{StaticResource RcSectionHeaderStyle}" />
-                        <Border Style="{StaticResource RcCardStyle}">
-                            <StackPanel Spacing="16">
-                                <ComboBox
-                                    Header="{Binding ModelLabel}"
-                                    ItemsSource="{Binding Models}"
-                                    SelectedItem="{Binding SelectedModelOption, Mode=TwoWay}"
-                                    DisplayMemberPath="Label"
-                                    MinWidth="320" />
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                </ScrollViewer>
+                <!-- ══ Pausenmodell ═══════════════════════════════════════════
+                     Kacheln statt Auswahlliste, darüber Suche und Filter in der
+                     Anordnung, die jede Listen-Ansicht führt. -->
+                <Grid x:Name="PanelModel" Visibility="Collapsed" RowSpacing="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
 
-                <!-- Eigene Intervalle -->
+                    <controls:ListPageHeader
+                        Grid.Row="0"
+                        Title="{Binding TabModelHeader}"
+                        Subtitle="{Binding BreakModels.Subtitle}" />
+
+                    <StackPanel Grid.Row="1" Spacing="8">
+                        <controls:SearchBox
+                            Text="{Binding BreakModels.SearchText, Mode=TwoWay}"
+                            Placeholder="{Binding BreakModels.SearchPlaceholder}"
+                            ClearLabel="{Binding ClearSearchLabel}"
+                            MaxWidth="{StaticResource RcContentMaxWidth}"
+                            HorizontalAlignment="Left"
+                            MinWidth="320" />
+
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ToggleButton
+                                Style="{StaticResource RcFilterChipStyle}"
+                                Content="{Binding BreakModels.FilterAllLabel}"
+                                IsChecked="{Binding BreakModels.IsFilterAll, Mode=TwoWay}" />
+                            <ToggleButton
+                                Style="{StaticResource RcFilterChipStyle}"
+                                Content="{Binding BreakModels.FilterActiveLabel}"
+                                IsChecked="{Binding BreakModels.IsFilterActive, Mode=TwoWay}" />
+                            <ToggleButton
+                                Style="{StaticResource RcFilterChipStyle}"
+                                Content="{Binding BreakModels.FilterInactiveLabel}"
+                                IsChecked="{Binding BreakModels.IsFilterInactive, Mode=TwoWay}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <ScrollViewer Grid.Row="2">
+                        <StackPanel Spacing="8" MaxWidth="{StaticResource RcContentMaxWidth}" HorizontalAlignment="Left">
+                            <ItemsControl
+                                ItemsSource="{Binding BreakModels.VisibleModels}"
+                                Visibility="{Binding BreakModels.HasResults, Converter={StaticResource BoolToVisibility}}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Spacing="8" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button
+                                            Style="{StaticResource RcCardButtonStyle}"
+                                            Command="{Binding DataContext.BreakModels.SelectCommand, ElementName=RootGrid}"
+                                            CommandParameter="{Binding}"
+                                            HorizontalAlignment="Stretch"
+                                            AutomationProperties.Name="{Binding Name}">
+                                            <Grid ColumnSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <StackPanel Grid.Column="0" Spacing="2">
+                                                    <TextBlock Text="{Binding Name}" Style="{StaticResource RcH3TextStyle}" />
+                                                    <TextBlock Text="{Binding Hint}" Style="{StaticResource RcPageSubtitleStyle}" />
+                                                    <TextBlock Text="{Binding BreakCountText}" Style="{StaticResource RcMutedTextStyle}" />
+                                                </StackPanel>
+
+                                                <!-- Der verwendete Zustand ist nicht allein über Farbe
+                                                     erkennbar — das Abzeichen trägt das Wort. -->
+                                                <Border
+                                                    Grid.Column="1"
+                                                    Style="{StaticResource RcBadgeStyle}"
+                                                    Visibility="{Binding IsActive, Converter={StaticResource BoolToVisibility}}">
+                                                    <TextBlock
+                                                        Text="{Binding DataContext.BreakModels.ActiveBadgeLabel, ElementName=RootGrid}"
+                                                        Style="{StaticResource RcCaptionTextStyle}" />
+                                                </Border>
+                                            </Grid>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <controls:EmptyState
+                                Glyph="&#xE721;"
+                                Title="{Binding BreakModels.NoResultsTitle}"
+                                Text="{Binding BreakModels.NoResultsText}"
+                                Visibility="{Binding BreakModels.ShowNoResults, Converter={StaticResource BoolToVisibility}}">
+                                <controls:EmptyState.ActionContent>
+                                    <Button
+                                        Content="{Binding BreakModels.ResetSearchLabel}"
+                                        Command="{Binding BreakModels.ResetSearchCommand}" />
+                                </controls:EmptyState.ActionContent>
+                            </controls:EmptyState>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+
+                <!-- ══ Eigene Intervalle ══════════════════════════════════════ -->
                 <ScrollViewer x:Name="PanelIntervals" Visibility="Collapsed">
-                    <StackPanel Spacing="12" MaxWidth="660" HorizontalAlignment="Left">
-                        <TextBlock Text="{Binding TabIntervalsHeader}" Style="{StaticResource RcSectionHeaderStyle}" />
+                    <StackPanel Spacing="12" MaxWidth="{StaticResource RcContentMaxWidth}" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding TabIntervalsHeader}" Style="{StaticResource RcPageTitleStyle}" />
                         <Border Style="{StaticResource RcCardStyle}">
                             <StackPanel Spacing="16">
-                                <TextBlock Text="{Binding IntervalsHint}" Foreground="{StaticResource RcTextSecondary}" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding IntervalsHint}" Style="{StaticResource RcPageSubtitleStyle}" />
                                 <CheckBox
                                     Content="{Binding UseCustomLabel}"
                                     IsChecked="{Binding UseCustomDurations, Mode=TwoWay}" />
@@ -177,8 +299,8 @@
                                     SpinButtonPlacementMode="Inline"
                                     MinWidth="160"
                                     HorizontalAlignment="Left" />
-                                <TextBlock Text="{Binding WorkRangeText}" Style="{StaticResource RcSecondaryTextStyle}" />
-                                <TextBlock Text="{Binding WorkError}" FontSize="{StaticResource RcFontSizeCaption}" Foreground="{StaticResource RcError}" />
+                                <TextBlock Text="{Binding WorkRangeText}" Style="{StaticResource RcMutedTextStyle}" />
+                                <TextBlock Text="{Binding WorkError}" Style="{StaticResource RcLogLevelErrorStyle}" />
                                 <NumberBox
                                     Header="{Binding BreakLabel}"
                                     Value="{Binding BreakMinutes, Mode=TwoWay}"
@@ -188,16 +310,16 @@
                                     SpinButtonPlacementMode="Inline"
                                     MinWidth="160"
                                     HorizontalAlignment="Left" />
-                                <TextBlock Text="{Binding BreakError}" FontSize="{StaticResource RcFontSizeCaption}" Foreground="{StaticResource RcError}" />
+                                <TextBlock Text="{Binding BreakError}" Style="{StaticResource RcLogLevelErrorStyle}" />
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- Sound -->
+                <!-- ══ Sound ══════════════════════════════════════════════════ -->
                 <ScrollViewer x:Name="PanelSound" Visibility="Collapsed">
-                    <StackPanel Spacing="12" MaxWidth="660" HorizontalAlignment="Left">
-                        <TextBlock Text="{Binding TabSoundHeader}" Style="{StaticResource RcSectionHeaderStyle}" />
+                    <StackPanel Spacing="12" MaxWidth="{StaticResource RcContentMaxWidth}" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding TabSoundHeader}" Style="{StaticResource RcPageTitleStyle}" />
                         <Border Style="{StaticResource RcCardStyle}">
                             <StackPanel Spacing="16">
                                 <CheckBox
@@ -218,16 +340,16 @@
                                     IsEnabled="{Binding SoundEnabled}"
                                     Width="240"
                                     HorizontalAlignment="Left" />
-                                <Button Content="{Binding SoundPreviewLabel}" Command="{Binding PreviewSoundCommand}" />
+                                <Button Content="{Binding SoundPreviewLabel}" Command="{Binding PreviewSoundCommand}" HorizontalAlignment="Left" />
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- Pause (Aktionen, Bildschirme, Farbe) -->
+                <!-- ══ Pause (Aktionen, Bildschirme, Farbe) ═══════════════════ -->
                 <ScrollViewer x:Name="PanelPause" Visibility="Collapsed">
-                    <StackPanel Spacing="12" MaxWidth="660" HorizontalAlignment="Left">
-                        <TextBlock Text="{Binding TabPauseActionsHeader}" Style="{StaticResource RcSectionHeaderStyle}" />
+                    <StackPanel Spacing="12" MaxWidth="{StaticResource RcContentMaxWidth}" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding TabPauseActionsHeader}" Style="{StaticResource RcPageTitleStyle}" />
                         <Border Style="{StaticResource RcCardStyle}">
                             <StackPanel Spacing="16">
                                 <CheckBox Content="{Binding DimEnableLabel}" IsChecked="{Binding DimScreenDuringBreak, Mode=TwoWay}" />
@@ -244,15 +366,18 @@
                                     Content="{Binding ResumeMediaLabel}"
                                     IsChecked="{Binding ResumeMediaAfterBreak, Mode=TwoWay}"
                                     IsEnabled="{Binding PauseMediaDuringBreak}" />
-                                <TextBlock Text="{Binding PauseMediaHint}" Foreground="{StaticResource RcTextSecondary}" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding PauseMediaHint}" Style="{StaticResource RcPageSubtitleStyle}" />
                                 <CheckBox Content="{Binding DarkenAllScreensLabel}" IsChecked="{Binding DarkenAllScreens, Mode=TwoWay}" />
                             </StackPanel>
                         </Border>
 
-                        <TextBlock Text="{Binding OverlayColorLabel}" Style="{StaticResource RcSectionHeaderStyle}" Margin="2,8,0,4" />
+                        <TextBlock
+                            Text="{Binding OverlayColorLabel, Converter={StaticResource UpperCase}}"
+                            Style="{StaticResource RcSectionLabelStyle}"
+                            Margin="2,8,0,4" />
                         <Border Style="{StaticResource RcCardStyle}">
                             <StackPanel Spacing="12">
-                                <TextBlock Text="{Binding OverlayColorHint}" Foreground="{StaticResource RcTextSecondary}" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding OverlayColorHint}" Style="{StaticResource RcPageSubtitleStyle}" />
                                 <ColorPicker
                                     x:Name="OverlayColorPicker"
                                     AutomationProperties.Name="{Binding OverlayColorLabel}"
@@ -268,10 +393,10 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- Hotkeys -->
+                <!-- ══ Hotkeys ════════════════════════════════════════════════ -->
                 <ScrollViewer x:Name="PanelHotkeys" Visibility="Collapsed">
-                    <StackPanel Spacing="12" MaxWidth="660" HorizontalAlignment="Left">
-                        <TextBlock Text="{Binding TabHotkeysHeader}" Style="{StaticResource RcSectionHeaderStyle}" />
+                    <StackPanel Spacing="12" MaxWidth="{StaticResource RcContentMaxWidth}" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding TabHotkeysHeader}" Style="{StaticResource RcPageTitleStyle}" />
                         <Border Style="{StaticResource RcCardStyle}">
                             <StackPanel Spacing="16">
                                 <CheckBox Content="{Binding HotkeysEnableLabel}" IsChecked="{Binding HotkeysEnabled, Mode=TwoWay}" />
@@ -286,43 +411,43 @@
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
-                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding HotkeyStartBreakLabel}" />
-                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding HotkeyStartBreakText}" FontWeight="Medium" Foreground="{StaticResource RcAccent}" />
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding HotkeyStartBreakLabel}" Style="{StaticResource RcBodyTextStyle}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding HotkeyStartBreakText}" Style="{StaticResource RcBodyTextStyle}" FontWeight="Medium" VerticalAlignment="Center" />
                                     <Button Grid.Row="0" Grid.Column="2" Content="{Binding HotkeysCaptureLabel}" Click="OnCaptureStartBreak" KeyDown="OnHotkeyCaptureKeyDown" />
-                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding HotkeySkipOrSnoozeLabel}" />
-                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding HotkeySkipOrSnoozeText}" FontWeight="Medium" Foreground="{StaticResource RcAccent}" />
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding HotkeySkipOrSnoozeLabel}" Style="{StaticResource RcBodyTextStyle}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding HotkeySkipOrSnoozeText}" Style="{StaticResource RcBodyTextStyle}" FontWeight="Medium" VerticalAlignment="Center" />
                                     <Button Grid.Row="1" Grid.Column="2" Content="{Binding HotkeysCaptureLabel}" Click="OnCaptureSkipOrSnooze" KeyDown="OnHotkeyCaptureKeyDown" />
-                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding HotkeyToggleDndLabel}" />
-                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding HotkeyToggleDndText}" FontWeight="Medium" Foreground="{StaticResource RcAccent}" />
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding HotkeyToggleDndLabel}" Style="{StaticResource RcBodyTextStyle}" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding HotkeyToggleDndText}" Style="{StaticResource RcBodyTextStyle}" FontWeight="Medium" VerticalAlignment="Center" />
                                     <Button Grid.Row="2" Grid.Column="2" Content="{Binding HotkeysCaptureLabel}" Click="OnCaptureToggleDnd" KeyDown="OnHotkeyCaptureKeyDown" />
                                 </Grid>
-                                <TextBlock Text="{Binding HotkeyCaptureHint}" Style="{StaticResource RcSecondaryTextStyle}" />
+                                <TextBlock Text="{Binding HotkeyCaptureHint}" Style="{StaticResource RcMutedTextStyle}" />
                                 <Button Content="{Binding HotkeysResetLabel}" Command="{Binding ResetHotkeysCommand}" HorizontalAlignment="Left" />
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- Statistik -->
+                <!-- ══ Statistik ══════════════════════════════════════════════ -->
                 <ScrollViewer x:Name="PanelStatistics" Visibility="Collapsed">
-                    <StackPanel Spacing="12" MaxWidth="660" HorizontalAlignment="Left">
-                        <TextBlock Text="{Binding Statistics.TabStatisticsHeader}" Style="{StaticResource RcSectionHeaderStyle}" />
+                    <StackPanel Spacing="12" MaxWidth="{StaticResource RcContentMaxWidth}" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding Statistics.TabStatisticsHeader}" Style="{StaticResource RcPageTitleStyle}" />
 
                         <Border Style="{StaticResource RcCardStyle}">
                             <StackPanel Spacing="12">
                                 <TextBlock Text="{Binding Statistics.TodayHeader}" Style="{StaticResource RcH3TextStyle}" />
                                 <StackPanel Orientation="Horizontal" Spacing="36">
                                     <StackPanel>
-                                        <TextBlock Text="{Binding Statistics.TodayCount}" Style="{StaticResource RcH1TextStyle}" Foreground="{StaticResource RcAccent}" />
-                                        <TextBlock Text="{Binding Statistics.BreaksLabel}" Style="{StaticResource RcSecondaryTextStyle}" />
+                                        <TextBlock Text="{Binding Statistics.TodayCount}" Style="{StaticResource RcH1TextStyle}" />
+                                        <TextBlock Text="{Binding Statistics.BreaksLabel}" Style="{StaticResource RcMutedTextStyle}" />
                                     </StackPanel>
                                     <StackPanel>
-                                        <TextBlock Text="{Binding Statistics.TodayBreakTime}" Style="{StaticResource RcH1TextStyle}" Foreground="{StaticResource RcAccent}" />
-                                        <TextBlock Text="{Binding Statistics.BreakTimeLabel}" Style="{StaticResource RcSecondaryTextStyle}" />
+                                        <TextBlock Text="{Binding Statistics.TodayBreakTime}" Style="{StaticResource RcH1TextStyle}" />
+                                        <TextBlock Text="{Binding Statistics.BreakTimeLabel}" Style="{StaticResource RcMutedTextStyle}" />
                                     </StackPanel>
                                     <StackPanel>
-                                        <TextBlock Text="{Binding Statistics.TodaySkipped}" Style="{StaticResource RcH1TextStyle}" Foreground="{StaticResource RcAccent}" />
-                                        <TextBlock Text="{Binding Statistics.SkippedLabel}" Style="{StaticResource RcSecondaryTextStyle}" />
+                                        <TextBlock Text="{Binding Statistics.TodaySkipped}" Style="{StaticResource RcH1TextStyle}" />
+                                        <TextBlock Text="{Binding Statistics.SkippedLabel}" Style="{StaticResource RcMutedTextStyle}" />
                                     </StackPanel>
                                 </StackPanel>
                             </StackPanel>
@@ -340,9 +465,9 @@
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <StackPanel Width="36" VerticalAlignment="Bottom" Spacing="2">
-                                                <TextBlock Text="{Binding Count}" Style="{StaticResource RcSecondaryTextStyle}" HorizontalAlignment="Center" />
-                                                <Border Width="22" Height="{Binding BarHeight}" CornerRadius="4" HorizontalAlignment="Center" Background="{StaticResource RcAccent}" />
-                                                <TextBlock Text="{Binding Label}" Style="{StaticResource RcSecondaryTextStyle}" HorizontalAlignment="Center" />
+                                                <TextBlock Text="{Binding Count}" Style="{StaticResource RcMutedTextStyle}" HorizontalAlignment="Center" />
+                                                <Border Width="22" Height="{Binding BarHeight}" CornerRadius="{StaticResource RcControlCornerRadius}" HorizontalAlignment="Center" Background="{ThemeResource RcPrimary}" />
+                                                <TextBlock Text="{Binding Label}" Style="{StaticResource RcMutedTextStyle}" HorizontalAlignment="Center" />
                                             </StackPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
@@ -362,9 +487,9 @@
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <StackPanel Width="30" VerticalAlignment="Bottom" Spacing="2">
-                                                <TextBlock Text="{Binding Count}" Style="{StaticResource RcSecondaryTextStyle}" HorizontalAlignment="Center" />
-                                                <Border Width="18" Height="{Binding BarHeight}" CornerRadius="4" HorizontalAlignment="Center" Background="{StaticResource RcAccent}" />
-                                                <TextBlock Text="{Binding Label}" Style="{StaticResource RcSecondaryTextStyle}" HorizontalAlignment="Center" />
+                                                <TextBlock Text="{Binding Count}" Style="{StaticResource RcMutedTextStyle}" HorizontalAlignment="Center" />
+                                                <Border Width="18" Height="{Binding BarHeight}" CornerRadius="{StaticResource RcControlCornerRadius}" HorizontalAlignment="Center" Background="{ThemeResource RcPrimary}" />
+                                                <TextBlock Text="{Binding Label}" Style="{StaticResource RcMutedTextStyle}" HorizontalAlignment="Center" />
                                             </StackPanel>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
@@ -375,34 +500,169 @@
                     </StackPanel>
                 </ScrollViewer>
 
-                <!-- Über LookAway -->
+                <!-- ══ Protokoll ══════════════════════════════════════════════
+                     Bis hierher lag das Protokoll nur als Datei im Datenverzeichnis. -->
+                <Grid x:Name="PanelLog" Visibility="Collapsed" RowSpacing="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <controls:ListPageHeader
+                        Grid.Row="0"
+                        Title="{Binding TabLogHeader}"
+                        Subtitle="{Binding Log.Subtitle}">
+                        <controls:ListPageHeader.ActionContent>
+                            <Button
+                                Content="{Binding Log.ReloadLabel}"
+                                Command="{Binding Log.ReloadCommand}"
+                                Style="{StaticResource RcPrimaryButtonStyle}" />
+                        </controls:ListPageHeader.ActionContent>
+                    </controls:ListPageHeader>
+
+                    <StackPanel Grid.Row="1" Spacing="8">
+                        <controls:SearchBox
+                            Text="{Binding Log.SearchText, Mode=TwoWay}"
+                            Placeholder="{Binding Log.SearchPlaceholder}"
+                            ClearLabel="{Binding ClearSearchLabel}"
+                            HorizontalAlignment="Left"
+                            MinWidth="320" />
+
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ToggleButton
+                                Style="{StaticResource RcFilterChipStyle}"
+                                Content="{Binding Log.LevelAllLabel}"
+                                IsChecked="{Binding Log.IsLevelAll, Mode=TwoWay}" />
+                            <ToggleButton
+                                Style="{StaticResource RcFilterChipStyle}"
+                                Content="{Binding Log.LevelInformationLabel}"
+                                IsChecked="{Binding Log.IsLevelInformation, Mode=TwoWay}" />
+                            <ToggleButton
+                                Style="{StaticResource RcFilterChipStyle}"
+                                Content="{Binding Log.LevelWarningLabel}"
+                                IsChecked="{Binding Log.IsLevelWarning, Mode=TwoWay}" />
+                            <ToggleButton
+                                Style="{StaticResource RcFilterChipStyle}"
+                                Content="{Binding Log.LevelErrorLabel}"
+                                IsChecked="{Binding Log.IsLevelError, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ToggleButton
+                                Style="{StaticResource RcFilterChipStyle}"
+                                Content="{Binding Log.PeriodAllLabel}"
+                                IsChecked="{Binding Log.IsPeriodAll, Mode=TwoWay}" />
+                            <ToggleButton
+                                Style="{StaticResource RcFilterChipStyle}"
+                                Content="{Binding Log.PeriodTodayLabel}"
+                                IsChecked="{Binding Log.IsPeriodToday, Mode=TwoWay}" />
+                            <ToggleButton
+                                Style="{StaticResource RcFilterChipStyle}"
+                                Content="{Binding Log.PeriodWeekLabel}"
+                                IsChecked="{Binding Log.IsPeriodWeek, Mode=TwoWay}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <ScrollViewer Grid.Row="2">
+                        <StackPanel Spacing="8">
+                            <ItemsControl
+                                ItemsSource="{Binding Log.VisibleEntries}"
+                                Visibility="{Binding Log.HasResults, Converter={StaticResource BoolToVisibility}}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Spacing="8" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource RcCardStyle}">
+                                            <StackPanel Spacing="4">
+                                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                                    <TextBlock Text="{Binding TimestampText}" Style="{StaticResource RcMutedTextStyle}" />
+                                                    <TextBlock
+                                                        Text="{Binding LevelText}"
+                                                        Style="{StaticResource RcLogLevelInformationStyle}"
+                                                        Visibility="{Binding IsInformation, Converter={StaticResource BoolToVisibility}}" />
+                                                    <TextBlock
+                                                        Text="{Binding LevelText}"
+                                                        Style="{StaticResource RcLogLevelWarningStyle}"
+                                                        Visibility="{Binding IsWarning, Converter={StaticResource BoolToVisibility}}" />
+                                                    <TextBlock
+                                                        Text="{Binding LevelText}"
+                                                        Style="{StaticResource RcLogLevelErrorStyle}"
+                                                        Visibility="{Binding IsError, Converter={StaticResource BoolToVisibility}}" />
+                                                    <TextBlock Text="{Binding Category}" Style="{StaticResource RcMutedTextStyle}" />
+                                                </StackPanel>
+                                                <TextBlock Text="{Binding Message}" Style="{StaticResource RcBodyTextStyle}" IsTextSelectionEnabled="True" />
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!-- Zwei Lagen, zwei Sätze: hier ist wirklich nichts da … -->
+                            <controls:EmptyState
+                                Glyph="&#xE9D5;"
+                                Title="{Binding Log.EmptyTitle}"
+                                Text="{Binding Log.EmptyText}"
+                                Visibility="{Binding Log.ShowEmpty, Converter={StaticResource BoolToVisibility}}" />
+
+                            <!-- … und hier ist etwas da, nur nicht das Gesuchte. -->
+                            <controls:EmptyState
+                                Glyph="&#xE721;"
+                                Title="{Binding Log.NoResultsTitle}"
+                                Text="{Binding Log.NoResultsText}"
+                                Visibility="{Binding Log.ShowNoResults, Converter={StaticResource BoolToVisibility}}">
+                                <controls:EmptyState.ActionContent>
+                                    <Button
+                                        Content="{Binding Log.ResetSearchLabel}"
+                                        Command="{Binding Log.ResetSearchCommand}" />
+                                </controls:EmptyState.ActionContent>
+                            </controls:EmptyState>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+
+                <!-- ══ Über LookAway ══════════════════════════════════════════ -->
                 <ScrollViewer x:Name="PanelAbout" Visibility="Collapsed">
-                    <StackPanel Spacing="12" MaxWidth="660" HorizontalAlignment="Left">
-                        <TextBlock Text="{Binding TabAboutHeader}" Style="{StaticResource RcSectionHeaderStyle}" />
+                    <StackPanel Spacing="12" MaxWidth="{StaticResource RcContentMaxWidth}" HorizontalAlignment="Left">
+                        <TextBlock Text="{Binding TabAboutHeader}" Style="{StaticResource RcPageTitleStyle}" />
                         <Border Style="{StaticResource RcCardStyle}">
                             <StackPanel Spacing="12">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="{Binding AboutVersionLabel}" FontWeight="Medium" />
-                                    <TextBlock Text="{Binding Version}" />
+                                    <TextBlock Text="{Binding AboutVersionLabel}" Style="{StaticResource RcBodyTextStyle}" FontWeight="Medium" />
+                                    <TextBlock Text="{Binding Version}" Style="{StaticResource RcBodyTextStyle}" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="{Binding LicenseLabel}" FontWeight="Medium" />
-                                    <TextBlock Text="{Binding LicenseText}" />
+                                    <TextBlock Text="{Binding LicenseLabel}" Style="{StaticResource RcBodyTextStyle}" FontWeight="Medium" />
+                                    <TextBlock Text="{Binding LicenseText}" Style="{StaticResource RcBodyTextStyle}" />
                                 </StackPanel>
-                                <HyperlinkButton Content="{Binding DocsLabel}" NavigateUri="{Binding DocsUri}" Padding="0,4" />
+                                <!-- Unterstrichen, weil ein Verweis nicht allein an der Farbe
+                                     erkennbar sein darf. -->
+                                <HyperlinkButton Click="OnOpenDocs" Padding="0,4">
+                                    <TextBlock Text="{Binding DocsLabel}" TextDecorations="Underline" />
+                                </HyperlinkButton>
                             </StackPanel>
                         </Border>
 
                         <!-- Freiwilliger Spenden-Einstieg. Bleibt ausgeblendet, solange kein
-                             echter PayPal-Handle konfiguriert ist, damit nie ein toter Link steht. -->
+                             echter PayPal-Handle konfiguriert ist, damit nie ein toter Link steht.
+                             Geöffnet wird über den Starter, der nur http und https zulässt. -->
                         <Border Style="{StaticResource RcCardStyle}"
                                 Visibility="{Binding IsSupportVisible, Converter={StaticResource BoolToVisibility}}">
                             <StackPanel Spacing="8">
-                                <TextBlock Text="{Binding SupportHeading}" Style="{StaticResource RcSecondaryTextStyle}" TextWrapping="Wrap" />
-                                <HyperlinkButton Content="{Binding SupportLabel}" NavigateUri="{Binding DonationUri}" Padding="0,4" />
+                                <TextBlock Text="{Binding SupportHeading}" Style="{StaticResource RcPageSubtitleStyle}" />
+                                <HyperlinkButton Click="OnOpenDonation" Padding="0,4">
+                                    <TextBlock Text="{Binding SupportLabel}" TextDecorations="Underline" />
+                                </HyperlinkButton>
                             </StackPanel>
                         </Border>
 
+                        <TextBlock
+                            Text="{Binding UpdateEnableLabel, Converter={StaticResource UpperCase}}"
+                            Style="{StaticResource RcSectionLabelStyle}"
+                            Margin="2,8,0,4" />
                         <Border Style="{StaticResource RcCardStyle}">
                             <StackPanel Spacing="12">
                                 <CheckBox Content="{Binding UpdateEnableLabel}" IsChecked="{Binding UpdateCheckEnabled, Mode=TwoWay}" />
@@ -417,7 +677,7 @@
                                     Content="{Binding AutoUpdateLabel}"
                                     IsChecked="{Binding AutoUpdate, Mode=TwoWay}"
                                     IsEnabled="{Binding UpdateCheckEnabled}" />
-                                <TextBlock Text="{Binding AutoUpdateHint}" Style="{StaticResource RcSecondaryTextStyle}" TextWrapping="Wrap" />
+                                <TextBlock Text="{Binding AutoUpdateHint}" Style="{StaticResource RcPageSubtitleStyle}" />
                                 <StackPanel Orientation="Horizontal" Spacing="12">
                                     <Button Content="{Binding UpdateCheckNowLabel}" Command="{Binding CheckForUpdatesCommand}" />
                                     <!-- Ein-Klick-Installation: lädt das Paket und spielt es beim Neustart ein.
@@ -425,16 +685,17 @@
                                     <Button
                                         Content="{Binding UpdateInstallNowLabel}"
                                         Command="{Binding InstallUpdateCommand}"
-                                        Style="{StaticResource AccentButtonStyle}"
+                                        Style="{StaticResource RcPrimaryButtonStyle}"
                                         Visibility="{Binding IsUpdateInstallable, Converter={StaticResource BoolToVisibility}}" />
-                                    <TextBlock Text="{Binding UpdateStatusText}" VerticalAlignment="Center" Foreground="{StaticResource RcTextSecondary}" />
+                                    <TextBlock Text="{Binding UpdateStatusText}" Style="{StaticResource RcPageSubtitleStyle}" VerticalAlignment="Center" />
                                 </StackPanel>
                                 <!-- Manueller Ausweg (Release-Seite) für Fälle ohne Auto-Tausch,
                                      z. B. eine "für alle Benutzer"-Installation in Programme. -->
                                 <HyperlinkButton
-                                    Content="{Binding UpdateDownloadLabel}"
-                                    NavigateUri="{Binding DownloadUri}"
-                                    Visibility="{Binding IsDownloadAvailable, Converter={StaticResource BoolToVisibility}}" />
+                                    Click="OnOpenDownload"
+                                    Visibility="{Binding IsDownloadAvailable, Converter={StaticResource BoolToVisibility}}">
+                                    <TextBlock Text="{Binding UpdateDownloadLabel}" TextDecorations="Underline" />
+                                </HyperlinkButton>
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -446,10 +707,10 @@
         <!-- Aktionsleiste: immer sichtbar am unteren Rand. -->
         <Border
             Grid.Row="1"
-            Background="{StaticResource RcPaneBackground}"
-            BorderBrush="{StaticResource RcDivider}"
-            BorderThickness="0,1,0,0"
-            Padding="32,14">
+            Background="{ThemeResource RcSurfaceRaised}"
+            BorderBrush="{ThemeResource RcBorder}"
+            BorderThickness="{StaticResource RcTopHairlineThickness}"
+            Padding="{StaticResource RcActionBarPadding}">
             <StackPanel
                 Orientation="Horizontal"
                 Spacing="12"

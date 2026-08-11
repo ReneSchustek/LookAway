@@ -8,6 +8,35 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+### Ajouté
+
+- **Apparence claire et sombre.** Sous « Général », vous pouvez choisir si les fenêtres
+  apparaissent claires ou sombres ; « Comme Windows » suit le réglage du système. Le choix prend
+  effet immédiatement dans la fenêtre ouverte.
+
+- **Journal dans l'application.** Une nouvelle section montre ce que l'application a enregistré
+  récemment — avec une recherche dans le texte des messages et des filtres par niveau et période.
+  Jusqu'ici ces entrées n'existaient que sous forme de fichier dans le dossier de données, qu'il
+  fallait d'abord trouver.
+
+- **Recherche et filtres pour les modèles de pause.** Les modèles se présentent sous forme de
+  cartes avec un champ de recherche et des filtres. Chaque carte indique quoi faire pendant cette
+  pause et combien de pauses en sont issues.
+
+### Modifié
+
+- **Apparence homogène.** Fenêtres, cartes, boutons, cases à cocher et curseurs suivent désormais
+  un jeu de couleurs commun. Auparavant, certains éléments reprenaient la couleur d'accentuation
+  configurée dans Windows — donc différente d'un poste à l'autre.
+
+- **Les liens sont soulignés** et restent donc reconnaissables même lorsque les couleurs sont
+  difficiles à distinguer.
+
+- **Nouvelle icône du programme** dans le menu latéral, la fenêtre et l'icône du programme.
+
+- Les listes vides indiquent désormais s'il n'y a rien du tout ou si la saisie ne correspond à
+  rien. Dans le second cas, un bouton réinitialise la recherche et les filtres.
+
 ## [1.2.9] – 2026-08-02
 
 ### Ajouté

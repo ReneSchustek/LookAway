@@ -69,6 +69,12 @@ internal static class ServiceRegistration
         // Lokalisierung: Deutsch ist die Referenzsprache.
         _ = services.AddSingleton<ILocalizationService>(_ => new JsonLocalizationService(Language.German));
 
+        // Erscheinungsbild (hell, dunkel oder nach Windows)
+        _ = services.AddSingleton<ThemeService>();
+
+        // Anwendungsprotokoll für die Protokollansicht
+        _ = services.AddSingleton<ILogEntryReader>(_ => new RollingFileLogReader(logDirectory));
+
         // Sound-Optionen
         _ = services.AddSingleton<ISoundService>(sp =>
             new SoundService(sp.GetRequiredService<ILogger<SoundService>>()));

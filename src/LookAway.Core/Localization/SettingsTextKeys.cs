@@ -26,6 +26,100 @@ public static class SettingsTextKeys
     /// <summary>Tab "Sound".</summary>
     public const string TabSound = "Settings.Tab.Sound";
 
+    /// <summary>Tab "Protokoll".</summary>
+    public const string TabLog = "Settings.Tab.Log";
+
+    /// <summary>Beschriftung der Erscheinungsbild-Auswahl.</summary>
+    public const string AppearanceLabel = "Settings.Appearance.Label";
+
+    /// <summary>Hinweistext zur Erscheinungsbild-Auswahl.</summary>
+    public const string AppearanceHint = "Settings.Appearance.Hint";
+
+    /// <summary>Erklärende Zeile über der Pausenmodell-Liste.</summary>
+    public const string ModelSubtitle = "Settings.Model.Subtitle";
+
+    /// <summary>Platzhalter des Suchfelds der Pausenmodelle.</summary>
+    public const string ModelSearchPlaceholder = "Settings.Model.SearchPlaceholder";
+
+    /// <summary>Filter-Chip "Alle" der Pausenmodelle.</summary>
+    public const string ModelFilterAll = "Settings.Model.FilterAll";
+
+    /// <summary>Filter-Chip "In Verwendung" der Pausenmodelle.</summary>
+    public const string ModelFilterActive = "Settings.Model.FilterActive";
+
+    /// <summary>Filter-Chip "Übrige" der Pausenmodelle.</summary>
+    public const string ModelFilterInactive = "Settings.Model.FilterInactive";
+
+    /// <summary>Zahl der aufgezeichneten Pausen eines Modells (Formatstring {0}).</summary>
+    public const string ModelBreakCount = "Settings.Model.BreakCount";
+
+    /// <summary>Kennzeichnung der gerade verwendeten Modell-Kachel.</summary>
+    public const string ModelActiveBadge = "Settings.Model.ActiveBadge";
+
+    /// <summary>Erklärende Zeile über dem Protokoll.</summary>
+    public const string LogSubtitle = "Settings.Log.Subtitle";
+
+    /// <summary>Platzhalter des Suchfelds im Protokoll.</summary>
+    public const string LogSearchPlaceholder = "Settings.Log.SearchPlaceholder";
+
+    /// <summary>Filter-Chip "Alle Stufen".</summary>
+    public const string LogLevelAll = "Settings.Log.LevelAll";
+
+    /// <summary>Filter-Chip "Hinweise".</summary>
+    public const string LogLevelInformation = "Settings.Log.LevelInformation";
+
+    /// <summary>Filter-Chip "Warnungen".</summary>
+    public const string LogLevelWarning = "Settings.Log.LevelWarning";
+
+    /// <summary>Filter-Chip "Fehler".</summary>
+    public const string LogLevelError = "Settings.Log.LevelError";
+
+    /// <summary>Stufe eines einzelnen Eintrags: Hinweis (Einzahl, anders als der Chip).</summary>
+    public const string LogEntryInformation = "Settings.Log.EntryInformation";
+
+    /// <summary>Stufe eines einzelnen Eintrags: Warnung.</summary>
+    public const string LogEntryWarning = "Settings.Log.EntryWarning";
+
+    /// <summary>Stufe eines einzelnen Eintrags: Fehler.</summary>
+    public const string LogEntryError = "Settings.Log.EntryError";
+
+    /// <summary>Filter-Chip "Gesamter Zeitraum".</summary>
+    public const string LogPeriodAll = "Settings.Log.PeriodAll";
+
+    /// <summary>Filter-Chip "Heute".</summary>
+    public const string LogPeriodToday = "Settings.Log.PeriodToday";
+
+    /// <summary>Filter-Chip "Letzte 7 Tage".</summary>
+    public const string LogPeriodWeek = "Settings.Log.PeriodWeek";
+
+    /// <summary>Überschrift des Leerzustands "noch nichts protokolliert".</summary>
+    public const string LogEmptyTitle = "Settings.Log.EmptyTitle";
+
+    /// <summary>Erklärung des Leerzustands "noch nichts protokolliert".</summary>
+    public const string LogEmptyText = "Settings.Log.EmptyText";
+
+    /// <summary>Beschriftung der Schaltfläche "Neu laden".</summary>
+    public const string LogReload = "Settings.Log.Reload";
+
+    /// <summary>Überschrift des Leerzustands "nichts gefunden".</summary>
+    public const string NoResultsTitle = "Common.NoResultsTitle";
+
+    /// <summary>Erklärung des Leerzustands "nichts gefunden".</summary>
+    public const string NoResultsText = "Common.NoResultsText";
+
+    /// <summary>Beschriftung der Schaltfläche "Suche zurücksetzen".</summary>
+    public const string ResetSearch = "Common.ResetSearch";
+
+    /// <summary>Beschriftung des Löschen-Zeichens im Suchfeld.</summary>
+    public const string ClearSearch = "Common.ClearSearch";
+
+    /// <summary>
+    /// Liefert den Anzeigenamen-Schlüssel eines Erscheinungsbilds.
+    /// </summary>
+    /// <param name="theme">Erscheinungsbild.</param>
+    /// <returns>Schlüssel der Form <c>"Settings.Appearance.&lt;Name&gt;"</c>.</returns>
+    public static string ForTheme(AppTheme theme) => "Settings.Appearance." + theme;
+
     /// <summary>Tab "Statistik".</summary>
     public const string TabStatistics = "Settings.Tab.Statistics";
 

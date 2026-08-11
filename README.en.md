@@ -163,17 +163,29 @@ LookAway is data-frugal and works entirely locally:
 
 ## Screenshots
 
-![Settings](docs/screenshots/settings.png)
+![Break screen](docs/screenshots/break-screen.png)
 
-*Settings – language, autostart, auto-pause and the automatic break start.*
+*The break screen – covers the display, shows the goal and a countdown, ends with **ESC**.*
 
-![Hotkeys](docs/screenshots/hotkeys.png)
+![Reminder](docs/screenshots/reminder.png)
 
-*Global hotkeys – every action can be bound to your own key combination via "Neu belegen".*
+*The reminder – start, postpone or skip the break; left untouched it starts by itself.*
+
+![Break models](docs/screenshots/break-models.png)
+
+*Break models – as cards with search and filters; each says what to do during that break.*
 
 ![Statistics](docs/screenshots/statistics.png)
 
 *Statistics – breaks per day, week and year, exportable as CSV.*
+
+![Settings](docs/screenshots/settings.png)
+
+*Settings – appearance, language, autostart and auto-pause.*
+
+![Hotkeys](docs/screenshots/hotkeys.png)
+
+*Global hotkeys – every action can be bound to your own key combination via "Neu belegen".*
 
 The screenshots show the German interface. Further captures are collected under
 [`docs/screenshots/`](docs/screenshots/).

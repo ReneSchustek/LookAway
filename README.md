@@ -168,17 +168,29 @@ LookAway ist datensparsam und arbeitet vollständig lokal:
 
 ## Screenshots
 
-![Einstellungen](docs/screenshots/settings.png)
+![Pausen-Screen](docs/screenshots/break-screen.png)
 
-*Einstellungen – Sprache, Autostart, Auto-Pause und automatischer Pausenstart.*
+*Der Pausen-Screen – verdeckt den Bildschirm, zeigt Ziel und Countdown, endet mit **ESC**.*
 
-![Hotkeys](docs/screenshots/hotkeys.png)
+![Erinnerung](docs/screenshots/reminder.png)
 
-*Globale Hotkeys – jede Aktion lässt sich über „Neu belegen" auf eine eigene Tastenkombination legen.*
+*Die Erinnerung – Pause starten, verschieben oder überspringen; ohne Klick beginnt sie von selbst.*
+
+![Pausenmodell](docs/screenshots/break-models.png)
+
+*Pausenmodelle – als Kacheln mit Suche und Filter; jede nennt, was in der Pause zu tun ist.*
 
 ![Statistik](docs/screenshots/statistics.png)
 
 *Statistik – Pausen pro Tag, Woche und Jahr, als CSV exportierbar.*
+
+![Einstellungen](docs/screenshots/settings.png)
+
+*Einstellungen – Erscheinungsbild, Sprache, Autostart und Auto-Pause.*
+
+![Hotkeys](docs/screenshots/hotkeys.png)
+
+*Globale Hotkeys – jede Aktion lässt sich über „Neu belegen" auf eine eigene Tastenkombination legen.*
 
 Weitere Aufnahmen liegen unter [`docs/screenshots/`](docs/screenshots/).
 

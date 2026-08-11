@@ -174,17 +174,29 @@ LookAway est sobre en données et fonctionne entièrement en local :
 
 ## Captures d'écran
 
-![Paramètres](docs/screenshots/settings.png)
+![Écran de pause](docs/screenshots/break-screen.png)
 
-*Paramètres – langue, démarrage automatique, pause automatique et départ automatique de la pause.*
+*L'écran de pause – recouvre l'écran, affiche l'objectif et un compte à rebours, se ferme avec **ÉCHAP**.*
 
-![Raccourcis](docs/screenshots/hotkeys.png)
+![Rappel](docs/screenshots/reminder.png)
 
-*Raccourcis globaux – chaque action peut être réattribuée à votre propre combinaison via « Neu belegen ».*
+*Le rappel – démarrer, reporter ou ignorer la pause ; sans clic, elle démarre d'elle-même.*
+
+![Modèles de pause](docs/screenshots/break-models.png)
+
+*Modèles de pause – en cartes avec recherche et filtres ; chacune indique quoi faire pendant la pause.*
 
 ![Statistiques](docs/screenshots/statistics.png)
 
 *Statistiques – pauses par jour, semaine et année, exportables en CSV.*
+
+![Paramètres](docs/screenshots/settings.png)
+
+*Paramètres – apparence, langue, démarrage automatique et pause automatique.*
+
+![Raccourcis](docs/screenshots/hotkeys.png)
+
+*Raccourcis globaux – chaque action peut être réattribuée à votre propre combinaison via « Neu belegen ».*
 
 Les captures montrent l'interface en allemand. D'autres captures sont rassemblées sous
 [`docs/screenshots/`](docs/screenshots/).

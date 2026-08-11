@@ -20,7 +20,7 @@ eyes, posture and focus.
 
 ## Latest release
 
-**[v1.3.0](https://github.com/ReneSchustek/LookAway/releases/latest)** is the current version –
+**[v1.4.0](https://github.com/ReneSchustek/LookAway/releases/latest)** is the current version –
 available as a Setup.exe and as a portable ZIP. Highlights of the 1.3 line:
 
 - **Light and dark appearance** – choose freely or follow the Windows setting; the choice takes

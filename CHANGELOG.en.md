@@ -8,6 +8,8 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.0] – 2026-08-11
+
 ### Added
 
 - **Tasks for the task-based break model.** A new section keeps the tasks you are working on —
@@ -17,6 +19,20 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 - **Breaks remember what they belonged to.** With the task-based model every break is assigned to
   the current task; each task shows how many breaks came out of it. The tray tooltip names the
   current task.
+
+### Fixed
+
+- **Nine log messages mixed languages** — for example "Einstellungen aus … loaded." instead of
+  "geladen". They are visible in the log section and now read consistently.
+
+- **Closing the app shortly after launch now cancels the update check.** It used to keep running
+  while the program was already shutting down.
+
+### Security
+
+- **The release page button only opens web addresses now.** The address comes from the release
+  service's response; without this check something other than a web page could have been opened.
+  The links on the About page were already protected this way.
 
 ## [1.3.0] – 2026-08-11
 

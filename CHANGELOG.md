@@ -8,6 +8,8 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+## [1.4.0] – 2026-08-11
+
 ### Hinzugefügt
 
 - **Aufgaben für das aufgabenbasierte Pausenmodell.** Ein neuer Bereich führt die Aufgaben, an
@@ -17,6 +19,20 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 - **Die Pause merkt sich, woran sie hing.** Beim aufgabenbasierten Modell wird jede Pause der
   laufenden Aufgabe zugeordnet; jede Aufgabe zeigt, wie viele Pausen aus ihr entstanden sind.
   Der Kurztext im Infobereich nennt die laufende Aufgabe.
+
+### Behoben
+
+- **Neun Protokollmeldungen standen in gemischter Sprache** — etwa „Einstellungen aus … loaded."
+  statt „geladen". Sie sind im Protokollbereich sichtbar und jetzt durchgehend deutsch.
+
+- **Wird die Anwendung kurz nach dem Start beendet, bricht die Update-Prüfung nun ab.** Vorher lief
+  sie weiter, während das Programm sich bereits schloss.
+
+### Sicherheit
+
+- **Die Schaltfläche zur Release-Seite öffnet nur noch Web-Adressen.** Die Adresse stammt aus der
+  Antwort des Release-Dienstes; ohne diese Prüfung hätte dort auch etwas anderes als eine Webseite
+  stehen können. Für die Verweise auf der Über-Seite galt die Prüfung bereits.
 
 ## [1.3.0] – 2026-08-11
 

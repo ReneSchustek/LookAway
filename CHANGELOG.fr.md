@@ -8,6 +8,8 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+## [1.4.0] – 2026-08-11
+
 ### Ajouté
 
 - **Tâches pour le modèle de pause basé sur les tâches.** Une nouvelle section gère les tâches en
@@ -17,6 +19,20 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 - **Les pauses retiennent leur origine.** Avec le modèle basé sur les tâches, chaque pause est
   rattachée à la tâche en cours ; chaque tâche indique combien de pauses en sont issues. L'info-bulle
   de la zone de notification nomme la tâche en cours.
+
+### Corrigé
+
+- **Neuf messages du journal mélangeaient les langues** — par exemple « Einstellungen aus … loaded. »
+  au lieu de « geladen ». Ils sont visibles dans la section Journal et sont désormais cohérents.
+
+- **Fermer l'application peu après son démarrage interrompt maintenant la vérification des mises à
+  jour.** Elle continuait auparavant alors que le programme se fermait déjà.
+
+### Sécurité
+
+- **Le bouton vers la page de publication n'ouvre plus que des adresses web.** L'adresse provient de
+  la réponse du service de publication ; sans cette vérification, autre chose qu'une page web aurait
+  pu être ouvert. Les liens de la page À propos étaient déjà protégés ainsi.
 
 ## [1.3.0] – 2026-08-11
 

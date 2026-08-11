@@ -21,7 +21,7 @@ et leur concentration.
 
 ## Version actuelle
 
-**[v1.3.0](https://github.com/ReneSchustek/LookAway/releases/latest)** est la version actuelle –
+**[v1.4.0](https://github.com/ReneSchustek/LookAway/releases/latest)** est la version actuelle –
 disponible en Setup.exe et en ZIP portable. Points forts de la série 1.3 :
 
 - **Apparence claire et sombre** – au choix ou selon le réglage de Windows ; le choix prend effet

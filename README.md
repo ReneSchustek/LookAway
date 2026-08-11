@@ -20,7 +20,7 @@ ihre Augen, Haltung und Konzentration schonen möchten.
 
 ## Aktuelles Release
 
-**[v1.3.0](https://github.com/ReneSchustek/LookAway/releases/latest)** ist die aktuelle Version –
+**[v1.4.0](https://github.com/ReneSchustek/LookAway/releases/latest)** ist die aktuelle Version –
 als Setup.exe und als portable ZIP. Highlights der 1.3-Reihe:
 
 - **Helles und dunkles Erscheinungsbild** – frei wählbar oder der Windows-Einstellung folgend; die

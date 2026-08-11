@@ -30,6 +30,8 @@ using SettingsViewModel = LookAway.App.ViewModels.SettingsViewModel;
 using StatisticsViewModel = LookAway.App.ViewModels.StatisticsViewModel;
 using BreakModelListViewModel = LookAway.App.ViewModels.BreakModelListViewModel;
 using LogViewModel = LookAway.App.ViewModels.LogViewModel;
+using WorkTaskListViewModel = LookAway.App.ViewModels.WorkTaskListViewModel;
+using CurrentWorkTaskTracker = LookAway.Core.Services.CurrentWorkTaskTracker;
 using WelcomeViewModel = LookAway.App.ViewModels.WelcomeViewModel;
 using StatisticsService = LookAway.Core.Services.StatisticsService;
 using CsvExporter = LookAway.Core.Services.CsvExporter;
@@ -236,7 +238,8 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
             CreateSettingsViewModel,
             Services.GetRequiredService<ThemeService>(),
             ApplySettingsLive,
-            SuspendHotkeysWhileCapturing);
+            SuspendHotkeysWhileCapturing,
+            RefreshCurrentWorkTask);
 
         await StartAsync().ConfigureAwait(true);
     }
@@ -280,6 +283,9 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
 
             // Alte Historie-Einträge (>1 Jahr) aufräumen — nicht startkritisch.
             _ = PurgeHistoryAsync();
+
+            // Laufende Aufgabe einmal bestimmen, damit sie beim ersten Pausenende steht.
+            _ = RefreshCurrentWorkTaskAsync();
 
             StartTimer(settings);
 
@@ -331,7 +337,8 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
             Services.GetRequiredService<IBreakHistoryRepository>(),
             _trayIcon!,
             Services.GetRequiredService<FullscreenDetectionService>(),
-            Services.GetRequiredService<ILogger<BreakCoordinator>>());
+            Services.GetRequiredService<ILogger<BreakCoordinator>>(),
+            Services.GetRequiredService<CurrentWorkTaskTracker>());
 
         // Innerhalb derselben Windows-Sitzung (z. B. nach einer Aktualisierung) den
         // Countdown fortsetzen statt zurückzusetzen; bei einem Windows-Neustart
@@ -533,6 +540,32 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
 
     private void OpenSettings() => _settingsPresenter?.Show();
 
+    /// <summary>
+    /// Bestimmt nach einer Änderung an den Aufgaben neu, an welcher gerade gearbeitet
+    /// wird. Die Antwort braucht der Timer beim Aufzeichnen der Pause sofort, und der
+    /// Infobereich nennt sie im Kurztext.
+    /// </summary>
+    private void RefreshCurrentWorkTask() => _ = RefreshCurrentWorkTaskAsync();
+
+    private async Task RefreshCurrentWorkTaskAsync()
+    {
+        try
+        {
+            CurrentWorkTaskTracker tracker = Services.GetRequiredService<CurrentWorkTaskTracker>();
+            await tracker.RefreshAsync().ConfigureAwait(false);
+            _trayIcon?.SetCurrentTask(tracker.CurrentTaskText);
+        }
+        catch (IOException ex)
+        {
+            // Die laufende Aufgabe ist eine Bequemlichkeit, kein Startkriterium.
+            AppLog.HistoryWriteFailed(_logger!, ex);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            AppLog.HistoryWriteFailed(_logger!, ex);
+        }
+    }
+
     private SettingsViewModel CreateSettingsViewModel() => new(
         Services.GetRequiredService<ISettingsRepository>(),
         Services.GetRequiredService<AutoStartCoordinator>(),
@@ -543,6 +576,7 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
         CreateStatisticsViewModel(),
         CreateBreakModelListViewModel(),
         CreateLogViewModel(),
+        CreateWorkTaskListViewModel(),
         Services.GetRequiredService<ILogger<SettingsViewModel>>(),
         GetVersion());
 
@@ -555,6 +589,12 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
     private BreakModelListViewModel CreateBreakModelListViewModel() => new(
         Services.GetRequiredService<ILocalizationService>(),
         Services.GetRequiredService<IBreakHistoryRepository>());
+
+    private WorkTaskListViewModel CreateWorkTaskListViewModel() => new(
+        Services.GetRequiredService<IWorkTaskRepository>(),
+        Services.GetRequiredService<IBreakHistoryRepository>(),
+        Services.GetRequiredService<ILocalizationService>(),
+        Services.GetRequiredService<IClock>());
 
     private LogViewModel CreateLogViewModel() => new(
         Services.GetRequiredService<ILogEntryReader>(),

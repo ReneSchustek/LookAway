@@ -58,12 +58,18 @@ public sealed class TrayStatusPresenter
     /// <param name="remaining">Verbleibende Zeit der laufenden Phase.</param>
     /// <param name="model">Aktives Pausenmodell (für die Modell-Zeile).</param>
     /// <param name="isDndActive">Sind Erinnerungen aktuell ausgesetzt?</param>
+    /// <param name="currentTask">
+    /// Aufgabe, an der gerade gearbeitet wird. Nur beim aufgabenbasierten Modell
+    /// gesetzt; bei den übrigen entsteht die Pause aus der Uhr und nicht aus dem,
+    /// was man gerade tut.
+    /// </param>
     /// <returns>Der mehrzeilige Tooltip-Text.</returns>
     public string GetTooltip(
         TimerState state,
         TimeSpan remaining,
         BreakModel model,
-        bool isDndActive = false)
+        bool isDndActive = false,
+        string? currentTask = null)
     {
         if (isDndActive)
         {
@@ -72,7 +78,7 @@ public sealed class TrayStatusPresenter
 
         return state switch
         {
-            TimerState.Working => BuildWorkingTooltip(remaining, model),
+            TimerState.Working => BuildWorkingTooltip(remaining, model, currentTask),
             TimerState.OnBreak => Format(TrayTextKeys.TooltipOnBreak, FormatRemaining(remaining)),
             TimerState.Paused => _localization.GetText(TrayTextKeys.TooltipPaused),
             TimerState.Idle => _localization.GetText(TrayTextKeys.TooltipIdle),
@@ -80,11 +86,21 @@ public sealed class TrayStatusPresenter
         };
     }
 
-    private string BuildWorkingTooltip(TimeSpan remaining, BreakModel model)
+    private string BuildWorkingTooltip(TimeSpan remaining, BreakModel model, string? currentTask)
     {
         string nextBreak = Format(TrayTextKeys.TooltipNextBreak, FormatRemaining(remaining));
         string modelName = _localization.GetText(SettingsTextKeys.ForModel(model));
         string modelLine = Format(TrayTextKeys.TooltipModel, modelName);
+
+        // Beim aufgabenbasierten Modell sagt die Restzeit wenig — dort zählt, woran
+        // gerade gearbeitet wird. Die Zeile kommt nur hinzu, wenn es eine Aufgabe gibt;
+        // der Kurztext von Windows ist knapp bemessen.
+        if (model == BreakModel.TaskBased && !string.IsNullOrWhiteSpace(currentTask))
+        {
+            string taskLine = Format(TrayTextKeys.TooltipTask, currentTask);
+            return $"{nextBreak}\n{modelLine}\n{taskLine}";
+        }
+
         return $"{nextBreak}\n{modelLine}";
     }
 

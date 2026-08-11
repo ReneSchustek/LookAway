@@ -8,6 +8,16 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Tasks for the task-based break model.** A new section keeps the tasks you are working on —
+  adding, renaming, checking off and deleting all happen on the task itself. With a search across
+  the task text and filters for open and done.
+
+- **Breaks remember what they belonged to.** With the task-based model every break is assigned to
+  the current task; each task shows how many breaks came out of it. The tray tooltip names the
+  current task.
+
 ## [1.3.0] – 2026-08-11
 
 ### Added

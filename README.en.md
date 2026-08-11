@@ -25,6 +25,8 @@ available as a Setup.exe and as a portable ZIP. Highlights of the 1.3 line:
 
 - **Light and dark appearance** – choose freely or follow the Windows setting; the choice takes
   effect immediately in the open window.
+- **Tasks (task-based model)** – the tasks you are working on, with search and filters; every
+  break is assigned to the current task
 - **Log inside the app** – the most recent entries with search and filters for level and period.
   Until now they only existed as a file in the data folder.
 - **Break models as cards** – with a search box and filter chips; each card says what to do during

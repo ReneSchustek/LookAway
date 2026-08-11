@@ -26,6 +26,8 @@ disponible en Setup.exe et en ZIP portable. Points forts de la série 1.3 :
 
 - **Apparence claire et sombre** – au choix ou selon le réglage de Windows ; le choix prend effet
   immédiatement dans la fenêtre ouverte.
+- **Tâches (modèle basé sur les tâches)** – les tâches en cours, avec recherche et filtres ;
+  chaque pause est rattachée à la tâche en cours
 - **Journal dans l'application** – les dernières entrées avec recherche et filtres par niveau et
   période. Jusqu'ici elles n'existaient que sous forme de fichier dans le dossier de données.
 - **Modèles de pause en cartes** – avec champ de recherche et filtres ; chaque carte indique quoi

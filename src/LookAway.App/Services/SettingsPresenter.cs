@@ -18,6 +18,7 @@ internal sealed class SettingsPresenter
     private readonly ThemeService _themeService;
     private readonly Action<Settings> _onSettingsApplied;
     private readonly Action<bool> _onHotkeyCaptureChanged;
+    private readonly Action _onTasksChanged;
     private Views.SettingsWindow? _window;
     private SettingsViewModel? _viewModel;
 
@@ -28,6 +29,10 @@ internal sealed class SettingsPresenter
     /// <param name="viewModelFactory">Erzeugt ein frisches Settings-ViewModel.</param>
     /// <param name="themeService">Liefert das gewählte Erscheinungsbild.</param>
     /// <param name="onSettingsApplied">Callback bei gespeicherten Einstellungen.</param>
+    /// <param name="onTasksChanged">
+    /// Callback, wenn sich an den Aufgaben etwas geändert hat. Danach muss die laufende
+    /// Aufgabe neu bestimmt und das Symbol im Infobereich aktualisiert werden.
+    /// </param>
     /// <param name="onHotkeyCaptureChanged">
     /// Callback für Beginn und Ende einer Hotkey-Aufnahme. Während der Aufnahme
     /// müssen die globalen Hotkeys freigegeben sein, sonst fängt Windows genau die
@@ -38,19 +43,22 @@ internal sealed class SettingsPresenter
         Func<SettingsViewModel> viewModelFactory,
         ThemeService themeService,
         Action<Settings> onSettingsApplied,
-        Action<bool> onHotkeyCaptureChanged)
+        Action<bool> onHotkeyCaptureChanged,
+        Action onTasksChanged)
     {
         ArgumentNullException.ThrowIfNull(dispatcher);
         ArgumentNullException.ThrowIfNull(viewModelFactory);
         ArgumentNullException.ThrowIfNull(themeService);
         ArgumentNullException.ThrowIfNull(onSettingsApplied);
         ArgumentNullException.ThrowIfNull(onHotkeyCaptureChanged);
+        ArgumentNullException.ThrowIfNull(onTasksChanged);
 
         _dispatcher = dispatcher;
         _viewModelFactory = viewModelFactory;
         _themeService = themeService;
         _onSettingsApplied = onSettingsApplied;
         _onHotkeyCaptureChanged = onHotkeyCaptureChanged;
+        _onTasksChanged = onTasksChanged;
     }
 
     /// <summary>Zeigt das Settings-Fenster (oder aktiviert das bereits offene).</summary>
@@ -67,6 +75,7 @@ internal sealed class SettingsPresenter
         SettingsViewModel viewModel = _viewModelFactory();
         viewModel.SettingsApplied += OnSettingsApplied;
         viewModel.HotkeyCaptureChanged += OnHotkeyCaptureChanged;
+        viewModel.Tasks.TasksChanged += OnTasksChanged;
         _viewModel = viewModel;
         await viewModel.LoadAsync().ConfigureAwait(true);
 
@@ -83,6 +92,8 @@ internal sealed class SettingsPresenter
     private void OnHotkeyCaptureChanged(object? sender, bool aktiv)
         => _onHotkeyCaptureChanged(aktiv);
 
+    private void OnTasksChanged(object? sender, EventArgs e) => _onTasksChanged();
+
     private void OnWindowClosed(object sender, Microsoft.UI.Xaml.WindowEventArgs args)
     {
         if (_window is not null)
@@ -95,6 +106,7 @@ internal sealed class SettingsPresenter
         {
             _viewModel.SettingsApplied -= OnSettingsApplied;
             _viewModel.HotkeyCaptureChanged -= OnHotkeyCaptureChanged;
+            _viewModel.Tasks.TasksChanged -= OnTasksChanged;
             _viewModel = null;
         }
 

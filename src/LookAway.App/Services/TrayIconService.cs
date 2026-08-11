@@ -48,6 +48,7 @@ internal sealed class TrayIconService : ITrayController, IDisposable
     private DispatcherQueueTimer? _statusTimer;
     private TrayIconVariant? _currentVariant;
     private BreakModel _activeModel = BreakModel.ClassicPomodoro;
+    private string? _currentTask;
     private bool _isDndActive;
     private bool _disposed;
 
@@ -117,6 +118,13 @@ internal sealed class TrayIconService : ITrayController, IDisposable
     public void SetActiveModel(BreakModel model) => _activeModel = model;
 
     /// <summary>
+    /// Übernimmt die Aufgabe, an der gerade gearbeitet wird. Nur beim
+    /// aufgabenbasierten Modell steht sie im Kurztext; <c>null</c> blendet sie aus.
+    /// </summary>
+    /// <param name="task">Text der laufenden Aufgabe oder <c>null</c>.</param>
+    public void SetCurrentTask(string? task) => _currentTask = task;
+
+    /// <summary>
     /// Schaltet die DND-Anzeige (ausgesetzte Erinnerungen). Wird von der
     /// Idle-/Vollbild-Erkennung angesteuert.
     /// </summary>
@@ -169,7 +177,7 @@ internal sealed class TrayIconService : ITrayController, IDisposable
         TimeSpan remaining = _timerService.Remaining;
 
         TrayIconVariant variant = _statusPresenter.GetIconVariant(state, _isDndActive);
-        _icon.ToolTipText = _statusPresenter.GetTooltip(state, remaining, _activeModel, _isDndActive);
+        _icon.ToolTipText = _statusPresenter.GetTooltip(state, remaining, _activeModel, _isDndActive, _currentTask);
 
         if (_currentVariant != variant)
         {

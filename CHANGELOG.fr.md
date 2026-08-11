@@ -8,6 +8,16 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+### Ajouté
+
+- **Tâches pour le modèle de pause basé sur les tâches.** Une nouvelle section gère les tâches en
+  cours — créer, renommer, cocher et supprimer se font sur la tâche elle-même. Avec une recherche
+  dans le texte des tâches et des filtres par ouvertes et terminées.
+
+- **Les pauses retiennent leur origine.** Avec le modèle basé sur les tâches, chaque pause est
+  rattachée à la tâche en cours ; chaque tâche indique combien de pauses en sont issues. L'info-bulle
+  de la zone de notification nomme la tâche en cours.
+
 ## [1.3.0] – 2026-08-11
 
 ### Ajouté

@@ -2,11 +2,11 @@
 <#
 .SYNOPSIS
     Lokale Review-Pipeline für LookAway: Build, Tests, Security-Scan und
-    Report-Skeleton.
+    Enterprise-Review-Report-Skeleton.
 
 .DESCRIPTION
     Wird vom Solution-Root oder aus tools/ aufgerufen. Bündelt die lokalen
-    Qualitäts-Checks ohne Cloud-Round-Trips.
+    Qualitäts-Checks (Maker-Checker-Workflow) ohne Cloud-Round-Trips.
 
     Modi:
       build       - dotnet build (TreatWarningsAsErrors greift global)

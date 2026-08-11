@@ -56,6 +56,54 @@ public static class SettingsTextKeys
     /// <summary>Kennzeichnung der gerade verwendeten Modell-Kachel.</summary>
     public const string ModelActiveBadge = "Settings.Model.ActiveBadge";
 
+    /// <summary>Tab "Aufgaben".</summary>
+    public const string TabTasks = "Settings.Tab.Tasks";
+
+    /// <summary>Erklärende Zeile über der Aufgabenliste.</summary>
+    public const string TasksSubtitle = "Settings.Tasks.Subtitle";
+
+    /// <summary>Platzhalter des Suchfelds der Aufgaben.</summary>
+    public const string TasksSearchPlaceholder = "Settings.Tasks.SearchPlaceholder";
+
+    /// <summary>Platzhalter des Eingabefelds für eine neue Aufgabe.</summary>
+    public const string TasksNewPlaceholder = "Settings.Tasks.NewPlaceholder";
+
+    /// <summary>Beschriftung der Schaltfläche zum Anlegen.</summary>
+    public const string TasksAdd = "Settings.Tasks.Add";
+
+    /// <summary>Filter-Chip "Alle" der Aufgaben.</summary>
+    public const string TasksFilterAll = "Settings.Tasks.FilterAll";
+
+    /// <summary>Filter-Chip "Offen".</summary>
+    public const string TasksFilterOpen = "Settings.Tasks.FilterOpen";
+
+    /// <summary>Filter-Chip "Erledigt".</summary>
+    public const string TasksFilterCompleted = "Settings.Tasks.FilterCompleted";
+
+    /// <summary>Beschriftung "Umbenennen".</summary>
+    public const string TasksRename = "Settings.Tasks.Rename";
+
+    /// <summary>Beschriftung "Löschen".</summary>
+    public const string TasksDelete = "Settings.Tasks.Delete";
+
+    /// <summary>Beschriftung "Übernehmen".</summary>
+    public const string TasksCommit = "Settings.Tasks.Commit";
+
+    /// <summary>Beschriftung "Abbrechen" beim Umbenennen.</summary>
+    public const string TasksCancel = "Settings.Tasks.Cancel";
+
+    /// <summary>Rückfrage vor dem Löschen.</summary>
+    public const string TasksDeleteConfirm = "Settings.Tasks.DeleteConfirm";
+
+    /// <summary>Zahl der Pausen einer Aufgabe (Formatstring {0}).</summary>
+    public const string TasksBreakCount = "Settings.Tasks.BreakCount";
+
+    /// <summary>Überschrift des Leerzustands "noch keine Aufgabe".</summary>
+    public const string TasksEmptyTitle = "Settings.Tasks.EmptyTitle";
+
+    /// <summary>Erklärung des Leerzustands "noch keine Aufgabe".</summary>
+    public const string TasksEmptyText = "Settings.Tasks.EmptyText";
+
     /// <summary>Erklärende Zeile über dem Protokoll.</summary>
     public const string LogSubtitle = "Settings.Log.Subtitle";
 

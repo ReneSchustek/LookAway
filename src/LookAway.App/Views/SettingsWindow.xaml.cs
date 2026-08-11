@@ -63,6 +63,7 @@ internal sealed partial class SettingsWindow : Window
             ["Sound"] = PanelSound,
             ["Pause"] = PanelPause,
             ["Hotkeys"] = PanelHotkeys,
+            ["Tasks"] = PanelTasks,
             ["Statistics"] = PanelStatistics,
             ["Log"] = PanelLog,
             ["About"] = PanelAbout,
@@ -188,6 +189,23 @@ internal sealed partial class SettingsWindow : Window
             // Die Shell meldet bei fehlender Zuordnung einen COM-Fehler; dann
             // passiert nichts, und das ist die richtige Antwort.
         }
+    }
+
+    /// <summary>
+    /// Legt eine Aufgabe auch per Eingabetaste an — wer tippt, will nicht zur Maus
+    /// greifen, um den Satz abzuschließen.
+    /// </summary>
+    private void OnNewTaskKeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        ArgumentNullException.ThrowIfNull(e);
+
+        if (e.Key != VirtualKey.Enter || !_viewModel.Tasks.AddCommand.CanExecute(null))
+        {
+            return;
+        }
+
+        e.Handled = true;
+        _viewModel.Tasks.AddCommand.Execute(null);
     }
 
     private void OnCloseRequested(object? sender, EventArgs e) => Close();

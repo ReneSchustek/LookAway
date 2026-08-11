@@ -79,6 +79,10 @@ internal static class ServiceRegistration
         _ = services.AddSingleton<ISoundService>(sp =>
             new SoundService(sp.GetRequiredService<ILogger<SoundService>>()));
 
+        // Aufgaben des aufgabenbasierten Modells
+        _ = services.AddSingleton<IWorkTaskRepository, JsonWorkTaskRepository>();
+        _ = services.AddSingleton<CurrentWorkTaskTracker>();
+
         // Statistiken / History / CSV
         _ = services.AddSingleton<IBreakHistoryRepository, JsonBreakHistoryRepository>();
         _ = services.AddSingleton<CsvExporter>();

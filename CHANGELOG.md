@@ -8,6 +8,16 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+### Hinzugefügt
+
+- **Aufgaben für das aufgabenbasierte Pausenmodell.** Ein neuer Bereich führt die Aufgaben, an
+  denen gerade gearbeitet wird — anlegen, umbenennen, abhaken und löschen geschieht an der
+  Aufgabe selbst. Mit Suche im Aufgabentext und Filtern nach offen und erledigt.
+
+- **Die Pause merkt sich, woran sie hing.** Beim aufgabenbasierten Modell wird jede Pause der
+  laufenden Aufgabe zugeordnet; jede Aufgabe zeigt, wie viele Pausen aus ihr entstanden sind.
+  Der Kurztext im Infobereich nennt die laufende Aufgabe.
+
 ## [1.3.0] – 2026-08-11
 
 ### Hinzugefügt

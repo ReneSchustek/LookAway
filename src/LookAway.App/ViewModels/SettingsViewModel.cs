@@ -45,6 +45,9 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Protokoll-Ansicht mit Suche und Filter, als eigenes ViewModel komponiert.</summary>
     public LogViewModel Log { get; }
 
+    /// <summary>Aufgabenliste mit Suche und Filter, als eigenes ViewModel komponiert.</summary>
+    public WorkTaskListViewModel Tasks { get; }
+
     private Language _originalLanguage;
     private bool _isInitializing;
     private bool _disposed;
@@ -133,6 +136,7 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <param name="statistics">Statistik-ViewModel (komponiert).</param>
     /// <param name="breakModels">Pausenmodell-Liste (komponiert).</param>
     /// <param name="log">Protokoll-Ansicht (komponiert).</param>
+    /// <param name="tasks">Aufgabenliste (komponiert).</param>
     /// <param name="logger">Logger.</param>
     /// <param name="applicationVersion">Anzuzeigende Versionsnummer (Über-Bereich).</param>
     public SettingsViewModel(
@@ -145,6 +149,7 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         StatisticsViewModel statistics,
         BreakModelListViewModel breakModels,
         LogViewModel log,
+        WorkTaskListViewModel tasks,
         ILogger<SettingsViewModel> logger,
         string applicationVersion)
     {
@@ -157,6 +162,7 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(statistics);
         ArgumentNullException.ThrowIfNull(breakModels);
         ArgumentNullException.ThrowIfNull(log);
+        ArgumentNullException.ThrowIfNull(tasks);
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentException.ThrowIfNullOrWhiteSpace(applicationVersion);
 
@@ -169,6 +175,7 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         Statistics = statistics;
         BreakModels = breakModels;
         Log = log;
+        Tasks = tasks;
         _logger = logger;
         _applicationVersion = applicationVersion;
 
@@ -281,6 +288,9 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     /// <summary>Tab-Überschrift "Protokoll".</summary>
     public string TabLogHeader => _localization.GetText(SettingsTextKeys.TabLog);
+
+    /// <summary>Tab-Überschrift "Aufgaben".</summary>
+    public string TabTasksHeader => _localization.GetText(SettingsTextKeys.TabTasks);
 
     /// <summary>Beschriftung der Erscheinungsbild-Auswahl.</summary>
     public string AppearanceLabel => _localization.GetText(SettingsTextKeys.AppearanceLabel);
@@ -488,6 +498,7 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         BreakModels.SetActiveModel(SelectedModel);
         await BreakModels.LoadAsync(cancellationToken).ConfigureAwait(true);
         await Log.LoadAsync(cancellationToken).ConfigureAwait(true);
+        await Tasks.LoadAsync(cancellationToken).ConfigureAwait(true);
 
         Validate();
         OnPropertyChanged(string.Empty);
@@ -724,8 +735,9 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         Log.RefreshTexts();
 
         // Die Modell-Kacheln tragen übersetzte Namen und Sätze; sie werden neu
-        // aufgebaut, statt nur die Bindungen anzustoßen.
+        // aufgebaut, statt nur die Bindungen anzustoßen. Die Aufgaben ebenso.
         _ = BreakModels.RefreshTextsAsync();
+        _ = Tasks.RefreshTextsAsync();
 
         OnPropertyChanged(string.Empty);
     }

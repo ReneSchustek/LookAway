@@ -37,6 +37,9 @@ public sealed class BreakCoordinator
     private readonly Lock _gate = new();
 
     private BreakModel _model = BreakModel.ClassicPomodoro;
+    // Optional: Nur beim aufgabenbasierten Modell hängt eine Pause an einer Aufgabe.
+    private readonly CurrentWorkTaskTracker? _workTasks;
+
     private BreakInterval? _interval;
     private bool _soundEnabled;
     private SoundType _soundType = SoundType.Chime;
@@ -60,7 +63,8 @@ public sealed class BreakCoordinator
         IBreakHistoryRepository history,
         ITrayController tray,
         FullscreenDetectionService fullscreen,
-        ILogger<BreakCoordinator> logger)
+        ILogger<BreakCoordinator> logger,
+        CurrentWorkTaskTracker? workTasks = null)
     {
         ArgumentNullException.ThrowIfNull(timer);
         ArgumentNullException.ThrowIfNull(reminder);
@@ -83,6 +87,7 @@ public sealed class BreakCoordinator
         _tray = tray;
         _fullscreen = fullscreen;
         _logger = logger;
+        _workTasks = workTasks;
     }
 
     /// <summary>Manuelles Nicht-stören aktiv? (Nur für Tests/Diagnose.)</summary>
@@ -350,7 +355,11 @@ public sealed class BreakCoordinator
             ? _reminderShownAt + _interval.BreakDuration
             : _reminderShownAt;
 
-        BreakSession session = new(Guid.NewGuid(), _reminderShownAt, end, _model, outcome);
+        // Die Aufgabe wird nur beim aufgabenbasierten Modell vermerkt: Bei den übrigen
+        // entsteht die Pause aus der Uhr und nicht aus dem, was man gerade tut.
+        Guid? taskId = _model == BreakModel.TaskBased ? _workTasks?.CurrentTaskId : null;
+
+        BreakSession session = new(Guid.NewGuid(), _reminderShownAt, end, _model, outcome, taskId);
         _ = AppendSessionAsync(session);
     }
 

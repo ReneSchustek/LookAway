@@ -59,6 +59,7 @@ public sealed class SettingsViewModelTests
             statistics,
             new BreakModelListViewModel(localization, history),
             new LogViewModel(new FakeLogEntryReader(), localization, clock),
+            new WorkTaskListViewModel(new FakeWorkTaskRepository(), history, localization, clock),
             NullLogger<SettingsViewModel>.Instance,
             TestVersion);
     }
@@ -93,6 +94,7 @@ public sealed class SettingsViewModelTests
             statistics,
             new BreakModelListViewModel(localization, history),
             new LogViewModel(new FakeLogEntryReader(), localization, clock),
+            new WorkTaskListViewModel(new FakeWorkTaskRepository(), history, localization, clock),
             NullLogger<SettingsViewModel>.Instance,
             TestVersion);
     }

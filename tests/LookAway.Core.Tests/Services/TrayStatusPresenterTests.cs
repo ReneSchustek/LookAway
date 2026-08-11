@@ -18,6 +18,8 @@ public sealed class TrayStatusPresenterTests
         ["Tray.Tooltip.Idle"] = "Timer gestoppt",
         ["Tray.Tooltip.NextBreak"] = "Nächste Pause in {0}",
         ["Tray.Tooltip.Model"] = "Modell: {0}",
+        ["Tray.Tooltip.Task"] = "Aufgabe: {0}",
+        ["Settings.Model.TaskBased"] = "TaskBased",
         ["Tray.Tooltip.OnBreak"] = "Pause läuft ({0} verbleibend)",
         ["Settings.Model.ModifiedPomodoro"] = "ModifiedPomodoro",
         ["Settings.Model.ClassicPomodoro"] = "ClassicPomodoro",
@@ -119,4 +121,47 @@ public sealed class TrayStatusPresenterTests
 
         Assert.Equal("Pause läuft (00:00 verbleibend)", tooltip);
     }
+    /// <remarks>
+    /// Beim aufgabenbasierten Modell sagt die Restzeit wenig — dort zählt, woran
+    /// gerade gearbeitet wird.
+    /// </remarks>
+    [Fact]
+    public void GetTooltip_NamesTheCurrentTaskForTheTaskBasedModel()
+    {
+        string tooltip = _presenter.GetTooltip(
+            TimerState.Working,
+            TimeSpan.FromMinutes(30),
+            BreakModel.TaskBased,
+            isDndActive: false,
+            currentTask: "Angebot schreiben");
+
+        Assert.Contains("Aufgabe: Angebot schreiben", tooltip, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void GetTooltip_OmitsTheTaskForOtherModels()
+    {
+        string tooltip = _presenter.GetTooltip(
+            TimerState.Working,
+            TimeSpan.FromMinutes(30),
+            BreakModel.ClassicPomodoro,
+            isDndActive: false,
+            currentTask: "Angebot schreiben");
+
+        Assert.DoesNotContain("Aufgabe:", tooltip, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void GetTooltip_OmitsTheTaskLineWithoutATask()
+    {
+        string tooltip = _presenter.GetTooltip(
+            TimerState.Working,
+            TimeSpan.FromMinutes(30),
+            BreakModel.TaskBased,
+            isDndActive: false,
+            currentTask: null);
+
+        Assert.DoesNotContain("Aufgabe:", tooltip, StringComparison.Ordinal);
+    }
+
 }

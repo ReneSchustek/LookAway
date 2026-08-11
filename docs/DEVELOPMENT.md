@@ -266,6 +266,31 @@ Das gewählte Erscheinungsbild (`Settings.AppTheme`: `System`, `Light`, `Dark`) 
 `ThemeService`; die Presenter legen es beim Aufbau auf das jeweilige Fenster. WinUI kennt das
 Erscheinungsbild nur je Element, nicht anwendungsweit.
 
+## Aufgaben (aufgabenbasiertes Modell)
+
+`WorkTask` (Core/Entities) ist unveränderlich wie `BreakSession`: Abschließen, Wiederöffnen und
+Umbenennen liefern eine neue Fassung, damit keine Liste halb aktualisiert dastehen kann. Persistiert
+wird als JSON-Array unter `%APPDATA%\LookAway\tasks.json` (`IWorkTaskRepository` →
+`JsonWorkTaskRepository`, atomar wie die übrigen Repositories).
+
+**Die Verknüpfung zur Pause ist der Grund für das Feature.** `BreakSession` trägt eine optionale
+`TaskId`; sie wird **nur** beim aufgabenbasierten Modell gesetzt — bei den übrigen entsteht die Pause
+aus der Uhr und nicht aus dem, was man gerade tut. Ältere Aufzeichnungen haben keine Kennung, der
+Wert ist deshalb `null`-fähig und der Konstruktor-Parameter optional (abwärtskompatibel zu
+bestehenden `history.json`). Wird eine Aufgabe gelöscht, bleibt die Kennung in der Historie stehen:
+Die Pause hat trotzdem stattgefunden.
+
+**Welche Aufgabe die laufende ist**, beantwortet `CurrentWorkTaskTracker` (Core/Services): die
+zuletzt angelegte offene. Das braucht keine zusätzliche Auswahl durch den Benutzer — wer eine Aufgabe
+anlegt, fängt damit an, und wer sie abhakt, arbeitet an der davor weiter. Die Antwort steht im
+Speicher, weil der Timer sie beim Aufzeichnen der Pause **sofort** braucht; für einen Dateizugriff
+ist an dieser Stelle kein Platz. Nachgeführt wird sie beim Start und nach jeder Änderung an den
+Aufgaben.
+
+Das `WorkTaskListViewModel` meldet Änderungen über das Ereignis `TasksChanged`, statt den Tracker
+injiziert zu bekommen. Die Composition Root hängt sich daran und stößt Tracker und Infobereich an;
+das ViewModel bleibt davon frei und ohne diese Teile testbar.
+
 ## Sound-Optionen
 
 Optional spielt LookAway bei einer Pause-Erinnerung einen dezenten Ton (Default: aus):

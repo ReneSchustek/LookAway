@@ -25,6 +25,8 @@ als Setup.exe und als portable ZIP. Highlights der 1.3-Reihe:
 
 - **Helles und dunkles Erscheinungsbild** – frei wählbar oder der Windows-Einstellung folgend; die
   Wahl wirkt sofort im offenen Fenster.
+- **Aufgaben (aufgabenbasiertes Modell)** – die Aufgaben, an denen gerade gearbeitet wird, mit
+  Suche und Filter; jede Pause wird der laufenden Aufgabe zugeordnet
 - **Protokoll im Programm** – die zuletzt festgehaltenen Meldungen mit Suche und Filtern nach Stufe
   und Zeitraum. Bisher lagen sie nur als Datei im Datenverzeichnis.
 - **Pausenmodelle als Kacheln** – mit Suchfeld und Filterleiste; jede Kachel nennt, was in der Pause

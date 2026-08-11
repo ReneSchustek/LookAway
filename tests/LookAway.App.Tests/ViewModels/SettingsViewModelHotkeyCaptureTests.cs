@@ -54,6 +54,7 @@ public sealed class SettingsViewModelHotkeyCaptureTests
             statistics,
             new BreakModelListViewModel(localization, history),
             new LogViewModel(new FakeLogEntryReader(), localization, clock),
+            new WorkTaskListViewModel(new FakeWorkTaskRepository(), history, localization, clock),
             NullLogger<SettingsViewModel>.Instance,
             "1.0.0");
     }

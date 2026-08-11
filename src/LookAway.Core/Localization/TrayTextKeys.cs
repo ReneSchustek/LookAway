@@ -44,6 +44,9 @@ public static class TrayTextKeys
     /// <summary>Tooltip-Zeile "Modell: {0}".</summary>
     public const string TooltipModel = "Tray.Tooltip.Model";
 
+    /// <summary>Tooltip-Zeile "Aufgabe: {0}" (nur beim aufgabenbasierten Modell).</summary>
+    public const string TooltipTask = "Tray.Tooltip.Task";
+
     /// <summary>Tooltip während der Pause "Pause läuft ({0} verbleibend)".</summary>
     public const string TooltipOnBreak = "Tray.Tooltip.OnBreak";
 }

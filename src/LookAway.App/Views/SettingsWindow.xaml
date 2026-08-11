@@ -14,6 +14,7 @@
     <Grid x:Name="RootGrid" Background="{ThemeResource RcBackground}">
         <Grid.Resources>
             <converters:BoolToVisibilityConverter x:Key="BoolToVisibility" />
+            <converters:InverseBoolToVisibilityConverter x:Key="InverseBoolToVisibility" />
             <converters:UpperCaseConverter x:Key="UpperCase" />
         </Grid.Resources>
         <Grid.RowDefinitions>
@@ -82,6 +83,11 @@
                 <NavigationViewItem Content="{Binding TabHotkeysHeader}" Tag="Hotkeys">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE765;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem Content="{Binding TabTasksHeader}" Tag="Tasks">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE8FD;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
                 <NavigationViewItem Content="{Binding Statistics.TabStatisticsHeader}" Tag="Statistics">
@@ -427,6 +433,181 @@
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
+
+                <!-- ══ Aufgaben ═══════════════════════════════════════════════
+                     Anlegen, Umbenennen, Abhaken und Löschen geschehen an der
+                     Kachel selbst — wer zum Ändern erst woandershin wechseln muss,
+                     verliert den Zusammenhang, den er vor sich hatte. -->
+                <Grid x:Name="PanelTasks" Visibility="Collapsed" RowSpacing="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <controls:ListPageHeader
+                        Grid.Row="0"
+                        Title="{Binding TabTasksHeader}"
+                        Subtitle="{Binding Tasks.Subtitle}" />
+
+                    <StackPanel Grid.Row="1" Spacing="8">
+                        <Border Style="{StaticResource RcCardStyle}">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBox
+                                    Grid.Column="0"
+                                    Text="{Binding Tasks.NewTaskText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    PlaceholderText="{Binding Tasks.NewTaskPlaceholder}"
+                                    AutomationProperties.Name="{Binding Tasks.NewTaskPlaceholder}"
+                                    KeyDown="OnNewTaskKeyDown" />
+                                <Button
+                                    Grid.Column="1"
+                                    Content="{Binding Tasks.AddLabel}"
+                                    Command="{Binding Tasks.AddCommand}"
+                                    Style="{StaticResource RcPrimaryButtonStyle}" />
+                            </Grid>
+                        </Border>
+
+                        <controls:SearchBox
+                            Text="{Binding Tasks.SearchText, Mode=TwoWay}"
+                            Placeholder="{Binding Tasks.SearchPlaceholder}"
+                            ClearLabel="{Binding ClearSearchLabel}"
+                            HorizontalAlignment="Left"
+                            MinWidth="320" />
+
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ToggleButton
+                                Style="{StaticResource RcFilterChipStyle}"
+                                Content="{Binding Tasks.FilterAllLabel}"
+                                IsChecked="{Binding Tasks.IsFilterAll, Mode=TwoWay}" />
+                            <ToggleButton
+                                Style="{StaticResource RcFilterChipStyle}"
+                                Content="{Binding Tasks.FilterOpenLabel}"
+                                IsChecked="{Binding Tasks.IsFilterOpen, Mode=TwoWay}" />
+                            <ToggleButton
+                                Style="{StaticResource RcFilterChipStyle}"
+                                Content="{Binding Tasks.FilterCompletedLabel}"
+                                IsChecked="{Binding Tasks.IsFilterCompleted, Mode=TwoWay}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <ScrollViewer Grid.Row="2">
+                        <StackPanel Spacing="8" MaxWidth="{StaticResource RcContentMaxWidth}" HorizontalAlignment="Left">
+                            <ItemsControl
+                                ItemsSource="{Binding Tasks.VisibleTasks}"
+                                Visibility="{Binding Tasks.HasResults, Converter={StaticResource BoolToVisibility}}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Spacing="8" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource RcCardStyle}">
+                                            <Grid ColumnSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <CheckBox
+                                                    Grid.Column="0"
+                                                    IsChecked="{Binding IsCompleted, Mode=OneWay}"
+                                                    Command="{Binding DataContext.Tasks.ToggleCompletedCommand, ElementName=RootGrid}"
+                                                    CommandParameter="{Binding}"
+                                                    MinWidth="0"
+                                                    VerticalAlignment="Top"
+                                                    AutomationProperties.Name="{Binding Text}" />
+
+                                                <!-- Anzeige und Bearbeitung liegen übereinander; welche gilt,
+                                                     entscheidet der Zustand der Kachel. -->
+                                                <StackPanel Grid.Column="1" Spacing="2">
+                                                    <StackPanel
+                                                        Spacing="2"
+                                                        Visibility="{Binding IsEditing, Converter={StaticResource InverseBoolToVisibility}}">
+                                                        <TextBlock Text="{Binding Text}" Style="{StaticResource RcBodyTextStyle}" />
+                                                        <TextBlock Text="{Binding BreakCountText}" Style="{StaticResource RcMutedTextStyle}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Spacing="8"
+                                                        Visibility="{Binding IsEditing, Converter={StaticResource BoolToVisibility}}">
+                                                        <TextBox
+                                                            Text="{Binding EditText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                                            AutomationProperties.Name="{Binding Text}" />
+                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                            <Button
+                                                                Content="{Binding DataContext.Tasks.CommitLabel, ElementName=RootGrid}"
+                                                                Command="{Binding DataContext.Tasks.CommitEditCommand, ElementName=RootGrid}"
+                                                                CommandParameter="{Binding}" />
+                                                            <Button
+                                                                Content="{Binding DataContext.Tasks.CancelLabel, ElementName=RootGrid}"
+                                                                Command="{Binding DataContext.Tasks.CancelEditCommand, ElementName=RootGrid}"
+                                                                CommandParameter="{Binding}" />
+                                                        </StackPanel>
+                                                    </StackPanel>
+                                                </StackPanel>
+
+                                                <StackPanel
+                                                    Grid.Column="2"
+                                                    Orientation="Horizontal"
+                                                    Spacing="4"
+                                                    VerticalAlignment="Top"
+                                                    Visibility="{Binding IsEditing, Converter={StaticResource InverseBoolToVisibility}}">
+                                                    <Button
+                                                        Content="{Binding DataContext.Tasks.RenameLabel, ElementName=RootGrid}"
+                                                        Command="{Binding DataContext.Tasks.StartEditCommand, ElementName=RootGrid}"
+                                                        CommandParameter="{Binding}" />
+                                                    <!-- Löschen fragt nach und benennt dabei, was mit den Pausen
+                                                         geschieht: Sie bleiben in der Statistik. -->
+                                                    <Button Content="{Binding DataContext.Tasks.DeleteLabel, ElementName=RootGrid}">
+                                                        <Button.Flyout>
+                                                            <Flyout>
+                                                                <StackPanel Spacing="12" MaxWidth="280">
+                                                                    <TextBlock
+                                                                        Text="{Binding DataContext.Tasks.DeleteConfirmation, ElementName=RootGrid}"
+                                                                        Style="{StaticResource RcBodyTextStyle}" />
+                                                                    <Button
+                                                                        Content="{Binding DataContext.Tasks.DeleteLabel, ElementName=RootGrid}"
+                                                                        Command="{Binding DataContext.Tasks.DeleteCommand, ElementName=RootGrid}"
+                                                                        CommandParameter="{Binding}"
+                                                                        Style="{StaticResource RcPrimaryButtonStyle}"
+                                                                        HorizontalAlignment="Right" />
+                                                                </StackPanel>
+                                                            </Flyout>
+                                                        </Button.Flyout>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <controls:EmptyState
+                                Glyph="&#xE8FD;"
+                                Title="{Binding Tasks.EmptyTitle}"
+                                Text="{Binding Tasks.EmptyText}"
+                                Visibility="{Binding Tasks.ShowEmpty, Converter={StaticResource BoolToVisibility}}" />
+
+                            <controls:EmptyState
+                                Glyph="&#xE721;"
+                                Title="{Binding Tasks.NoResultsTitle}"
+                                Text="{Binding Tasks.NoResultsText}"
+                                Visibility="{Binding Tasks.ShowNoResults, Converter={StaticResource BoolToVisibility}}">
+                                <controls:EmptyState.ActionContent>
+                                    <Button
+                                        Content="{Binding Tasks.ResetSearchLabel}"
+                                        Command="{Binding Tasks.ResetSearchCommand}" />
+                                </controls:EmptyState.ActionContent>
+                            </controls:EmptyState>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
 
                 <!-- ══ Statistik ══════════════════════════════════════════════ -->
                 <ScrollViewer x:Name="PanelStatistics" Visibility="Collapsed">

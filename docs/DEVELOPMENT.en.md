@@ -259,6 +259,29 @@ The chosen appearance (`Settings.AppTheme`: `System`, `Light`, `Dark`) is held b
 the presenters apply it to each window as it is built. WinUI only knows the appearance per element,
 not application-wide.
 
+## Tasks (task-based model)
+
+`WorkTask` (Core/Entities) is immutable like `BreakSession`: completing, reopening and renaming each
+return a new version, so no list can be left half updated. Persisted as a JSON array under
+`%APPDATA%\LookAway\tasks.json` (`IWorkTaskRepository` → `JsonWorkTaskRepository`, atomic like the
+other repositories).
+
+**The link to the break is the reason for the feature.** `BreakSession` carries an optional `TaskId`;
+it is set **only** for the task-based model — with the others the break comes from the clock, not
+from what you are doing. Older records have no id, so the value is nullable and the constructor
+parameter optional (backwards compatible with existing `history.json`). Deleting a task leaves the id
+in the history: the break still happened.
+
+**Which task is the current one** is answered by `CurrentWorkTaskTracker` (Core/Services): the most
+recently created open one. That needs no extra selection by the user — whoever adds a task starts on
+it, and whoever checks it off continues with the one before. The answer is held in memory because the
+timer needs it *immediately* when recording the break; there is no room for a file access at that
+point. It is refreshed at startup and after every change to the tasks.
+
+`WorkTaskListViewModel` reports changes through the `TasksChanged` event instead of taking the
+tracker as a dependency. The composition root hooks into it and nudges tracker and tray icon; the
+view model stays free of those parts and testable without them.
+
 ## Sound options
 
 Optionally LookAway plays a discreet tone on a break reminder (default: off):

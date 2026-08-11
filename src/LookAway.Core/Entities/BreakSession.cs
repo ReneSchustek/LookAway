@@ -17,6 +17,12 @@ public sealed class BreakSession
     /// <param name="endedAt">Ende; darf nicht vor <paramref name="startedAt"/> liegen.</param>
     /// <param name="model">Aktives Pausenmodell.</param>
     /// <param name="outcome">Ergebnis der Erinnerung.</param>
+    /// <param name="taskId">
+    /// Aufgabe, an der zu diesem Zeitpunkt gearbeitet wurde; <c>null</c> bei allen
+    /// Modellen außer dem aufgabenbasierten und bei Aufzeichnungen aus der Zeit vor
+    /// den Aufgaben. Der Wert bleibt auch dann stehen, wenn die Aufgabe später
+    /// gelöscht wird — die Pause hat trotzdem stattgefunden.
+    /// </param>
     /// <exception cref="ArgumentException"><paramref name="id"/> ist leer.</exception>
     /// <exception cref="ArgumentOutOfRangeException">Ende liegt vor Beginn oder Enum-Wert ist unbekannt.</exception>
     [JsonConstructor]
@@ -25,7 +31,8 @@ public sealed class BreakSession
         DateTimeOffset startedAt,
         DateTimeOffset endedAt,
         BreakModel model,
-        BreakOutcome outcome)
+        BreakOutcome outcome,
+        Guid? taskId = null)
     {
         if (id == Guid.Empty)
         {
@@ -55,6 +62,7 @@ public sealed class BreakSession
         EndedAt = endedAt;
         Model = model;
         Outcome = outcome;
+        TaskId = taskId;
     }
 
     /// <summary>Eindeutige Kennung der Sitzung.</summary>
@@ -71,6 +79,12 @@ public sealed class BreakSession
 
     /// <summary>Ergebnis der Erinnerung.</summary>
     public BreakOutcome Outcome { get; }
+
+    /// <summary>
+    /// Aufgabe, an der zu diesem Zeitpunkt gearbeitet wurde; <c>null</c>, wenn keine
+    /// zugeordnet war.
+    /// </summary>
+    public Guid? TaskId { get; }
 
     /// <summary>Dauer der Sitzung.</summary>
     [JsonIgnore]

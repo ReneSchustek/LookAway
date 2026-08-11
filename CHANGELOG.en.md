@@ -22,9 +22,6 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Fixed
 
-- **Nine log messages mixed languages** — for example "Einstellungen aus … loaded." instead of
-  "geladen". They are visible in the log section and now read consistently.
-
 - **Closing the app shortly after launch now cancels the update check.** It used to keep running
   while the program was already shutting down.
 

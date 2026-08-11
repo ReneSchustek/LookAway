@@ -22,9 +22,6 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
-- **Neun Protokollmeldungen standen in gemischter Sprache** — etwa „Einstellungen aus … loaded."
-  statt „geladen". Sie sind im Protokollbereich sichtbar und jetzt durchgehend deutsch.
-
 - **Wird die Anwendung kurz nach dem Start beendet, bricht die Update-Prüfung nun ab.** Vorher lief
   sie weiter, während das Programm sich bereits schloss.
 

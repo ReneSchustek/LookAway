@@ -22,9 +22,6 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ### Corrigé
 
-- **Neuf messages du journal mélangeaient les langues** — par exemple « Einstellungen aus … loaded. »
-  au lieu de « geladen ». Ils sont visibles dans la section Journal et sont désormais cohérents.
-
 - **Fermer l'application peu après son démarrage interrompt maintenant la vérification des mises à
   jour.** Elle continuait auparavant alors que le programme se fermait déjà.
 

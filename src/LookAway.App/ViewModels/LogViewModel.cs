@@ -67,21 +67,16 @@ internal sealed partial class LogViewModel : ObservableObject
     [ObservableProperty]
     public partial LogPeriodFilter PeriodFilter { get; set; }
 
-    /// <summary>
-    /// Wahr, wenn überhaupt nichts protokolliert ist.
-    /// </summary>
-    /// <remarks>
-    /// Von <see cref="ShowNoResults"/> zu trennen: Ein leeres Protokoll ist eine
-    /// andere Lage als eine Suche ohne Treffer, und ein „Suche zurücksetzen" hilft
-    /// dort nicht weiter.
-    /// </remarks>
-    public bool ShowEmpty => _allEntries.Count == 0;
+    private ListViewState State => new(_allEntries.Count, VisibleEntries.Count);
+
+    /// <summary>Wahr, wenn überhaupt nichts protokolliert ist.</summary>
+    public bool ShowEmpty => State.ShowEmpty;
 
     /// <summary>Wahr, wenn Suche oder Filter alles ausgeblendet haben.</summary>
-    public bool ShowNoResults => _allEntries.Count > 0 && VisibleEntries.Count == 0;
+    public bool ShowNoResults => State.ShowNoResults;
 
     /// <summary>Wahr, solange Einträge zu sehen sind.</summary>
-    public bool HasResults => VisibleEntries.Count > 0;
+    public bool HasResults => State.HasResults;
 
     /// <summary>Erklärende Zeile unter dem Titel.</summary>
     public string Subtitle => _localization.GetText(SettingsTextKeys.LogSubtitle);

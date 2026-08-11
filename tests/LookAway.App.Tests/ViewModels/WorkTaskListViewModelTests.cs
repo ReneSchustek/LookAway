@@ -243,6 +243,87 @@ public sealed class WorkTaskListViewModelTests
         Assert.Equal(0, viewModel.VisibleTasks.Single(item => item.Id == ohne.Id).BreakCount);
     }
 
+    /// <remarks>
+    /// Je Leiste bleibt genau ein Chip gewählt. Der erneute Klick auf den aktiven meldet
+    /// „abgewählt" — bliebe das stehen, zeigte die Liste einen Ausschnitt, ohne dass zu
+    /// sehen wäre, welchen.
+    /// </remarks>
+    [Theory]
+    [InlineData(nameof(WorkTaskListViewModel.IsFilterAll))]
+    [InlineData(nameof(WorkTaskListViewModel.IsFilterOpen))]
+    [InlineData(nameof(WorkTaskListViewModel.IsFilterCompleted))]
+    public async Task FilterChip_StaysSelectedWhenClickedAgain(string chip)
+    {
+        WorkTaskListViewModel viewModel = CreateViewModel([WorkTask.Create("Ablage", Now)]);
+        await viewModel.LoadAsync();
+        SetChip(viewModel, chip, value: true);
+
+        SetChip(viewModel, chip, value: false);
+
+        Assert.True(ChipValue(viewModel, chip));
+    }
+
+    [Theory]
+    [InlineData(nameof(WorkTaskListViewModel.IsFilterOpen))]
+    [InlineData(nameof(WorkTaskListViewModel.IsFilterCompleted))]
+    public async Task FilterChip_TakesTheSelectionFromAll(string chosen)
+    {
+        WorkTaskListViewModel viewModel = CreateViewModel([WorkTask.Create("Ablage", Now)]);
+        await viewModel.LoadAsync();
+
+        SetChip(viewModel, chosen, value: true);
+
+        Assert.True(ChipValue(viewModel, chosen));
+        Assert.False(viewModel.IsFilterAll);
+    }
+
+    /// <remarks>
+    /// Die Befehle hängen an den Schaltflächen der Listeneinträge. Kommt von dort nichts
+    /// an — etwa weil der Eintrag beim Klicken gerade entfernt wurde —, darf das nicht
+    /// zum Absturz führen.
+    /// </remarks>
+    [Fact]
+    public async Task ItemCommands_IgnoreAMissingItem()
+    {
+        WorkTaskListViewModel viewModel = CreateViewModel([WorkTask.Create("Ablage", Now)]);
+        await viewModel.LoadAsync();
+
+        viewModel.StartEditCommand.Execute(null);
+        viewModel.CancelEditCommand.Execute(null);
+        await viewModel.CommitEditCommand.ExecuteAsync(null);
+
+        _ = Assert.Single(viewModel.VisibleTasks);
+    }
+
+    [Fact]
+    public void EveryLabelReturnsText()
+    {
+        WorkTaskListViewModel viewModel = CreateViewModel([]);
+        List<string> empty = [];
+
+        foreach (System.Reflection.PropertyInfo property in typeof(WorkTaskListViewModel)
+            .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+            .Where(property => property.PropertyType == typeof(string) && property.CanRead))
+        {
+            if (property.GetValue(viewModel) is not string value || string.IsNullOrWhiteSpace(value))
+            {
+                empty.Add(property.Name);
+            }
+        }
+
+        // Die beiden Eingabefelder starten leer; alles Übrige ist Beschriftung.
+        _ = empty.Remove(nameof(WorkTaskListViewModel.SearchText));
+        _ = empty.Remove(nameof(WorkTaskListViewModel.NewTaskText));
+
+        Assert.True(empty.Count == 0, "Ohne Text: " + string.Join(", ", empty));
+    }
+
+    private static void SetChip(WorkTaskListViewModel viewModel, string chip, bool value)
+        => typeof(WorkTaskListViewModel).GetProperty(chip)!.SetValue(viewModel, value);
+
+    private static bool ChipValue(WorkTaskListViewModel viewModel, string chip)
+        => (bool)typeof(WorkTaskListViewModel).GetProperty(chip)!.GetValue(viewModel)!;
+
     private static BreakSession Session(Guid? taskId) => new(
         Guid.NewGuid(),
         Now,

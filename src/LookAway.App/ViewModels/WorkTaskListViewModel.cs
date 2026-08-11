@@ -81,14 +81,16 @@ internal sealed partial class WorkTaskListViewModel : ObservableObject
     [ObservableProperty]
     public partial WorkTaskFilter Filter { get; set; }
 
+    private ListViewState State => new(_allTasks.Count, VisibleTasks.Count);
+
     /// <summary>Wahr, wenn noch keine Aufgabe angelegt wurde.</summary>
-    public bool ShowEmpty => _allTasks.Count == 0;
+    public bool ShowEmpty => State.ShowEmpty;
 
     /// <summary>Wahr, wenn Suche oder Filter alles ausgeblendet haben.</summary>
-    public bool ShowNoResults => _allTasks.Count > 0 && VisibleTasks.Count == 0;
+    public bool ShowNoResults => State.ShowNoResults;
 
     /// <summary>Wahr, solange Aufgaben zu sehen sind.</summary>
-    public bool HasResults => VisibleTasks.Count > 0;
+    public bool HasResults => State.HasResults;
 
     /// <summary>Erklärende Zeile unter dem Titel.</summary>
     public string Subtitle => _localization.GetText(SettingsTextKeys.TasksSubtitle);

@@ -25,7 +25,8 @@ public sealed class BreakCoordinatorTests
         FakeBreakOverlayPresenter Overlay,
         FakeTrayController Tray,
         FakeBreakHistoryRepository History,
-        FakeClock Clock);
+        FakeClock Clock,
+        FakeSoundService Sound);
 
     private static void Run(Action<Harness> body, Settings? settings = null, bool applyInitialSchedule = true)
     {
@@ -38,13 +39,14 @@ public sealed class BreakCoordinatorTests
         FakeTrayController tray = new();
         FakeBreakHistoryRepository history = new();
         FullscreenDetectionService fullscreen = new(new FakeFullscreenDetector());
+        FakeSoundService sound = new();
 
         BreakCoordinator coordinator = new(
             timer,
             reminder,
             overlay,
             pauseActions,
-            new FakeSoundService(),
+            sound,
             clock,
             history,
             tray,
@@ -56,7 +58,7 @@ public sealed class BreakCoordinatorTests
             coordinator.ApplySchedule(settings ?? new Settings());
         }
 
-        body(new Harness(coordinator, timer, reminder, overlay, tray, history, clock));
+        body(new Harness(coordinator, timer, reminder, overlay, tray, history, clock, sound));
     }
 
     private static IReadOnlyList<BreakSession> Sessions(Harness h)
@@ -92,7 +94,7 @@ public sealed class BreakCoordinatorTests
     });
 
     [Fact]
-    public void BreakDue_ReichtAutoStartVerzoegerungAusDenSettingsDurch() => Run(
+    public void BreakDue_PassesTheAutoStartDelayFromTheSettings() => Run(
         h =>
         {
             h.Coordinator.RequestReminder();
@@ -102,7 +104,7 @@ public sealed class BreakCoordinatorTests
         settings: new Settings { AutoStartBreakEnabled = true, AutoStartBreakSeconds = 45 });
 
     [Fact]
-    public void BreakDue_OhneAutoStart_ReichtKeineVerzoegerungDurch() => Run(
+    public void BreakDue_WithoutAutoStart_PassesNoDelay() => Run(
         h =>
         {
             h.Coordinator.RequestReminder();
@@ -187,7 +189,7 @@ public sealed class BreakCoordinatorTests
     });
 
     [Fact]
-    public void ApplySchedule_MitUnveraendertemIntervall_SetztDenTimerNichtZurueck() => Run(h =>
+    public void ApplySchedule_WithAnUnchangedInterval_DoesNotResetTheTimer() => Run(h =>
     {
         TimeSpan voll = h.Timer.Remaining;
         h.Clock.Advance(TimeSpan.FromMinutes(10));
@@ -202,7 +204,7 @@ public sealed class BreakCoordinatorTests
     });
 
     [Fact]
-    public void ApplySchedule_BeiModellwechsel_StartetDenTimerNeu() => Run(h =>
+    public void ApplySchedule_OnModelChange_RestartsTheTimer() => Run(h =>
     {
         h.Clock.Advance(TimeSpan.FromMinutes(10));
 
@@ -215,7 +217,7 @@ public sealed class BreakCoordinatorTests
     });
 
     [Fact]
-    public void ApplySchedule_MitResume_SetztDenCountdownFortStattZurueckzusetzen() => Run(
+    public void ApplySchedule_WithResume_ContinuesTheCountdownInsteadOfResetting() => Run(
         h =>
         {
             // Frischer Coordinator (Timer noch Idle): Wiederherstellung nach Neustart
@@ -226,4 +228,104 @@ public sealed class BreakCoordinatorTests
             Assert.Equal(TimeSpan.FromMinutes(8), h.Timer.Remaining);
         },
         applyInitialSchedule: false);
+
+    /// <remarks>
+    /// Das aktive Modell wird beim Beenden in die Momentaufnahme geschrieben und beim
+    /// nächsten Start wieder aufgenommen. Läge hier etwas anderes als in den
+    /// Einstellungen, setzte das Programm nach einem Neustart mit dem falschen Modell fort.
+    /// </remarks>
+    [Fact]
+    public void ActiveModel_FollowsTheSchedule() => Run(h =>
+    {
+        Assert.Equal(BreakModel.ClassicPomodoro, h.Coordinator.ActiveModel);
+
+        h.Coordinator.ApplySchedule(new Settings { BreakModel = BreakModel.Ultradian });
+
+        Assert.Equal(BreakModel.Ultradian, h.Coordinator.ActiveModel);
+    });
+
+    /// <remarks>
+    /// Beides zusammen bildet die Momentaufnahme beim Beenden: ob gearbeitet wurde und
+    /// wie viel davon noch offen war. Wird die Restzeit falsch gemeldet, beginnt das
+    /// Programm nach dem nächsten Start mitten in einer Phase, die es nicht mehr gibt.
+    /// </remarks>
+    [Fact]
+    public void IsWorkingAndWorkRemaining_MirrorTheTimer() => Run(h =>
+    {
+        Assert.True(h.Coordinator.IsWorking);
+        TimeSpan atStart = h.Coordinator.WorkRemaining;
+
+        h.Clock.Advance(TimeSpan.FromMinutes(10));
+        h.Timer.Tick();
+
+        Assert.True(h.Coordinator.WorkRemaining < atStart);
+    });
+
+    [Fact]
+    public void IsWorking_IsFalseBeforeAnySchedule() => Run(
+        h => Assert.False(h.Coordinator.IsWorking),
+        applyInitialSchedule: false);
+
+    /// <remarks>
+    /// Gegenstück zu <see cref="BreakCompleted_WithOpenOverlay_LeavesOverlayInCharge"/>:
+    /// Wurde die Erinnerung übergangen, gibt es kein Overlay, das die Pause beendet —
+    /// dann muss der Ablauf hier aufräumen, sonst bliebe der Bildschirm gedimmt und die
+    /// Wiedergabe angehalten.
+    /// </remarks>
+    [Fact]
+    public void BreakCompleted_WithoutOverlay_CleansUpItself() => Run(h =>
+    {
+        h.Coordinator.HandleTimerEvent(new BreakCompletedEvent());
+
+        Assert.False(h.Overlay.IsOverlayOpen);
+    });
+
+    /// <summary>Der Hotkey „Überspringen" beginnt die Arbeitsphase von vorn.</summary>
+    [Fact]
+    public void SkipOrSnooze_RestartsTheWorkInterval() => Run(h =>
+    {
+        h.Clock.Advance(TimeSpan.FromMinutes(10));
+        h.Timer.Tick();
+        TimeSpan afterTick = h.Timer.Remaining;
+
+        h.Coordinator.SkipOrSnooze();
+
+        Assert.True(h.Timer.Remaining > afterTick);
+    });
+
+    [Fact]
+    public void SkipOrSnooze_WithoutASchedule_DoesNothing() => Run(
+        h =>
+        {
+            h.Coordinator.SkipOrSnooze();
+
+            Assert.Equal(TimerState.Idle, h.Timer.State);
+        },
+        applyInitialSchedule: false);
+
+    /// <remarks>
+    /// Der Ton ist das Einzige, was die Erinnerung ankündigt, wenn das Fenster hinter
+    /// anderen liegt — Lautstärke und Art kommen aus den Einstellungen.
+    /// </remarks>
+    [Fact]
+    public void Reminder_PlaysTheConfiguredSound() => Run(
+        h =>
+        {
+            h.Coordinator.RequestReminder();
+
+            Assert.Equal(1, h.Sound.PlayCallCount);
+            Assert.Equal(SoundType.Bell, h.Sound.LastSound);
+            Assert.Equal(40, h.Sound.LastVolume);
+        },
+        new Settings { SoundEnabled = true, ReminderSound = SoundType.Bell, SoundVolumePercent = 40 });
+
+    [Fact]
+    public void Reminder_StaysSilentWhenSoundIsOff() => Run(
+        h =>
+        {
+            h.Coordinator.RequestReminder();
+
+            Assert.Equal(0, h.Sound.PlayCallCount);
+        },
+        new Settings { SoundEnabled = false });
 }

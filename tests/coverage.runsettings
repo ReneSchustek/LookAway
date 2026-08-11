@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Einstellungen für die Messung der Testabdeckung.
+
+    Ohne sie misst der Sammler auch Code, den niemand geschrieben hat: allein die aus
+    [LoggerMessage] erzeugten Log-Klassen brachten mehrere hundert Zeilen mit, die
+    naturgemäß ungeprüft bleiben. Eine Abdeckungszahl, die zu einem guten Teil aus
+    erzeugtem Code besteht, sagt über die eigene Prüftiefe nichts aus.
+
+    Bewusst nicht ausgeschlossen ist CompilerGeneratedAttribute: Es träfe die
+    Zustandsautomaten, die der Compiler aus jeder async-Methode baut. Das ist
+    geschriebener Code — mit diesem Filter verschwand die Datenschicht, deren
+    Ablagen durchgehend asynchron arbeiten, vollständig aus dem Bericht.
+-->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <!-- Erzeugtes gehört nicht in die Messung. -->
+          <ExcludeByAttribute>GeneratedCodeAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+          <!--
+              Die Testprojekte messen sich nicht selbst, und die *Log-Klassen ebenfalls
+              nicht: Sie bestehen ausnahmslos aus [LoggerMessage]-Deklarationen ohne
+              eine einzige Anweisung. Was dort steht, erzeugt der Generator; die
+              Deklarationszeile selbst ist nichts, was ein Test durchlaufen könnte.
+          -->
+          <Exclude>[*.Tests]*,[*]*Log</Exclude>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

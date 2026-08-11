@@ -38,7 +38,7 @@ public sealed class JsonTimerStateStoreTests : IDisposable
     }
 
     [Fact]
-    public void Save_und_Load_erhalten_die_Momentaufnahme()
+    public void SaveAndLoad_PreserveTheSnapshot()
     {
         JsonTimerStateStore store = new(_filePath);
         DateTimeOffset marker = new(2026, 6, 30, 8, 0, 0, TimeSpan.Zero);
@@ -53,13 +53,13 @@ public sealed class JsonTimerStateStoreTests : IDisposable
     }
 
     [Fact]
-    public void Load_ohne_Datei_liefert_null()
+    public void Load_WithoutFile_ReturnsNull()
     {
         Assert.Null(new JsonTimerStateStore(_filePath).Load());
     }
 
     [Fact]
-    public void Clear_entfernt_die_Datei()
+    public void Clear_RemovesTheFile()
     {
         JsonTimerStateStore store = new(_filePath);
         store.Save(new TimerSnapshot(BreakModel.ClassicPomodoro, TimeSpan.FromMinutes(5), DateTimeOffset.UnixEpoch));
@@ -68,5 +68,82 @@ public sealed class JsonTimerStateStoreTests : IDisposable
 
         Assert.Null(store.Load());
         Assert.False(File.Exists(_filePath));
+    }
+
+    /// <remarks>
+    /// Eine halb geschriebene Datei — etwa nach einem Stromausfall mitten im Sichern —
+    /// darf den Start nicht aufhalten. Der Timer beginnt dann eben mit voller
+    /// Arbeitsdauer.
+    /// </remarks>
+    [Theory]
+    [InlineData("{ das ist kein JSON")]
+    [InlineData("{\"model\":")]
+    [InlineData("[]")]
+    public void Load_WithBrokenContent_ReturnsNull(string content)
+    {
+        File.WriteAllText(_filePath, content);
+
+        Assert.Null(new JsonTimerStateStore(_filePath).Load());
+    }
+
+    [Fact]
+    public void Load_WithEmptyFile_ReturnsNull()
+    {
+        File.WriteAllText(_filePath, "   ");
+
+        Assert.Null(new JsonTimerStateStore(_filePath).Load());
+    }
+
+    /// <remarks>
+    /// Die Datei kann gerade von einem Virenscanner oder einer zweiten Instanz
+    /// gehalten werden. Auch dann startet die Anwendung.
+    /// </remarks>
+    [Fact]
+    public void Load_WithLockedFile_ReturnsNull()
+    {
+        using LockedFile locked = new(_filePath, "{}");
+
+        Assert.Null(new JsonTimerStateStore(_filePath).Load());
+    }
+
+    [Fact]
+    public void Save_WithLockedFile_IsIgnored()
+    {
+        using LockedFile locked = new(_filePath);
+        JsonTimerStateStore store = new(_filePath);
+
+        Exception? thrown = Record.Exception(
+            () => store.Save(new TimerSnapshot(BreakModel.Ultradian, TimeSpan.FromMinutes(3), DateTimeOffset.UnixEpoch)));
+
+        Assert.Null(thrown);
+    }
+
+    [Fact]
+    public void Clear_WithLockedFile_IsIgnored()
+    {
+        using LockedFile locked = new(_filePath, "{}");
+        JsonTimerStateStore store = new(_filePath);
+
+        Exception? thrown = Record.Exception(store.Clear);
+
+        Assert.Null(thrown);
+    }
+
+    /// <remarks>
+    /// Zeigt der Pfad auf ein Verzeichnis, verweigert Windows den Schreibzugriff mit
+    /// einer anderen Ausnahme als bei der gesperrten Datei — beide Zweige müssen
+    /// schweigen.
+    /// </remarks>
+    [Fact]
+    public void Save_WhenPathIsADirectory_IsIgnored()
+    {
+        string asDirectory = Path.Combine(_directory, "belegt");
+        _ = Directory.CreateDirectory(asDirectory);
+        JsonTimerStateStore store = new(asDirectory);
+
+        Exception? thrown = Record.Exception(
+            () => store.Save(new TimerSnapshot(BreakModel.ClassicPomodoro, TimeSpan.FromMinutes(1), DateTimeOffset.UnixEpoch)));
+
+        Assert.Null(thrown);
     }
 }

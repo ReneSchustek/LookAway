@@ -10,6 +10,11 @@ namespace LookAway.Data.Services;
 /// Auf Hardware ohne DDC/CI (z. B. viele Notebooks) bleibt der Aufruf
 /// wirkungslos — Fehler werden geschluckt und geloggt.
 /// </summary>
+/// <remarks>
+/// Von der Abdeckungsmessung ausgenommen: Ob das Dimmen greift, entscheidet der
+/// angeschlossene Monitor. Das lässt sich nur am Gerät sehen.
+/// </remarks>
+[ExcludeFromCodeCoverage(Justification = "Reine Systemanbindung ohne eigene Fachlogik.")]
 public sealed partial class WindowsScreenDimmer : IScreenDimmer, IDisposable
 {
     private readonly ILogger<WindowsScreenDimmer> _logger;

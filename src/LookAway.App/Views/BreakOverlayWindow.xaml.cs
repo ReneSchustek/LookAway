@@ -123,7 +123,7 @@ internal sealed partial class BreakOverlayWindow : Window
     }
 
     /// <summary>
-    /// Schließt das Overlay von aussen (reguläres Pausenende oder weil ein
+    /// Schließt das Overlay von außen (reguläres Pausenende oder weil ein
     /// Geschwister-Fenster die Pause beendet hat). Unterdrückt das
     /// Benutzer-Ende-Fallback, damit kein zusätzliches Ende signalisiert wird.
     /// </summary>

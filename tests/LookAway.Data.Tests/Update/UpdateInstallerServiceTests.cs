@@ -115,7 +115,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task DownloadAndStage_entpackt_signiertes_Paket_in_Versionsordner()
+    public async Task DownloadAndStage_ExtractsASignedPackageIntoTheVersionFolder()
     {
         string stagingRoot = Path.Combine(_root, "staging");
         UpdateInstallerService service = CreateSigningService(stagingRoot, BuildPackageZip());
@@ -131,7 +131,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task DownloadAndStage_übernimmt_die_Portable_Markierung_nicht()
+    public async Task DownloadAndStage_DoesNotCarryOverThePortableMarker()
     {
         // Der Helfer startet aus dem Staging-Ordner. Läge dort die Portable-Markierung,
         // hielte er sich für eine portable Installation, läse die Einstellungen neben sich
@@ -148,7 +148,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task DownloadAndStage_ohne_Paket_URL_liefert_null()
+    public async Task DownloadAndStage_WithoutPackageAddress_ReturnsNull()
     {
         UpdateInstallerService service = CreateService(Path.Combine(_root, "staging"), BuildPackageZip());
         UpdateInfo info = UpdateInfo.Create(new Version(1, 0, 0), "v1.5.0", "https://example.com/r", null);
@@ -159,7 +159,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task DownloadAndStage_ohne_Signatur_URL_liefert_null()
+    public async Task DownloadAndStage_WithoutSignatureAddress_ReturnsNull()
     {
         // Paket vorhanden, aber keine Signatur-URL: fail-closed -> kein Update.
         string stagingRoot = Path.Combine(_root, "staging");
@@ -171,7 +171,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task DownloadAndStage_lehnt_ungültige_Signatur_ab()
+    public async Task DownloadAndStage_RejectsAnInvalidSignature()
     {
         // Signatur passt nicht zum Paket (über andere Bytes erzeugt) -> Abweisung.
         string stagingRoot = Path.Combine(_root, "staging");
@@ -191,7 +191,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task DownloadAndStage_bei_Download_Fehler_liefert_null()
+    public async Task DownloadAndStage_OnDownloadFailure_ReturnsNull()
     {
         // FakeHttpGetClient ohne Inhalt -> DownloadFileAsync meldet Misserfolg.
         UpdateInstallerService service = CreateService(Path.Combine(_root, "staging"), package: null);
@@ -200,7 +200,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task DownloadAndStage_bei_Paket_ohne_EXE_liefert_null_und_räumt_auf()
+    public async Task DownloadAndStage_WithAPackageWithoutExecutable_ReturnsNullAndCleansUp()
     {
         byte[] zipWithoutExe = BuildZip(("readme.txt", "hallo"));
         string stagingRoot = Path.Combine(_root, "staging");
@@ -211,7 +211,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task DownloadAndStage_lehnt_ZipSlip_ab_und_entkommt_nicht()
+    public async Task DownloadAndStage_RejectsZipSlipAndStaysInsideTheFolder()
     {
         byte[] zipSlip = BuildZip(("../escape.exe", "böse"), ("LookAway.exe", "x"));
         string stagingRoot = Path.Combine(_root, "staging");
@@ -223,7 +223,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public void FindVerified_liefert_Ordner_bei_passendem_Hash()
+    public void FindVerified_WithMatchingHash_ReturnsTheFolder()
     {
         string stagingRoot = Path.Combine(_root, "staging");
         StageVersion(stagingRoot, "1.6.0");
@@ -238,7 +238,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public void FindVerified_lehnt_falschen_Hash_ab()
+    public void FindVerified_RejectsAWrongHash()
     {
         string stagingRoot = Path.Combine(_root, "staging");
         StageVersion(stagingRoot, "1.6.0");
@@ -249,7 +249,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public void FindVerified_ignoriert_ältere_oder_gleiche()
+    public void FindVerified_IgnoresOlderOrEqualVersions()
     {
         string stagingRoot = Path.Combine(_root, "staging");
         StageVersion(stagingRoot, "1.5.0");
@@ -261,7 +261,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public void FindVerified_ohne_Vermerk_liefert_null()
+    public void FindVerified_WithoutARecord_ReturnsNull()
     {
         string stagingRoot = Path.Combine(_root, "staging");
         StageVersion(stagingRoot, "1.6.0");
@@ -271,7 +271,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public void CleanObsolete_entfernt_nur_alte_Ordner()
+    public void CleanObsolete_RemovesOnlyOutdatedFolders()
     {
         string stagingRoot = Path.Combine(_root, "staging");
         StageVersion(stagingRoot, "1.4.0");
@@ -285,7 +285,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public void ApplyStagedFiles_ersetzt_Dateien_ohne_Portable_Flag_und_erhält_Benutzerdaten()
+    public void ApplyStagedFiles_ReplacesFilesWithoutThePortableMarkerAndKeepsUserData()
     {
         string source = Path.Combine(_root, "src");
         string target = Path.Combine(_root, "app");
@@ -314,14 +314,14 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public void IsDirectoryWritable_ist_wahr_für_Temp_und_falsch_für_Unbekannt()
+    public void IsDirectoryWritable_IsTrueForTempAndFalseForAnUnknownPath()
     {
         Assert.True(UpdateInstallerService.IsDirectoryWritable(_root));
         Assert.False(UpdateInstallerService.IsDirectoryWritable(Path.Combine(_root, "gibt-es-nicht")));
     }
 
     [Fact]
-    public void IsTrustedStagingDirectory_akzeptiert_Staging_Ordner_mit_passendem_Hash()
+    public void IsTrustedStagingDirectory_AcceptsAStagingFolderWithMatchingHash()
     {
         string stagingRoot = Path.Combine(_root, "staging");
         string source = Path.Combine(stagingRoot, "1.5.0");
@@ -336,7 +336,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public void IsTrustedStagingDirectory_lehnt_Ordner_ausserhalb_des_Staging_ab()
+    public void IsTrustedStagingDirectory_RejectsFoldersOutsideTheStagingArea()
     {
         string stagingRoot = Path.Combine(_root, "staging");
         _ = Directory.CreateDirectory(stagingRoot);
@@ -353,7 +353,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public void IsTrustedStagingDirectory_lehnt_bei_Hash_Abweichung_ab()
+    public void IsTrustedStagingDirectory_RejectsOnHashMismatch()
     {
         string stagingRoot = Path.Combine(_root, "staging");
         string source = Path.Combine(stagingRoot, "1.5.0");
@@ -366,7 +366,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public void IsTrustedStagingDirectory_lehnt_Traversal_über_Staging_hinaus_ab()
+    public void IsTrustedStagingDirectory_RejectsTraversalBeyondTheStagingArea()
     {
         string stagingRoot = Path.Combine(_root, "staging");
         _ = Directory.CreateDirectory(stagingRoot);
@@ -382,7 +382,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public void IsTrustedTargetDirectory_akzeptiert_bestehende_Installation()
+    public void IsTrustedTargetDirectory_AcceptsAnExistingInstallation()
     {
         string stagingRoot = Path.Combine(_root, "staging");
         _ = Directory.CreateDirectory(stagingRoot);
@@ -396,7 +396,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public void IsTrustedTargetDirectory_lehnt_den_Staging_Ordner_selbst_ab()
+    public void IsTrustedTargetDirectory_RejectsTheStagingFolderItself()
     {
         // Der Helfer läuft aus dem Staging-Ordner. Nähme er sein eigenes Programm-
         // verzeichnis als Ziel, kopierte er auf sich selbst und die Installation bliebe
@@ -413,7 +413,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public void IsTrustedTargetDirectory_lehnt_Ordner_ohne_Programmdatei_ab()
+    public void IsTrustedTargetDirectory_RejectsFoldersWithoutTheExecutable()
     {
         string stagingRoot = Path.Combine(_root, "staging");
         _ = Directory.CreateDirectory(stagingRoot);
@@ -426,7 +426,7 @@ public sealed class UpdateInstallerServiceTests : IDisposable
     }
 
     [Fact]
-    public void IsTrustedTargetDirectory_lehnt_fehlenden_Pfad_ab()
+    public void IsTrustedTargetDirectory_RejectsAMissingPath()
     {
         UpdateInstallerService service = CreateService(Path.Combine(_root, "staging"));
 

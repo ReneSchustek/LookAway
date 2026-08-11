@@ -12,7 +12,7 @@ public sealed class UpdateTests
     private static readonly Version Current = new(1, 2, 0);
 
     [Fact]
-    public void Create_erkennt_neuere_Version()
+    public void Create_DetectsANewerVersion()
     {
         UpdateInfo info = UpdateInfo.Create(Current, "v1.3.0", "https://example.com/r", "Notes");
 
@@ -22,7 +22,7 @@ public sealed class UpdateTests
     }
 
     [Fact]
-    public void Create_meldet_kein_Update_bei_gleicher_Version()
+    public void Create_WithTheSameVersion_ReportsNoUpdate()
     {
         UpdateInfo info = UpdateInfo.Create(Current, "v1.2.0", "https://example.com/r", "Notes");
 
@@ -30,7 +30,7 @@ public sealed class UpdateTests
     }
 
     [Fact]
-    public void Create_übernimmt_Paket_URL()
+    public void Create_TakesThePackageAddress()
     {
         UpdateInfo info = UpdateInfo.Create(
             Current,
@@ -44,7 +44,7 @@ public sealed class UpdateTests
     }
 
     [Fact]
-    public void Create_ohne_Paket_URL_hat_keine()
+    public void Create_WithoutPackageAddress_HasNone()
     {
         UpdateInfo info = UpdateInfo.Create(Current, "v1.3.0", "https://example.com/r", "Notes");
 
@@ -52,7 +52,7 @@ public sealed class UpdateTests
     }
 
     [Fact]
-    public void Create_meldet_kein_Update_bei_älterer_Version()
+    public void Create_WithAnOlderVersion_ReportsNoUpdate()
     {
         UpdateInfo info = UpdateInfo.Create(Current, "1.1.9", null, null);
 
@@ -60,7 +60,7 @@ public sealed class UpdateTests
     }
 
     [Fact]
-    public void Create_ignoriert_unparsbares_Tag()
+    public void Create_IgnoresAnUnparsableTag()
     {
         UpdateInfo info = UpdateInfo.Create(Current, "nightly", null, null);
 
@@ -68,7 +68,7 @@ public sealed class UpdateTests
     }
 
     [Fact]
-    public void Create_schneidet_Prärelease_Suffix_ab()
+    public void Create_TrimsThePrereleaseSuffix()
     {
         UpdateInfo info = UpdateInfo.Create(Current, "v1.3.0-beta", null, null);
 
@@ -82,7 +82,7 @@ public sealed class UpdateTests
     [InlineData(UpdateCheckFrequency.Daily, 25, true)]
     [InlineData(UpdateCheckFrequency.Weekly, 100, false)]
     [InlineData(UpdateCheckFrequency.Weekly, 200, true)]
-    public void IsDue_beachtet_Häufigkeit(UpdateCheckFrequency frequency, int hoursSinceLast, bool expected)
+    public void IsDue_RespectsTheFrequency(UpdateCheckFrequency frequency, int hoursSinceLast, bool expected)
     {
         DateTimeOffset now = new(2026, 6, 28, 12, 0, 0, TimeSpan.Zero);
         DateTimeOffset last = now.AddHours(-hoursSinceLast);
@@ -91,7 +91,7 @@ public sealed class UpdateTests
     }
 
     [Fact]
-    public void IsDue_ist_wahr_wenn_nie_geprüft()
+    public void IsDue_WhenNeverChecked_IsTrue()
     {
         DateTimeOffset now = new(2026, 6, 28, 12, 0, 0, TimeSpan.Zero);
 

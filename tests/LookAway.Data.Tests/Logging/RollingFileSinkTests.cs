@@ -217,4 +217,81 @@ public sealed class RollingFileSinkTests : IDisposable
         File.SetLastWriteTimeUtc(path, date);
         return path;
     }
+
+    /// <remarks>
+    /// Die Protokolldatei kann von einem Betrachter offen gehalten werden. Dass die
+    /// Anwendung dann nicht mehr protokolliert, ist hinnehmbar — dass sie deswegen
+    /// stehen bleibt, nicht.
+    /// </remarks>
+    [Fact]
+    public void Write_WithLockedLogFile_IsIgnored()
+    {
+        using RollingFileSink sink = CreateSink();
+        DateTimeOffset timestamp = new(2026, 5, 10, 12, 0, 0, TimeSpan.Zero);
+        using LockedFile locked = new(Path.Combine(_logDirectory, "lookaway-2026-05-10.log"));
+
+        Exception? thrown = Record.Exception(
+            () => sink.Write(timestamp, LogLevel.Error, "Cat", "Eintrag", null));
+
+        Assert.Null(thrown);
+    }
+
+    /// <remarks>
+    /// Beim Aufräumen gilt dasselbe: Eine Datei, die gerade jemand liest, bleibt eben
+    /// noch einen Tag liegen.
+    /// </remarks>
+    [Fact]
+    public void PruneNow_WithLockedOldFile_KeepsGoing()
+    {
+        using RollingFileSink sink = new(_logDirectory, retentionDays: 7);
+        DateTime today = DateTime.UtcNow.Date;
+
+        string lockedPath = Path.Combine(_logDirectory, $"lookaway-{today.AddDays(-10):yyyy-MM-dd}.log");
+        using LockedFile locked = new(lockedPath, "alter Inhalt");
+        File.SetLastWriteTimeUtc(lockedPath, today.AddDays(-10));
+
+        string otherOld = WriteLogFileWithDate(today.AddDays(-11), "auch alt");
+
+        sink.PruneNow();
+
+        Assert.True(File.Exists(lockedPath));
+        Assert.False(File.Exists(otherOld));
+    }
+
+    [Fact]
+    public void PruneNow_AfterDisposal_DoesNothing()
+    {
+        RollingFileSink sink = new(_logDirectory, retentionDays: 7);
+        string oldFile = WriteLogFileWithDate(DateTime.UtcNow.Date.AddDays(-30), "alt");
+        sink.Dispose();
+
+        Exception? thrown = Record.Exception(sink.PruneNow);
+
+        Assert.Null(thrown);
+        Assert.True(File.Exists(oldFile));
+    }
+
+    /// <remarks>
+    /// Die Stufen stehen als Text in der Datei, weil sie dort gelesen und gefiltert
+    /// werden. Eine verschobene Zuordnung würde die Filterung im Protokollfenster
+    /// stillschweigend ins Leere laufen lassen.
+    /// </remarks>
+    [Theory]
+    [InlineData(LogLevel.Trace, "Trace")]
+    [InlineData(LogLevel.Debug, "Debug")]
+    [InlineData(LogLevel.Information, "Information")]
+    [InlineData(LogLevel.Warning, "Warning")]
+    [InlineData(LogLevel.Error, "Error")]
+    [InlineData(LogLevel.Critical, "Critical")]
+    [InlineData(LogLevel.None, "None")]
+    public void Write_NamesEveryLogLevel(LogLevel level, string expected)
+    {
+        using RollingFileSink sink = CreateSink();
+        DateTimeOffset timestamp = new(2026, 5, 10, 12, 0, 0, TimeSpan.Zero);
+
+        sink.Write(timestamp, level, "Cat", "Eintrag", null);
+
+        string content = File.ReadAllText(Path.Combine(_logDirectory, "lookaway-2026-05-10.log"));
+        Assert.Contains($"[{expected}]", content, StringComparison.Ordinal);
+    }
 }

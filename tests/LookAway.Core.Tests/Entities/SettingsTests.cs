@@ -199,4 +199,93 @@ public sealed class SettingsTests
         settings.AutoUpdate = true;
         Assert.True(settings.AutoUpdate);
     }
+
+    [Theory]
+    [InlineData(AppTheme.System)]
+    [InlineData(AppTheme.Light)]
+    [InlineData(AppTheme.Dark)]
+    public void AppTheme_AcceptsAllDefinedValues(AppTheme theme)
+    {
+        Settings settings = new() { AppTheme = theme };
+        Assert.Equal(theme, settings.AppTheme);
+    }
+
+    /// <remarks>
+    /// Die Werte stammen aus der abgelegten Datei und können jeden Zahlenwert
+    /// tragen, den jemand hineinschreibt — auch einen, den es nie gab.
+    /// </remarks>
+    [Fact]
+    public void AppTheme_ThrowsOnUndefinedValue()
+    {
+        Settings settings = new();
+
+        _ = Assert.Throws<ArgumentOutOfRangeException>(
+            () => settings.AppTheme = (AppTheme)99);
+    }
+
+    [Fact]
+    public void ReminderSound_ThrowsOnUndefinedValue()
+    {
+        Settings settings = new();
+
+        _ = Assert.Throws<ArgumentOutOfRangeException>(
+            () => settings.ReminderSound = (SoundType)99);
+    }
+
+    [Theory]
+    [InlineData(Settings.MinSoundVolumePercent)]
+    [InlineData(50)]
+    [InlineData(Settings.MaxSoundVolumePercent)]
+    public void SoundVolumePercent_AcceptsBoundaryValues(int percent)
+    {
+        Settings settings = new() { SoundVolumePercent = percent };
+        Assert.Equal(percent, settings.SoundVolumePercent);
+    }
+
+    [Theory]
+    [InlineData(Settings.MinSoundVolumePercent - 1)]
+    [InlineData(Settings.MaxSoundVolumePercent + 1)]
+    [InlineData(-100)]
+    public void SoundVolumePercent_ThrowsOnOutOfRange(int percent)
+    {
+        Settings settings = new();
+
+        _ = Assert.Throws<ArgumentOutOfRangeException>(
+            () => settings.SoundVolumePercent = percent);
+    }
+
+    [Fact]
+    public void UpdateCheckFrequency_ThrowsOnUndefinedValue()
+    {
+        Settings settings = new();
+
+        _ = Assert.Throws<ArgumentOutOfRangeException>(
+            () => settings.UpdateCheckFrequency = (UpdateCheckFrequency)99);
+    }
+
+    [Theory]
+    [InlineData(Settings.MinDimBrightnessPercent)]
+    [InlineData(50)]
+    [InlineData(Settings.MaxDimBrightnessPercent)]
+    public void DimBrightnessPercent_AcceptsBoundaryValues(int percent)
+    {
+        Settings settings = new() { DimBrightnessPercent = percent };
+        Assert.Equal(percent, settings.DimBrightnessPercent);
+    }
+
+    /// <remarks>
+    /// Die untere Grenze ist bewusst nicht null: Ein vollständig schwarzer Bildschirm
+    /// wäre von einem defekten Monitor nicht zu unterscheiden.
+    /// </remarks>
+    [Theory]
+    [InlineData(Settings.MinDimBrightnessPercent - 1)]
+    [InlineData(0)]
+    [InlineData(Settings.MaxDimBrightnessPercent + 1)]
+    public void DimBrightnessPercent_ThrowsOnOutOfRange(int percent)
+    {
+        Settings settings = new();
+
+        _ = Assert.Throws<ArgumentOutOfRangeException>(
+            () => settings.DimBrightnessPercent = percent);
+    }
 }

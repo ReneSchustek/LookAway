@@ -56,10 +56,11 @@ public sealed class SettingsViewModelTests
             sound,
             new FakeUpdateChecker(),
             new FakeUpdateInstaller(),
-            statistics,
-            new BreakModelListViewModel(localization, history),
-            new LogViewModel(new FakeLogEntryReader(), localization, clock),
-            new WorkTaskListViewModel(new FakeWorkTaskRepository(), history, localization, clock),
+            new SettingsSections(
+                statistics,
+                new BreakModelListViewModel(localization, history),
+                new LogViewModel(new FakeLogEntryReader(), localization, clock),
+                new WorkTaskListViewModel(new FakeWorkTaskRepository(), history, localization, clock)),
             NullLogger<SettingsViewModel>.Instance,
             TestVersion);
     }
@@ -91,16 +92,17 @@ public sealed class SettingsViewModelTests
             new FakeSoundService(),
             checker,
             installer,
-            statistics,
-            new BreakModelListViewModel(localization, history),
-            new LogViewModel(new FakeLogEntryReader(), localization, clock),
-            new WorkTaskListViewModel(new FakeWorkTaskRepository(), history, localization, clock),
+            new SettingsSections(
+                statistics,
+                new BreakModelListViewModel(localization, history),
+                new LogViewModel(new FakeLogEntryReader(), localization, clock),
+                new WorkTaskListViewModel(new FakeWorkTaskRepository(), history, localization, clock)),
             NullLogger<SettingsViewModel>.Instance,
             TestVersion);
     }
 
     [Fact]
-    public async Task CheckForUpdates_mit_verfügbarem_Paket_bietet_Installation_an()
+    public async Task CheckForUpdates_WithAnAvailablePackage_OffersInstallation()
     {
         UpdateInfo info = UpdateInfo.Create(
             new Version(1, 0, 0), "v2.0.0", "https://example.com/r", null,
@@ -114,7 +116,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task InstallUpdate_staged_und_vermerkt_die_ausstehende_Version()
+    public async Task InstallUpdate_StagesAndRecordsThePendingVersion()
     {
         UpdateInfo info = UpdateInfo.Create(
             new Version(1, 0, 0), "v2.0.0", null, null,
@@ -136,7 +138,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task InstallUpdate_bei_Fehlschlag_bietet_erneut_an()
+    public async Task InstallUpdate_OnFailure_OffersAgain()
     {
         UpdateInfo info = UpdateInfo.Create(
             new Version(1, 0, 0), "v2.0.0", null, null,
@@ -152,7 +154,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task LoadAsync_übernimmt_die_persistierten_Werte()
+    public async Task LoadAsync_TakesThePersistedValues()
     {
         Settings stored = new()
         {
@@ -171,7 +173,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task LoadAsync_übernimmt_benutzerdefinierte_Dauern()
+    public async Task LoadAsync_TakesTheCustomDurations()
     {
         Settings stored = new()
         {
@@ -188,7 +190,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Save_schreibt_die_geänderten_Werte_ins_Repository()
+    public async Task Save_WritesTheChangedValuesToTheRepository()
     {
         using SettingsViewModel viewModel = CreateViewModel(out InMemorySettingsRepository repository, out _, out _);
         await viewModel.LoadAsync();
@@ -204,7 +206,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Save_löst_CloseRequested_aus()
+    public async Task Save_RaisesCloseRequested()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _);
         await viewModel.LoadAsync();
@@ -217,7 +219,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Apply_speichert_ohne_zu_schließen_und_meldet_die_Einstellungen()
+    public async Task Apply_SavesWithoutClosingAndReportsTheSettings()
     {
         using SettingsViewModel viewModel = CreateViewModel(out InMemorySettingsRepository repository, out _, out _);
         await viewModel.LoadAsync();
@@ -236,7 +238,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Cancel_verwirft_Änderungen_und_stellt_die_Sprache_wieder_her()
+    public async Task Cancel_DiscardsChangesAndRestoresTheLanguage()
     {
         using SettingsViewModel viewModel = CreateViewModel(
             out InMemorySettingsRepository repository,
@@ -256,7 +258,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Sprachwechsel_schaltet_die_Lokalisierung_sofort_um()
+    public async Task LanguageChange_SwitchesLocalizationImmediately()
     {
         using SettingsViewModel viewModel = CreateViewModel(
             out _,
@@ -267,11 +269,11 @@ public sealed class SettingsViewModelTests
         viewModel.SelectLanguage(Language.English);
 
         Assert.Equal(Language.English, localization.CurrentLanguage);
-        Assert.StartsWith("English:", viewModel.Title, StringComparison.Ordinal);
+        Assert.StartsWith("English:", viewModel.Texts.Title, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task Ungültige_Arbeitsdauer_blockiert_das_Speichern()
+    public async Task InvalidWorkDuration_BlocksSaving()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _);
         await viewModel.LoadAsync();
@@ -285,7 +287,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Ungültige_Overlayfarbe_blockiert_das_Speichern()
+    public async Task InvalidOverlayColor_BlocksSaving()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _);
         await viewModel.LoadAsync();
@@ -298,7 +300,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Overlay_und_Update_Einstellungen_werden_geladen_und_gespeichert()
+    public async Task OverlayAndUpdateSettings_AreLoadedAndSaved()
     {
         Settings stored = new()
         {
@@ -335,7 +337,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Gültige_Arbeitsdauer_erlaubt_das_Speichern()
+    public async Task ValidWorkDuration_AllowsSaving()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _);
         await viewModel.LoadAsync();
@@ -350,7 +352,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Ohne_eigene_Dauern_wird_CustomDurations_gelöscht()
+    public async Task WithoutCustomDurations_TheOverrideIsCleared()
     {
         Settings stored = new()
         {
@@ -367,7 +369,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Autostart_aktivieren_synchronisiert_Registry_und_Persistenz()
+    public async Task EnablingAutoStart_SynchronizesRegistryAndSettings()
     {
         using SettingsViewModel viewModel = CreateViewModel(
             out InMemorySettingsRepository repository,
@@ -384,7 +386,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task PhysicalCounter_begrenzt_die_Arbeitsdauer_auf_den_Modellbereich()
+    public async Task PhysicalCounter_LimitsWorkDurationToTheModelRange()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _);
         await viewModel.LoadAsync();
@@ -397,7 +399,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Modellwechsel_setzt_die_Dauern_auf_die_Vorgaben_zurück()
+    public async Task ModelChange_ResetsTheDurationsToTheDefaults()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _);
         await viewModel.LoadAsync();
@@ -409,7 +411,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Sound_Einstellungen_werden_geladen_und_gespeichert()
+    public async Task SoundSettings_AreLoadedAndSaved()
     {
         Settings stored = new()
         {
@@ -436,7 +438,7 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
-    public async Task Vorhören_spielt_den_gewählten_Ton_mit_der_Lautstärke()
+    public async Task Preview_PlaysTheChosenSoundAtTheSetVolume()
     {
         using SettingsViewModel viewModel = CreateViewModel(
             out _, out _, out _, out FakeSoundService sound);

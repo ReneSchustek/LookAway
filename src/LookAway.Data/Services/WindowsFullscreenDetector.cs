@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using LookAway.Core.Interfaces;
@@ -9,6 +10,12 @@ namespace LookAway.Data.Services;
 /// (<c>GetForegroundWindow</c> + Vergleich von Fenster- und Monitor-Rechteck).
 /// Shell-Fenster (Desktop, Sperrbildschirm) werden ausgeschlossen.
 /// </summary>
+/// <remarks>
+/// Von der Abdeckungsmessung ausgenommen: Die Entscheidung stützt sich auf die Lage
+/// des Vordergrundfensters gegenüber dem Monitor. Beides liefert das Betriebssystem;
+/// ohne echten Bildschirm bliebe von der Prüfung nichts übrig.
+/// </remarks>
+[ExcludeFromCodeCoverage(Justification = "Reine Systemanbindung ohne eigene Fachlogik.")]
 [SupportedOSPlatform("windows")]
 public sealed partial class WindowsFullscreenDetector : IFullscreenDetector
 {

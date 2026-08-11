@@ -55,27 +55,27 @@
             </NavigationView.PaneHeader>
 
             <NavigationView.MenuItems>
-                <NavigationViewItem Content="{Binding TabGeneralHeader}" Tag="General" IsSelected="True">
+                <NavigationViewItem Content="{Binding Texts.TabGeneralHeader}" Tag="General" IsSelected="True">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE713;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="{Binding TabModelHeader}" Tag="Model">
+                <NavigationViewItem Content="{Binding Texts.TabModelHeader}" Tag="Model">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE916;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="{Binding TabIntervalsHeader}" Tag="Intervals">
+                <NavigationViewItem Content="{Binding Texts.TabIntervalsHeader}" Tag="Intervals">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE121;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="{Binding TabSoundHeader}" Tag="Sound">
+                <NavigationViewItem Content="{Binding Texts.TabSoundHeader}" Tag="Sound">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE767;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="{Binding TabPauseActionsHeader}" Tag="Pause">
+                <NavigationViewItem Content="{Binding Texts.TabPauseActionsHeader}" Tag="Pause">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE708;" />
                     </NavigationViewItem.Icon>
@@ -85,7 +85,7 @@
                         <FontIcon Glyph="&#xE765;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="{Binding TabTasksHeader}" Tag="Tasks">
+                <NavigationViewItem Content="{Binding Texts.TabTasksHeader}" Tag="Tasks">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE8FD;" />
                     </NavigationViewItem.Icon>
@@ -95,7 +95,7 @@
                         <FontIcon Glyph="&#xE9D9;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="{Binding TabLogHeader}" Tag="Log">
+                <NavigationViewItem Content="{Binding Texts.TabLogHeader}" Tag="Log">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE9D5;" />
                     </NavigationViewItem.Icon>
@@ -103,7 +103,7 @@
             </NavigationView.MenuItems>
 
             <NavigationView.FooterMenuItems>
-                <NavigationViewItem Content="{Binding TabAboutHeader}" Tag="About">
+                <NavigationViewItem Content="{Binding Texts.TabAboutHeader}" Tag="About">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE946;" />
                     </NavigationViewItem.Icon>
@@ -118,44 +118,44 @@
                 <!-- ══ Allgemein ══════════════════════════════════════════════ -->
                 <ScrollViewer x:Name="PanelGeneral">
                     <StackPanel Spacing="12" MaxWidth="{StaticResource RcContentMaxWidth}" HorizontalAlignment="Left">
-                        <TextBlock Text="{Binding TabGeneralHeader}" Style="{StaticResource RcPageTitleStyle}" />
+                        <TextBlock Text="{Binding Texts.TabGeneralHeader}" Style="{StaticResource RcPageTitleStyle}" />
 
                         <TextBlock
-                            Text="{Binding AppearanceLabel, Converter={StaticResource UpperCase}}"
+                            Text="{Binding Texts.AppearanceLabel, Converter={StaticResource UpperCase}}"
                             Style="{StaticResource RcSectionLabelStyle}"
                             Margin="2,8,0,4" />
                         <Border Style="{StaticResource RcCardStyle}">
                             <StackPanel Spacing="12">
                                 <ComboBox
-                                    Header="{Binding AppearanceLabel}"
+                                    Header="{Binding Texts.AppearanceLabel}"
                                     ItemsSource="{Binding Appearances}"
                                     SelectedItem="{Binding SelectedThemeOption, Mode=TwoWay}"
                                     DisplayMemberPath="Label"
                                     MinWidth="240" />
-                                <TextBlock Text="{Binding AppearanceHint}" Style="{StaticResource RcPageSubtitleStyle}" />
+                                <TextBlock Text="{Binding Texts.AppearanceHint}" Style="{StaticResource RcPageSubtitleStyle}" />
                             </StackPanel>
                         </Border>
 
                         <TextBlock
-                            Text="{Binding TabGeneralHeader, Converter={StaticResource UpperCase}}"
+                            Text="{Binding Texts.TabGeneralHeader, Converter={StaticResource UpperCase}}"
                             Style="{StaticResource RcSectionLabelStyle}"
                             Margin="2,8,0,4" />
                         <Border Style="{StaticResource RcCardStyle}">
                             <StackPanel Spacing="16">
                                 <ComboBox
-                                    Header="{Binding LanguageLabel}"
+                                    Header="{Binding Texts.LanguageLabel}"
                                     ItemsSource="{Binding Languages}"
                                     SelectedItem="{Binding SelectedLanguageOption, Mode=TwoWay}"
                                     DisplayMemberPath="Label"
                                     MinWidth="240" />
                                 <CheckBox
-                                    Content="{Binding AutoStartLabel}"
+                                    Content="{Binding Texts.AutoStartLabel}"
                                     IsChecked="{Binding AutoStart, Mode=TwoWay}" />
                                 <CheckBox
-                                    Content="{Binding IdlePauseLabel}"
+                                    Content="{Binding Texts.IdlePauseLabel}"
                                     IsChecked="{Binding PauseOnIdle, Mode=TwoWay}" />
                                 <NumberBox
-                                    Header="{Binding IdleThresholdLabel}"
+                                    Header="{Binding Texts.IdleThresholdLabel}"
                                     Value="{Binding IdleThresholdMinutes, Mode=TwoWay}"
                                     Minimum="{Binding IdleMinMinutes}"
                                     Maximum="{Binding IdleMaxMinutes}"
@@ -164,13 +164,13 @@
                                     MinWidth="160"
                                     HorizontalAlignment="Left" />
                                 <CheckBox
-                                    Content="{Binding FullscreenSuppressLabel}"
+                                    Content="{Binding Texts.FullscreenSuppressLabel}"
                                     IsChecked="{Binding SuppressOnFullscreen, Mode=TwoWay}" />
                                 <CheckBox
-                                    Content="{Binding AutoStartBreakLabel}"
+                                    Content="{Binding Texts.AutoStartBreakLabel}"
                                     IsChecked="{Binding AutoStartBreakEnabled, Mode=TwoWay}" />
                                 <NumberBox
-                                    Header="{Binding AutoStartBreakSecondsLabel}"
+                                    Header="{Binding Texts.AutoStartBreakSecondsLabel}"
                                     Value="{Binding AutoStartBreakSeconds, Mode=TwoWay}"
                                     Minimum="{Binding AutoStartBreakMinSeconds}"
                                     Maximum="{Binding AutoStartBreakMaxSeconds}"
@@ -197,14 +197,14 @@
 
                     <controls:ListPageHeader
                         Grid.Row="0"
-                        Title="{Binding TabModelHeader}"
+                        Title="{Binding Texts.TabModelHeader}"
                         Subtitle="{Binding BreakModels.Subtitle}" />
 
                     <StackPanel Grid.Row="1" Spacing="8">
                         <controls:SearchBox
                             Text="{Binding BreakModels.SearchText, Mode=TwoWay}"
                             Placeholder="{Binding BreakModels.SearchPlaceholder}"
-                            ClearLabel="{Binding ClearSearchLabel}"
+                            ClearLabel="{Binding Texts.ClearSearchLabel}"
                             MaxWidth="{StaticResource RcContentMaxWidth}"
                             HorizontalAlignment="Left"
                             MinWidth="320" />
@@ -289,15 +289,15 @@
                 <!-- ══ Eigene Intervalle ══════════════════════════════════════ -->
                 <ScrollViewer x:Name="PanelIntervals" Visibility="Collapsed">
                     <StackPanel Spacing="12" MaxWidth="{StaticResource RcContentMaxWidth}" HorizontalAlignment="Left">
-                        <TextBlock Text="{Binding TabIntervalsHeader}" Style="{StaticResource RcPageTitleStyle}" />
+                        <TextBlock Text="{Binding Texts.TabIntervalsHeader}" Style="{StaticResource RcPageTitleStyle}" />
                         <Border Style="{StaticResource RcCardStyle}">
                             <StackPanel Spacing="16">
-                                <TextBlock Text="{Binding IntervalsHint}" Style="{StaticResource RcPageSubtitleStyle}" />
+                                <TextBlock Text="{Binding Texts.IntervalsHint}" Style="{StaticResource RcPageSubtitleStyle}" />
                                 <CheckBox
-                                    Content="{Binding UseCustomLabel}"
+                                    Content="{Binding Texts.UseCustomLabel}"
                                     IsChecked="{Binding UseCustomDurations, Mode=TwoWay}" />
                                 <NumberBox
-                                    Header="{Binding WorkLabel}"
+                                    Header="{Binding Texts.WorkLabel}"
                                     Value="{Binding WorkMinutes, Mode=TwoWay}"
                                     Minimum="{Binding WorkMinMinutes}"
                                     Maximum="{Binding WorkMaxMinutes}"
@@ -308,7 +308,7 @@
                                 <TextBlock Text="{Binding WorkRangeText}" Style="{StaticResource RcMutedTextStyle}" />
                                 <TextBlock Text="{Binding WorkError}" Style="{StaticResource RcLogLevelErrorStyle}" />
                                 <NumberBox
-                                    Header="{Binding BreakLabel}"
+                                    Header="{Binding Texts.BreakLabel}"
                                     Value="{Binding BreakMinutes, Mode=TwoWay}"
                                     Minimum="{Binding BreakMinMinutes}"
                                     Maximum="{Binding BreakMaxMinutes}"
@@ -325,28 +325,28 @@
                 <!-- ══ Sound ══════════════════════════════════════════════════ -->
                 <ScrollViewer x:Name="PanelSound" Visibility="Collapsed">
                     <StackPanel Spacing="12" MaxWidth="{StaticResource RcContentMaxWidth}" HorizontalAlignment="Left">
-                        <TextBlock Text="{Binding TabSoundHeader}" Style="{StaticResource RcPageTitleStyle}" />
+                        <TextBlock Text="{Binding Texts.TabSoundHeader}" Style="{StaticResource RcPageTitleStyle}" />
                         <Border Style="{StaticResource RcCardStyle}">
                             <StackPanel Spacing="16">
                                 <CheckBox
-                                    Content="{Binding SoundEnableLabel}"
+                                    Content="{Binding Texts.SoundEnableLabel}"
                                     IsChecked="{Binding SoundEnabled, Mode=TwoWay}" />
                                 <ComboBox
-                                    Header="{Binding SoundSelectLabel}"
+                                    Header="{Binding Texts.SoundSelectLabel}"
                                     ItemsSource="{Binding Sounds}"
                                     SelectedItem="{Binding SelectedSoundOption, Mode=TwoWay}"
                                     DisplayMemberPath="Label"
                                     IsEnabled="{Binding SoundEnabled}"
                                     MinWidth="240" />
                                 <Slider
-                                    Header="{Binding SoundVolumeLabel}"
+                                    Header="{Binding Texts.SoundVolumeLabel}"
                                     Value="{Binding SoundVolume, Mode=TwoWay}"
                                     Minimum="{Binding SoundVolumeMin}"
                                     Maximum="{Binding SoundVolumeMax}"
                                     IsEnabled="{Binding SoundEnabled}"
                                     Width="240"
                                     HorizontalAlignment="Left" />
-                                <Button Content="{Binding SoundPreviewLabel}" Command="{Binding PreviewSoundCommand}" HorizontalAlignment="Left" />
+                                <Button Content="{Binding Texts.SoundPreviewLabel}" Command="{Binding PreviewSoundCommand}" HorizontalAlignment="Left" />
                             </StackPanel>
                         </Border>
                     </StackPanel>
@@ -355,38 +355,38 @@
                 <!-- ══ Pause (Aktionen, Bildschirme, Farbe) ═══════════════════ -->
                 <ScrollViewer x:Name="PanelPause" Visibility="Collapsed">
                     <StackPanel Spacing="12" MaxWidth="{StaticResource RcContentMaxWidth}" HorizontalAlignment="Left">
-                        <TextBlock Text="{Binding TabPauseActionsHeader}" Style="{StaticResource RcPageTitleStyle}" />
+                        <TextBlock Text="{Binding Texts.TabPauseActionsHeader}" Style="{StaticResource RcPageTitleStyle}" />
                         <Border Style="{StaticResource RcCardStyle}">
                             <StackPanel Spacing="16">
-                                <CheckBox Content="{Binding DimEnableLabel}" IsChecked="{Binding DimScreenDuringBreak, Mode=TwoWay}" />
+                                <CheckBox Content="{Binding Texts.DimEnableLabel}" IsChecked="{Binding DimScreenDuringBreak, Mode=TwoWay}" />
                                 <Slider
-                                    Header="{Binding DimBrightnessLabel}"
+                                    Header="{Binding Texts.DimBrightnessLabel}"
                                     Value="{Binding DimBrightnessPercent, Mode=TwoWay}"
                                     Minimum="{Binding DimBrightnessMin}"
                                     Maximum="{Binding DimBrightnessMax}"
                                     IsEnabled="{Binding DimScreenDuringBreak}"
                                     Width="240"
                                     HorizontalAlignment="Left" />
-                                <CheckBox Content="{Binding PauseMediaLabel}" IsChecked="{Binding PauseMediaDuringBreak, Mode=TwoWay}" />
+                                <CheckBox Content="{Binding Texts.PauseMediaLabel}" IsChecked="{Binding PauseMediaDuringBreak, Mode=TwoWay}" />
                                 <CheckBox
-                                    Content="{Binding ResumeMediaLabel}"
+                                    Content="{Binding Texts.ResumeMediaLabel}"
                                     IsChecked="{Binding ResumeMediaAfterBreak, Mode=TwoWay}"
                                     IsEnabled="{Binding PauseMediaDuringBreak}" />
-                                <TextBlock Text="{Binding PauseMediaHint}" Style="{StaticResource RcPageSubtitleStyle}" />
-                                <CheckBox Content="{Binding DarkenAllScreensLabel}" IsChecked="{Binding DarkenAllScreens, Mode=TwoWay}" />
+                                <TextBlock Text="{Binding Texts.PauseMediaHint}" Style="{StaticResource RcPageSubtitleStyle}" />
+                                <CheckBox Content="{Binding Texts.DarkenAllScreensLabel}" IsChecked="{Binding DarkenAllScreens, Mode=TwoWay}" />
                             </StackPanel>
                         </Border>
 
                         <TextBlock
-                            Text="{Binding OverlayColorLabel, Converter={StaticResource UpperCase}}"
+                            Text="{Binding Texts.OverlayColorLabel, Converter={StaticResource UpperCase}}"
                             Style="{StaticResource RcSectionLabelStyle}"
                             Margin="2,8,0,4" />
                         <Border Style="{StaticResource RcCardStyle}">
                             <StackPanel Spacing="12">
-                                <TextBlock Text="{Binding OverlayColorHint}" Style="{StaticResource RcPageSubtitleStyle}" />
+                                <TextBlock Text="{Binding Texts.OverlayColorHint}" Style="{StaticResource RcPageSubtitleStyle}" />
                                 <ColorPicker
                                     x:Name="OverlayColorPicker"
-                                    AutomationProperties.Name="{Binding OverlayColorLabel}"
+                                    AutomationProperties.Name="{Binding Texts.OverlayColorLabel}"
                                     IsAlphaEnabled="False"
                                     IsColorSliderVisible="True"
                                     IsColorChannelTextInputVisible="False"
@@ -447,7 +447,7 @@
 
                     <controls:ListPageHeader
                         Grid.Row="0"
-                        Title="{Binding TabTasksHeader}"
+                        Title="{Binding Texts.TabTasksHeader}"
                         Subtitle="{Binding Tasks.Subtitle}" />
 
                     <StackPanel Grid.Row="1" Spacing="8">
@@ -474,7 +474,7 @@
                         <controls:SearchBox
                             Text="{Binding Tasks.SearchText, Mode=TwoWay}"
                             Placeholder="{Binding Tasks.SearchPlaceholder}"
-                            ClearLabel="{Binding ClearSearchLabel}"
+                            ClearLabel="{Binding Texts.ClearSearchLabel}"
                             HorizontalAlignment="Left"
                             MinWidth="320" />
 
@@ -692,7 +692,7 @@
 
                     <controls:ListPageHeader
                         Grid.Row="0"
-                        Title="{Binding TabLogHeader}"
+                        Title="{Binding Texts.TabLogHeader}"
                         Subtitle="{Binding Log.Subtitle}">
                         <controls:ListPageHeader.ActionContent>
                             <Button
@@ -706,7 +706,7 @@
                         <controls:SearchBox
                             Text="{Binding Log.SearchText, Mode=TwoWay}"
                             Placeholder="{Binding Log.SearchPlaceholder}"
-                            ClearLabel="{Binding ClearSearchLabel}"
+                            ClearLabel="{Binding Texts.ClearSearchLabel}"
                             HorizontalAlignment="Left"
                             MinWidth="320" />
 
@@ -808,21 +808,21 @@
                 <!-- ══ Über LookAway ══════════════════════════════════════════ -->
                 <ScrollViewer x:Name="PanelAbout" Visibility="Collapsed">
                     <StackPanel Spacing="12" MaxWidth="{StaticResource RcContentMaxWidth}" HorizontalAlignment="Left">
-                        <TextBlock Text="{Binding TabAboutHeader}" Style="{StaticResource RcPageTitleStyle}" />
+                        <TextBlock Text="{Binding Texts.TabAboutHeader}" Style="{StaticResource RcPageTitleStyle}" />
                         <Border Style="{StaticResource RcCardStyle}">
                             <StackPanel Spacing="12">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="{Binding AboutVersionLabel}" Style="{StaticResource RcBodyTextStyle}" FontWeight="Medium" />
+                                    <TextBlock Text="{Binding Texts.AboutVersionLabel}" Style="{StaticResource RcBodyTextStyle}" FontWeight="Medium" />
                                     <TextBlock Text="{Binding Version}" Style="{StaticResource RcBodyTextStyle}" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="{Binding LicenseLabel}" Style="{StaticResource RcBodyTextStyle}" FontWeight="Medium" />
-                                    <TextBlock Text="{Binding LicenseText}" Style="{StaticResource RcBodyTextStyle}" />
+                                    <TextBlock Text="{Binding Texts.LicenseLabel}" Style="{StaticResource RcBodyTextStyle}" FontWeight="Medium" />
+                                    <TextBlock Text="{Binding Texts.LicenseText}" Style="{StaticResource RcBodyTextStyle}" />
                                 </StackPanel>
                                 <!-- Unterstrichen, weil ein Verweis nicht allein an der Farbe
                                      erkennbar sein darf. -->
                                 <HyperlinkButton Click="OnOpenDocs" Padding="0,4">
-                                    <TextBlock Text="{Binding DocsLabel}" TextDecorations="Underline" />
+                                    <TextBlock Text="{Binding Texts.DocsLabel}" TextDecorations="Underline" />
                                 </HyperlinkButton>
                             </StackPanel>
                         </Border>
@@ -833,9 +833,9 @@
                         <Border Style="{StaticResource RcCardStyle}"
                                 Visibility="{Binding IsSupportVisible, Converter={StaticResource BoolToVisibility}}">
                             <StackPanel Spacing="8">
-                                <TextBlock Text="{Binding SupportHeading}" Style="{StaticResource RcPageSubtitleStyle}" />
+                                <TextBlock Text="{Binding Texts.SupportHeading}" Style="{StaticResource RcPageSubtitleStyle}" />
                                 <HyperlinkButton Click="OnOpenDonation" Padding="0,4">
-                                    <TextBlock Text="{Binding SupportLabel}" TextDecorations="Underline" />
+                                    <TextBlock Text="{Binding Texts.SupportLabel}" TextDecorations="Underline" />
                                 </HyperlinkButton>
                             </StackPanel>
                         </Border>
@@ -896,9 +896,9 @@
                 Orientation="Horizontal"
                 Spacing="12"
                 HorizontalAlignment="Right">
-                <Button Content="{Binding ApplyLabel}" Command="{Binding ApplyCommand}" />
-                <Button Content="{Binding SaveLabel}" Command="{Binding SaveCommand}" Style="{StaticResource RcPrimaryButtonStyle}" />
-                <Button Content="{Binding CancelLabel}" Command="{Binding CancelCommand}" />
+                <Button Content="{Binding Texts.ApplyLabel}" Command="{Binding ApplyCommand}" />
+                <Button Content="{Binding Texts.SaveLabel}" Command="{Binding SaveCommand}" Style="{StaticResource RcPrimaryButtonStyle}" />
+                <Button Content="{Binding Texts.CancelLabel}" Command="{Binding CancelCommand}" />
             </StackPanel>
         </Border>
     </Grid>

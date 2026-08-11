@@ -12,7 +12,7 @@ public sealed class HotkeyTests
     private const int VkP = 0x50;
 
     [Fact]
-    public void IsValid_akzeptiert_Modifikator_plus_Taste()
+    public void IsValid_AcceptsAModifierPlusKey()
     {
         HotkeyDefinition definition = new(HotkeyModifiers.Control | HotkeyModifiers.Alt, VkP);
 
@@ -20,7 +20,7 @@ public sealed class HotkeyTests
     }
 
     [Fact]
-    public void IsValid_lehnt_Taste_ohne_Modifikator_ab()
+    public void IsValid_RejectsAKeyWithoutModifier()
     {
         HotkeyDefinition definition = new(HotkeyModifiers.None, VkP);
 
@@ -28,7 +28,7 @@ public sealed class HotkeyTests
     }
 
     [Fact]
-    public void IsValid_lehnt_nur_Umschalt_ab()
+    public void IsValid_RejectsShiftOnly()
     {
         HotkeyDefinition definition = new(HotkeyModifiers.Shift, VkP);
 
@@ -36,7 +36,7 @@ public sealed class HotkeyTests
     }
 
     [Fact]
-    public void FindConflicts_erkennt_doppelte_Belegung()
+    public void FindConflicts_DetectsADuplicateAssignment()
     {
         HotkeyDefinition shared = new(HotkeyModifiers.Control | HotkeyModifiers.Alt, VkP);
         Dictionary<HotkeyAction, HotkeyDefinition> bindings = new()
@@ -54,7 +54,7 @@ public sealed class HotkeyTests
     }
 
     [Fact]
-    public void FindConflicts_meldet_ungültige_Leer_Bindungen_nicht()
+    public void FindConflicts_IgnoresInvalidEmptyBindings()
     {
         // Zwei ungebundene Aktionen (None+0) sind wertgleich, dürfen aber nicht
         // als Konflikt gelten.
@@ -69,7 +69,7 @@ public sealed class HotkeyTests
     }
 
     [Fact]
-    public void Defaults_sind_gültig_und_kollisionsfrei()
+    public void Defaults_AreValidAndFreeOfConflicts()
     {
         IReadOnlyDictionary<HotkeyAction, HotkeyDefinition> defaults = HotkeyDefaults.CreateDefaults();
 
@@ -78,7 +78,7 @@ public sealed class HotkeyTests
     }
 
     [Fact]
-    public void ToString_zeigt_lesbare_Kombination()
+    public void ToString_ShowsAReadableCombination()
     {
         HotkeyDefinition definition = new(HotkeyModifiers.Control | HotkeyModifiers.Alt, VkP);
 
@@ -86,7 +86,7 @@ public sealed class HotkeyTests
     }
 
     [Fact]
-    public void Format_nutzt_die_übergebenen_Modifikatornamen()
+    public void Format_UsesTheSuppliedModifierNames()
     {
         HotkeyDefinition definition = new(HotkeyModifiers.Control | HotkeyModifiers.Shift, VkP);
 
@@ -101,10 +101,67 @@ public sealed class HotkeyTests
     }
 
     [Fact]
-    public void KeyLabel_ist_leer_ohne_Taste()
+    public void KeyLabel_WithoutKey_IsEmpty()
     {
         HotkeyDefinition definition = new(HotkeyModifiers.Control, 0);
 
         Assert.Equal(string.Empty, definition.KeyLabel);
+    }
+
+    /// <remarks>
+    /// Die Reihenfolge liegt fest und folgt der Beschriftung auf der Tastatur —
+    /// „Win+Umschalt+P" läse sich verkehrt herum.
+    /// </remarks>
+    [Fact]
+    public void ToString_ListsAllFourModifiersInFixedOrder()
+    {
+        HotkeyDefinition definition = new(
+            HotkeyModifiers.Control | HotkeyModifiers.Alt | HotkeyModifiers.Shift | HotkeyModifiers.Win,
+            VkP);
+
+        Assert.Equal("Strg+Alt+Umschalt+Win+P", definition.ToString());
+    }
+
+    [Fact]
+    public void Format_PassesTheWindowsModifierThrough()
+    {
+        HotkeyDefinition definition = new(HotkeyModifiers.Win, VkP);
+
+        string text = definition.Format(modifier => modifier switch
+        {
+            HotkeyModifiers.Win => "Cmd",
+            _ => "?",
+        });
+
+        Assert.Equal("Cmd+P", text);
+    }
+
+    [Theory]
+    [InlineData(0x41, "A")]
+    [InlineData(0x5A, "Z")]
+    [InlineData(0x30, "0")]
+    [InlineData(0x39, "9")]
+    [InlineData(0x70, "F1")]
+    [InlineData(0x7B, "F12")]
+    public void KeyLabel_NamesLettersDigitsAndFunctionKeys(int virtualKey, string expected)
+    {
+        HotkeyDefinition definition = new(HotkeyModifiers.Control, virtualKey);
+
+        Assert.Equal(expected, definition.KeyLabel);
+    }
+
+    /// <remarks>
+    /// Für alles Übrige bleibt der rohe Tastencode stehen. Das ist unschön zu lesen,
+    /// aber ehrlicher als eine erfundene Beschriftung — und der Nutzer erkennt, dass
+    /// er eine Taste erwischt hat, die hier niemand vorgesehen hat.
+    /// </remarks>
+    [Theory]
+    [InlineData(0x2D)]
+    [InlineData(0x7C)]
+    public void KeyLabel_FallsBackToTheRawCode(int virtualKey)
+    {
+        HotkeyDefinition definition = new(HotkeyModifiers.Control, virtualKey);
+
+        Assert.Equal("VK" + virtualKey, definition.KeyLabel);
     }
 }

@@ -15,7 +15,7 @@ public sealed class HotkeyTextKeysTests
     private const int VkP = 0x50;
 
     [Fact]
-    public void Format_rendert_lokalisierte_Modifikatornamen()
+    public void Format_RendersLocalizedModifierNames()
     {
         Dictionary<string, string> english = new()
         {
@@ -29,7 +29,7 @@ public sealed class HotkeyTextKeysTests
     }
 
     [Fact]
-    public void Format_nutzt_deutsche_Modifikatornamen()
+    public void Format_UsesTheGermanModifierNames()
     {
         Dictionary<string, string> german = new()
         {

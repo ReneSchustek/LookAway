@@ -59,7 +59,7 @@ public sealed class BreakReminderViewModelTests
     }
 
     [Fact]
-    public void Tick_ZaehltHerunterUndStartetPauseBeiNull()
+    public void Tick_CountsDownAndStartsTheBreakAtZero()
     {
         BreakReminderViewModel vm = new(HintKey, autoStartSeconds: 3);
 
@@ -77,7 +77,7 @@ public sealed class BreakReminderViewModelTests
     }
 
     [Fact]
-    public void Tick_OhneAutoStart_WirktNicht()
+    public void Tick_WithoutAutoStart_HasNoEffect()
     {
         BreakReminderViewModel vm = new(HintKey);
 
@@ -93,7 +93,7 @@ public sealed class BreakReminderViewModelTests
     }
 
     [Fact]
-    public void Tick_NachBenutzeraktion_UeberschreibtNicht()
+    public void Tick_AfterAUserAction_DoesNotOverrideIt()
     {
         BreakReminderViewModel vm = new(HintKey, autoStartSeconds: 1);
         vm.Snooze();
@@ -104,7 +104,7 @@ public sealed class BreakReminderViewModelTests
     }
 
     [Fact]
-    public void Constructor_MitAutoStart_SetztAnfangswerte()
+    public void Constructor_WithAutoStart_SetsTheInitialValues()
     {
         BreakReminderViewModel vm = new(HintKey, autoStartSeconds: 15);
 

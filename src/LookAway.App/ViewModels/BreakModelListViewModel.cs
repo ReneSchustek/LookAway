@@ -59,18 +59,21 @@ internal sealed partial class BreakModelListViewModel : ObservableObject
     [ObservableProperty]
     public partial BreakModelFilter Filter { get; set; }
 
+    private ListViewState State => new(_allModels.Count, VisibleModels.Count);
+
     /// <summary>Wahr, solange die gefilterte Liste Einträge hat.</summary>
-    public bool HasResults => VisibleModels.Count > 0;
+    public bool HasResults => State.HasResults;
 
     /// <summary>
     /// Wahr, wenn Suche oder Filter alles ausgeblendet haben.
     /// </summary>
     /// <remarks>
-    /// Die Gegenlage — „nichts vorhanden" — gibt es hier nicht: Die Modelle sind fest
-    /// eingebaut. Ein Leerzustand kann also nur von der Eingabe kommen, und genau das
-    /// sagt der Text; sonst sucht der Benutzer den Fehler in seinen Daten.
+    /// Die Gegenlage — „nichts vorhanden" — tritt hier nie ein: Die Modelle sind fest
+    /// eingebaut, es gibt immer sieben. Ein Leerzustand kann also nur von der Eingabe
+    /// kommen, und genau das sagt der Text; sonst sucht der Benutzer den Fehler in
+    /// seinen Daten.
     /// </remarks>
-    public bool ShowNoResults => VisibleModels.Count == 0;
+    public bool ShowNoResults => State.ShowNoResults;
 
     /// <summary>Beschriftung "Alle" der Filterleiste.</summary>
     public string FilterAllLabel => _localization.GetText(SettingsTextKeys.ModelFilterAll);

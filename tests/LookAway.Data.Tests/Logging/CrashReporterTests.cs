@@ -157,4 +157,83 @@ public sealed class CrashReporterTests : IDisposable
         // Test-Erwartung: Methode wirft NICHT.
         reporter.Report(new InvalidOperationException("x"), "TestSource");
     }
+
+    /// <remarks>
+    /// Das Verzeichnis bleibt bestehen, nachdem der letzte Bericht von Hand gelöscht
+    /// wurde. Ein leeres Verzeichnis ist kein offener Absturz.
+    /// </remarks>
+    [Fact]
+    public void HasUnresolvedCrashes_WithEmptyDirectory_ReturnsFalse()
+    {
+        _ = Directory.CreateDirectory(_crashDirectory);
+        CrashReporter reporter = new(_crashDirectory);
+
+        Assert.False(reporter.HasUnresolvedCrashes());
+    }
+
+    /// <remarks>
+    /// Beim Berichten wird der Bestätigungsvermerk gelöscht, sodass der Vergleich der
+    /// Zeitstempel im eigenen Ablauf nie greift. Er greift, wenn der Absturz von
+    /// woanders kommt — von einer zweiten Instanz oder aus einer gesicherten Ablage.
+    /// Ohne diesen Vergleich bliebe ein solcher Absturz unbemerkt.
+    /// </remarks>
+    [Fact]
+    public void HasUnresolvedCrashes_WithForeignCrashNewerThanMarker_ReturnsTrue()
+    {
+        _ = Directory.CreateDirectory(_crashDirectory);
+        DateTime marker = DateTime.UtcNow.AddMinutes(-10);
+
+        string ackPath = Path.Combine(_crashDirectory, ".acknowledged");
+        File.WriteAllText(ackPath, "bestätigt");
+        File.SetLastWriteTimeUtc(ackPath, marker);
+
+        string crashPath = Path.Combine(_crashDirectory, "crash-20260811-120000-000.json");
+        File.WriteAllText(crashPath, "{}");
+        File.SetLastWriteTimeUtc(crashPath, marker.AddMinutes(5));
+
+        Assert.True(new CrashReporter(_crashDirectory).HasUnresolvedCrashes());
+    }
+
+    /// <remarks>
+    /// Umgekehrt: Ein Absturz, der älter ist als der Vermerk, wurde bereits gesehen.
+    /// </remarks>
+    [Fact]
+    public void HasUnresolvedCrashes_WithForeignCrashOlderThanMarker_ReturnsFalse()
+    {
+        _ = Directory.CreateDirectory(_crashDirectory);
+        DateTime marker = DateTime.UtcNow.AddMinutes(-10);
+
+        string crashPath = Path.Combine(_crashDirectory, "crash-20260811-120000-000.json");
+        File.WriteAllText(crashPath, "{}");
+        File.SetLastWriteTimeUtc(crashPath, marker.AddMinutes(-5));
+
+        string ackPath = Path.Combine(_crashDirectory, ".acknowledged");
+        File.WriteAllText(ackPath, "bestätigt");
+        File.SetLastWriteTimeUtc(ackPath, marker);
+
+        Assert.False(new CrashReporter(_crashDirectory).HasUnresolvedCrashes());
+    }
+
+    /// <remarks>
+    /// Ohne Verzeichnis gab es nie einen Absturz — es dafür anzulegen wäre verkehrt.
+    /// </remarks>
+    [Fact]
+    public void MarkResolved_WithoutDirectory_CreatesNothing()
+    {
+        new CrashReporter(_crashDirectory).MarkResolved();
+
+        Assert.False(Directory.Exists(_crashDirectory));
+    }
+
+    [Fact]
+    public void MarkResolved_WithLockedMarker_IsIgnored()
+    {
+        _ = Directory.CreateDirectory(_crashDirectory);
+        CrashReporter reporter = new(_crashDirectory);
+        using LockedFile locked = new(Path.Combine(_crashDirectory, ".acknowledged"));
+
+        Exception? thrown = Record.Exception(reporter.MarkResolved);
+
+        Assert.Null(thrown);
+    }
 }

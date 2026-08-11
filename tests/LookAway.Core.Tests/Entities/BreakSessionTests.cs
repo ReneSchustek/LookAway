@@ -11,7 +11,7 @@ public sealed class BreakSessionTests
     private static readonly DateTimeOffset Start = new(2026, 6, 28, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public void Konstruktor_setzt_Werte_und_berechnet_die_Dauer()
+    public void Constructor_SetsTheValuesAndComputesTheDuration()
     {
         BreakSession session = new(
             Guid.NewGuid(),
@@ -25,16 +25,34 @@ public sealed class BreakSessionTests
     }
 
     [Fact]
-    public void Leere_Id_wird_abgelehnt()
+    public void EmptyId_IsRejected()
     {
         _ = Assert.Throws<ArgumentException>(() =>
             new BreakSession(Guid.Empty, Start, Start, BreakModel.ClassicPomodoro, BreakOutcome.Taken));
     }
 
     [Fact]
-    public void Ende_vor_Beginn_wird_abgelehnt()
+    public void EndBeforeStart_IsRejected()
     {
         _ = Assert.Throws<ArgumentOutOfRangeException>(() =>
             new BreakSession(Guid.NewGuid(), Start, Start.AddMinutes(-1), BreakModel.ClassicPomodoro, BreakOutcome.Taken));
+    }
+
+    /// <remarks>
+    /// Der Verlauf wird aus einer Datei gelesen, die auch von Hand geändert sein kann.
+    /// Ein unbekannter Zahlenwert darf dort nicht als gültiges Modell durchrutschen.
+    /// </remarks>
+    [Fact]
+    public void UndefinedModel_IsRejected()
+    {
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new BreakSession(Guid.NewGuid(), Start, Start.AddMinutes(5), (BreakModel)99, BreakOutcome.Taken));
+    }
+
+    [Fact]
+    public void UndefinedOutcome_IsRejected()
+    {
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new BreakSession(Guid.NewGuid(), Start, Start.AddMinutes(5), BreakModel.ClassicPomodoro, (BreakOutcome)99));
     }
 }

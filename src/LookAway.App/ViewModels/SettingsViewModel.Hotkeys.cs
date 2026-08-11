@@ -145,7 +145,7 @@ internal sealed partial class SettingsViewModel
     [RelayCommand]
     private void ResetHotkeys()
     {
-        bool aufnahmeLief = _capturingAction is not null;
+        bool captureWasRunning = _capturingAction is not null;
         _capturingAction = null;
         _hotkeyStartBreak = HotkeyDefaults.StartBreak;
         _hotkeySkipOrSnooze = HotkeyDefaults.SkipOrSnooze;
@@ -153,7 +153,7 @@ internal sealed partial class SettingsViewModel
         HotkeyCaptureHint = string.Empty;
         NotifyHotkeysChanged();
 
-        if (aufnahmeLief)
+        if (captureWasRunning)
         {
             HotkeyCaptureChanged?.Invoke(this, false);
         }

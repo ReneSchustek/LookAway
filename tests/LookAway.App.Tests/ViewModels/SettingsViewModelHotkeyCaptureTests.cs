@@ -24,9 +24,9 @@ public sealed class SettingsViewModelHotkeyCaptureTests
     private const int VkY = 0x59;
 
     // Erwartete Folgen des Aufnahmezustands (true = Aufnahme läuft).
-    private static readonly bool[] BeginnUndEnde = [true, false];
-    private static readonly bool[] NurBeginn = [true];
-    private static readonly bool[] ZweiDurchgaenge = [true, false, true, false];
+    private static readonly bool[] BeginAndEnd = [true, false];
+    private static readonly bool[] BeginOnly = [true];
+    private static readonly bool[] TwoRounds = [true, false, true, false];
 
     private static SettingsViewModel CreateViewModel(out InMemorySettingsRepository repository)
     {
@@ -51,16 +51,17 @@ public sealed class SettingsViewModelHotkeyCaptureTests
             new FakeSoundService(),
             new FakeUpdateChecker(),
             new FakeUpdateInstaller(),
-            statistics,
-            new BreakModelListViewModel(localization, history),
-            new LogViewModel(new FakeLogEntryReader(), localization, clock),
-            new WorkTaskListViewModel(new FakeWorkTaskRepository(), history, localization, clock),
+            new SettingsSections(
+                statistics,
+                new BreakModelListViewModel(localization, history),
+                new LogViewModel(new FakeLogEntryReader(), localization, clock),
+                new WorkTaskListViewModel(new FakeWorkTaskRepository(), history, localization, clock)),
             NullLogger<SettingsViewModel>.Instance,
             "1.0.0");
     }
 
     [Fact]
-    public void Aufnahme_ohne_Start_wird_abgelehnt()
+    public void Capture_WithoutStart_IsRejected()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _);
 
@@ -72,7 +73,7 @@ public sealed class SettingsViewModelHotkeyCaptureTests
     }
 
     [Fact]
-    public void Gültige_Kombination_wird_übernommen_und_beendet_die_Aufnahme()
+    public void ValidCombination_IsAppliedAndEndsTheCapture()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _);
         viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.StartBreak);
@@ -87,57 +88,57 @@ public sealed class SettingsViewModelHotkeyCaptureTests
     }
 
     [Fact]
-    public void Kombination_ohne_echten_Modifikator_wird_abgelehnt()
+    public void Combination_WithoutARealModifier_IsRejected()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _);
-        string vorher = viewModel.HotkeyStartBreakText;
+        string before = viewModel.HotkeyStartBreakText;
         viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.StartBreak);
 
         bool übernommen = viewModel.TryCompleteHotkeyCapture(
             new HotkeyDefinition(HotkeyModifiers.Shift, VkX));
 
         Assert.False(übernommen);
-        Assert.Equal(vorher, viewModel.HotkeyStartBreakText);
+        Assert.Equal(before, viewModel.HotkeyStartBreakText);
         // Die Aufnahme läuft weiter, damit direkt eine gültige Kombination folgen kann.
         Assert.True(viewModel.IsCapturingHotkey);
     }
 
     [Fact]
-    public void Bereits_belegte_Kombination_wird_abgelehnt()
+    public void AlreadyAssignedCombination_IsRejected()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _);
         viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.StartBreak);
         Assert.True(viewModel.TryCompleteHotkeyCapture(
             new HotkeyDefinition(HotkeyModifiers.Control | HotkeyModifiers.Alt, VkQ)));
-        string andereBelegung = viewModel.HotkeySkipOrSnoozeText;
+        string otherAssignment = viewModel.HotkeySkipOrSnoozeText;
 
         viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.SkipOrSnooze);
         bool übernommen = viewModel.TryCompleteHotkeyCapture(
             new HotkeyDefinition(HotkeyModifiers.Control | HotkeyModifiers.Alt, VkQ));
 
         Assert.False(übernommen);
-        Assert.Equal(andereBelegung, viewModel.HotkeySkipOrSnoozeText);
+        Assert.Equal(otherAssignment, viewModel.HotkeySkipOrSnoozeText);
     }
 
     [Fact]
-    public void Dieselbe_Kombination_erneut_auf_dieselbe_Aktion_ist_keine_Kollision()
+    public void SameCombinationOnTheSameAction_IsNoConflict()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _);
-        HotkeyDefinition kombination = new(HotkeyModifiers.Control | HotkeyModifiers.Alt, VkY);
+        HotkeyDefinition combination = new(HotkeyModifiers.Control | HotkeyModifiers.Alt, VkY);
         viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.ToggleDnd);
-        Assert.True(viewModel.TryCompleteHotkeyCapture(kombination));
+        Assert.True(viewModel.TryCompleteHotkeyCapture(combination));
 
         viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.ToggleDnd);
-        bool erneut = viewModel.TryCompleteHotkeyCapture(kombination);
+        bool again = viewModel.TryCompleteHotkeyCapture(combination);
 
-        Assert.True(erneut);
+        Assert.True(again);
     }
 
     [Fact]
-    public void Standardbelegung_einer_anderen_Aktion_wird_abgelehnt()
+    public void DefaultAssignmentOfAnotherAction_IsRejected()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _);
-        string vorher = viewModel.HotkeyToggleDndText;
+        string before = viewModel.HotkeyToggleDndText;
         viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.ToggleDnd);
 
         // Die Werksbelegung von "Pause starten" ist bereits vergeben — auch ohne
@@ -145,27 +146,27 @@ public sealed class SettingsViewModelHotkeyCaptureTests
         bool übernommen = viewModel.TryCompleteHotkeyCapture(HotkeyDefaults.StartBreak);
 
         Assert.False(übernommen);
-        Assert.Equal(vorher, viewModel.HotkeyToggleDndText);
+        Assert.Equal(before, viewModel.HotkeyToggleDndText);
     }
 
     [Fact]
-    public void Abbruch_lässt_die_Belegung_unverändert()
+    public void Cancel_LeavesTheAssignmentUnchanged()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _);
-        string vorher = viewModel.HotkeyStartBreakText;
+        string before = viewModel.HotkeyStartBreakText;
         viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.StartBreak);
 
         viewModel.CancelHotkeyCaptureCommand.Execute(null);
 
         Assert.False(viewModel.IsCapturingHotkey);
-        Assert.Equal(vorher, viewModel.HotkeyStartBreakText);
+        Assert.Equal(before, viewModel.HotkeyStartBreakText);
         Assert.False(viewModel.TryCompleteHotkeyCapture(
             new HotkeyDefinition(HotkeyModifiers.Control, VkX)));
-        Assert.Equal(vorher, viewModel.HotkeyStartBreakText);
+        Assert.Equal(before, viewModel.HotkeyStartBreakText);
     }
 
     [Fact]
-    public void Zweiter_Start_verschiebt_die_Aufnahme_auf_die_neue_Aktion()
+    public void SecondStart_MovesTheCaptureToTheNewAction()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _);
         string startBreakVorher = viewModel.HotkeyStartBreakText;
@@ -180,106 +181,106 @@ public sealed class SettingsViewModelHotkeyCaptureTests
     }
 
     [Fact]
-    public async Task Aufgenommene_Belegung_wird_gespeichert()
+    public async Task CapturedAssignment_IsSaved()
     {
         using SettingsViewModel viewModel = CreateViewModel(out InMemorySettingsRepository repository);
         await viewModel.LoadAsync();
         viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.SkipOrSnooze);
-        HotkeyDefinition kombination = new(HotkeyModifiers.Control | HotkeyModifiers.Alt, VkQ);
-        Assert.True(viewModel.TryCompleteHotkeyCapture(kombination));
+        HotkeyDefinition combination = new(HotkeyModifiers.Control | HotkeyModifiers.Alt, VkQ);
+        Assert.True(viewModel.TryCompleteHotkeyCapture(combination));
 
         await viewModel.SaveCommand.ExecuteAsync(null);
 
-        Settings gespeichert = await repository.LoadAsync();
-        Assert.Equal(kombination, gespeichert.HotkeySkipOrSnooze);
+        Settings saved = await repository.LoadAsync();
+        Assert.Equal(combination, saved.HotkeySkipOrSnooze);
     }
 
     [Fact]
-    public void Beginn_und_Übernahme_melden_den_Aufnahmezustand()
+    public void StartAndCommit_ReportTheCaptureState()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _);
-        List<bool> meldungen = new();
-        viewModel.HotkeyCaptureChanged += (_, aktiv) => meldungen.Add(aktiv);
+        List<bool> reports = new();
+        viewModel.HotkeyCaptureChanged += (_, aktiv) => reports.Add(aktiv);
 
         viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.StartBreak);
         Assert.True(viewModel.TryCompleteHotkeyCapture(
             new HotkeyDefinition(HotkeyModifiers.Control | HotkeyModifiers.Shift, VkX)));
 
-        Assert.Equal(BeginnUndEnde, meldungen);
+        Assert.Equal(BeginAndEnd, reports);
     }
 
     [Fact]
-    public void Abgelehnte_Kombination_hält_den_Aufnahmezustand()
+    public void RejectedCombination_KeepsTheCaptureState()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _);
-        List<bool> meldungen = new();
-        viewModel.HotkeyCaptureChanged += (_, aktiv) => meldungen.Add(aktiv);
+        List<bool> reports = new();
+        viewModel.HotkeyCaptureChanged += (_, aktiv) => reports.Add(aktiv);
 
         viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.StartBreak);
         // Ohne echten Modifikator: abgelehnt, aber die Aufnahme läuft weiter —
         // die Hotkeys dürfen deshalb noch nicht zurückkommen.
         Assert.False(viewModel.TryCompleteHotkeyCapture(new HotkeyDefinition(HotkeyModifiers.Shift, VkX)));
 
-        Assert.Equal(NurBeginn, meldungen);
+        Assert.Equal(BeginOnly, reports);
     }
 
     [Fact]
-    public void Zweiter_Start_meldet_den_Zustand_nicht_erneut()
+    public void SecondStart_DoesNotReportTheStateAgain()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _);
-        List<bool> meldungen = new();
-        viewModel.HotkeyCaptureChanged += (_, aktiv) => meldungen.Add(aktiv);
+        List<bool> reports = new();
+        viewModel.HotkeyCaptureChanged += (_, aktiv) => reports.Add(aktiv);
 
         viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.StartBreak);
         viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.ToggleDnd);
 
-        Assert.Equal(NurBeginn, meldungen);
+        Assert.Equal(BeginOnly, reports);
     }
 
     [Fact]
-    public void Abbruch_und_Zurücksetzen_melden_das_Ende()
+    public void CancelAndReset_ReportTheEnd()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _);
-        List<bool> meldungen = new();
-        viewModel.HotkeyCaptureChanged += (_, aktiv) => meldungen.Add(aktiv);
+        List<bool> reports = new();
+        viewModel.HotkeyCaptureChanged += (_, aktiv) => reports.Add(aktiv);
 
         viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.StartBreak);
         viewModel.CancelHotkeyCaptureCommand.Execute(null);
         viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.ToggleDnd);
         viewModel.ResetHotkeysCommand.Execute(null);
 
-        Assert.Equal(ZweiDurchgaenge, meldungen);
+        Assert.Equal(TwoRounds, reports);
     }
 
     [Fact]
-    public void Freigeben_beendet_eine_offene_Aufnahme()
+    public void Dispose_EndsAnOpenCapture()
     {
         SettingsViewModel viewModel = CreateViewModel(out _);
-        List<bool> meldungen = new();
-        viewModel.HotkeyCaptureChanged += (_, aktiv) => meldungen.Add(aktiv);
+        List<bool> reports = new();
+        viewModel.HotkeyCaptureChanged += (_, aktiv) => reports.Add(aktiv);
         viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.StartBreak);
 
         // Fenster zu, während die Aufnahme läuft: Ohne Abmeldung blieben die
         // globalen Hotkeys dauerhaft freigegeben.
         viewModel.Dispose();
 
-        Assert.Equal(BeginnUndEnde, meldungen);
+        Assert.Equal(BeginAndEnd, reports);
     }
 
     [Fact]
-    public void Freigeben_ohne_Aufnahme_meldet_nichts()
+    public void Dispose_WithoutCapture_ReportsNothing()
     {
         SettingsViewModel viewModel = CreateViewModel(out _);
-        List<bool> meldungen = new();
-        viewModel.HotkeyCaptureChanged += (_, aktiv) => meldungen.Add(aktiv);
+        List<bool> reports = new();
+        viewModel.HotkeyCaptureChanged += (_, aktiv) => reports.Add(aktiv);
 
         viewModel.Dispose();
 
-        Assert.Empty(meldungen);
+        Assert.Empty(reports);
     }
 
     [Fact]
-    public void Zurücksetzen_beendet_eine_laufende_Aufnahme()
+    public void Reset_EndsARunningCapture()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _);
         viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.StartBreak);

@@ -66,21 +66,7 @@ public sealed class JsonSettingsRepository : ISettingsRepository, IDisposable
     {
         ThrowIfDisposed();
 
-        string? json;
-        try
-        {
-            json = await _store.ReadAllTextOrNullAsync(cancellationToken).ConfigureAwait(false);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            JsonSettingsRepositoryLog.ReadAccessDenied(_logger, ex, _store.FilePath);
-            throw;
-        }
-        catch (IOException ex)
-        {
-            JsonSettingsRepositoryLog.ReadIoError(_logger, ex, _store.FilePath);
-            throw;
-        }
+        string? json = await ReadJsonAsync(cancellationToken).ConfigureAwait(false);
 
         if (json is null)
         {
@@ -94,6 +80,52 @@ public sealed class JsonSettingsRepository : ISettingsRepository, IDisposable
             return CreateFirstRunDefaults();
         }
 
+        return await ParseOrDefaultsAsync(json, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Liest die Datei, oder <c>null</c>, wenn es sie nicht gibt.
+    /// </summary>
+    /// <param name="cancellationToken">Abbruch-Token.</param>
+    /// <returns>Der Inhalt der Datei, <c>null</c> bei fehlender Datei.</returns>
+    /// <remarks>
+    /// Lesefehler werden protokolliert und weitergereicht, nicht geschluckt: Ohne
+    /// Einstellungen weiterzulaufen hieße, mit Standardwerten zu starten und sie beim
+    /// nächsten Sichern über die echten zu schreiben.
+    /// </remarks>
+    private async Task<string?> ReadJsonAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await _store.ReadAllTextOrNullAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            JsonSettingsRepositoryLog.ReadAccessDenied(_logger, ex, _store.FilePath);
+            throw;
+        }
+        catch (IOException ex)
+        {
+            JsonSettingsRepositoryLog.ReadIoError(_logger, ex, _store.FilePath);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Wertet den Inhalt aus; bei unbrauchbarem Inhalt wird er gesichert und mit
+    /// Standardwerten begonnen.
+    /// </summary>
+    /// <param name="json">Der gelesene Inhalt.</param>
+    /// <param name="cancellationToken">Abbruch-Token.</param>
+    /// <returns>Die gelesenen Einstellungen oder Standardwerte.</returns>
+    /// <remarks>
+    /// Hier wird geschluckt statt geworfen, und das ist der Unterschied zum Lesen: Eine
+    /// unlesbare Datei ist ein Zustand des Rechners, eine unbrauchbare ein Zustand der
+    /// Daten. Letztere lässt sich beiseitelegen, und der Nutzer beginnt neu — statt vor
+    /// einem Programm zu sitzen, das nicht mehr startet.
+    /// </remarks>
+    private async Task<Settings> ParseOrDefaultsAsync(string json, CancellationToken cancellationToken)
+    {
         try
         {
             Settings? settings = JsonSerializer.Deserialize<Settings>(json, SerializerOptions);

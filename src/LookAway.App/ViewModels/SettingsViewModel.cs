@@ -36,6 +36,15 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private readonly ILogger<SettingsViewModel> _logger;
     private readonly string _applicationVersion;
 
+    /// <summary>
+    /// Die Beschriftungen des Fensters, als eigenes Objekt komponiert.
+    /// </summary>
+    /// <remarks>
+    /// Beschriftungen nachzuschlagen ist eine andere Aufgabe als Einstellungen zu
+    /// laden, zu prüfen und zu speichern — siehe <see cref="SettingsTexts"/>.
+    /// </remarks>
+    public SettingsTexts Texts { get; }
+
     /// <summary>Statistik-Bereich, als eigenes ViewModel komponiert.</summary>
     public StatisticsViewModel Statistics { get; }
 
@@ -133,10 +142,7 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <param name="soundService">Spielt den Erinnerungston für die Vorschau.</param>
     /// <param name="updateChecker">Prüft auf Updates.</param>
     /// <param name="updateInstaller">Lädt und stellt ein gefundenes Update bereit (Ein-Klick-Installation).</param>
-    /// <param name="statistics">Statistik-ViewModel (komponiert).</param>
-    /// <param name="breakModels">Pausenmodell-Liste (komponiert).</param>
-    /// <param name="log">Protokoll-Ansicht (komponiert).</param>
-    /// <param name="tasks">Aufgabenliste (komponiert).</param>
+    /// <param name="sections">Die eigenständigen Bereiche des Fensters (komponiert).</param>
     /// <param name="logger">Logger.</param>
     /// <param name="applicationVersion">Anzuzeigende Versionsnummer (Über-Bereich).</param>
     public SettingsViewModel(
@@ -146,10 +152,7 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         ISoundService soundService,
         IUpdateChecker updateChecker,
         IUpdateInstaller updateInstaller,
-        StatisticsViewModel statistics,
-        BreakModelListViewModel breakModels,
-        LogViewModel log,
-        WorkTaskListViewModel tasks,
+        SettingsSections sections,
         ILogger<SettingsViewModel> logger,
         string applicationVersion)
     {
@@ -159,10 +162,7 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(soundService);
         ArgumentNullException.ThrowIfNull(updateChecker);
         ArgumentNullException.ThrowIfNull(updateInstaller);
-        ArgumentNullException.ThrowIfNull(statistics);
-        ArgumentNullException.ThrowIfNull(breakModels);
-        ArgumentNullException.ThrowIfNull(log);
-        ArgumentNullException.ThrowIfNull(tasks);
+        ArgumentNullException.ThrowIfNull(sections);
         ArgumentNullException.ThrowIfNull(logger);
         ArgumentException.ThrowIfNullOrWhiteSpace(applicationVersion);
 
@@ -172,10 +172,11 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         _soundService = soundService;
         _updateChecker = updateChecker;
         _updateInstaller = updateInstaller;
-        Statistics = statistics;
-        BreakModels = breakModels;
-        Log = log;
-        Tasks = tasks;
+        Texts = new SettingsTexts(localization);
+        Statistics = sections.Statistics;
+        BreakModels = sections.BreakModels;
+        Log = sections.Log;
+        Tasks = sections.Tasks;
         _logger = logger;
         _applicationVersion = applicationVersion;
 
@@ -271,101 +272,45 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Wahr, wenn die aktuellen Eingaben gespeichert werden dürfen.</summary>
     public bool CanPersist => WorkError is null && BreakError is null && HexColor.IsValid(BreakOverlayColor);
 
-    /// <summary>Fenstertitel.</summary>
-    public string Title => _localization.GetText(SettingsTextKeys.Title);
 
-    /// <summary>Tab-Überschrift "Allgemein".</summary>
-    public string TabGeneralHeader => _localization.GetText(SettingsTextKeys.TabGeneral);
 
-    /// <summary>Tab-Überschrift "Pausenmodell".</summary>
-    public string TabModelHeader => _localization.GetText(SettingsTextKeys.TabModel);
 
-    /// <summary>Tab-Überschrift "Eigene Intervalle".</summary>
-    public string TabIntervalsHeader => _localization.GetText(SettingsTextKeys.TabIntervals);
 
-    /// <summary>Tab-Überschrift "Über LookAway".</summary>
-    public string TabAboutHeader => _localization.GetText(SettingsTextKeys.TabAbout);
 
-    /// <summary>Tab-Überschrift "Protokoll".</summary>
-    public string TabLogHeader => _localization.GetText(SettingsTextKeys.TabLog);
 
-    /// <summary>Tab-Überschrift "Aufgaben".</summary>
-    public string TabTasksHeader => _localization.GetText(SettingsTextKeys.TabTasks);
 
-    /// <summary>Beschriftung der Erscheinungsbild-Auswahl.</summary>
-    public string AppearanceLabel => _localization.GetText(SettingsTextKeys.AppearanceLabel);
 
-    /// <summary>Hinweistext zur Erscheinungsbild-Auswahl.</summary>
-    public string AppearanceHint => _localization.GetText(SettingsTextKeys.AppearanceHint);
 
-    /// <summary>Beschriftung des Löschen-Zeichens in den Suchfeldern.</summary>
-    public string ClearSearchLabel => _localization.GetText(SettingsTextKeys.ClearSearch);
 
-    /// <summary>Beschriftung der Sprachauswahl.</summary>
-    public string LanguageLabel => _localization.GetText(SettingsTextKeys.LanguageLabel);
 
-    /// <summary>Beschriftung der Autostart-Option.</summary>
-    public string AutoStartLabel => _localization.GetText(SettingsTextKeys.AutoStartLabel);
 
-    /// <summary>Beschriftung der Auto-Pause-Option.</summary>
-    public string IdlePauseLabel => _localization.GetText(SettingsTextKeys.IdlePauseLabel);
 
-    /// <summary>Beschriftung der Inaktivitätsschwelle.</summary>
-    public string IdleThresholdLabel => _localization.GetText(SettingsTextKeys.IdleThresholdLabel);
 
-    /// <summary>Beschriftung der DND-Option.</summary>
-    public string FullscreenSuppressLabel => _localization.GetText(SettingsTextKeys.FullscreenSuppressLabel);
 
-    /// <summary>Beschriftung der Auto-Pausenstart-Option.</summary>
-    public string AutoStartBreakLabel => _localization.GetText(SettingsTextKeys.AutoStartBreakLabel);
 
-    /// <summary>Beschriftung der Auto-Pausenstart-Verzögerung.</summary>
-    public string AutoStartBreakSecondsLabel => _localization.GetText(SettingsTextKeys.AutoStartBreakSecondsLabel);
 
-    /// <summary>Beschriftung der Modellauswahl.</summary>
-    public string ModelLabel => _localization.GetText(SettingsTextKeys.ModelLabel);
 
-    /// <summary>Beschriftung des "Eigene Dauern verwenden"-Schalters.</summary>
-    public string UseCustomLabel => _localization.GetText(SettingsTextKeys.IntervalsUseCustom);
 
-    /// <summary>Hinweistext im Intervall-Bereich.</summary>
-    public string IntervalsHint => _localization.GetText(SettingsTextKeys.IntervalsHint);
 
-    /// <summary>Beschriftung der Arbeitsdauer.</summary>
-    public string WorkLabel => _localization.GetText(SettingsTextKeys.WorkLabel);
 
-    /// <summary>Beschriftung der Pausendauer.</summary>
-    public string BreakLabel => _localization.GetText(SettingsTextKeys.BreakLabel);
 
     /// <summary>Hinweis auf den erlaubten Arbeitsdauer-Bereich (leer, wenn unbeschränkt).</summary>
     public string WorkRangeText => HasWorkRange
         ? string.Format(CultureInfo.CurrentCulture, _localization.GetText(SettingsTextKeys.WorkRangeHint), WorkMinMinutes, WorkMaxMinutes)
         : string.Empty;
 
-    /// <summary>Beschriftung "Version".</summary>
-    public string AboutVersionLabel => _localization.GetText(SettingsTextKeys.AboutVersionLabel);
 
     /// <summary>Anzuzeigende Versionsnummer.</summary>
     public string Version => _applicationVersion;
 
-    /// <summary>Beschriftung "Lizenz".</summary>
-    public string LicenseLabel => _localization.GetText(SettingsTextKeys.LicenseLabel);
 
-    /// <summary>Lizenztext.</summary>
-    public string LicenseText => _localization.GetText(SettingsTextKeys.License);
 
-    /// <summary>Beschriftung "Dokumentation".</summary>
-    public string DocsLabel => _localization.GetText(SettingsTextKeys.DocsLabel);
 
     /// <summary>URL zur Dokumentation (für einen HyperlinkButton); <c>null</c> bei ungültigem Wert.</summary>
     public Uri? DocsUri =>
         Uri.TryCreate(_localization.GetText(SettingsTextKeys.DocsUrl), UriKind.Absolute, out Uri? uri) ? uri : null;
 
-    /// <summary>Hinweistext über dem freiwilligen Spenden-Eintrag.</summary>
-    public string SupportHeading => _localization.GetText(SettingsTextKeys.SupportHeading);
 
-    /// <summary>Beschriftung des Spenden-Links.</summary>
-    public string SupportLabel => _localization.GetText(SettingsTextKeys.SupportLabel);
 
     /// <summary>
     /// Ziel des Spenden-Links. Anders als <see cref="DocsUri"/> stammt die Adresse
@@ -380,56 +325,22 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// </summary>
     public bool IsSupportVisible => SupportDonation.IsConfigured;
 
-    /// <summary>Beschriftung des Speichern-Buttons.</summary>
-    public string SaveLabel => _localization.GetText(SettingsTextKeys.ButtonSave);
 
-    /// <summary>Beschriftung des Abbrechen-Buttons.</summary>
-    public string CancelLabel => _localization.GetText(SettingsTextKeys.ButtonCancel);
 
-    /// <summary>Beschriftung des Anwenden-Buttons.</summary>
-    public string ApplyLabel => _localization.GetText(SettingsTextKeys.ButtonApply);
 
-    /// <summary>Tab-Überschrift "Sound".</summary>
-    public string TabSoundHeader => _localization.GetText(SettingsTextKeys.TabSound);
 
-    /// <summary>Beschriftung der Ton-aktivieren-Option.</summary>
-    public string SoundEnableLabel => _localization.GetText(SettingsTextKeys.SoundEnableLabel);
 
-    /// <summary>Beschriftung der Ton-Auswahl.</summary>
-    public string SoundSelectLabel => _localization.GetText(SettingsTextKeys.SoundSelectLabel);
 
-    /// <summary>Beschriftung der Lautstärke.</summary>
-    public string SoundVolumeLabel => _localization.GetText(SettingsTextKeys.SoundVolumeLabel);
 
-    /// <summary>Beschriftung des Vorhör-Buttons.</summary>
-    public string SoundPreviewLabel => _localization.GetText(SettingsTextKeys.SoundPreviewButton);
 
-    /// <summary>Tab-Überschrift "Pause-Aktionen".</summary>
-    public string TabPauseActionsHeader => _localization.GetText(SettingsTextKeys.TabPauseActions);
 
-    /// <summary>Beschriftung "Bildschirm dimmen".</summary>
-    public string DimEnableLabel => _localization.GetText(SettingsTextKeys.PauseActionsDimEnable);
 
-    /// <summary>Beschriftung der Pause-Helligkeit.</summary>
-    public string DimBrightnessLabel => _localization.GetText(SettingsTextKeys.PauseActionsDimBrightness);
 
-    /// <summary>Beschriftung "Medien pausieren".</summary>
-    public string PauseMediaLabel => _localization.GetText(SettingsTextKeys.PauseActionsPauseMedia);
 
-    /// <summary>Beschriftung "Medien fortsetzen".</summary>
-    public string ResumeMediaLabel => _localization.GetText(SettingsTextKeys.PauseActionsResumeMedia);
 
-    /// <summary>Hinweistext, welche Player automatisch pausiert werden.</summary>
-    public string PauseMediaHint => _localization.GetText(SettingsTextKeys.PauseActionsPauseMediaHint);
 
-    /// <summary>Beschriftung "Alle Bildschirme abdunkeln".</summary>
-    public string DarkenAllScreensLabel => _localization.GetText(SettingsTextKeys.PauseActionsDarkenAllScreens);
 
-    /// <summary>Beschriftung des Overlay-Farbwählers.</summary>
-    public string OverlayColorLabel => _localization.GetText(SettingsTextKeys.PauseActionsOverlayColor);
 
-    /// <summary>Hinweistext zum Overlay-Farbwähler (Transparenz).</summary>
-    public string OverlayColorHint => _localization.GetText(SettingsTextKeys.PauseActionsOverlayColorHint);
 
     /// <summary>Untere Grenze der Pause-Helligkeit.</summary>
     public int DimBrightnessMin => Settings.MinDimBrightnessPercent;
@@ -731,6 +642,7 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
         // Fehlertexte in neuer Sprache, danach alle gebundenen Texte aktualisieren.
         Validate();
+        Texts.Refresh();
         Statistics.RefreshTexts();
         Log.RefreshTexts();
 

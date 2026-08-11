@@ -12,7 +12,7 @@ public sealed class AppPathsTests
     private const string AppData = @"C:\Users\test\AppData\Roaming";
 
     [Fact]
-    public void Portable_legt_Daten_neben_die_Exe()
+    public void Portable_PlacesDataNextToTheExecutable()
     {
         string directory = AppPaths.ResolveDataDirectory(isPortable: true, BaseDir, AppData);
 
@@ -20,7 +20,7 @@ public sealed class AppPathsTests
     }
 
     [Fact]
-    public void Nicht_portable_nutzt_AppData_LookAway()
+    public void NonPortable_UsesAppDataFolder()
     {
         string directory = AppPaths.ResolveDataDirectory(isPortable: false, BaseDir, AppData);
 

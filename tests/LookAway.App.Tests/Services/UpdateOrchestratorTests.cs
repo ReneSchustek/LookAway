@@ -45,7 +45,7 @@ public sealed class UpdateOrchestratorTests : IDisposable
             NullLogger<UpdateOrchestrator>.Instance);
 
     [Fact]
-    public async Task Eingespieltes_Update_raeumt_seinen_Vermerk_beim_nächsten_Start_ab()
+    public async Task AppliedUpdate_ClearsItsRecordOnTheNextStart()
     {
         // Nach erfolgreichem Einspielen läuft genau die vermerkte Version, ihr Staging-Ordner
         // ist abgeräumt. Bliebe der Vermerk stehen, suchte ihn jeder Start erneut.
@@ -65,7 +65,7 @@ public sealed class UpdateOrchestratorTests : IDisposable
     }
 
     [Fact]
-    public async Task Vermerk_ohne_Staging_Ordner_wird_verworfen()
+    public async Task PendingRecord_WithoutStagingFolder_IsDiscarded()
     {
         // Neuere Version vermerkt, aber kein passender Ordner (z. B. manuell gelöscht):
         // unbrauchbar — der Vermerk darf nicht liegen bleiben.
@@ -84,7 +84,7 @@ public sealed class UpdateOrchestratorTests : IDisposable
     }
 
     [Fact]
-    public async Task Regulaerer_Start_ohne_Vermerk_fasst_die_Einstellungen_nicht_an()
+    public async Task RegularStart_WithoutRecord_LeavesTheSettingsUntouched()
     {
         InMemorySettingsRepository repository = new(new Settings());
         UpdateOrchestrator orchestrator = CreateOrchestrator(repository, new Version(1, 2, 7));

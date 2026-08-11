@@ -29,7 +29,7 @@ public sealed class StatisticsTests
     }
 
     [Fact]
-    public async Task GetToday_zählt_nur_die_heutigen_Sitzungen()
+    public async Task GetToday_CountsOnlyTodaysSessions()
     {
         (StatisticsService service, _) = CreateService();
 
@@ -41,7 +41,7 @@ public sealed class StatisticsTests
     }
 
     [Fact]
-    public async Task GetThisWeek_liefert_sieben_Tagesbalken()
+    public async Task GetThisWeek_ReturnsSevenDailyBars()
     {
         (StatisticsService service, _) = CreateService();
 
@@ -53,7 +53,7 @@ public sealed class StatisticsTests
     }
 
     [Fact]
-    public async Task GetThisYear_liefert_zwölf_Monatsbalken()
+    public async Task GetThisYear_ReturnsTwelveMonthlyBars()
     {
         (StatisticsService service, _) = CreateService();
 
@@ -65,7 +65,7 @@ public sealed class StatisticsTests
     }
 
     [Fact]
-    public void CsvExporter_erzeugt_Kopfzeile_und_eine_Zeile_pro_Sitzung()
+    public void CsvExporter_WritesAHeaderAndOneRowPerSession()
     {
         CsvExporter exporter = new();
         BreakSession[] sessions =

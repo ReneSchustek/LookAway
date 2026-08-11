@@ -40,13 +40,13 @@ public sealed class ReleaseSignatureVerifierTests : IDisposable
         => _key.SignData(File.ReadAllBytes(_file), HashAlgorithmName.SHA256);
 
     [Fact]
-    public void VerifyFile_akzeptiert_gültige_Signatur()
+    public void VerifyFile_AcceptsAValidSignature()
     {
         Assert.True(VerifierForOwnKey().VerifyFile(_file, SignFile()));
     }
 
     [Fact]
-    public void VerifyFile_lehnt_manipulierte_Datei_ab()
+    public void VerifyFile_RejectsATamperedFile()
     {
         byte[] signature = SignFile();
         File.WriteAllBytes(_file, "ein-MANIPULIERTER-inhalt"u8.ToArray());
@@ -55,7 +55,7 @@ public sealed class ReleaseSignatureVerifierTests : IDisposable
     }
 
     [Fact]
-    public void VerifyFile_lehnt_fremden_Schlüssel_ab()
+    public void VerifyFile_RejectsAForeignKey()
     {
         // Mit einem anderen Schlüssel signiert -> der eigene öffentliche Schlüssel verwirft.
         using ECDsa otherKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
@@ -65,19 +65,19 @@ public sealed class ReleaseSignatureVerifierTests : IDisposable
     }
 
     [Fact]
-    public void VerifyFile_lehnt_leere_Signatur_ab()
+    public void VerifyFile_RejectsAnEmptySignature()
     {
         Assert.False(VerifierForOwnKey().VerifyFile(_file, []));
     }
 
     [Fact]
-    public void VerifyFile_lehnt_kaputte_Signaturbytes_ab()
+    public void VerifyFile_RejectsCorruptSignatureBytes()
     {
         Assert.False(VerifierForOwnKey().VerifyFile(_file, [0, 1, 2, 3, 4, 5]));
     }
 
     [Fact]
-    public void Konstruktor_akzeptiert_eingebetteten_Produktionsschlüssel()
+    public void Constructor_AcceptsTheEmbeddedProductionKey()
     {
         // Der eingebettete Standardschlüssel muss ein gültiger SPKI-Base64 sein.
         ReleaseSignatureVerifier verifier = new();

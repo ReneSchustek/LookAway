@@ -65,7 +65,7 @@ public sealed class TimerServiceTests
     }
 
     [Fact]
-    public void RestoreWorking_SetztVerbleibendeArbeitszeitUndZustand()
+    public void RestoreWorking_SetsRemainingWorkTimeAndState()
     {
         (TimerService service, _, _) = CreateService();
         try
@@ -83,7 +83,7 @@ public sealed class TimerServiceTests
     }
 
     [Fact]
-    public void RestoreWorking_BegrenztRestzeitAufVolleArbeitsdauer()
+    public void RestoreWorking_CapsRemainingTimeAtTheFullWorkDuration()
     {
         (TimerService service, _, _) = CreateService();
         try

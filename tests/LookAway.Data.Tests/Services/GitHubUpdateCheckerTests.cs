@@ -27,7 +27,7 @@ public sealed class GitHubUpdateCheckerTests
         => new(new FakeHttpGetClient(response), current, NullLogger<GitHubUpdateChecker>.Instance);
 
     [Fact]
-    public async Task CheckForUpdate_meldet_neuere_Version()
+    public async Task CheckForUpdate_ReportsANewerVersion()
     {
         const string json = """{ "tag_name": "v2.0.0", "html_url": "https://github.com/x/releases/2.0.0", "body": "Neu" }""";
         GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
@@ -40,7 +40,7 @@ public sealed class GitHubUpdateCheckerTests
     }
 
     [Fact]
-    public async Task CheckForUpdate_liest_Portable_ZIP_aus_Assets()
+    public async Task CheckForUpdate_ReadsThePortableArchiveFromTheAssets()
     {
         const string json = """
         {
@@ -63,7 +63,7 @@ public sealed class GitHubUpdateCheckerTests
     }
 
     [Fact]
-    public async Task CheckForUpdate_fällt_auf_erste_ZIP_zurück_wenn_keine_Portable()
+    public async Task CheckForUpdate_FallsBackToTheFirstArchiveWithoutAPortableOne()
     {
         const string json = """
         {
@@ -82,7 +82,7 @@ public sealed class GitHubUpdateCheckerTests
     }
 
     [Fact]
-    public async Task CheckForUpdate_lehnt_Nicht_GitHub_und_HTTP_Assets_ab()
+    public async Task CheckForUpdate_RejectsNonGitHubAndPlainHttpAssets()
     {
         const string json = """
         {
@@ -101,7 +101,7 @@ public sealed class GitHubUpdateCheckerTests
     }
 
     [Fact]
-    public async Task CheckForUpdate_akzeptiert_githubusercontent_Host()
+    public async Task CheckForUpdate_AcceptsTheGitHubUserContentHost()
     {
         const string json = """
         {
@@ -117,7 +117,7 @@ public sealed class GitHubUpdateCheckerTests
     }
 
     [Fact]
-    public async Task CheckForUpdate_ignoriert_NichtZip_Assets()
+    public async Task CheckForUpdate_IgnoresNonArchiveAssets()
     {
         const string json = """
         {
@@ -133,7 +133,7 @@ public sealed class GitHubUpdateCheckerTests
     }
 
     [Fact]
-    public async Task CheckForUpdate_ohne_Assets_hat_keine_Paket_URL()
+    public async Task CheckForUpdate_WithoutAssets_HasNoPackageAddress()
     {
         const string json = """{ "tag_name": "v2.0.0", "html_url": "https://github.com/x", "body": "" }""";
         GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
@@ -144,7 +144,7 @@ public sealed class GitHubUpdateCheckerTests
     }
 
     [Fact]
-    public async Task CheckForUpdate_meldet_kein_Update_bei_gleicher_Version()
+    public async Task CheckForUpdate_WithTheSameVersion_ReportsNoUpdate()
     {
         const string json = """{ "tag_name": "v1.0.0", "html_url": "https://github.com/x", "body": "" }""";
         GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
@@ -155,7 +155,7 @@ public sealed class GitHubUpdateCheckerTests
     }
 
     [Fact]
-    public async Task CheckForUpdate_behandelt_Netzwerkfehler_als_kein_Update()
+    public async Task CheckForUpdate_TreatsANetworkErrorAsNoUpdate()
     {
         GitHubUpdateChecker checker = CreateChecker(response: null, new Version(1, 0, 0));
 
@@ -165,7 +165,7 @@ public sealed class GitHubUpdateCheckerTests
     }
 
     [Fact]
-    public async Task CheckForUpdate_behandelt_ungültiges_JSON_als_kein_Update()
+    public async Task CheckForUpdate_TreatsInvalidJsonAsNoUpdate()
     {
         GitHubUpdateChecker checker = CreateChecker("nicht json", new Version(1, 0, 0));
 

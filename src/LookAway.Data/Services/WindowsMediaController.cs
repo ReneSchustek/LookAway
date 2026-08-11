@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using LookAway.Core.Interfaces;
 using Microsoft.Extensions.Logging;
@@ -10,6 +11,11 @@ namespace LookAway.Data.Services;
 /// (<see cref="GlobalSystemMediaTransportControlsSessionManager"/>).
 /// Fehlt die API oder eine Session, bleibt der Aufruf wirkungslos.
 /// </summary>
+/// <remarks>
+/// Von der Abdeckungsmessung ausgenommen: Ohne laufende Wiedergabe gibt es keine
+/// Sitzung, an der sich etwas prüfen ließe.
+/// </remarks>
+[ExcludeFromCodeCoverage(Justification = "Reine Systemanbindung ohne eigene Fachlogik.")]
 public sealed class WindowsMediaController : IMediaController
 {
     private readonly ILogger<WindowsMediaController> _logger;

@@ -24,12 +24,6 @@ public sealed class UpdateInstallerService : IUpdateInstaller
     private const int CopyRetries = 10;
     private static readonly TimeSpan CopyRetryDelay = TimeSpan.FromMilliseconds(500);
 
-    // Großzügige Obergrenzen als Zip-Bomben-Schutz, die ein reales Portable-Paket
-    // (self-contained, einige hundert MB / einige tausend Dateien) nie erreicht:
-    // 1 GiB entpackte Gesamtgröße und 20 000 Einträge.
-    private const long MaxExtractedBytes = 1024L * 1024 * 1024;
-    private const int MaxEntries = 20_000;
-
     private readonly IHttpGetClient _httpClient;
     private readonly ILogger<UpdateInstallerService> _logger;
     private readonly string _stagingRoot;
@@ -233,7 +227,7 @@ public sealed class UpdateInstallerService : IUpdateInstaller
                 return null;
             }
 
-            await Task.Run(() => ExtractSafely(tempZip, workDir), cancellationToken).ConfigureAwait(false);
+            await Task.Run(() => SafeArchiveExtractor.ExtractTo(tempZip, workDir), cancellationToken).ConfigureAwait(false);
             File.Delete(tempZip);
 
             if (!File.Exists(ExecutablePathIn(workDir)))
@@ -301,70 +295,6 @@ public sealed class UpdateInstallerService : IUpdateInstaller
 
         UpdateInstallerLog.SignatureVerified(_logger, info.LatestVersion);
         return true;
-    }
-
-    /// <summary>
-    /// Entpackt ein ZIP sicher: erzwingt eine Obergrenze für Eintragszahl und
-    /// entpackte Gesamtgröße (Schutz vor Zip-Bomben) und weist Einträge ab, die
-    /// das Zielverzeichnis verlassen würden (Zip-Slip).
-    /// </summary>
-    private static void ExtractSafely(string zipPath, string destinationDir)
-    {
-        _ = Directory.CreateDirectory(destinationDir);
-        string destFull = Path.GetFullPath(destinationDir) + Path.DirectorySeparatorChar;
-
-        using ZipArchive archive = ZipFile.OpenRead(zipPath);
-
-        if (archive.Entries.Count > MaxEntries)
-        {
-            throw new InvalidDataException($"ZIP enthält zu viele Einträge ({archive.Entries.Count}).");
-        }
-
-        long totalWritten = 0;
-        foreach (ZipArchiveEntry entry in archive.Entries)
-        {
-            string targetPath = Path.GetFullPath(Path.Combine(destinationDir, entry.FullName));
-            if (!targetPath.StartsWith(destFull, StringComparison.Ordinal))
-            {
-                throw new InvalidDataException($"Unsicherer ZIP-Eintrag (Pfadverlassen): {entry.FullName}");
-            }
-
-            // Verzeichniseintrag (endet auf '/').
-            if (entry.FullName.EndsWith('/') || entry.FullName.EndsWith('\\'))
-            {
-                _ = Directory.CreateDirectory(targetPath);
-                continue;
-            }
-
-            // Die Portable-Markierung des Pakets nie in den Staging-Ordner übernehmen:
-            // Der Helfer startet von dort und würde sich sonst für eine portable
-            // Installation halten — er läse seine Einstellungen aus dem Staging-Ordner
-            // statt aus dem Datenverzeichnis der laufenden Installation, fände dort den
-            // vermerkten Datei-Hash nicht und lehnte das eigene Update ab.
-            if (string.Equals(entry.FullName, AppPaths.PortableFlagFileName, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            _ = Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
-
-            // Auf tatsächlich geschriebene Bytes begrenzen statt auf die im ZIP
-            // deklarierte (manipulierbare) Größe zu vertrauen — Schutz vor Zip-Bomben.
-            using Stream source = entry.Open();
-            using FileStream destination = File.Create(targetPath);
-            byte[] buffer = new byte[81920];
-            int read;
-            while ((read = source.Read(buffer, 0, buffer.Length)) > 0)
-            {
-                totalWritten += read;
-                if (totalWritten > MaxExtractedBytes)
-                {
-                    throw new InvalidDataException("Entpackte Gesamtgröße überschreitet das Limit.");
-                }
-
-                destination.Write(buffer, 0, read);
-            }
-        }
     }
 
     /// <summary>

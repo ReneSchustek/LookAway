@@ -30,6 +30,7 @@ using SettingsViewModel = LookAway.App.ViewModels.SettingsViewModel;
 using StatisticsViewModel = LookAway.App.ViewModels.StatisticsViewModel;
 using BreakModelListViewModel = LookAway.App.ViewModels.BreakModelListViewModel;
 using LogViewModel = LookAway.App.ViewModels.LogViewModel;
+using SettingsSections = LookAway.App.ViewModels.SettingsSections;
 using WorkTaskListViewModel = LookAway.App.ViewModels.WorkTaskListViewModel;
 using CurrentWorkTaskTracker = LookAway.Core.Services.CurrentWorkTaskTracker;
 using WelcomeViewModel = LookAway.App.ViewModels.WelcomeViewModel;
@@ -414,10 +415,10 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
     /// zu belegen.
     /// </para>
     /// </summary>
-    /// <param name="aufnahmeLaeuft">Wahr bei Beginn, falsch bei Ende der Aufnahme.</param>
-    private void SuspendHotkeysWhileCapturing(bool aufnahmeLaeuft)
+    /// <param name="captureRunning">Wahr bei Beginn, falsch bei Ende der Aufnahme.</param>
+    private void SuspendHotkeysWhileCapturing(bool captureRunning)
     {
-        if (aufnahmeLaeuft)
+        if (captureRunning)
         {
             Services.GetRequiredService<IHotkeyService>().UnregisterAll();
             return;
@@ -573,10 +574,11 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
         Services.GetRequiredService<ISoundService>(),
         Services.GetRequiredService<IUpdateChecker>(),
         Services.GetRequiredService<IUpdateInstaller>(),
-        CreateStatisticsViewModel(),
-        CreateBreakModelListViewModel(),
-        CreateLogViewModel(),
-        CreateWorkTaskListViewModel(),
+        new SettingsSections(
+            CreateStatisticsViewModel(),
+            CreateBreakModelListViewModel(),
+            CreateLogViewModel(),
+            CreateWorkTaskListViewModel()),
         Services.GetRequiredService<ILogger<SettingsViewModel>>(),
         GetVersion());
 

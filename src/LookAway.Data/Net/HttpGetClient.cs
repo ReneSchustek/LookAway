@@ -90,41 +90,13 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
                 .ConfigureAwait(false);
             _ = response.EnsureSuccessStatusCode();
 
-            // Eine etwaige Weiterleitung darf nicht auf Klartext (HTTP) herabstufen.
-            Uri? finalUri = response.RequestMessage?.RequestUri;
-            if (finalUri is not null
-                && !string.Equals(finalUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+            if (!IsAcceptableResponse(response, requestUri))
             {
-                HttpGetClientLog.DownloadRejected(_logger, finalUri.ToString());
                 return false;
             }
 
-            // Früher Abbruch, wenn die angekündigte Größe das Limit sprengt.
-            if (response.Content.Headers.ContentLength is long announced && announced > MaxDownloadBytes)
-            {
-                HttpGetClientLog.DownloadTooLarge(_logger, requestUri.ToString(), announced);
-                return false;
-            }
-
-            using FileStream file = new(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None);
             using Stream source = await response.Content.ReadAsStreamAsync(linked.Token).ConfigureAwait(false);
-
-            byte[] buffer = new byte[DownloadBufferSize];
-            long total = 0;
-            int read;
-            while ((read = await source.ReadAsync(buffer, linked.Token).ConfigureAwait(false)) > 0)
-            {
-                total += read;
-                if (total > MaxDownloadBytes)
-                {
-                    HttpGetClientLog.DownloadTooLarge(_logger, requestUri.ToString(), total);
-                    return false;
-                }
-
-                await file.WriteAsync(buffer.AsMemory(0, read), linked.Token).ConfigureAwait(false);
-            }
-
-            return true;
+            return await StreamToFileAsync(source, destinationPath, requestUri, linked.Token).ConfigureAwait(false);
         }
         catch (HttpRequestException ex)
         {
@@ -147,6 +119,72 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
             HttpGetClientLog.DownloadFailed(_logger, ex, requestUri.ToString());
             return false;
         }
+    }
+
+    /// <summary>
+    /// Prüft die Antwort, bevor auch nur ein Byte auf die Platte geht.
+    /// </summary>
+    /// <param name="response">Die Antwort des Servers.</param>
+    /// <param name="requestUri">Die ursprünglich angefragte Adresse (für das Protokoll).</param>
+    /// <returns><c>true</c>, wenn heruntergeladen werden darf.</returns>
+    private bool IsAcceptableResponse(HttpResponseMessage response, Uri requestUri)
+    {
+        // Eine etwaige Weiterleitung darf nicht auf Klartext (HTTP) herabstufen.
+        Uri? finalUri = response.RequestMessage?.RequestUri;
+        if (finalUri is not null
+            && !string.Equals(finalUri.Scheme, Uri.UriSchemeHttps, StringComparison.OrdinalIgnoreCase))
+        {
+            HttpGetClientLog.DownloadRejected(_logger, finalUri.ToString());
+            return false;
+        }
+
+        // Früher Abbruch, wenn die angekündigte Größe das Limit sprengt.
+        if (response.Content.Headers.ContentLength is long announced && announced > MaxDownloadBytes)
+        {
+            HttpGetClientLog.DownloadTooLarge(_logger, requestUri.ToString(), announced);
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Schreibt den Strom in die Zieldatei und bricht ab, sobald die Obergrenze
+    /// überschritten wird.
+    /// </summary>
+    /// <param name="source">Der Strom aus der Antwort.</param>
+    /// <param name="destinationPath">Zielpfad.</param>
+    /// <param name="requestUri">Angefragte Adresse (für das Protokoll).</param>
+    /// <param name="cancellationToken">Abbruch-Token.</param>
+    /// <returns><c>true</c>, wenn die Datei vollständig geschrieben wurde.</returns>
+    /// <remarks>
+    /// Gezählt werden die tatsächlich gelesenen Bytes: Die angekündigte Größe hat der
+    /// Server geschickt und kann jede Zahl tragen.
+    /// </remarks>
+    private async Task<bool> StreamToFileAsync(
+        Stream source,
+        string destinationPath,
+        Uri requestUri,
+        CancellationToken cancellationToken)
+    {
+        using FileStream file = new(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None);
+
+        byte[] buffer = new byte[DownloadBufferSize];
+        long total = 0;
+        int read;
+        while ((read = await source.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
+        {
+            total += read;
+            if (total > MaxDownloadBytes)
+            {
+                HttpGetClientLog.DownloadTooLarge(_logger, requestUri.ToString(), total);
+                return false;
+            }
+
+            await file.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+        }
+
+        return true;
     }
 
     /// <summary>Gibt den HttpClient frei.</summary>

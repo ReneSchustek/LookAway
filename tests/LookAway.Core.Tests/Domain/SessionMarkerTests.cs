@@ -11,14 +11,14 @@ public sealed class SessionMarkerTests
     private static readonly DateTimeOffset Now = new(2026, 6, 30, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public void Compute_LiefertSystemstartZeitpunkt()
+    public void Compute_ReturnsTheSystemStartTime()
     {
         // 1000 ms seit Systemstart -> Marke liegt 1 Sekunde vor "jetzt".
         Assert.Equal(Now - TimeSpan.FromSeconds(1), SessionMarker.Compute(Now, 1000));
     }
 
     [Fact]
-    public void IsSameSession_BeiNeustartInDerselbenSitzung_IstWahr()
+    public void IsSameSession_OnRestartWithinTheSameSession_IsTrue()
     {
         // 30 s später, Laufzeit ebenfalls +30 s -> identische Marke (gleiche Sitzung).
         DateTimeOffset beforeRestart = SessionMarker.Compute(Now, 60_000);
@@ -28,7 +28,7 @@ public sealed class SessionMarkerTests
     }
 
     [Fact]
-    public void IsSameSession_NachWindowsNeustart_IstFalsch()
+    public void IsSameSession_AfterAWindowsRestart_IsFalse()
     {
         // Vor dem Neustart 1 h Laufzeit; nach dem Neustart nur wenige Sekunden Laufzeit
         // bei deutlich späterer Uhrzeit -> stark verschobene Marke.

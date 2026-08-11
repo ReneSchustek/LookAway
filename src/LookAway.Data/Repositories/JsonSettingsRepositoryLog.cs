@@ -26,7 +26,7 @@ internal static partial class JsonSettingsRepositoryLog
     [LoggerMessage(
         EventId = 2003,
         Level = LogLevel.Information,
-        Message = "Einstellungen gespeichert in {SettingsPath}.")]
+        Message = "Einstellungen in {SettingsPath} gespeichert.")]
     public static partial void SettingsSaved(ILogger logger, string settingsPath);
 
     [LoggerMessage(

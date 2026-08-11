@@ -19,9 +19,9 @@ public sealed class LogMessageSanitizerTests
     {
         LogMessageSanitizer sanitizer = new(LocalAppData, AppData, UserProfile, UserName);
 
-        string result = sanitizer.Sanitize($@"Settings gespeichert in {AppData}\LookAway\settings.json");
+        string result = sanitizer.Sanitize($@"Settings saved in {AppData}\LookAway\settings.json");
 
-        Assert.Equal(@"Settings gespeichert in %APPDATA%\LookAway\settings.json", result);
+        Assert.Equal(@"Settings saved in %APPDATA%\LookAway\settings.json", result);
     }
 
     [Fact]

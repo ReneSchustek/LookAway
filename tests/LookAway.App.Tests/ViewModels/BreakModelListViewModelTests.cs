@@ -167,6 +167,79 @@ public sealed class BreakModelListViewModelTests
         Assert.Equal(0, viewModel.VisibleModels.Single(item => item.Model == BreakModel.TaskBased).BreakCount);
     }
 
+    /// <remarks>
+    /// Wie in den anderen Listen: Der erneute Klick auf den aktiven Chip darf die Leiste
+    /// nicht auswahllos zurücklassen.
+    /// </remarks>
+    [Theory]
+    [InlineData(nameof(BreakModelListViewModel.IsFilterAll))]
+    [InlineData(nameof(BreakModelListViewModel.IsFilterActive))]
+    [InlineData(nameof(BreakModelListViewModel.IsFilterInactive))]
+    public void FilterChip_StaysSelectedWhenClickedAgain(string chip)
+    {
+        BreakModelListViewModel viewModel = CreateViewModel();
+        SetChip(viewModel, chip, value: true);
+
+        SetChip(viewModel, chip, value: false);
+
+        Assert.True(ChipValue(viewModel, chip));
+    }
+
+    [Theory]
+    [InlineData(nameof(BreakModelListViewModel.IsFilterActive))]
+    [InlineData(nameof(BreakModelListViewModel.IsFilterInactive))]
+    public void FilterChip_TakesTheSelectionFromAll(string chosen)
+    {
+        BreakModelListViewModel viewModel = CreateViewModel();
+
+        SetChip(viewModel, chosen, value: true);
+
+        Assert.True(ChipValue(viewModel, chosen));
+        Assert.False(viewModel.IsFilterAll);
+    }
+
+    /// <remarks>
+    /// Der Befehl hängt an den Karten der Liste; ohne Karte gibt es nichts zu wählen.
+    /// </remarks>
+    [Fact]
+    public async Task SelectCommand_IgnoresAMissingItem()
+    {
+        BreakModelListViewModel viewModel = CreateViewModel();
+        await viewModel.LoadAsync();
+        BreakModel before = viewModel.VisibleModels.Single(item => item.IsActive).Model;
+
+        viewModel.SelectCommand.Execute(null);
+
+        Assert.Equal(before, viewModel.VisibleModels.Single(item => item.IsActive).Model);
+    }
+
+    [Fact]
+    public void EveryLabelReturnsText()
+    {
+        BreakModelListViewModel viewModel = CreateViewModel();
+        List<string> empty = [];
+
+        foreach (System.Reflection.PropertyInfo property in typeof(BreakModelListViewModel)
+            .GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+            .Where(property => property.PropertyType == typeof(string) && property.CanRead))
+        {
+            if (property.GetValue(viewModel) is not string value || string.IsNullOrWhiteSpace(value))
+            {
+                empty.Add(property.Name);
+            }
+        }
+
+        _ = empty.Remove(nameof(BreakModelListViewModel.SearchText));
+
+        Assert.True(empty.Count == 0, "Ohne Text: " + string.Join(", ", empty));
+    }
+
+    private static void SetChip(BreakModelListViewModel viewModel, string chip, bool value)
+        => typeof(BreakModelListViewModel).GetProperty(chip)!.SetValue(viewModel, value);
+
+    private static bool ChipValue(BreakModelListViewModel viewModel, string chip)
+        => (bool)typeof(BreakModelListViewModel).GetProperty(chip)!.GetValue(viewModel)!;
+
     private static BreakSession Session(BreakModel model) => new(
         Guid.NewGuid(),
         new DateTimeOffset(2026, 8, 1, 9, 0, 0, TimeSpan.Zero),

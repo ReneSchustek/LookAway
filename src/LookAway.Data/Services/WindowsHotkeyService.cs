@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using LookAway.Core.Domain;
 using LookAway.Core.Enums;
@@ -18,7 +19,12 @@ namespace LookAway.Data.Services;
 /// warteschlange des registrierenden Threads. Der Dienst hält deshalb kein natives
 /// Handle; Registrierung und Freigabe sind thread-affin und werden über
 /// <c>PostThreadMessage</c> auf den Nachrichten-Thread marshalled.
+///
+/// Von der Abdeckungsmessung ausgenommen: Registrierung und Nachrichtenschleife
+/// gehören dem Betriebssystem. Ob eine Kombination ankommt, zeigt erst der
+/// Tastendruck am laufenden Programm.
 /// </remarks>
+[ExcludeFromCodeCoverage(Justification = "Reine Systemanbindung ohne eigene Fachlogik.")]
 [System.Runtime.Versioning.SupportedOSPlatform("windows")]
 public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
 {
@@ -217,7 +223,7 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
 
         _disposed = true;
 
-        // Abbau auf dem Nachrichten-Thread anstossen (Hotkeys sind thread-affin).
+        // Abbau auf dem Nachrichten-Thread anstoßen (Hotkeys sind thread-affin).
         PostToMessageThread(WmQuitLoop);
 
         _ = _thread?.Join(TimeSpan.FromSeconds(2));

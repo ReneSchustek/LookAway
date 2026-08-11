@@ -53,7 +53,7 @@ internal sealed partial class SettingsWindow : Window
         InitializeComponent();
 
         RootGrid.DataContext = viewModel;
-        Title = viewModel.Title;
+        Title = viewModel.Texts.Title;
 
         _panels = new Dictionary<string, FrameworkElement>(StringComparer.Ordinal)
         {

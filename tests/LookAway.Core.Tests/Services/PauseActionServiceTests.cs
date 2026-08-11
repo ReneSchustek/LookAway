@@ -19,7 +19,7 @@ public sealed class PauseActionServiceTests
     }
 
     [Fact]
-    public async Task BeginBreak_dimmt_und_pausiert_wenn_aktiviert()
+    public async Task BeginBreak_WhenEnabled_DimsAndPausesMedia()
     {
         using PauseActionService service = Create(out FakeScreenDimmer dimmer, out FakeMediaController media);
         service.DimScreenEnabled = true;
@@ -34,7 +34,7 @@ public sealed class PauseActionServiceTests
     }
 
     [Fact]
-    public async Task BeginBreak_tut_nichts_wenn_deaktiviert()
+    public async Task BeginBreak_WhenDisabled_DoesNothing()
     {
         using PauseActionService service = Create(out FakeScreenDimmer dimmer, out FakeMediaController media);
 
@@ -45,7 +45,7 @@ public sealed class PauseActionServiceTests
     }
 
     [Fact]
-    public async Task EndBreak_stellt_wieder_her_und_setzt_Medien_fort()
+    public async Task EndBreak_RestoresBrightnessAndResumesMedia()
     {
         using PauseActionService service = Create(out FakeScreenDimmer dimmer, out FakeMediaController media);
         service.DimScreenEnabled = true;
@@ -59,7 +59,7 @@ public sealed class PauseActionServiceTests
     }
 
     [Fact]
-    public async Task EndBreak_setzt_Medien_nicht_fort_wenn_abgewählt()
+    public async Task EndBreak_WhenDeselected_DoesNotResumeMedia()
     {
         using PauseActionService service = Create(out _, out FakeMediaController media);
         service.PauseMediaEnabled = true;
@@ -71,7 +71,7 @@ public sealed class PauseActionServiceTests
     }
 
     [Fact]
-    public async Task Begin_und_End_laufen_serialisiert_Restore_nach_DimTo()
+    public async Task BeginAndEnd_RunSerialized_RestoreAfterDimTo()
     {
         OrderRecordingDimmer dimmer = new();
         using PauseActionService service = new(dimmer, new FakeMediaController())

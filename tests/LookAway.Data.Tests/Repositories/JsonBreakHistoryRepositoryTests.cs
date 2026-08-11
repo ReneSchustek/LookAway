@@ -28,7 +28,7 @@ public sealed class JsonBreakHistoryRepositoryTests : IDisposable
         => new(Guid.NewGuid(), start, start.AddMinutes(5), BreakModel.ClassicPomodoro, outcome);
 
     [Fact]
-    public async Task Append_und_LoadAll_speichern_die_Sitzungen()
+    public async Task AppendAndLoadAll_StoreTheSessions()
     {
         using JsonBreakHistoryRepository repository = CreateRepository();
         DateTimeOffset now = new(2026, 6, 28, 12, 0, 0, TimeSpan.Zero);
@@ -42,7 +42,7 @@ public sealed class JsonBreakHistoryRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task LoadAll_liefert_leere_Liste_ohne_Datei()
+    public async Task LoadAll_WithoutFile_ReturnsAnEmptyList()
     {
         using JsonBreakHistoryRepository repository = CreateRepository();
 
@@ -52,7 +52,7 @@ public sealed class JsonBreakHistoryRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task PurgeOlderThan_entfernt_alte_Einträge()
+    public async Task PurgeOlderThan_RemovesOldEntries()
     {
         using JsonBreakHistoryRepository repository = CreateRepository();
         DateTimeOffset now = new(2026, 6, 28, 12, 0, 0, TimeSpan.Zero);
@@ -67,7 +67,7 @@ public sealed class JsonBreakHistoryRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task LoadAll_mit_beschädigter_Datei_sichert_Inhalt_und_startet_leer()
+    public async Task LoadAll_WithACorruptFile_BacksUpTheContentAndStartsEmpty()
     {
         const string corrupt = "[ this is : not json ::: }";
         await File.WriteAllTextAsync(_filePath, corrupt);

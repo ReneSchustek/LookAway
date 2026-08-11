@@ -71,7 +71,7 @@ public sealed class LogServiceTests
         ThrowingCrashReporter crashReporter = new();
         LogService service = new(NullLogger<LogService>.Instance, crashReporter);
 
-        // Darf keine Exception nach aussen werfen.
+        // Darf keine Exception nach außen werfen.
         service.HandleUnhandledException(new InvalidOperationException("inner"), "TestSource");
 
         Assert.True(crashReporter.WasInvoked);

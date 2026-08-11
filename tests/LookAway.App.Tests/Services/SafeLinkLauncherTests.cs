@@ -18,7 +18,7 @@ public sealed class SafeLinkLauncherTests
 
     [Theory]
     [InlineData("file:///C:/Windows/System32/cmd.exe")]
-    [InlineData("ftp://example.org/datei")]
+    [InlineData("ftp://example.org/file")]
     [InlineData("mailto:jemand@example.org")]
     [InlineData("ms-settings:privacy")]
     [InlineData("javascript:alert(1)")]

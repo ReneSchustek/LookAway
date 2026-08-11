@@ -12,7 +12,7 @@
   <ItemGroup>
     <!-- Nur die Logging-Abstraktion (ILogger&lt;T&gt;), keine Sink-Implementierung:
          die konkrete Log-Pipeline wird in der Composition Root verdrahtet. -->
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
 
   <ItemGroup>

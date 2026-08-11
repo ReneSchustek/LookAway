@@ -12,7 +12,7 @@ namespace LookAway.Data.Tests;
 public sealed class JsonLocalizationServiceTests
 {
     [Fact]
-    public void GetText_liefert_den_deutschen_Text_für_einen_bekannten_Schlüssel()
+    public void GetText_ReturnsTheGermanTextForAKnownKey()
     {
         JsonLocalizationService service = new(Language.German);
 
@@ -22,7 +22,7 @@ public sealed class JsonLocalizationServiceTests
     }
 
     [Fact]
-    public void GetText_liefert_den_englischen_Text()
+    public void GetText_ReturnsTheEnglishText()
     {
         JsonLocalizationService service = new(Language.English);
 
@@ -32,7 +32,7 @@ public sealed class JsonLocalizationServiceTests
     }
 
     [Fact]
-    public void GetText_liefert_den_französischen_Text()
+    public void GetText_ReturnsTheFrenchText()
     {
         JsonLocalizationService service = new(Language.French);
 
@@ -42,7 +42,7 @@ public sealed class JsonLocalizationServiceTests
     }
 
     [Fact]
-    public void GetText_liefert_den_Schlüssel_wenn_er_nirgends_existiert()
+    public void GetText_ReturnsTheKeyWhenItExistsNowhere()
     {
         JsonLocalizationService service = new(Language.German);
 
@@ -52,7 +52,7 @@ public sealed class JsonLocalizationServiceTests
     }
 
     [Fact]
-    public void SetLanguage_löst_LanguageChanged_nur_bei_echter_Änderung_aus()
+    public void SetLanguage_RaisesLanguageChangedOnlyOnARealChange()
     {
         JsonLocalizationService service = new(Language.German);
         int raised = 0;
@@ -68,7 +68,7 @@ public sealed class JsonLocalizationServiceTests
     [Theory]
     [InlineData("en.json")]
     [InlineData("fr.json")]
-    public void Alle_deutschen_Schlüssel_existieren_auch_in_den_anderen_Sprachen(string otherFile)
+    public void AllGermanKeys_ExistInTheOtherLanguages(string otherFile)
     {
         HashSet<string> german = LoadKeys("de.json");
         HashSet<string> other = LoadKeys(otherFile);
@@ -80,7 +80,7 @@ public sealed class JsonLocalizationServiceTests
     [Theory]
     [InlineData("en.json")]
     [InlineData("fr.json")]
-    public void Keine_überzähligen_Schlüssel_in_den_anderen_Sprachen(string otherFile)
+    public void NoSurplusKeys_InTheOtherLanguages(string otherFile)
     {
         HashSet<string> german = LoadKeys("de.json");
         HashSet<string> other = LoadKeys(otherFile);

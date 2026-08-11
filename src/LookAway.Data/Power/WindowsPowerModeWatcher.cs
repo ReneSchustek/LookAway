@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Versioning;
 using LookAway.Core.Interfaces;
 using Microsoft.Win32;
@@ -9,6 +10,12 @@ namespace LookAway.Data.Power;
 /// übersetzt Suspend/Resume in plattformneutrale
 /// <see cref="IPowerModeWatcher"/>-Events.
 /// </summary>
+/// <remarks>
+/// Von der Abdeckungsmessung ausgenommen: Ausgelöst wird hier nichts vom eigenen
+/// Code, sondern vom Ruhezustand des Rechners. Was die Klasse tut, zeigt sich beim
+/// Zuklappen des Deckels, nicht im Test.
+/// </remarks>
+[ExcludeFromCodeCoverage(Justification = "Reine Systemanbindung ohne eigene Fachlogik.")]
 [SupportedOSPlatform("windows")]
 public sealed class WindowsPowerModeWatcher : IPowerModeWatcher
 {

@@ -21,7 +21,7 @@ ihre Augen, Haltung und Konzentration schonen möchten.
 ## Aktuelles Release
 
 **[v1.4.0](https://github.com/ReneSchustek/LookAway/releases/latest)** ist die aktuelle Version –
-als Setup.exe und als portable ZIP. Highlights der 1.3-Reihe:
+als Setup.exe und als portable ZIP. Die Höhepunkte der jüngsten Versionen:
 
 - **Helles und dunkles Erscheinungsbild** – frei wählbar oder der Windows-Einstellung folgend; die
   Wahl wirkt sofort im offenen Fenster.
@@ -46,7 +46,8 @@ als Setup.exe und als portable ZIP. Highlights der 1.3-Reihe:
   die Arbeitszeit frisch, denn die Augen haben ohnehin pausiert
 - **Abgedunkelter Pausen-Screen** – ein ruhiges Vollbild-Overlay verdeckt den Bildschirm während der
   Pause, zeigt den Countdown und das Übungs-Ziel und lässt sich jederzeit mit **ESC** beenden;
-  optional auf **allen Monitoren** und in **frei wählbarer Farbe**
+  optional auf **allen Monitoren** und in **frei wählbarer Farbe**. Es liegt über allen Fenstern und
+  über der Taskleiste und erscheint dabei weder in der Taskleiste noch im Alt-Tab-Umschalter
 - **Pause-Aktionen** – Bildschirm dimmen (DDC/CI) und Medienwiedergabe während der Pause pausieren
   (nur Player mit Windows-Mediensteuerung wie Spotify, Musik-App, Chrome/Edge/Firefox; VLC wird nicht unterstützt)
 - **Automatische Updates** – optionale Prüfung über die GitHub-Releases-API; auf Wunsch lädt und
@@ -155,6 +156,9 @@ LookAway kann sich selbst aktuell halten:
 | Nicht stören umschalten | `Strg + Alt + D` |
 
 Die Hotkeys lassen sich in den Einstellungen aktivieren oder auf die Standardwerte zurücksetzen.
+
+Läuft gerade eine Pause, beendet „Überspringen / Snooze" sie — der zweite Weg neben **ESC** aus dem
+bildschirmfüllenden Overlay.
 
 ## Datenschutz
 

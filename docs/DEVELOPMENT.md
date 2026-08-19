@@ -178,6 +178,42 @@ Wird eine Pause fällig (`BreakDueEvent`), zeigt LookAway ein dezentes Overlay-F
 - `BreakReminderWindow` (App/Views) ist eine eigenständige, nicht minimierbare `Window`-Instanz (480×320, zentriert, Farbpalette Indigo `#4361EE` / Weiß / Dunkelgrau). `IReminderPresenter`/`ReminderPresenter` (App) erzeugen sie auf dem UI-Thread und verhindern Stapel (zweite Meldung bei offenem Fenster wird ignoriert, `_isReminderOpen`).
 - Der App-Event-Loop konsumiert den `ITimerService.Events`-Stream; bei `BreakDue` wird die Erinnerung nur gezeigt, wenn kein DND aktiv ist (`FullscreenDetectionService.TryShowReminder`), sonst nachgeholt. Snooze startet einen 5-min-Arbeitszyklus, Überspringen den regulären. Texte sind Platzhalter.
 
+## Pausen-Overlay
+
+Beginnt die Pause, deckt `IBreakOverlayPresenter` (Core) → `BreakOverlayPresenter` (App) jeden
+Monitor mit einem `BreakOverlayWindow` ab (bei `DarkenAllScreens`; sonst nur den Hauptmonitor):
+
+- Jedes Fenster läuft über den `OverlappedPresenter` ohne Rahmen und Titelleiste, in Monitorgröße
+  (`DisplayArea.OuterBounds`), mit `IsAlwaysOnTop` und `IsShownInSwitchers = false` — damit steht
+  LookAway während der Pause weder in der Taskleiste noch im Alt-Tab-Umschalter. Der
+  FullScreen-Presenter taugt dafür nicht: Er hält den Zustand nur, solange das Fenster im
+  Vordergrund liegt, und Vordergrund kann immer nur eines der Fenster sein — auf den übrigen
+  Monitoren fiel das Overlay auf ein gewöhnliches Fenster samt Titelleiste zurück.
+- `IsAlwaysOnTop` hebt das Fenster einmalig in die oberste Fensterebene, ordnet es darin aber nicht
+  nach. `ITopmostWindowGuard` (Core) → `WindowsTopmostWindowGuard` (Data) ruft deshalb
+  `SetWindowPos(HWND_TOPMOST, SWP_NOACTIVATE)` — im vorhandenen Sekundentakt des Countdowns und
+  ohne den Eingabefokus zu bewegen.
+- Aktiviert wird jedes Fenster, denn erst damit baut WinUI die XAML-Insel auf. Über den Fokus
+  entscheidet daher die Reihenfolge: `CreateDisplayOrder` liefert die Nebenmonitore zuerst und den
+  Hauptmonitor zuletzt — dort stehen Titel, Hinweis und Countdown, und dort greift ESC.
+- Rahmen und runde Ecken zeichnet die Fensterverwaltung selbst, unabhängig vom Presenter.
+  `IWindowFrameSuppressor` (Core) → `WindowsWindowFrameSuppressor` (Data) setzt deshalb
+  `DWMWA_WINDOW_CORNER_PREFERENCE` auf `DWMWCP_DONOTROUND` und nimmt dem Fenster die Stile
+  `WS_CAPTION`/`WS_THICKFRAME` samt `WS_EX_WINDOWEDGE` (mit `SWP_FRAMECHANGED`, sonst greift
+  das erst beim nächsten Größenwechsel). Der Aufruf erfolgt **nach** `Activate()`: davor setzt
+  WinUI die Stile noch einmal selbst.
+- Die Overlay-Farbe wird im Presenter deckend gerechnet (`HexColor.FlattenOverWhite`), bevor sie
+  an die Fenster geht. Das Fenster ist nicht durchsichtig, eine Alpha-Angabe könnte also nichts
+  durchscheinen lassen — sie würde nur gegen den Fenstergrund gemischt, und der ist je Monitor
+  nicht derselbe. Danach zeigen alle Monitore dieselbe Fläche.
+- Welcher Schriftsatz auf dieser Fläche liegt, entscheidet das Kontrastverhältnis
+  (`HexColor.ContrastRatio`, WCAG 2.1) zwischen Fläche und den beiden Farbsätzen aus den
+  Belegungen (`RcOverlayForeground*` und `…OnLight`). Eine Helligkeitsschwelle stand vorher an
+  zwei Stellen mit zwei verschiedenen Formeln und lag auf mittlerem Grau falsch.
+- Den Notausstieg bildet `BreakCoordinator.SkipOrSnooze`: Bei offenem Overlay schließt er es und
+  läuft in denselben Abschluss wie das reguläre Pausenende (`EndBreakLocked`), sodass Helligkeit
+  und Medienwiedergabe auf beiden Wegen zurückkommen.
+
 ## Idle- und Vollbild-Erkennung (DND)
 
 LookAway pausiert den Timer bei längerer Inaktivität und unterdrückt Erinnerungen während Vollbild-Apps:
@@ -326,7 +362,8 @@ LookAway zeichnet jede angebotene Pause auf und zeigt Statistiken im Settings-Ta
 LookAway lässt sich systemweit per Tastenkombination bedienen (Standard aktiv):
 
 - `Strg+Alt+P` → Pause-Erinnerung sofort anzeigen
-- `Strg+Alt+S` → überspringen / Arbeitszyklus neu starten
+- `Strg+Alt+S` → überspringen / Arbeitszyklus neu starten; läuft gerade eine Pause, ist dieser
+  Hotkey der Notausstieg aus dem Overlay (siehe „Pausen-Overlay")
 - `Strg+Alt+D` → Nicht-stören manuell umschalten (Tray-Icon spiegelt den Zustand)
 
 `IHotkeyService` (Core) → `WindowsHotkeyService` (Data) nutzt die Win32-API `RegisterHotKey` auf einem

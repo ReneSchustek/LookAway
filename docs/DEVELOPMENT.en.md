@@ -178,6 +178,43 @@ When a break becomes due (`BreakDueEvent`), LookAway shows a discreet overlay wi
 - `BreakReminderWindow` (App/Views) is a standalone, non-minimizable `Window` instance (480×320, centered, color palette indigo `#4361EE` / white / dark gray). `IReminderPresenter`/`ReminderPresenter` (App) create it on the UI thread and prevent stacking (a second message while a window is open is ignored, `_isReminderOpen`).
 - The app event loop consumes the `ITimerService.Events` stream; on `BreakDue` the reminder is only shown when no DND is active (`FullscreenDetectionService.TryShowReminder`), otherwise it is deferred. Snooze starts a 5-min work cycle, skip starts the regular one. Texts are placeholders.
 
+## Break overlay
+
+When a break begins, `IBreakOverlayPresenter` (Core) → `BreakOverlayPresenter` (App) covers every
+monitor with a `BreakOverlayWindow` (with `DarkenAllScreens`; otherwise only the primary monitor):
+
+- Every window uses the `OverlappedPresenter` without border and title bar, at monitor size
+  (`DisplayArea.OuterBounds`), with `IsAlwaysOnTop` and `IsShownInSwitchers = false` — so LookAway
+  appears neither in the taskbar nor in the Alt-Tab switcher during the break. The FullScreen
+  presenter is not suitable here: it only keeps that state while the window is in the foreground,
+  and only one window can be in the foreground — on the remaining monitors the overlay fell back to
+  an ordinary window including a title bar.
+- `IsAlwaysOnTop` raises the window into the topmost band once, but does not reorder it within that
+  band. `ITopmostWindowGuard` (Core) → `WindowsTopmostWindowGuard` (Data) therefore calls
+  `SetWindowPos(HWND_TOPMOST, SWP_NOACTIVATE)` — on the existing one-second countdown tick and
+  without moving the input focus.
+- Every window is activated, because only then does WinUI build the XAML island. The order
+  therefore decides where the focus ends up: `CreateDisplayOrder` yields the secondary monitors
+  first and the primary monitor last — that is where title, hint and countdown are, and where ESC
+  takes effect.
+- Border and rounded corners are drawn by the window manager itself, regardless of the presenter.
+  `IWindowFrameSuppressor` (Core) → `WindowsWindowFrameSuppressor` (Data) therefore sets
+  `DWMWA_WINDOW_CORNER_PREFERENCE` to `DWMWCP_DONOTROUND` and strips the `WS_CAPTION`/
+  `WS_THICKFRAME` styles along with `WS_EX_WINDOWEDGE` (using `SWP_FRAMECHANGED`, otherwise the
+  change only takes effect on the next resize). The call happens **after** `Activate()`: before
+  that, WinUI sets the styles once more itself.
+- The overlay colour is flattened to opaque in the presenter (`HexColor.FlattenOverWhite`) before
+  it reaches the windows. The window is not translucent, so an alpha value could not let anything
+  show through — it would merely blend against the window background, which is not the same on
+  every monitor. Afterwards all monitors show the identical surface.
+- Which set of text colours sits on that surface is decided by the contrast ratio
+  (`HexColor.ContrastRatio`, WCAG 2.1) between the surface and the two sets from the themes
+  (`RcOverlayForeground*` and `…OnLight`). A brightness threshold previously existed in two places
+  with two different formulas and got mid-range greys wrong.
+- The emergency exit is `BreakCoordinator.SkipOrSnooze`: with an open overlay it closes the overlay
+  and runs into the same completion as the regular end of a break (`EndBreakLocked`), so brightness
+  and media playback are restored on both paths.
+
 ## Idle and full-screen detection (DND)
 
 LookAway pauses the timer on prolonged inactivity and suppresses reminders during full-screen apps:
@@ -317,7 +354,8 @@ LookAway records every offered break and shows statistics in the settings tab "S
 LookAway can be operated system-wide via key combinations (enabled by default):
 
 - `Ctrl+Alt+P` → show the break reminder immediately
-- `Ctrl+Alt+S` → skip / restart the work cycle
+- `Ctrl+Alt+S` → skip / restart the work cycle; while a break is running this hotkey is the
+  emergency exit from the overlay (see "Break overlay")
 - `Ctrl+Alt+D` → toggle Do Not Disturb manually (the tray icon reflects the state)
 
 `IHotkeyService` (Core) → `WindowsHotkeyService` (Data) uses the Win32 API `RegisterHotKey` on a

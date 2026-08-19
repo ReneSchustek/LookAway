@@ -8,6 +8,31 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+### Behoben
+
+- **Das Pausen-Overlay deckt den Bildschirm jetzt bis zum äußersten Bildpunkt ab.** Um jeden
+  Monitor lag eine helle Linie, und an den abgerundeten Ecken schaute der Desktop durch. Bei
+  dunklen Overlay-Farben fiel beides deutlich auf. Gemessen wurde nach: Rand und Ecken tragen
+  jetzt die eingestellte Farbe.
+
+- **Die Schriftfarbe im Overlay passt jetzt auch zu mittleren Farbtönen.** Auf einem mittleren
+  Grau stand heller Text auf hellem Grund; entschieden wird das nun am tatsächlichen Kontrast.
+
+- **Das Pausen-Overlay bleibt jetzt auf jedem Monitor vorn.** Auf den Nebenmonitoren konnte es sich
+  hinter andere Fenster schieben, die Windows-Taskleiste blieb dort sichtbar, und eine Titelleiste
+  tauchte auf. Das Overlay liegt nun für die gesamte Pause über allem anderen — auch über der
+  Taskleiste — und deckt jeden Monitor vollständig ab. Schiebt sich ein Fenster von sich aus nach
+  vorn, ist die Pause spätestens nach einer Sekunde wieder vollständig zu sehen.
+
+- **LookAway erscheint während der Pause nicht mehr in Taskleiste und Alt-Tab.** Bei mehreren
+  Monitoren stand dort je Monitor ein Eintrag.
+
+### Geändert
+
+- **Der Hotkey „Überspringen/Snooze" (Standard `Strg + Alt + S`) beendet eine laufende Pause.**
+  Neben **ESC** gibt es damit einen zweiten Weg aus dem bildschirmfüllenden Overlay. Helligkeit und
+  Medienwiedergabe kehren dabei genauso zurück wie am regulären Pausenende.
+
 ## [1.4.0] – 2026-08-11
 
 ### Hinzugefügt

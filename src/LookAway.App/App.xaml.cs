@@ -239,6 +239,8 @@ public sealed partial class LookAwayApp : global::Microsoft.UI.Xaml.Application,
         _overlayPresenter = new BreakOverlayPresenter(
             _window.DispatcherQueue,
             Services.GetRequiredService<ILocalizationService>(),
+            Services.GetRequiredService<ITopmostWindowGuard>(),
+            Services.GetRequiredService<IWindowFrameSuppressor>(),
             Services.GetRequiredService<ILogger<BreakOverlayPresenter>>());
         _settingsPresenter = new SettingsPresenter(
             _window.DispatcherQueue,

@@ -92,6 +92,8 @@ internal static class ServiceRegistration
         _ = services.AddSingleton<IHotkeyService, WindowsHotkeyService>();
 
         // Pause-Aktionen
+        _ = services.AddSingleton<ITopmostWindowGuard, WindowsTopmostWindowGuard>();
+        _ = services.AddSingleton<IWindowFrameSuppressor, WindowsWindowFrameSuppressor>();
         _ = services.AddSingleton<IScreenDimmer>(sp => new WindowsScreenDimmer(sp.GetRequiredService<ILogger<WindowsScreenDimmer>>()));
         _ = services.AddSingleton<IMediaController>(sp => new WindowsMediaController(sp.GetRequiredService<ILogger<WindowsMediaController>>()));
         _ = services.AddSingleton<PauseActionService>();

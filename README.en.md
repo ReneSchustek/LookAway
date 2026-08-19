@@ -21,7 +21,7 @@ eyes, posture and focus.
 ## Latest release
 
 **[v1.4.0](https://github.com/ReneSchustek/LookAway/releases/latest)** is the current version –
-available as a Setup.exe and as a portable ZIP. Highlights of the 1.3 line:
+available as a Setup.exe and as a portable ZIP. Highlights of the most recent versions:
 
 - **Light and dark appearance** – choose freely or follow the Windows setting; the choice takes
   effect immediately in the open window.
@@ -46,7 +46,8 @@ available as a Setup.exe and as a portable ZIP. Highlights of the 1.3 line:
   timer restarts fresh, since your eyes have already rested
 - **Dimmed break screen** – a calm full-screen overlay covers the screen during the break, shows the
   countdown and the exercise goal, and can be ended at any time with **ESC**; optionally on **all
-  monitors** and in a **freely selectable colour**
+  monitors** and in a **freely selectable colour**. It sits above all windows and above the taskbar
+  and shows up neither in the taskbar nor in the Alt-Tab switcher
 - **Break actions** – dim the screen (DDC/CI) and pause media playback during the break
   (only players with Windows media controls such as Spotify, the Music app, Chrome/Edge/Firefox; VLC is not supported)
 - **Automatic updates** – optional check via the GitHub releases API; on request LookAway downloads
@@ -152,6 +153,9 @@ LookAway can keep itself up to date:
 | Toggle Do Not Disturb | `Ctrl + Alt + D` |
 
 The hotkeys can be enabled in the settings or reset to their default values.
+
+While a break is running, "Skip / Snooze" ends it — the second way out of the full-screen
+overlay besides **ESC**.
 
 ## Privacy
 

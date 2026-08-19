@@ -1,7 +1,9 @@
 using System;
+using LookAway.Core.Domain;
 using LookAway.Core.Interfaces;
 using LookAway.Core.Localization;
 using LookAway.App.ViewModels;
+using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
@@ -20,7 +22,13 @@ namespace LookAway.App.Views;
 /// </summary>
 internal sealed partial class BreakOverlayWindow : Window
 {
+    // Schlüssel der Haupt-Schriftfarbe; die beiden Nebentöne folgen demselben Muster,
+    // der Zusatz "OnLight" wählt den Satz für helle Overlay-Farben.
+    private const string PrimaryInkKey = "RcOverlayForeground";
+
     private readonly BreakOverlayViewModel _viewModel;
+    private readonly ITopmostWindowGuard _topmost;
+    private readonly IWindowFrameSuppressor _frameSuppressor;
     private readonly bool _showContent;
     private bool _closedByCaller;
 
@@ -29,16 +37,31 @@ internal sealed partial class BreakOverlayWindow : Window
     /// </summary>
     /// <param name="viewModel">Gemeinsame Countdown- und Aktionslogik der Pause.</param>
     /// <param name="localization">Liefert die sprachabhängigen Texte.</param>
-    /// <param name="background">Hintergrundfarbe des Overlays (inkl. Transparenz).</param>
+    /// <param name="topmost">Hält das Fenster über allen anderen.</param>
+    /// <param name="frameSuppressor">Nimmt dem Fenster Randlinie und runde Ecken.</param>
+    /// <param name="background">
+    /// Deckende Hintergrundfarbe des Overlays. Der <see cref="Services.BreakOverlayPresenter"/>
+    /// rechnet eine Alpha-Angabe vorher heraus, damit jeder Monitor dieselbe Fläche zeigt.
+    /// </param>
     /// <param name="showContent">
     /// Zeigt dieses Fenster Titel, Hinweis und Countdown? Nur der Hauptmonitor zeigt
     /// den Inhalt; weitere Monitore werden nur abgedunkelt (leeres Overlay).
     /// </param>
-    public BreakOverlayWindow(BreakOverlayViewModel viewModel, ILocalizationService localization, WinColor background, bool showContent)
+    public BreakOverlayWindow(
+        BreakOverlayViewModel viewModel,
+        ILocalizationService localization,
+        ITopmostWindowGuard topmost,
+        IWindowFrameSuppressor frameSuppressor,
+        WinColor background,
+        bool showContent)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
         ArgumentNullException.ThrowIfNull(localization);
+        ArgumentNullException.ThrowIfNull(topmost);
+        ArgumentNullException.ThrowIfNull(frameSuppressor);
         _viewModel = viewModel;
+        _topmost = topmost;
+        _frameSuppressor = frameSuppressor;
         _showContent = showContent;
 
         InitializeComponent();
@@ -69,20 +92,58 @@ internal sealed partial class BreakOverlayWindow : Window
     }
 
     /// <summary>
-    /// Platziert das Fenster auf dem angegebenen Anzeigebereich und schaltet es
-    /// dort in den Vollbildmodus, sodass der gesamte Monitor abgedeckt wird.
+    /// Deckt den angegebenen Monitor vollständig mit dem Overlay ab und zeigt es an.
     /// </summary>
     /// <param name="area">Zielmonitor.</param>
+    /// <remarks>
+    /// Aktiviert wird jedes Fenster: Erst damit baut WinUI die XAML-Insel auf, ein bloß
+    /// gezeigtes Fenster bliebe leer. Wo der Eingabefokus am Ende sitzt, entscheidet
+    /// deshalb die Reihenfolge — der <see cref="Services.BreakOverlayPresenter"/> zeigt
+    /// den Hauptmonitor zuletzt, sodass ESC dort ankommt.
+    /// </remarks>
     public void ShowOnDisplay(DisplayArea area)
     {
         ArgumentNullException.ThrowIfNull(area);
 
-        // Erst auf den Zielmonitor verschieben, dann Vollbild — der FullScreen-
-        // Presenter nutzt den Monitor, auf dem das Fenster gerade liegt.
+        ConfigureAsOverlay();
+
         RectInt32 bounds = area.OuterBounds;
         AppWindow.MoveAndResize(new RectInt32(bounds.X, bounds.Y, bounds.Width, bounds.Height));
-        AppWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
+
         Activate();
+
+        // Erst nach dem Aktivieren: Bis dahin setzt WinUI die Fensterstile noch einmal
+        // selbst, und ein vorher genommener Rahmen käme zurück.
+        _frameSuppressor.SuppressFrame(Win32Interop.GetWindowFromWindowId(AppWindow.Id));
+        KeepOnTop();
+    }
+
+    /// <summary>
+    /// Hebt das Fenster wieder über alle anderen, falls sich eines davor geschoben hat.
+    /// Der <see cref="Services.BreakOverlayPresenter"/> ruft das im Sekundentakt.
+    /// </summary>
+    public void KeepOnTop() => _topmost.BringToTop(Win32Interop.GetWindowFromWindowId(AppWindow.Id));
+
+    private void ConfigureAsOverlay()
+    {
+        // Kein Vollbild-Presenter mehr: Er fällt zurück, sobald das Fenster den
+        // Vordergrund verliert — bei mehreren Monitoren also überall dort, wo der Fokus
+        // gerade nicht sitzt. Sichtbar wurde das an der wieder auftauchenden Titelleiste
+        // auf den Nebenmonitoren. Ein randloses Fenster in Monitorgröße, das immer oben
+        // liegt, hält die Abdeckung unabhängig vom Fokus.
+        if (AppWindow.Presenter is OverlappedPresenter presenter)
+        {
+            presenter.SetBorderAndTitleBar(hasBorder: false, hasTitleBar: false);
+            presenter.IsMinimizable = false;
+            presenter.IsMaximizable = false;
+            presenter.IsResizable = false;
+            presenter.IsAlwaysOnTop = true;
+        }
+
+        // Kein Eintrag in Taskleiste und Alt-Tab: Sonst stünde LookAway dort einmal je
+        // Monitor, und ein Wechsel dorthin würde die Pause verdecken.
+        AppWindow.IsShownInSwitchers = false;
+
     }
 
     /// <summary>
@@ -99,28 +160,30 @@ internal sealed partial class BreakOverlayWindow : Window
 
     private void ApplyReadableForeground(WinColor background)
     {
-        // Das Overlay ist halbtransparent und liegt über dem (hellen) Fenstergrund.
-        // Für die Textfarbe zählt daher die tatsächlich sichtbare, deckende Farbe:
-        // die Overlay-Farbe über Weiß zusammensetzen und danach die wahrgenommene
-        // Helligkeit (BT.601-Luma) bewerten. So bekommt z. B. ein halbtransparentes
-        // Schwarz (wirkt als Grau) dunklen statt hellen Text.
-        static byte OverWhite(byte channel, byte alpha)
-            => (byte)(((channel * alpha) + (255 * (255 - alpha))) / 255);
+        // Welcher der beiden Schriftsätze auf der gewählten Overlay-Farbe besser liest,
+        // entscheidet das Kontrastverhältnis (LookAway.Core) und keine Helligkeitsschwelle.
+        // Die Farbwerte selbst stehen in den Belegungen, nicht hier.
+        bool onLight = DarkInkReadsBetter(background);
 
-        byte er = OverWhite(background.R, background.A);
-        byte eg = OverWhite(background.G, background.A);
-        byte eb = OverWhite(background.B, background.A);
-        bool light = ((0.299 * er) + (0.587 * eg) + (0.114 * eb)) > 128.0;
-
-        SolidColorBrush primary = new(light ? WinColor.FromArgb(0xFF, 0x0B, 0x1F, 0x1C) : WinColor.FromArgb(0xFF, 0xFF, 0xFF, 0xFF));
-        SolidColorBrush secondary = new(light ? WinColor.FromArgb(0xFF, 0x33, 0x4A, 0x45) : WinColor.FromArgb(0xFF, 0xE5, 0xE7, 0xEB));
-        SolidColorBrush tertiary = new(light ? WinColor.FromArgb(0xFF, 0x52, 0x70, 0x6A) : WinColor.FromArgb(0xFF, 0x9C, 0xA3, 0xAF));
-
-        TitleText.Foreground = primary;
-        CountdownText.Foreground = primary;
-        HintText.Foreground = secondary;
-        EndHintText.Foreground = tertiary;
+        TitleText.Foreground = OverlayBrush(PrimaryInkKey, onLight);
+        CountdownText.Foreground = OverlayBrush(PrimaryInkKey, onLight);
+        HintText.Foreground = OverlayBrush("RcOverlayForegroundMuted", onLight);
+        EndHintText.Foreground = OverlayBrush("RcOverlayForegroundFaint", onLight);
     }
+
+    private static bool DarkInkReadsBetter(WinColor background)
+    {
+        (byte R, byte G, byte B) surface = (background.R, background.G, background.B);
+        (byte R, byte G, byte B) darkInk = Channels(OverlayBrush(PrimaryInkKey, onLight: true).Color);
+        (byte R, byte G, byte B) lightInk = Channels(OverlayBrush(PrimaryInkKey, onLight: false).Color);
+
+        return HexColor.ContrastRatio(surface, darkInk) > HexColor.ContrastRatio(surface, lightInk);
+    }
+
+    private static SolidColorBrush OverlayBrush(string themeKey, bool onLight)
+        => (SolidColorBrush)Application.Current.Resources[onLight ? themeKey + "OnLight" : themeKey];
+
+    private static (byte R, byte G, byte B) Channels(WinColor color) => (color.R, color.G, color.B);
 
     /// <summary>
     /// Schließt das Overlay von außen (reguläres Pausenende oder weil ein

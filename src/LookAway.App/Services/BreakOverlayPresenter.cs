@@ -22,6 +22,8 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
 {
     private readonly DispatcherQueue _dispatcher;
     private readonly ILocalizationService _localization;
+    private readonly ITopmostWindowGuard _topmost;
+    private readonly IWindowFrameSuppressor _frameSuppressor;
     private readonly ILogger<BreakOverlayPresenter> _logger;
     private readonly List<Views.BreakOverlayWindow> _windows = new();
     private DispatcherQueueTimer? _countdownTimer;
@@ -34,14 +36,25 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
     /// </summary>
     /// <param name="dispatcher">Dispatcher des Hauptfensters.</param>
     /// <param name="localization">Liefert die sprachabhängigen Texte.</param>
+    /// <param name="topmost">Hält die Overlays über allen anderen Fenstern.</param>
+    /// <param name="frameSuppressor">Nimmt den Overlays Randlinie und runde Ecken.</param>
     /// <param name="logger">Protokolliert fehlgeschlagene Fenster-Aufbauten.</param>
-    public BreakOverlayPresenter(DispatcherQueue dispatcher, ILocalizationService localization, ILogger<BreakOverlayPresenter> logger)
+    public BreakOverlayPresenter(
+        DispatcherQueue dispatcher,
+        ILocalizationService localization,
+        ITopmostWindowGuard topmost,
+        IWindowFrameSuppressor frameSuppressor,
+        ILogger<BreakOverlayPresenter> logger)
     {
         ArgumentNullException.ThrowIfNull(dispatcher);
         ArgumentNullException.ThrowIfNull(localization);
+        ArgumentNullException.ThrowIfNull(topmost);
+        ArgumentNullException.ThrowIfNull(frameSuppressor);
         ArgumentNullException.ThrowIfNull(logger);
         _dispatcher = dispatcher;
         _localization = localization;
+        _topmost = topmost;
+        _frameSuppressor = frameSuppressor;
         _logger = logger;
     }
 
@@ -81,37 +94,22 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
                 onEnded(reason);
             };
 
-            (byte a, byte r, byte g, byte b) = HexColor.ParseOrDefault(overlayColorHex);
-            WinColor background = WinColor.FromArgb(a, r, g, b);
+            // Deckend rechnen, bevor die Farbe an die Fenster geht: Das Overlay-Fenster
+            // ist nicht durchsichtig, eine Alpha-Angabe könnte also gar nichts durchscheinen
+            // lassen — sie würde nur gegen den Fenstergrund gemischt, und der ist je nach
+            // Monitor nicht derselbe. Nach dieser Zeile zeigen alle Monitore dieselbe Fläche,
+            // und die Schriftfarbe rechnet gegen genau diese Farbe.
+            (byte cr, byte cg, byte cb) = HexColor.FlattenOverWhite(HexColor.ParseOrDefault(overlayColorHex));
+            WinColor background = WinColor.FromArgb(0xFF, cr, cg, cb);
 
-            // Auf Wunsch jeden Monitor abdecken; sonst nur den Hauptbildschirm.
-            // DisplayArea.FindAll() liefert eine WinRT-Projektion, deren Enumeration
-            // per foreach in CsWinRT einen InvalidCastException wirft (fehlschlagende
-            // IIterable-Abfrage). Daher per Index (IVectorView) in ein verwaltetes
-            // Array übernehmen und erst über dieses iterieren.
             DisplayArea primary = DisplayArea.Primary;
 
-            DisplayArea[] areas;
-            if (allScreens)
-            {
-                IReadOnlyList<DisplayArea> found = DisplayArea.FindAll();
-                areas = new DisplayArea[found.Count];
-                for (int i = 0; i < found.Count; i++)
-                {
-                    areas[i] = found[i];
-                }
-            }
-            else
-            {
-                areas = new[] { primary };
-            }
-
-            foreach (DisplayArea area in areas)
+            foreach (DisplayArea area in CreateDisplayOrder(primary, allScreens))
             {
                 // Inhalt (Titel/Hinweis/Countdown) nur auf dem Hauptmonitor; weitere
                 // Monitore werden nur abgedunkelt (leeres Overlay).
                 bool isPrimary = area.DisplayId.Value == primary.DisplayId.Value;
-                Views.BreakOverlayWindow window = new(viewModel, _localization, background, isPrimary);
+                Views.BreakOverlayWindow window = new(viewModel, _localization, _topmost, _frameSuppressor, background, isPrimary);
                 _windows.Add(window);
                 window.ShowOnDisplay(area);
             }
@@ -126,6 +124,33 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
             // zurückgenommen und eine frische Arbeitsphase gestartet.
             onEnded(BreakEndReason.Elapsed);
         }
+    }
+
+    // Reihenfolge der Monitore: Nebenmonitore zuerst, der Hauptmonitor zuletzt. Jedes
+    // Fenster wird beim Anzeigen aktiviert und nimmt dem vorigen dabei den Fokus — nach
+    // dem letzten liegt er also auf dem Hauptmonitor, wo der Inhalt steht und ESC wirkt.
+    private static IReadOnlyList<DisplayArea> CreateDisplayOrder(DisplayArea primary, bool allScreens)
+    {
+        if (!allScreens)
+        {
+            return new[] { primary };
+        }
+
+        // DisplayArea.FindAll() liefert eine WinRT-Projektion, deren Enumeration per
+        // foreach in CsWinRT einen InvalidCastException wirft (fehlschlagende
+        // IIterable-Abfrage). Daher per Index (IVectorView) übernehmen.
+        IReadOnlyList<DisplayArea> found = DisplayArea.FindAll();
+        List<DisplayArea> ordered = new(found.Count);
+        for (int i = 0; i < found.Count; i++)
+        {
+            if (found[i].DisplayId.Value != primary.DisplayId.Value)
+            {
+                ordered.Add(found[i]);
+            }
+        }
+
+        ordered.Add(primary);
+        return ordered;
     }
 
     // Der Overlay-Aufbau darf die App nie hängen lassen. Der Filter protokolliert den
@@ -160,6 +185,9 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
             foreach (Views.BreakOverlayWindow window in _windows)
             {
                 window.RefreshCountdown();
+                // Jede Sekunde die oberste Lage nachziehen: Fremde Fenster, die sich
+                // selbst nach vorn holen, verdecken die Pause damit höchstens kurz.
+                window.KeepOnTop();
             }
         };
         _countdownTimer.Start();

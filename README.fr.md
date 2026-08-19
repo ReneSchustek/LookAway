@@ -22,7 +22,7 @@ et leur concentration.
 ## Version actuelle
 
 **[v1.4.0](https://github.com/ReneSchustek/LookAway/releases/latest)** est la version actuelle –
-disponible en Setup.exe et en ZIP portable. Points forts de la série 1.3 :
+disponible en Setup.exe et en ZIP portable. Points forts des versions les plus récentes :
 
 - **Apparence claire et sombre** – au choix ou selon le réglage de Windows ; le choix prend effet
   immédiatement dans la fenêtre ouverte.
@@ -47,7 +47,9 @@ disponible en Setup.exe et en ZIP portable. Points forts de la série 1.3 :
   appel), le minuteur de travail redémarre à zéro, les yeux s'étant déjà reposés
 - **Écran de pause assombri** – une surimpression plein écran apaisante masque l'écran pendant la
   pause, affiche le compte à rebours et l'objectif d'exercice, et se ferme à tout moment avec
-  **ÉCHAP** ; en option sur **tous les moniteurs** et dans une **couleur librement choisie**
+  **ÉCHAP** ; en option sur **tous les moniteurs** et dans une **couleur librement choisie**. Elle se
+  place au-dessus de toutes les fenêtres et de la barre des tâches et n'apparaît ni dans la barre
+  des tâches ni dans le sélecteur Alt-Tab
 - **Actions de pause** – assombrir l'écran (DDC/CI) et mettre en pause la lecture multimédia
   (uniquement les lecteurs intégrés aux commandes multimédias de Windows comme Spotify, l'application Musique, Chrome/Edge/Firefox ; VLC n'est pas pris en charge)
 - **Mises à jour automatiques** – vérification optionnelle via l'API des versions GitHub ; sur demande,
@@ -161,6 +163,9 @@ LookAway peut se maintenir à jour tout seul :
 | Basculer Ne pas déranger | `Ctrl + Alt + D` |
 
 Les raccourcis peuvent être activés dans les paramètres ou réinitialisés à leurs valeurs par défaut.
+
+Si une pause est en cours, « Ignorer / Reporter » y met fin — le deuxième moyen, à côté d'**ÉCHAP**,
+de quitter la surimpression plein écran.
 
 ## Confidentialité
 

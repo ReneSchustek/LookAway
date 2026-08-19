@@ -8,6 +8,30 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **The break overlay now covers the screen out to the very last pixel.** A light line ran around
+  every monitor and the desktop showed through the rounded corners — clearly visible with dark
+  overlay colours. Measured afterwards: edges and corners now carry the colour you picked.
+
+- **The overlay text colour now also fits mid-range shades.** On a medium grey, light text sat on
+  a light background; the choice is now made by actual contrast.
+
+- **The break overlay now stays in front on every monitor.** On secondary monitors it could slip
+  behind other windows, the Windows taskbar stayed visible there, and a title bar appeared. The
+  overlay now sits above everything else for the whole break — above the taskbar as well — and
+  covers each monitor completely. If a window brings itself to the front, the break is fully
+  visible again after a second at most.
+
+- **LookAway no longer shows up in the taskbar and Alt-Tab during the break.** With several
+  monitors there was one entry per monitor.
+
+### Changed
+
+- **The "Skip / Snooze" hotkey (default `Ctrl + Alt + S`) ends a running break.** Alongside **ESC**
+  there is now a second way out of the full-screen overlay. Brightness and media playback are
+  restored just as they are at the regular end of a break.
+
 ## [1.4.0] – 2026-08-11
 
 ### Added

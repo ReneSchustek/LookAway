@@ -236,11 +236,27 @@ public sealed class BreakCoordinator
         }
     }
 
-    /// <summary>Hotkey „Überspringen/Snooze": startet das aktuelle Intervall neu.</summary>
+    /// <summary>
+    /// Hotkey „Überspringen/Snooze": beendet eine laufende Pause, sonst startet er das
+    /// aktuelle Intervall neu.
+    /// </summary>
+    /// <remarks>
+    /// Während der Pause deckt das Overlay jeden Monitor ab und liegt über allen
+    /// anderen Fenstern — es lässt sich weder wegklicken noch in den Hintergrund
+    /// schieben. Damit ESC nicht der einzige Ausweg bleibt, ist der Hotkey hier der
+    /// Notausstieg; er nimmt die Pause-Aktionen genauso zurück wie das reguläre Ende.
+    /// </remarks>
     public void SkipOrSnooze()
     {
         lock (_gate)
         {
+            if (_overlay.IsOverlayOpen)
+            {
+                _overlay.Close();
+                EndBreakLocked();
+                return;
+            }
+
             if (_interval is not null)
             {
                 _timer.Start(_interval);
@@ -328,16 +344,23 @@ public sealed class BreakCoordinator
 
     private void OnOverlayEnded(BreakEndReason reason)
     {
-        // Egal ob abgelaufen oder per ESC beendet: Pause-Aktionen zurücknehmen und
-        // eine frische Arbeitsphase starten.
+        // Egal ob abgelaufen oder per ESC beendet: derselbe Abschluss.
         _ = reason;
         lock (_gate)
         {
-            _ = _pauseActions.EndBreakAsync();
-            if (_interval is not null)
-            {
-                _timer.Start(_interval);
-            }
+            EndBreakLocked();
+        }
+    }
+
+    // Erwartet den gehaltenen _gate-Lock. Nimmt die Pause-Aktionen zurück und beginnt
+    // eine frische Arbeitsphase — unabhängig davon, wodurch die Pause endete.
+    private void EndBreakLocked()
+    {
+        _ = _pauseActions.EndBreakAsync();
+
+        if (_interval is not null)
+        {
+            _timer.Start(_interval);
         }
     }
 

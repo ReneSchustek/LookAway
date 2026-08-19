@@ -70,6 +70,15 @@
     <SolidColorBrush x:Key="RcOverlayForegroundMuted" Color="#E5E7EB" />
     <SolidColorBrush x:Key="RcOverlayForegroundFaint" Color="#9CA3AF" />
 
+    <!--
+        Zweiter Satz für helle Overlay-Farben. Welcher der beiden greift, entscheidet
+        das Kontrastverhältnis zur gewählten Farbe, nicht das Erscheinungsbild der
+        Fenster — deshalb stehen beide Sätze in beiden Belegungen mit denselben Werten.
+    -->
+    <SolidColorBrush x:Key="RcOverlayForegroundOnLight" Color="#0B1F1C" />
+    <SolidColorBrush x:Key="RcOverlayForegroundMutedOnLight" Color="#334A45" />
+    <SolidColorBrush x:Key="RcOverlayForegroundFaintOnLight" Color="#52706A" />
+
     <!-- ── WinUI-Systempinsel ──────────────────────────────────────────────── -->
     <SolidColorBrush x:Key="ApplicationPageBackgroundThemeBrush" Color="#0F1923" />
     <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="#152030" />

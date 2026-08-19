@@ -304,6 +304,25 @@ public sealed class BreakCoordinatorTests
         applyInitialSchedule: false);
 
     /// <remarks>
+    /// Notausstieg aus der laufenden Pause: Das Overlay deckt jeden Monitor ab und liegt
+    /// über allen Fenstern — ohne diesen Weg bliebe ESC der einzige Ausweg. Der Hotkey
+    /// muss deshalb dasselbe leisten wie das reguläre Ende: Overlay zu, Arbeitsphase neu.
+    /// </remarks>
+    [Fact]
+    public void SkipOrSnooze_WithOpenOverlay_ClosesOverlayAndRestartsWork() => Run(h =>
+    {
+        h.Coordinator.RequestReminder();
+        h.Reminder.CompleteWith(ReminderResult.StartBreak);
+        Assert.True(h.Overlay.IsOverlayOpen);
+
+        h.Coordinator.SkipOrSnooze();
+
+        Assert.False(h.Overlay.IsOverlayOpen);
+        Assert.Equal(TimerState.Working, h.Timer.State);
+        Assert.Equal(TimeSpan.FromMinutes(25), h.Timer.Remaining);
+    });
+
+    /// <remarks>
     /// Der Ton ist das Einzige, was die Erinnerung ankündigt, wenn das Fenster hinter
     /// anderen liegt — Lautstärke und Art kommen aus den Einstellungen.
     /// </remarks>

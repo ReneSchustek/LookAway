@@ -63,10 +63,55 @@ public sealed class HexColorTests
     }
 
     [Fact]
-    public void IsLight_DistinguishesDarkAndLight()
+    public void ContrastRatio_ReachesTheExtremesOfTheScale()
     {
-        Assert.True(HexColor.IsLight(0xFF, 0xFF, 0xFF));
-        Assert.False(HexColor.IsLight(0x0F, 0x11, 0x15));
+        Assert.Equal(21.0, HexColor.ContrastRatio((0x00, 0x00, 0x00), (0xFF, 0xFF, 0xFF)), 3);
+        Assert.Equal(1.0, HexColor.ContrastRatio((0x12, 0x34, 0x56), (0x12, 0x34, 0x56)), 3);
+    }
+
+    [Fact]
+    public void ContrastRatio_IsIndependentOfArgumentOrder()
+    {
+        Assert.Equal(
+            HexColor.ContrastRatio((0x9E, 0x9E, 0x9E), (0x0B, 0x1F, 0x1C)),
+            HexColor.ContrastRatio((0x0B, 0x1F, 0x1C), (0x9E, 0x9E, 0x9E)),
+            10);
+    }
+
+    /// <remarks>
+    /// Das mittlere Grau, das eine halbtransparente Farbe ergibt, ist der Fall, an dem
+    /// eine Helligkeitsschwelle danebenlag: Sie erklärte es für dunkel und wählte helle
+    /// Schrift. Gemessen liest sich dunkle Schrift dort mehr als doppelt so gut.
+    /// </remarks>
+    [Fact]
+    public void ContrastRatio_PrefersDarkInkOnMediumGrey()
+    {
+        (byte R, byte G, byte B) grey = (0x9E, 0x9E, 0x9E);
+
+        double dark = HexColor.ContrastRatio(grey, (0x0B, 0x1F, 0x1C));
+        double light = HexColor.ContrastRatio(grey, (0xFF, 0xFF, 0xFF));
+
+        Assert.True(dark > light, $"Dunkel {dark:F2}:1 muss heller Schrift {light:F2}:1 vorgehen.");
+    }
+
+    [Theory]
+    // Sehr dunkle und sehr helle Flächen bleiben eindeutig — hier darf die Wahl nicht kippen.
+    [InlineData(0x0F, 0x11, 0x15, false)]
+    [InlineData(0xEF, 0xEF, 0xEF, true)]
+    [InlineData(0x9E, 0x9E, 0x9E, true)]
+    public void ContrastRatio_ChoosesTheReadableInk(byte r, byte g, byte b, bool expectsDarkInk)
+    {
+        double dark = HexColor.ContrastRatio((r, g, b), (0x0B, 0x1F, 0x1C));
+        double light = HexColor.ContrastRatio((r, g, b), (0xFF, 0xFF, 0xFF));
+
+        Assert.Equal(expectsDarkInk, dark > light);
+    }
+
+    [Fact]
+    public void FlattenOverWhite_OnComponents_MatchesTheHexVariant()
+    {
+        Assert.Equal(((byte)0x9E, (byte)0x9E, (byte)0x9E), HexColor.FlattenOverWhite((0x61, 0x00, 0x00, 0x00)));
+        Assert.Equal(((byte)0x12, (byte)0x34, (byte)0x56), HexColor.FlattenOverWhite((0xFF, 0x12, 0x34, 0x56)));
     }
 
     [Fact]

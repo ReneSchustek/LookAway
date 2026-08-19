@@ -91,6 +91,15 @@
     <SolidColorBrush x:Key="RcOverlayForegroundFaint" Color="#9CA3AF" />
 
     <!--
+        Zweiter Satz für helle Overlay-Farben. Welcher der beiden greift, entscheidet
+        das Kontrastverhältnis zur gewählten Farbe, nicht das Erscheinungsbild der
+        Fenster — deshalb stehen beide Sätze in beiden Belegungen mit denselben Werten.
+    -->
+    <SolidColorBrush x:Key="RcOverlayForegroundOnLight" Color="#0B1F1C" />
+    <SolidColorBrush x:Key="RcOverlayForegroundMutedOnLight" Color="#334A45" />
+    <SolidColorBrush x:Key="RcOverlayForegroundFaintOnLight" Color="#52706A" />
+
+    <!--
         ── WinUI-Systempinsel ───────────────────────────────────────────────────
         Standard-Steuerelemente (Seitenmenü, Auswahlfelder, Schieberegler)
         zeichnen sich aus den Pinseln des Rahmenwerks. Ohne diese Belegung

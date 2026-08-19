@@ -93,23 +93,51 @@ public static class HexColor
     /// <returns>Deckende Farbe als <c>#FFRRGGBB</c>.</returns>
     public static string FlattenOverWhite(string? value)
     {
-        (byte a, byte r, byte g, byte b) = ParseOrDefault(value);
-        byte Over(byte channel) => (byte)(((channel * a) + (255 * (255 - a))) / 255);
-        return ToHex(0xFF, Over(r), Over(g), Over(b));
+        (byte r, byte g, byte b) = FlattenOverWhite(ParseOrDefault(value));
+        return ToHex(0xFF, r, g, b);
     }
 
     /// <summary>
-    /// Bestimmt anhand der relativen Luminanz (WCAG, sRGB-linearisiert), ob eine
-    /// Farbe hell ist — dient der Wahl einer kontrastreichen Textfarbe darüber.
+    /// Setzt eine (evtl. halbtransparente) Farbe deckend über Weiß zusammen und gibt die
+    /// sichtbaren Farbkanäle zurück. Bei bereits deckenden Farben unverändert.
     /// </summary>
-    /// <param name="r">Rot.</param>
-    /// <param name="g">Grün.</param>
-    /// <param name="b">Blau.</param>
-    /// <returns><c>true</c>, wenn dunkler Text besser lesbar ist.</returns>
-    public static bool IsLight(byte r, byte g, byte b)
-        // 0.5 ist der gewählte Mittelpunkt der normierten Luminanz [0,1] als
-        // Hell/Dunkel-Grenze (eine frei justierbare Heuristik, KEIN WCAG-Kontrastverhältnis).
-        => RelativeLuminance(r, g, b) > 0.5;
+    /// <param name="color">ARGB-Komponenten der Overlay-Farbe.</param>
+    /// <returns>Die sichtbaren, deckenden Farbkanäle.</returns>
+    /// <remarks>
+    /// Weiß ist hier keine Annahme über den Bildschirminhalt, sondern der festgelegte
+    /// Untergrund: Das Overlay-Fenster ist nicht durchsichtig, eine Alpha-Angabe kann also
+    /// gar nichts durchscheinen lassen. Sie wird deshalb an dieser einen Stelle in die
+    /// Farbe hineingerechnet — dieselbe Rechnung, mit der die Einstellungen eine
+    /// halbtransparente Altfarbe auf ihr sichtbares Gegenstück umstellen.
+    /// </remarks>
+    public static (byte R, byte G, byte B) FlattenOverWhite((byte A, byte R, byte G, byte B) color)
+    {
+        byte Over(byte channel) => (byte)(((channel * color.A) + (255 * (255 - color.A))) / 255);
+        return (Over(color.R), Over(color.G), Over(color.B));
+    }
+
+    /// <summary>
+    /// Berechnet das Kontrastverhältnis zweier deckender Farben nach WCAG 2.1 — von
+    /// <c>1</c> (nicht unterscheidbar) bis <c>21</c> (Schwarz auf Weiß).
+    /// </summary>
+    /// <param name="first">Erste Farbe.</param>
+    /// <param name="second">Zweite Farbe.</param>
+    /// <returns>Kontrastverhältnis, unabhängig von der Reihenfolge der Farben.</returns>
+    /// <remarks>
+    /// Ersetzt die frühere Hell/Dunkel-Schwelle. Eine Schwelle beantwortet die Frage nur
+    /// mittelbar und lag am Ende falsch: Auf dem mittleren Grau, das eine halbtransparente
+    /// Farbe ergibt, liest sich dunkler Text mit rund 6:1, heller mit rund 2,7:1 — eine
+    /// Schwelle auf halber Luminanz hätte dort den helleren gewählt. Der Vergleich zweier
+    /// Verhältnisse braucht keinen gesetzten Grenzwert und ist deshalb auch nicht daneben
+    /// zu justieren.
+    /// </remarks>
+    public static double ContrastRatio((byte R, byte G, byte B) first, (byte R, byte G, byte B) second)
+    {
+        double a = RelativeLuminance(first.R, first.G, first.B);
+        double b = RelativeLuminance(second.R, second.G, second.B);
+        (double lighter, double darker) = a >= b ? (a, b) : (b, a);
+        return (lighter + 0.05) / (darker + 0.05);
+    }
 
     private static double RelativeLuminance(byte r, byte g, byte b)
         => (0.2126 * Linearize(r)) + (0.7152 * Linearize(g)) + (0.0722 * Linearize(b));

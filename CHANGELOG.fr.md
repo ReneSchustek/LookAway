@@ -8,6 +8,33 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+### Corrigé
+
+- **La surimpression de pause couvre désormais l'écran jusqu'au dernier pixel.** Une ligne claire
+  entourait chaque moniteur et le bureau apparaissait dans les coins arrondis — bien visible avec
+  des couleurs sombres. Mesuré ensuite : les bords et les coins portent maintenant la couleur
+  choisie.
+
+- **La couleur du texte convient désormais aussi aux teintes moyennes.** Sur un gris moyen, un
+  texte clair se trouvait sur un fond clair ; le choix se fait maintenant selon le contraste réel.
+
+- **La surimpression de pause reste désormais au premier plan sur chaque moniteur.** Sur les
+  moniteurs secondaires, elle pouvait passer derrière d'autres fenêtres, la barre des tâches de
+  Windows y restait visible et une barre de titre apparaissait. La surimpression se place
+  maintenant au-dessus de tout le reste pendant toute la pause — y compris au-dessus de la barre
+  des tâches — et couvre entièrement chaque moniteur. Si une fenêtre se place d'elle-même au
+  premier plan, la pause redevient entièrement visible au bout d'une seconde au plus.
+
+- **LookAway n'apparaît plus dans la barre des tâches ni dans Alt-Tab pendant la pause.** Avec
+  plusieurs moniteurs, il y figurait une entrée par moniteur.
+
+### Modifié
+
+- **Le raccourci « Ignorer / Reporter » (par défaut `Ctrl + Alt + S`) met fin à une pause en
+  cours.** En plus d'**ÉCHAP**, il existe ainsi un deuxième moyen de quitter la surimpression
+  plein écran. La luminosité et la lecture multimédia sont rétablies comme à la fin normale d'une
+  pause.
+
 ## [1.4.0] – 2026-08-11
 
 ### Ajouté

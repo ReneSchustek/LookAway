@@ -8,6 +8,8 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+## [1.4.1] – 2026-08-19
+
 ### Behoben
 
 - **Das Pausen-Overlay deckt den Bildschirm jetzt bis zum äußersten Bildpunkt ab.** Um jeden

@@ -20,9 +20,12 @@ ihre Augen, Haltung und Konzentration schonen möchten.
 
 ## Aktuelles Release
 
-**[v1.4.0](https://github.com/ReneSchustek/LookAway/releases/latest)** ist die aktuelle Version –
+**[v1.4.1](https://github.com/ReneSchustek/LookAway/releases/latest)** ist die aktuelle Version –
 als Setup.exe und als portable ZIP. Die Höhepunkte der jüngsten Versionen:
 
+- **Das Pausen-Overlay liegt zuverlässig über allem** – auf jedem Monitor, bis zum äußersten
+  Bildpunkt und ohne Eintrag in Taskleiste und Alt-Tab. **Strg + Alt + S** beendet eine laufende
+  Pause.
 - **Helles und dunkles Erscheinungsbild** – frei wählbar oder der Windows-Einstellung folgend; die
   Wahl wirkt sofort im offenen Fenster.
 - **Aufgaben (aufgabenbasiertes Modell)** – die Aufgaben, an denen gerade gearbeitet wird, mit

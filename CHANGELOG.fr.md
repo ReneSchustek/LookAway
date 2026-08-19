@@ -8,6 +8,8 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+## [1.4.1] – 2026-08-19
+
 ### Corrigé
 
 - **La surimpression de pause couvre désormais l'écran jusqu'au dernier pixel.** Une ligne claire

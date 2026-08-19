@@ -20,9 +20,11 @@ eyes, posture and focus.
 
 ## Latest release
 
-**[v1.4.0](https://github.com/ReneSchustek/LookAway/releases/latest)** is the current version –
+**[v1.4.1](https://github.com/ReneSchustek/LookAway/releases/latest)** is the current version –
 available as a Setup.exe and as a portable ZIP. Highlights of the most recent versions:
 
+- **The break overlay reliably sits above everything** – on every monitor, out to the very last
+  pixel and without an entry in the taskbar or Alt-Tab. **Ctrl + Alt + S** ends a running break.
 - **Light and dark appearance** – choose freely or follow the Windows setting; the choice takes
   effect immediately in the open window.
 - **Tasks (task-based model)** – the tasks you are working on, with search and filters; every

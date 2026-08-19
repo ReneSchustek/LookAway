@@ -8,6 +8,8 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.1] – 2026-08-19
+
 ### Fixed
 
 - **The break overlay now covers the screen out to the very last pixel.** A light line ran around

@@ -21,9 +21,12 @@ et leur concentration.
 
 ## Version actuelle
 
-**[v1.4.0](https://github.com/ReneSchustek/LookAway/releases/latest)** est la version actuelle –
+**[v1.4.1](https://github.com/ReneSchustek/LookAway/releases/latest)** est la version actuelle –
 disponible en Setup.exe et en ZIP portable. Points forts des versions les plus récentes :
 
+- **La surimpression de pause se place de façon fiable au-dessus de tout** – sur chaque moniteur,
+  jusqu'au dernier pixel et sans entrée dans la barre des tâches ni dans Alt-Tab.
+  **Ctrl + Alt + S** met fin à une pause en cours.
 - **Apparence claire et sombre** – au choix ou selon le réglage de Windows ; le choix prend effet
   immédiatement dans la fenêtre ouverte.
 - **Tâches (modèle basé sur les tâches)** – les tâches en cours, avec recherche et filtres ;

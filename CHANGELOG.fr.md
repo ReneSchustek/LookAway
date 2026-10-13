@@ -13,7 +13,7 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 ### Corrigé
 
 - **La surimpression de pause couvre désormais l'écran jusqu'au dernier pixel.** Une ligne claire
-  entourait chaque moniteur et le bureau apparaissait dans les coins arrondis — bien visible avec
+  entourait chaque moniteur et le bureau apparaissait dans les coins arrondis, bien visible avec
   des couleurs sombres. Mesuré ensuite : les bords et les coins portent maintenant la couleur
   choisie.
 
@@ -42,7 +42,7 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 ### Ajouté
 
 - **Tâches pour le modèle de pause basé sur les tâches.** Une nouvelle section gère les tâches en
-  cours — créer, renommer, cocher et supprimer se font sur la tâche elle-même. Avec une recherche
+  cours : créer, renommer, cocher et supprimer se font sur la tâche elle-même. Avec une recherche
   dans le texte des tâches et des filtres par ouvertes et terminées.
 
 - **Les pauses retiennent leur origine.** Avec le modèle basé sur les tâches, chaque pause est
@@ -69,7 +69,7 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
   effet immédiatement dans la fenêtre ouverte.
 
 - **Journal dans l'application.** Une nouvelle section montre ce que l'application a enregistré
-  récemment — avec une recherche dans le texte des messages et des filtres par niveau et période.
+  récemment, avec une recherche dans le texte des messages et des filtres par niveau et période.
   Jusqu'ici ces entrées n'existaient que sous forme de fichier dans le dossier de données, qu'il
   fallait d'abord trouver.
 
@@ -81,7 +81,7 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 - **Apparence homogène.** Fenêtres, cartes, boutons, cases à cocher et curseurs suivent désormais
   un jeu de couleurs commun. Auparavant, certains éléments reprenaient la couleur d'accentuation
-  configurée dans Windows — donc différente d'un poste à l'autre.
+  configurée dans Windows, donc différente d'un poste à l'autre.
 
 - **Les liens sont soulignés** et restent donc reconnaissables même lorsque les couleurs sont
   difficiles à distinguer.
@@ -102,7 +102,7 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 - **Le Setup.exe accompagne de nouveau chaque version :** depuis la 1.2.5, les versions ne contenaient
   plus que le ZIP portable et l'installateur devait être compilé soi-même. Il est désormais généré lors
   de la publication et téléversé avec le ZIP. Le texte de la version indique le SHA-256 des deux
-  fichiers. Seul le ZIP est signé — le module de mise à jour retient la première signature d'une
+  fichiers. Seul le ZIP est signé ; le module de mise à jour retient la première signature d'une
   version et pourrait attribuer une seconde au paquet, faisant échouer la vérification.
 
 ## [1.2.8] – 2026-07-11
@@ -119,12 +119,12 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 ### Corrigé
 
 - **La mise à jour automatique n'installait pas le paquet.** La mise à jour était vérifiée et
-  téléchargée, mais jamais appliquée — l'ancienne version restait installée. Le processus
+  téléchargée, mais jamais appliquée ; l'ancienne version restait installée. Le processus
   auxiliaire qui remplace les fichiers démarre depuis le dossier intermédiaire et en déduisait
   deux choses à tort :
   - **Son répertoire de données :** le paquet contenant un marqueur portable, il se croyait être
     une installation portable et cherchait ses paramètres à côté de lui. Il n'y trouvait pas
-    l'empreinte de fichier enregistrée servant à vérifier le paquet — et refusait sa propre mise
+    l'empreinte de fichier enregistrée servant à vérifier le paquet, et refusait sa propre mise
     à jour. Il utilise désormais le répertoire de données de l'installation qu'il dessert. De
     plus, le marqueur portable n'est plus copié dans le dossier intermédiaire.
   - **Sa cible :** il utilisait son propre dossier de programme (le dossier intermédiaire) comme
@@ -139,7 +139,7 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 - **Démarrage automatique de la pause :** La pause démarre désormais automatiquement après un
   délai configurable (15 secondes par défaut, par pas de 5 secondes jusqu'à 3 minutes) si le
   rappel n'est pas utilisé. Un compte à rebours dans la fenêtre de rappel affiche le temps
-  restant. Activable ou désactivable dans les paramètres — désactivé, le rappel reste ouvert
+  restant. Activable ou désactivable dans les paramètres ; désactivé, le rappel reste ouvert
   jusqu'à ce que vous choisissiez une action.
 
 ## [1.2.5] – 2026-07-02
@@ -161,7 +161,7 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
   La vraie transparence de fenêtre n'est pas réalisable de façon fiable dans WinUI 3 ; la
   superposition recouvre l'écran de manière opaque. Une couleur auparavant
   semi-transparente est automatiquement migrée vers son équivalent opaque visuellement
-  identique — l'apparence ne change pas.
+  identique ; l'apparence ne change pas.
 
 ## [1.2.3] – 2026-07-01
 
@@ -171,7 +171,7 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
   écrans » activé (par défaut), la superposition ne s'affichait pas au début d'une
   pause. La cause était une `InvalidCastException` lors de l'énumération de la liste
   des moniteurs issue de `DisplayArea.FindAll()` (une projection WinRT dont la
-  requête `IIterable` échoue dans CsWinRT) — sur les versions plus anciennes, cela
+  requête `IIterable` échoue dans CsWinRT) ; sur les versions plus anciennes, cela
   faisait même planter l'application au clic sur « Démarrer la pause ». La liste des
   moniteurs est désormais copiée dans un tableau managé par index ; la superposition
   couvre à nouveau tous les moniteurs. (La protection ajoutée en 1.2.2 intercepte
@@ -230,9 +230,8 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ### Modifié
 
-- Finitions internes de qualité : audit complet des commentaires/principes sur toutes
-  les couches, code mort supprimé, trémas corrects et cohérents jusque dans les
-  commentaires des fichiers projet.
+- Finitions internes : commentaires relus sur toutes les couches, code mort supprimé,
+  trémas corrects et cohérents jusque dans les commentaires des fichiers projet.
 
 ## [1.2.0] – 2026-06-30
 
@@ -285,7 +284,7 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 - Écran de pause sur **plusieurs moniteurs** : pendant la pause, chaque écran
   connecté peut être recouvert par sa propre superposition (option « Assombrir
-  tous les écrans », activée par défaut). Fonctionne indépendamment du DDC/CI —
+  tous les écrans », activée par défaut). Fonctionne indépendamment du DDC/CI,
   donc aussi sur les ordinateurs portables.
 - **Couleur de l'écran de pause librement configurable**, transparence comprise
   (curseur d'opacité/alpha), via un sélecteur de couleur dans les paramètres.
@@ -317,7 +316,7 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
   notification était transmise à H.NotifyIcon en PNG et levait une exception ; elle est
   désormais au format ICO DIB. De plus, la publication ne contenait pas l'index de
   ressources (PRI) ni les fichiers d'actifs en clair (XamlParseException /
-  DirectoryNotFoundException) — l'application démarre maintenant de façon fiable. Le ZIP
+  DirectoryNotFoundException) ; l'application démarre maintenant de façon fiable. Le ZIP
   portable et le MSIX sont ainsi pleinement exécutables pour la première fois.
 
 ### Ajouté
@@ -325,7 +324,7 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 - Installateur Setup.exe (Inno Setup) : emplacement d'installation librement choisi,
   installation pour l'utilisateur courant ou pour tous les utilisateurs, raccourci menu
   Démarrer / bureau (optionnel), démarrage automatique optionnel et désinstallateur.
-  Autonome (self-contained) — aucune runtime .NET / Windows App SDK préinstallée requise.
+  Autonome (self-contained) ; aucune runtime .NET / Windows App SDK préinstallée requise.
 
 ### Modifié
 

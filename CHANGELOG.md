@@ -22,8 +22,8 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 - **Das Pausen-Overlay bleibt jetzt auf jedem Monitor vorn.** Auf den Nebenmonitoren konnte es sich
   hinter andere Fenster schieben, die Windows-Taskleiste blieb dort sichtbar, und eine Titelleiste
-  tauchte auf. Das Overlay liegt nun für die gesamte Pause über allem anderen — auch über der
-  Taskleiste — und deckt jeden Monitor vollständig ab. Schiebt sich ein Fenster von sich aus nach
+  tauchte auf. Das Overlay liegt nun für die gesamte Pause über allem anderen, auch über der
+  Taskleiste, und deckt jeden Monitor vollständig ab. Schiebt sich ein Fenster von sich aus nach
   vorn, ist die Pause spätestens nach einer Sekunde wieder vollständig zu sehen.
 
 - **LookAway erscheint während der Pause nicht mehr in Taskleiste und Alt-Tab.** Bei mehreren
@@ -40,8 +40,8 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 ### Hinzugefügt
 
 - **Aufgaben für das aufgabenbasierte Pausenmodell.** Ein neuer Bereich führt die Aufgaben, an
-  denen gerade gearbeitet wird — anlegen, umbenennen, abhaken und löschen geschieht an der
-  Aufgabe selbst. Mit Suche im Aufgabentext und Filtern nach offen und erledigt.
+  denen gerade gearbeitet wird. Anlegen, umbenennen, abhaken und löschen geschieht an der
+  Aufgabe selbst, dazu gibt es eine Suche im Aufgabentext und Filter nach offen und erledigt.
 
 - **Die Pause merkt sich, woran sie hing.** Beim aufgabenbasierten Modell wird jede Pause der
   laufenden Aufgabe zugeordnet; jede Aufgabe zeigt, wie viele Pausen aus ihr entstanden sind.
@@ -66,7 +66,7 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
   oder dunkel erscheinen; „Wie Windows" folgt der Einstellung des Systems. Die Wahl wirkt sofort im
   offenen Fenster.
 
-- **Protokoll im Programm.** Ein neuer Bereich zeigt, was die Anwendung zuletzt festgehalten hat —
+- **Protokoll im Programm.** Ein neuer Bereich zeigt, was die Anwendung zuletzt festgehalten hat,
   mit Suche im Meldungstext und Filtern nach Stufe und Zeitraum. Bisher lagen diese Meldungen nur
   als Datei im Datenverzeichnis, das man erst finden musste.
 
@@ -78,7 +78,7 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 - **Durchgängiges Erscheinungsbild.** Fenster, Karten, Schaltflächen, Kontrollkästchen und
   Schieberegler folgen jetzt einer gemeinsamen Farbgebung. Vorher zogen einige Bedienelemente die
-  in Windows eingestellte Akzentfarbe — je nach Rechner also eine andere.
+  in Windows eingestellte Akzentfarbe, je nach Rechner also eine andere.
 
 - **Verweise sind unterstrichen** und dadurch auch dann als solche erkennbar, wenn Farben schwer zu
   unterscheiden sind.
@@ -99,7 +99,7 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 - **Setup.exe liegt wieder an jedem Release:** Seit 1.2.5 enthielten die Releases nur noch die
   portable ZIP; der Installer musste selbst kompiliert werden. Er entsteht jetzt im Release-Lauf
   und wird mit hochgeladen. Der Release-Text nennt zu beiden Dateien den SHA-256. Signiert wird
-  weiterhin ausschließlich die ZIP — der Updater greift sich die erste Signatur eines Releases,
+  weiterhin ausschließlich die ZIP. Der Updater greift sich die erste Signatur eines Releases;
   eine zweite könnte er dem Paket zuordnen und die Prüfung fehlschlagen lassen.
 
 ## [1.2.8] – 2026-07-11
@@ -116,12 +116,12 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 ### Behoben
 
 - **Automatische Aktualisierung installierte das Paket nicht.** Das Update wurde geprüft und
-  heruntergeladen, aber nie eingespielt — die alte Version blieb installiert. Der Hilfsprozess,
+  heruntergeladen, aber nie eingespielt, und die alte Version blieb installiert. Der Hilfsprozess,
   der die Programmdateien austauscht, startet aus dem Zwischenspeicher und leitete daraus zwei
   Dinge falsch ab:
   - **Seinen Datenort:** Weil das Paket eine Portable-Markierung enthält, hielt er sich für eine
     portable Installation und suchte die Einstellungen neben sich. Dort fand er den vermerkten
-    Datei-Hash nicht, mit dem er das Paket gegenprüft — und lehnte sein eigenes Update ab. Er
+    Datei-Hash nicht, mit dem er das Paket gegenprüft, und lehnte sein eigenes Update ab. Er
     verwendet jetzt den Datenort der Installation, die er bedient. Zusätzlich wird die
     Portable-Markierung gar nicht mehr mit zwischengespeichert.
   - **Sein Ziel:** Er nahm seinen eigenen Programmordner (also den Zwischenspeicher) als Ziel
@@ -136,7 +136,7 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 - **Automatischer Pausenstart:** Die Pause startet nach einer einstellbaren Verzögerung
   (Standard 15 Sekunden, in 5-Sekunden-Schritten bis zu 3 Minuten) automatisch, wenn die
   Erinnerung nicht bedient wird. Ein Countdown im Erinnerungsfenster zeigt die verbleibende
-  Zeit an. Über die Einstellungen an- oder abschaltbar — deaktiviert bleibt die Erinnerung
+  Zeit an. Über die Einstellungen an- oder abschaltbar. Ist er deaktiviert, bleibt die Erinnerung
   offen, bis eine Aktion gewählt wird.
 
 ## [1.2.5] – 2026-07-02
@@ -156,7 +156,7 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
   entfällt, ebenso der irreführende Hinweis („wie stark der Bildschirm durchscheint").
   Echte Fenster-Transparenz ist in WinUI 3 nicht zuverlässig umsetzbar; das Overlay
   überdeckt den Bildschirm deckend. Eine bisher halbtransparent eingestellte Farbe wird
-  automatisch auf ihr optisch gleiches, deckendes Äquivalent migriert — das Aussehen
+  automatisch auf ihr optisch gleiches, deckendes Äquivalent migriert; das Aussehen
   ändert sich dadurch nicht.
 
 ## [1.2.3] – 2026-07-01
@@ -167,7 +167,7 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
   Bildschirme abdunkeln" (Standard) wurde das Overlay nicht angezeigt. Ursache war
   ein `InvalidCastException` beim Aufzählen der Monitorliste aus
   `DisplayArea.FindAll()` (WinRT-Projektion, fehlschlagende `IIterable`-Abfrage in
-  CsWinRT) — auf älteren Ständen führte das sogar zum Absturz beim Klick auf
+  CsWinRT). Auf älteren Ständen führte das sogar zum Absturz beim Klick auf
   „Pause starten". Die Monitorliste wird jetzt per Index in ein verwaltetes Array
   übernommen; das Overlay deckt wieder alle Monitore ab. (Die in 1.2.2 ergänzte
   Absicherung fängt einen etwaigen Fehler weiterhin ab, statt die App hängen zu lassen.)
@@ -181,7 +181,7 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 - **Bessere automatische Textfarbe im Overlay:** Die kontrastreiche Textfarbe richtet
   sich jetzt nach der tatsächlich sichtbaren Overlay-Farbe (halbtransparente Farbe
   über hellem Grund zusammengesetzt, wahrgenommene Helligkeit). Ein halbtransparentes
-  Schwarz — das als Grau erscheint — bekommt dadurch dunklen statt hellem, schlecht
+  Schwarz, das als Grau erscheint, bekommt dadurch dunklen statt hellem, schlecht
   lesbarem Text.
 
 ## [1.2.2] – 2026-07-01
@@ -199,7 +199,7 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 - **Robusterer Pausenbeginn:** Schlägt der Aufbau des Pausen-Overlays oder des
   Erinnerungsfensters fehl, bleibt die App bedienbar: der Zustand wird sauber
   zurückgesetzt, Helligkeit/Medien werden wiederhergestellt und der Timer läuft
-  weiter — statt mit gesetztem „Pause läuft"-Zustand hängenzubleiben.
+  weiter, statt mit gesetztem „Pause läuft"-Zustand hängenzubleiben.
 
 ## [1.2.1] – 2026-06-30
 
@@ -216,13 +216,13 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 - **Ein-Klick-Installation:** „Auf Updates prüfen" bietet bei einem gefundenen Paket
   jetzt direkt einen **„Jetzt installieren"**-Button. Das Update wird geladen,
-  signaturgeprüft und beim nächsten Start eingespielt — kein Umweg mehr über die
-  GitHub-Release-Seite (die als manueller Ausweg sichtbar bleibt).
+  signaturgeprüft und beim nächsten Start eingespielt. Der Umweg über die
+  GitHub-Release-Seite entfällt (sie bleibt als manueller Ausweg sichtbar).
 
 ### Geändert
 
-- Interner Qualitäts-Feinschliff: vollständiges Kommentar-/Prinzipien-Audit aller
-  Schichten, toter Code entfernt, durchgängig korrekte Umlaute auch in Projekt-Kommentaren.
+- Interner Feinschliff: Kommentare in allen Schichten durchgesehen, toter Code entfernt,
+  durchgängig korrekte Umlaute auch in Projekt-Kommentaren.
 
 ## [1.2.0] – 2026-06-30
 
@@ -256,7 +256,7 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 - In-App-Lizenzanzeige (Über-Bereich) zeigt nun korrekt **MIT** statt „Proprietär".
 - **Sicherheit:** Ein ausstehendes Update wird vor dem Einspielen über Version
-  **und SHA-256 der Programmdatei** verifiziert — ein einfach untergeschobener
+  **und SHA-256 der Programmdatei** verifiziert. Ein einfach untergeschobener
   Ordner unter `%LOCALAPPDATA%\…\updates\` wird nicht mehr ausgeführt. Der
   Zip-Bomben-Schutz begrenzt jetzt die **tatsächlich geschriebenen** Bytes statt
   der im ZIP angegebenen Größe.
@@ -273,11 +273,11 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 - Pausen-Screen auf **mehreren Monitoren**: Auf Wunsch wird während der Pause
   jeder angeschlossene Bildschirm mit einem eigenen Overlay abgedeckt (Option
   „Alle Bildschirme abdunkeln", Standard: an). Funktioniert unabhängig von
-  DDC/CI — also auch auf Notebooks.
+  DDC/CI, also auch auf Notebooks.
 - **Frei wählbare Farbe des Pausen-Screens** inklusive Transparenz (Deckkraft-/
   Alpha-Regler) über einen Farbwähler in den Einstellungen.
 - **Automatische Aktualisierung**: Ist eine neue Version verfügbar, kann LookAway
-  sie selbst installieren — das neue Portable-Paket wird heruntergeladen, die
+  sie selbst installieren: Das neue Portable-Paket wird heruntergeladen, die
   Programmdateien werden nach dem Beenden ausgetauscht und die App startet neu.
   Neue Einstellung **„Automatisch aktualisieren"**: lädt die neueste Version im
   Hintergrund und installiert sie beim nächsten Start ohne Zutun. Ohne diese
@@ -289,7 +289,7 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
   ein-/ausklappbares **Seitenmenü** (NavigationView mit Hamburger-Button) ersetzt.
 - Neues helles **Mint/Teal-Theme** (augenfreundlich) für die gesamte Oberfläche.
 - Nach **Standby oder Inaktivität** (z. B. Telefonat) startet der Arbeits-Timer
-  frisch, wenn die Abwesenheit mindestens so lang wie eine Pause war — die Augen
+  frisch, wenn die Abwesenheit mindestens so lang wie eine Pause war. Die Augen
   haben dann ohnehin bereits geruht. Kurze Unterbrechungen laufen wie bisher mit
   der Restzeit weiter; eine manuelle Pause bleibt unverändert.
 - Der Tray-Eintrag „Update" öffnet nicht mehr nur die Release-Seite, sondern
@@ -302,15 +302,15 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 - Startabsturz im unpackaged-Betrieb behoben: Das Tray-Icon wurde als PNG an
   H.NotifyIcon übergeben und warf eine Ausnahme; jetzt als DIB-ICO. Zudem
   fehlten beim Publish der Ressourcen-Index (PRI) und lose Asset-Dateien
-  (XamlParseException / DirectoryNotFoundException) — die App startet nun
+  (XamlParseException / DirectoryNotFoundException). Die App startet nun
   zuverlässig. Portable-ZIP und MSIX sind damit erstmals voll lauffähig.
 
 ### Hinzugefügt
 
 - Setup.exe-Installer (Inno Setup): frei wählbarer Speicherort, Installation
   für den aktuellen oder alle Benutzer, Startmenü-/optionale Desktop-Verknüpfung,
-  optionaler Autostart und Uninstaller. Self-contained — keine vorinstallierte
-  .NET-/Windows-App-SDK-Runtime nötig.
+  optionaler Autostart und Uninstaller. Self-contained, eine vorinstallierte
+  .NET-/Windows-App-SDK-Runtime ist nicht nötig.
 
 ### Geändert
 

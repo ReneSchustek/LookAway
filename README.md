@@ -4,7 +4,7 @@
 
 # LookAway
 
-**Bildschirmpausen, intelligent erinnert.**
+**Erinnert an Bildschirmpausen.**
 
 [![CI](https://github.com/ReneSchustek/LookAway/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ReneSchustek/LookAway/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/ReneSchustek/LookAway?sort=semver)](https://github.com/ReneSchustek/LookAway/releases/latest)
@@ -13,56 +13,56 @@
 
 </div>
 
-LookAway ist eine schlanke Windows-Tray-Anwendung, die dezent an Bildschirmpausen erinnert.
-Sie läuft unauffällig im Hintergrund, bietet mehrere wissenschaftlich fundierte Pausenmodelle und
-ist vollständig pro Windows-Benutzer konfigurierbar – für alle, die viel am Bildschirm arbeiten und
-ihre Augen, Haltung und Konzentration schonen möchten.
+LookAway ist eine kleine Windows-Tray-Anwendung, die an Bildschirmpausen erinnert, ohne zu stören.
+Sie läuft im Hintergrund, bringt mehrere wissenschaftlich begründete Pausenmodelle mit und lässt
+sich für jeden Windows-Benutzer eigens einstellen. Gedacht ist sie für alle, die viel am Bildschirm
+arbeiten und dabei Augen, Haltung und Konzentration schonen möchten.
 
 ## Aktuelles Release
 
-**[v1.4.1](https://github.com/ReneSchustek/LookAway/releases/latest)** ist die aktuelle Version –
-als Setup.exe und als portable ZIP. Die Höhepunkte der jüngsten Versionen:
+**[v1.4.1](https://github.com/ReneSchustek/LookAway/releases/latest)** ist die aktuelle Version,
+zu haben als Setup.exe und als portable ZIP. Das hat sich zuletzt getan:
 
-- **Das Pausen-Overlay liegt zuverlässig über allem** – auf jedem Monitor, bis zum äußersten
+- **Das Pausen-Overlay liegt zuverlässig über allem**, auf jedem Monitor, bis zum äußersten
   Bildpunkt und ohne Eintrag in Taskleiste und Alt-Tab. **Strg + Alt + S** beendet eine laufende
   Pause.
-- **Helles und dunkles Erscheinungsbild** – frei wählbar oder der Windows-Einstellung folgend; die
+- **Helles und dunkles Erscheinungsbild:** frei wählbar oder der Windows-Einstellung folgend. Die
   Wahl wirkt sofort im offenen Fenster.
-- **Aufgaben (aufgabenbasiertes Modell)** – die Aufgaben, an denen gerade gearbeitet wird, mit
-  Suche und Filter; jede Pause wird der laufenden Aufgabe zugeordnet
-- **Protokoll im Programm** – die zuletzt festgehaltenen Meldungen mit Suche und Filtern nach Stufe
+- **Aufgaben (aufgabenbasiertes Modell):** Die Aufgaben, an denen gerade gearbeitet wird, stehen
+  in einer Liste mit Suche und Filter, und jede Pause wird der laufenden Aufgabe zugeordnet.
+- **Protokoll im Programm:** die zuletzt festgehaltenen Meldungen mit Suche und Filtern nach Stufe
   und Zeitraum. Bisher lagen sie nur als Datei im Datenverzeichnis.
-- **Pausenmodelle als Kacheln** – mit Suchfeld und Filterleiste; jede Kachel nennt, was in der Pause
+- **Pausenmodelle als Kacheln** mit Suchfeld und Filterleiste. Jede Kachel nennt, was in der Pause
   zu tun ist und wie viele Pausen daraus entstanden sind.
-- **Signierte Updates** – jedes Paket wird vor dem Einspielen gegen eine ECDSA-P-256-Signatur geprüft
+- **Signierte Updates:** Jedes Paket wird vor dem Einspielen gegen eine ECDSA-P-256-Signatur geprüft
   und ohne gültige Signatur abgelehnt.
-- **Ein-Klick-Installation** – „Auf Updates prüfen" spielt ein gefundenes Paket direkt ein, ohne Umweg
+- **Ein-Klick-Installation:** „Auf Updates prüfen" spielt ein gefundenes Paket direkt ein, ohne Umweg
   über die Release-Seite.
 
 ## Funktionen
 
-- **7 Pausenmodelle** – Pomodoro, Modifiziertes Pomodoro, Ultradianer Rhythmus, Physical Counter,
+- **7 Pausenmodelle:** Pomodoro, Modifiziertes Pomodoro, Ultradianer Rhythmus, Physical Counter,
   Kurze Pausen, Aufgabenbasiert und gesetzliche Empfehlung
-- **Auto-Pause und Nicht stören** – pausiert bei Inaktivität und unterdrückt Erinnerungen während
-  Vollbild-Apps (Präsentationen, Filme, Spiele)
-- **Timer-Reset nach Abwesenheit** – nach Standby oder längerer Inaktivität (z. B. Telefonat) startet
-  die Arbeitszeit frisch, denn die Augen haben ohnehin pausiert
-- **Abgedunkelter Pausen-Screen** – ein ruhiges Vollbild-Overlay verdeckt den Bildschirm während der
+- **Auto-Pause und Nicht stören:** pausiert bei Inaktivität und hält Erinnerungen zurück, solange
+  Vollbild-Apps laufen (Präsentationen, Filme, Spiele)
+- **Timer-Reset nach Abwesenheit:** Nach Standby oder längerer Inaktivität (z. B. Telefonat) beginnt
+  die Arbeitszeit von vorn, denn die Augen haben ohnehin pausiert
+- **Abgedunkelter Pausen-Screen:** Ein ruhiges Vollbild-Overlay verdeckt den Bildschirm während der
   Pause, zeigt den Countdown und das Übungs-Ziel und lässt sich jederzeit mit **ESC** beenden;
   optional auf **allen Monitoren** und in **frei wählbarer Farbe**. Es liegt über allen Fenstern und
   über der Taskleiste und erscheint dabei weder in der Taskleiste noch im Alt-Tab-Umschalter
-- **Pause-Aktionen** – Bildschirm dimmen (DDC/CI) und Medienwiedergabe während der Pause pausieren
+- **Pause-Aktionen:** Bildschirm dimmen (DDC/CI) und Medienwiedergabe während der Pause pausieren
   (nur Player mit Windows-Mediensteuerung wie Spotify, Musik-App, Chrome/Edge/Firefox; VLC wird nicht unterstützt)
-- **Automatische Updates** – optionale Prüfung über die GitHub-Releases-API; auf Wunsch lädt und
+- **Automatische Updates:** optionale Prüfung über die GitHub-Releases-API; auf Wunsch lädt und
   installiert LookAway neue Versionen selbst (siehe [Updates](#updates))
-- **Helles und dunkles Erscheinungsbild** – frei wählbar oder der Windows-Einstellung folgend
-- **Dreisprachig** – Deutsch, Englisch, Französisch, live umschaltbar
-- **Statistiken und CSV-Export** – Pausen pro Tag, Woche und Jahr, exportierbar
-- **Protokoll im Programm** – die zuletzt festgehaltenen Meldungen mit Suche und Filter nach Stufe
-  und Zeitraum; hilfreich, wenn etwas nicht so läuft wie erwartet
-- **Globale Hotkeys** – Pause starten, überspringen, Nicht stören – von überall
-- **Optionaler Ton** – dezenter Hinweis bei der Erinnerung (aus drei Tönen wählbar)
-- **Autostart** – startet auf Wunsch automatisch mit Windows
+- **Helles und dunkles Erscheinungsbild:** frei wählbar oder der Windows-Einstellung folgend
+- **Dreisprachig:** Deutsch, Englisch, Französisch, live umschaltbar
+- **Statistiken und CSV-Export:** Pausen pro Tag, Woche und Jahr, exportierbar
+- **Protokoll im Programm:** die zuletzt festgehaltenen Meldungen mit Suche und Filter nach Stufe
+  und Zeitraum, hilfreich, wenn etwas nicht so läuft wie erwartet
+- **Globale Hotkeys:** Pause starten, überspringen, Nicht stören, von überall aus
+- **Optionaler Ton:** dezenter Hinweis bei der Erinnerung (aus drei Tönen wählbar)
+- **Autostart:** startet auf Wunsch automatisch mit Windows
 
 ## Voraussetzungen
 
@@ -84,10 +84,10 @@ als **portables ZIP**.
 
 1. `LookAway-Portable-<Version>.zip` von der Releases-Seite herunterladen und in einen beliebigen
    Ordner entpacken.
-2. `LookAway.exe` starten. Im Portable-Modus liegen alle Daten neben der EXE – ideal für den USB-Stick.
+2. `LookAway.exe` starten. Im Portable-Modus liegen alle Daten neben der EXE, passend für den USB-Stick.
 
-> Hinweis: Die Builds sind nicht mit einem CA-Zertifikat signiert – Windows SmartScreen kann beim ersten
-> Start warnen („Weitere Informationen" → „Trotzdem ausführen"). Der Release-Text nennt zu jeder Datei
+> Hinweis: Die Builds sind nicht mit einem CA-Zertifikat signiert, deshalb kann Windows SmartScreen beim
+> ersten Start warnen („Weitere Informationen" → „Trotzdem ausführen"). Der Release-Text nennt zu jeder Datei
 > den SHA-256; damit lässt sich ein Download vor dem Start prüfen:
 > `Get-FileHash .\LookAway-Setup-<Version>.exe -Algorithm SHA256`.
 
@@ -113,7 +113,7 @@ msbuild src\LookAway.App\LookAway.App.csproj -p:Configuration=Release -p:Platfor
 ## Erste Schritte
 
 Beim ersten Start führt ein kurzer Assistent in drei Schritten durch die Einrichtung: Sprache,
-Pausenmodell und Autostart. Danach lebt LookAway im Tray – ein Klick auf das Symbol öffnet das Menü,
+Pausenmodell und Autostart. Danach sitzt LookAway im Tray. Ein Klick auf das Symbol öffnet das Menü,
 ein Doppelklick die Einstellungen.
 
 ## Konfiguration
@@ -160,14 +160,14 @@ LookAway kann sich selbst aktuell halten:
 
 Die Hotkeys lassen sich in den Einstellungen aktivieren oder auf die Standardwerte zurücksetzen.
 
-Läuft gerade eine Pause, beendet „Überspringen / Snooze" sie — der zweite Weg neben **ESC** aus dem
-bildschirmfüllenden Overlay.
+Läuft gerade eine Pause, beendet „Überspringen / Snooze" sie. Das ist neben **ESC** der zweite Weg aus
+dem bildschirmfüllenden Overlay.
 
 ## Datenschutz
 
 LookAway ist datensparsam und arbeitet vollständig lokal:
 
-- **Was gespeichert wird:** Einstellungen, Pausen-Historie und Logdateien – ausschließlich auf dem
+- **Was gespeichert wird:** Einstellungen, Pausen-Historie und Logdateien, ausschließlich auf dem
   eigenen Gerät unter `%APPDATA%\LookAway` (bzw. neben der EXE im Portable-Modus).
 - **Was nicht passiert:** Es werden keine Nutzungsdaten, keine Telemetrie und keine persönlichen
   Daten an Server gesendet.
@@ -179,27 +179,27 @@ LookAway ist datensparsam und arbeitet vollständig lokal:
 
 ![Pausen-Screen](docs/screenshots/break-screen.png)
 
-*Der Pausen-Screen – verdeckt den Bildschirm, zeigt Ziel und Countdown, endet mit **ESC**.*
+*Der Pausen-Screen verdeckt den Bildschirm, zeigt Ziel und Countdown und endet mit **ESC**.*
 
 ![Erinnerung](docs/screenshots/reminder.png)
 
-*Die Erinnerung – Pause starten, verschieben oder überspringen; ohne Klick beginnt sie von selbst.*
+*Die Erinnerung: Pause starten, verschieben oder überspringen. Ohne Klick beginnt sie von selbst.*
 
 ![Pausenmodell](docs/screenshots/break-models.png)
 
-*Pausenmodelle – als Kacheln mit Suche und Filter; jede nennt, was in der Pause zu tun ist.*
+*Pausenmodelle als Kacheln mit Suche und Filter. Jede nennt, was in der Pause zu tun ist.*
 
 ![Statistik](docs/screenshots/statistics.png)
 
-*Statistik – Pausen pro Tag, Woche und Jahr, als CSV exportierbar.*
+*Statistik: Pausen pro Tag, Woche und Jahr, als CSV exportierbar.*
 
 ![Einstellungen](docs/screenshots/settings.png)
 
-*Einstellungen – Erscheinungsbild, Sprache, Autostart und Auto-Pause.*
+*Einstellungen: Erscheinungsbild, Sprache, Autostart und Auto-Pause.*
 
 ![Hotkeys](docs/screenshots/hotkeys.png)
 
-*Globale Hotkeys – jede Aktion lässt sich über „Neu belegen" auf eine eigene Tastenkombination legen.*
+*Globale Hotkeys: Jede Aktion lässt sich über „Neu belegen" auf eine eigene Tastenkombination legen.*
 
 Weitere Aufnahmen liegen unter [`docs/screenshots/`](docs/screenshots/).
 
@@ -214,7 +214,7 @@ beschrieben.
 
 ## Lizenz
 
-MIT-Lizenz – siehe [LICENSE](LICENSE).
+MIT-Lizenz, siehe [LICENSE](LICENSE).
 
 Die mitgelieferte Schrift **Roboto** steht unter der Apache-Lizenz 2.0; der Lizenztext liegt bei
 den Schriftdateien unter `src/LookAway.App/Assets/Fonts/LICENSE.txt`.

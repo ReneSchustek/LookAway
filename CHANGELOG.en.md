@@ -13,7 +13,7 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - **The break overlay now covers the screen out to the very last pixel.** A light line ran around
-  every monitor and the desktop showed through the rounded corners — clearly visible with dark
+  every monitor and the desktop showed through the rounded corners, clearly visible with dark
   overlay colours. Measured afterwards: edges and corners now carry the colour you picked.
 
 - **The overlay text colour now also fits mid-range shades.** On a medium grey, light text sat on
@@ -38,7 +38,7 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **Tasks for the task-based break model.** A new section keeps the tasks you are working on —
+- **Tasks for the task-based break model.** A new section keeps the tasks you are working on:
   adding, renaming, checking off and deleting all happen on the task itself. With a search across
   the task text and filters for open and done.
 
@@ -65,7 +65,7 @@ and versioning follows [Semantic Versioning](https://semver.org/).
   dark; "Match Windows" follows the system setting. The choice takes effect immediately in the
   open window.
 
-- **Log inside the app.** A new section shows what the application recorded most recently — with
+- **Log inside the app.** A new section shows what the application recorded most recently, with
   a search across the message text and filters for level and period. Until now these entries only
   existed as a file in the data folder, which you had to find first.
 
@@ -75,7 +75,7 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - **Consistent appearance.** Windows, cards, buttons, check boxes and sliders now follow one shared
-  set of colours. Previously some controls picked up the accent colour configured in Windows — a
+  set of colours. Previously some controls picked up the accent colour configured in Windows, a
   different one on every machine.
 
 - **Links are underlined** and therefore recognisable as links even when colours are hard to tell
@@ -96,7 +96,7 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 - **Setup.exe is attached to every release again:** since 1.2.5 the releases carried only the portable
   ZIP, so the installer had to be compiled by hand. It is now built during the release run and uploaded
-  along with the ZIP. The release text lists the SHA-256 of both files. Only the ZIP is signed — the
+  along with the ZIP. The release text lists the SHA-256 of both files. Only the ZIP is signed; the
   updater picks the first signature of a release, and a second one could be mistaken for the package's
   and fail the check.
 
@@ -113,11 +113,11 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - **Automatic update did not install the package.** The update was verified and downloaded but
-  never applied — the old version stayed installed. The helper process that swaps the program
+  never applied; the old version stayed installed. The helper process that swaps the program
   files starts from the staging folder and derived two things wrongly from that:
   - **Its data location:** Because the package contains a portable marker, it considered itself
     a portable installation and looked for its settings next to itself. There it could not find
-    the recorded file hash it validates the package against — and rejected its own update. It
+    the recorded file hash it validates the package against, and rejected its own update. It
     now uses the data location of the installation it serves. In addition, the portable marker
     is no longer staged at all.
   - **Its target:** It used its own program folder (the staging folder) as the target, copying
@@ -131,7 +131,7 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 - **Automatic break start:** The break now starts automatically after a configurable delay
   (default 15 seconds, in 5-second steps up to 3 minutes) if the reminder is left untouched.
   A countdown in the reminder window shows the remaining time. It can be enabled or disabled
-  in the settings — when disabled, the reminder stays open until you choose an action.
+  in the settings; when disabled, the reminder stays open until you choose an action.
 
 ## [1.2.5] – 2026-07-02
 
@@ -150,7 +150,7 @@ and versioning follows [Semantic Versioning](https://semver.org/).
   picker is gone, along with the misleading hint ("how much the screen shows through").
   True window transparency is not reliably achievable in WinUI 3; the overlay covers
   the screen opaquely. A previously semi-transparent colour is automatically migrated
-  to its visually equivalent opaque colour — the appearance does not change.
+  to its visually equivalent opaque colour; the appearance does not change.
 
 ## [1.2.3] – 2026-07-01
 
@@ -160,7 +160,7 @@ and versioning follows [Semantic Versioning](https://semver.org/).
   the overlay was not displayed when a break started. The cause was an
   `InvalidCastException` while enumerating the monitor list from
   `DisplayArea.FindAll()` (a WinRT projection whose `IIterable` query fails in
-  CsWinRT) — on older builds this even crashed the app when clicking "Start break".
+  CsWinRT); on older builds this even crashed the app when clicking "Start break".
   The monitor list is now copied into a managed array by index; the overlay covers
   all monitors again. (The safeguard added in 1.2.2 still catches any failure
   instead of leaving the app stuck.)
@@ -212,7 +212,7 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ### Changed
 
-- Internal quality polish: full comment/principles audit across all layers, dead code
+- Internal polish: comments reviewed across all layers, dead code
   removed, consistent correct umlauts including project-file comments.
 
 ## [1.2.0] – 2026-06-30
@@ -262,7 +262,7 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 - Break screen across **multiple monitors**: optionally every connected display
   is covered with its own overlay during a break (option "Darken all screens",
-  default: on). Works independently of DDC/CI — so on laptops too.
+  default: on). Works independently of DDC/CI, so on laptops too.
 - **Freely selectable break screen colour** including transparency (opacity/alpha
   slider) via a colour picker in the settings.
 - **Automatic updates**: when a new version is available, LookAway can install it
@@ -290,14 +290,14 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 - Fixed a startup crash in unpackaged mode: the tray icon was passed to H.NotifyIcon
   as a PNG and threw an exception; it is now a DIB ICO. In addition, the publish was
   missing the resource index (PRI) and loose asset files (XamlParseException /
-  DirectoryNotFoundException) — the app now starts reliably. The portable ZIP and the
+  DirectoryNotFoundException); the app now starts reliably. The portable ZIP and the
   MSIX are therefore fully runnable for the first time.
 
 ### Added
 
 - Setup.exe installer (Inno Setup): freely selectable install location, installation
   for the current or all users, Start menu / optional desktop shortcut, optional
-  autostart and an uninstaller. Self-contained — no pre-installed .NET / Windows App
+  autostart and an uninstaller. Self-contained; no pre-installed .NET / Windows App
   SDK runtime required.
 
 ### Changed

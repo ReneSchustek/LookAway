@@ -1,13 +1,6 @@
 # ============================================================
 # .gitignore – LookAway
 # ============================================================
-# Persoenliche Notizdateien sind in ~/.gitignore_global eingetragen
-# und müssen hier NICHT wiederholt werden.
-# ============================================================
-
-# ============================================================
-# Lokale Werkzeug-/Vorlagendateien (nicht versionieren)
-# ============================================================
 
 # ============================================================
 # SCRIPTE nie committen — Ausnahme: tools/ liefert Repo-Skripte
@@ -24,14 +17,6 @@ coverage/
 *.trx
 *.coverage
 *.coveragexml
-
-# ============================================================
-# Hinweis: reviews/ gehört NICHT in .gitignore
-# ============================================================
-# reviews/ wird auf DevBox in Git versioniert (Entwicklungshistorie).
-# GitHub-Export-Script schließt reviews/ automatisch aus.
-# Niemals reviews/ hier eintragen.
-# ============================================================
 
 # ============================================================
 # Secrets / Umgebungsvariablen (NIEMALS in Git!)
@@ -93,8 +78,6 @@ $RECYCLE.BIN/
 # Rider
 .idea/
 
-# Lokale Hilfs-/Arbeitsverzeichnisse (nicht versionieren)
-
 # MSIX-Build-Artefakte
 **/AppPackages/
 
@@ -103,7 +86,6 @@ $RECYCLE.BIN/
 
 # Portable Werkzeuge werden nicht versioniert (lokal via tools/install-*.ps1 holen)
 *.exe
-
 
 # Generiertes Setup-Icon (via installer/make-setup-icon.ps1)
 installer/setup-icon.ico
@@ -114,12 +96,6 @@ installer/setup-icon.ico
 *.pem
 *.sig
 *signing-key*
-
-# Lokales Entwickler-Werkzeug (nicht Bestandteil des Repos)
-tools/install-pre-commit-hook.ps1
-
-# Lokale Ausnahmeliste eines Entwickler-Werkzeugs (nicht Bestandteil des Repos)
-.ai-trace-ignore
 
 # Die globale Ignorierliste dieses Rechners schließt "docs/" aus. Hier ist das
 # Projektdokumentation samt Screenshots und gehört ins Repository.

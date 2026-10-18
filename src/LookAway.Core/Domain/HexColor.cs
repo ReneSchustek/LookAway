@@ -124,12 +124,11 @@ public static class HexColor
     /// <param name="second">Zweite Farbe.</param>
     /// <returns>Kontrastverhältnis, unabhängig von der Reihenfolge der Farben.</returns>
     /// <remarks>
-    /// Ersetzt die frühere Hell/Dunkel-Schwelle. Eine Schwelle beantwortet die Frage nur
-    /// mittelbar und lag am Ende falsch: Auf dem mittleren Grau, das eine halbtransparente
-    /// Farbe ergibt, liest sich dunkler Text mit rund 6:1, heller mit rund 2,7:1 — eine
-    /// Schwelle auf halber Luminanz hätte dort den helleren gewählt. Der Vergleich zweier
-    /// Verhältnisse braucht keinen gesetzten Grenzwert und ist deshalb auch nicht daneben
-    /// zu justieren.
+    /// Eine Hell/Dunkel-Schwelle beantwortet die Frage nur mittelbar und läge falsch: Auf
+    /// dem mittleren Grau, das eine halbtransparente Farbe ergibt, liest sich dunkler Text
+    /// mit rund 6:1, heller mit rund 2,7:1 — eine Schwelle auf halber Luminanz wählte dort
+    /// den helleren. Der Vergleich zweier Verhältnisse braucht keinen gesetzten Grenzwert
+    /// und ist deshalb auch nicht daneben zu justieren.
     /// </remarks>
     public static double ContrastRatio((byte R, byte G, byte B) first, (byte R, byte G, byte B) second)
     {

@@ -10,9 +10,9 @@ namespace LookAway.App.ViewModels;
 /// <remarks>
 /// Jeder Bereich bringt seine eigene Datenquelle und seinen eigenen Zustand mit und
 /// steht für sich. Sie hier zu bündeln hält den Konstruktor des
-/// <see cref="SettingsViewModel"/> lesbar: Vorher standen vier Bereiche als vier
-/// weitere Parameter zwischen den Diensten, und mit jedem neuen Bereich wäre ein
-/// weiterer dazugekommen.
+/// <see cref="SettingsViewModel"/> lesbar: Einzeln stünden die vier Bereiche als vier
+/// weitere Parameter zwischen den Diensten, und jeder neue Bereich brächte einen
+/// weiteren mit.
 /// </remarks>
 internal sealed record SettingsSections(
     StatisticsViewModel Statistics,

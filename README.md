@@ -31,7 +31,7 @@ zu haben als Setup.exe und als portable ZIP. Das hat sich zuletzt getan:
 - **Aufgaben (aufgabenbasiertes Modell):** Die Aufgaben, an denen gerade gearbeitet wird, stehen
   in einer Liste mit Suche und Filter, und jede Pause wird der laufenden Aufgabe zugeordnet.
 - **Protokoll im Programm:** die zuletzt festgehaltenen Meldungen mit Suche und Filtern nach Stufe
-  und Zeitraum. Bisher lagen sie nur als Datei im Datenverzeichnis.
+  und Zeitraum. Daneben liegen sie weiter als Datei im Datenverzeichnis.
 - **Pausenmodelle als Kacheln** mit Suchfeld und Filterleiste. Jede Kachel nennt, was in der Pause
   zu tun ist und wie viele Pausen daraus entstanden sind.
 - **Signierte Updates:** Jedes Paket wird vor dem Einspielen gegen eine ECDSA-P-256-Signatur geprüft

@@ -30,7 +30,7 @@ available as a Setup.exe and as a portable ZIP. Highlights of the most recent ve
 - **Tasks (task-based model)**: the tasks you are working on, with search and filters; every
   break is assigned to the current task
 - **Log inside the app**: the most recent entries with search and filters for level and period.
-  Until now they only existed as a file in the data folder.
+  They are still kept as a file in the data folder as well.
 - **Break models as cards**: with a search box and filter chips; each card says what to do during
   that break and how many breaks have come out of it.
 - **Signed updates**: every package is checked against an ECDSA P-256 signature before it is applied

@@ -17,6 +17,11 @@
     <!-- xUnit v3 baut das Testprojekt als Programm. Ein Programm darf auf die eigenständig
          ausgelieferte App nur verweisen, wenn es selbst eigenständig ist (NETSDK1151). -->
     <SelfContained>true</SelfContained>
+    <!-- Die Prüfung „Programm verweist auf Programm“ gilt einem Programm, das ein anderes ausführt.
+         Das Testprojekt nutzt die App nur als Typbibliothek. Der Workload-Schritt der CI wertet die
+         Verweise ohne RuntimeIdentifier aus; dort gilt die App als nicht eigenständig, und die
+         Prüfung schlüge an (NETSDK1150), obwohl der eigentliche Bau passt. -->
+    <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
   </PropertyGroup>
 
   <ItemGroup>

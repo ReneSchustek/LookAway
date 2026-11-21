@@ -3,9 +3,8 @@ using LookAway.Data.Logging;
 namespace LookAway.Data.Tests;
 
 /// <summary>
-/// Tests für den <see cref="LogMessageSanitizer"/>: stellt sicher, dass
-/// benutzerspezifische Pfade und der Benutzername durch generische
-/// Platzhalter ersetzt werden.
+/// Benutzerpfade und der Benutzername erscheinen im Protokoll nur als Platzhalter. Ein
+/// Protokoll, das jemand zur Fehlersuche weitergibt, verriete sonst, wem der Rechner gehört.
 /// </summary>
 public sealed class LogMessageSanitizerTests
 {

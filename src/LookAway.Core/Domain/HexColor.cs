@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 
 namespace LookAway.Core.Domain;
@@ -9,7 +10,11 @@ namespace LookAway.Core.Domain;
 /// </summary>
 public static class HexColor
 {
-    /// <summary>Dunkles, leicht transparentes Standard-Overlay (#F20F1115).</summary>
+    /// <summary>
+    /// Standardfarbe des Overlays (#F20F1115). Der Alphawert <c>F2</c> wird über Weiß
+    /// eingerechnet (<see cref="FlattenOverWhite(string)"/>); sichtbar ist ein fast
+    /// schwarzes Anthrazit, kein durchscheinender Bildschirm.
+    /// </summary>
     public const string Default = "#F20F1115";
 
     /// <summary>Standard-ARGB-Komponenten, falls eine Eingabe ungültig ist.</summary>
@@ -21,7 +26,7 @@ public static class HexColor
     /// </summary>
     /// <param name="value">Zu prüfende Zeichenkette.</param>
     /// <returns><c>true</c>, wenn das Format gültig ist.</returns>
-    public static bool IsValid(string? value)
+    public static bool IsValid([NotNullWhen(true)] string? value)
     {
         if (string.IsNullOrEmpty(value) || value[0] != '#' || value.Length is not (7 or 9))
         {
@@ -54,7 +59,7 @@ public static class HexColor
             return false;
         }
 
-        string body = value![1..];
+        string body = value[1..];
         uint raw = uint.Parse(body, NumberStyles.HexNumber, CultureInfo.InvariantCulture);
         byte a = body.Length == 8 ? (byte)((raw >> 24) & 0xFF) : (byte)0xFF;
         byte r = (byte)((raw >> 16) & 0xFF);
@@ -138,6 +143,21 @@ public static class HexColor
         return (lighter + 0.05) / (darker + 0.05);
     }
 
+    /// <summary>
+    /// Ob sich dunkle Schrift auf <paramref name="surface"/> besser liest als helle.
+    /// </summary>
+    /// <param name="surface">Hintergrundfarbe.</param>
+    /// <param name="darkInk">Die dunkle Schriftfarbe.</param>
+    /// <param name="lightInk">Die helle Schriftfarbe.</param>
+    /// <returns>
+    /// <c>true</c>, wenn die dunkle Schrift das höhere Kontrastverhältnis hat; bei Gleichstand
+    /// gewinnt die helle.
+    /// </returns>
+    public static bool PrefersDarkInk((byte R, byte G, byte B) surface, (byte R, byte G, byte B) darkInk, (byte R, byte G, byte B) lightInk)
+        => ContrastRatio(surface, darkInk) > ContrastRatio(surface, lightInk);
+
+    // Gewichte und Schwellen sind die der WCAG-2.1-Definition der relativen Leuchtdichte;
+    // eigene Werte ergäben Verhältnisse, die sich mit keinem Prüfwerkzeug vergleichen ließen.
     private static double RelativeLuminance(byte r, byte g, byte b)
         => (0.2126 * Linearize(r)) + (0.7152 * Linearize(g)) + (0.0722 * Linearize(b));
 

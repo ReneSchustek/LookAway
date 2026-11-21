@@ -3,7 +3,9 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Core.Tests;
 
 /// <summary>
-/// Tests für die Wertebereichs-Validierung des <see cref="CustomDurations"/>-Value-Objects.
+/// Eigene Arbeits- und Pausendauern außerhalb der Grenzen werden schon beim Setzen
+/// abgewiesen, auch beim Lesen aus der Datei. Sonst käme ein ungültiger Wert bis in den Timer
+/// und scheiterte erst dort an <see cref="BreakInterval"/>.
 /// </summary>
 public sealed class CustomDurationsTests
 {

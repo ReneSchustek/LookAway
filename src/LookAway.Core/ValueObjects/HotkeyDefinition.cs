@@ -35,26 +35,10 @@ public readonly record struct HotkeyDefinition(HotkeyModifiers Modifiers, int Vi
     {
         ArgumentNullException.ThrowIfNull(modifierName);
 
-        List<string> parts = new();
-        if (Modifiers.HasFlag(HotkeyModifiers.Control))
-        {
-            parts.Add(modifierName(HotkeyModifiers.Control));
-        }
-
-        if (Modifiers.HasFlag(HotkeyModifiers.Alt))
-        {
-            parts.Add(modifierName(HotkeyModifiers.Alt));
-        }
-
-        if (Modifiers.HasFlag(HotkeyModifiers.Shift))
-        {
-            parts.Add(modifierName(HotkeyModifiers.Shift));
-        }
-
-        if (Modifiers.HasFlag(HotkeyModifiers.Win))
-        {
-            parts.Add(modifierName(HotkeyModifiers.Win));
-        }
+        // Feste Reihenfolge, wie Windows Kombinationen anzeigt: Strg, Alt, Umschalt, Win.
+        HotkeyModifiers[] displayOrder = [HotkeyModifiers.Control, HotkeyModifiers.Alt, HotkeyModifiers.Shift, HotkeyModifiers.Win];
+        HotkeyModifiers held = Modifiers;
+        List<string> parts = [.. displayOrder.Where(flag => held.HasFlag(flag)).Select(modifierName)];
 
         string key = KeyLabel;
         if (key.Length != 0)

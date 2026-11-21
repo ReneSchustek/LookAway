@@ -19,7 +19,7 @@ public sealed class LogServiceTests
         FakeCrashReporter crashReporter = new() { HasUnresolved = true };
         LogService service = new(NullLogger<LogService>.Instance, crashReporter);
 
-        bool result = service.LogStart("1.2.3", Language.German);
+        bool result = service.LogStart("1.2.3");
 
         Assert.True(result);
     }
@@ -30,7 +30,7 @@ public sealed class LogServiceTests
         FakeCrashReporter crashReporter = new() { HasUnresolved = false };
         LogService service = new(NullLogger<LogService>.Instance, crashReporter);
 
-        bool result = service.LogStart("1.0.0", Language.English);
+        bool result = service.LogStart("1.0.0");
 
         Assert.False(result);
     }
@@ -40,7 +40,7 @@ public sealed class LogServiceTests
     {
         LogService service = new(NullLogger<LogService>.Instance, new FakeCrashReporter());
 
-        _ = Assert.Throws<ArgumentException>(() => service.LogStart("  ", Language.German));
+        _ = Assert.Throws<ArgumentException>(() => service.LogStart("  "));
     }
 
     [Fact]
@@ -102,6 +102,7 @@ public sealed class LogServiceTests
             () => new LogService(NullLogger<LogService>.Instance, null!));
     }
 
+    // Merkt sich die Berichte und meldet offene Abstürze, wenn der Test es vorgibt.
     private sealed class FakeCrashReporter : ICrashReporter
     {
         public bool HasUnresolved { get; set; }
@@ -117,6 +118,7 @@ public sealed class LogServiceTests
         public void MarkResolved() => MarkResolvedCalls++;
     }
 
+    // Wirft beim Schreiben, wie ein voller Datenträger es täte.
     private sealed class ThrowingCrashReporter : ICrashReporter
     {
         public bool WasInvoked { get; private set; }

@@ -6,6 +6,9 @@ namespace LookAway.Data;
 /// </summary>
 internal static class AtomicFile
 {
+    // Ein Virenscanner oder ein paralleler Leser hält die Datei meist nur Millisekunden.
+    // Vier Wiederholungen nach 20, 40, 60 und 80 ms decken das ab und verzögern ein
+    // Speichern im schlechtesten Fall um eine Fünftelsekunde.
     private const int MaxMoveAttempts = 5;
     private const int RetryBackoffMs = 20;
 
@@ -38,14 +41,9 @@ internal static class AtomicFile
             {
                 await Task.Delay(RetryBackoffMs * attempt, cancellationToken).ConfigureAwait(false);
             }
-            catch (IOException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 // Endgültiger Fehlschlag: verwaiste Temp-Datei aufräumen, dann weiterreichen.
-                TryDelete(sourcePath);
-                throw;
-            }
-            catch (UnauthorizedAccessException)
-            {
                 TryDelete(sourcePath);
                 throw;
             }
@@ -58,11 +56,7 @@ internal static class AtomicFile
         {
             File.Delete(path);
         }
-        catch (IOException)
-        {
-            // Aufräumen ist best-effort.
-        }
-        catch (UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             // Aufräumen ist best-effort.
         }

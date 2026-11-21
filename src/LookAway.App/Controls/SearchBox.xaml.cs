@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -13,6 +14,7 @@ namespace LookAway.App.Controls;
 /// auf einen Klick reagiert, fühlt sich langsam an, auch wenn sie schnell ist.
 /// Deshalb meldet <see cref="Text"/> jede Änderung sofort weiter.
 /// </remarks>
+[ExcludeFromCodeCoverage(Justification = "Steuerelement mit Eingabe- und Leeren-Verhalten auf WinUI-Abhängigkeitseigenschaften; ohne WinUI-Laufzeit nicht anlegbar.")]
 internal sealed partial class SearchBox : UserControl
 {
     /// <summary>Der eingegebene Suchtext.</summary>
@@ -83,7 +85,7 @@ internal sealed partial class SearchBox : UserControl
     }
 
     // Escape leert das Feld — der kürzeste Weg zurück zur vollständigen Liste.
-    private void OnInputKeyDown(object sender, KeyRoutedEventArgs e)
+    private void OnInputKeyDown(object _, KeyRoutedEventArgs e)
     {
         ArgumentNullException.ThrowIfNull(e);
 

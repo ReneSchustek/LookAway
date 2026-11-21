@@ -7,7 +7,9 @@ using LookAway.Core.Enums;
 namespace LookAway.App.Tests.ViewModels;
 
 /// <summary>
-/// Tests für <see cref="SettingsTexts"/>: die Beschriftungen des Einstellungsfensters.
+/// Jede Beschriftung des Einstellungsfensters liefert Text, und jede Bindung in den Ansichten
+/// findet ihre Eigenschaft. Eine Bindung auf einen falsch geschriebenen Namen bleibt in WinUI
+/// ohne Ausnahme leer; erst diese Prüfung macht sie sichtbar.
 /// </summary>
 public sealed class SettingsTextsTests
 {

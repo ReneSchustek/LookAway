@@ -4,7 +4,7 @@
     Setup.exe zur Weitergabe.
 
 .DESCRIPTION
-    Ergebnis unter -OutputDir (Standard: F:\Entwicklung\publish\LookAway):
+    Ergebnis unter -OutputDir (Standard: F:\Publish\LookAway):
 
       * alle Programmdateien – ein Doppelklick auf LookAway.exe genügt, ohne
         Installation und ohne vorinstalliertes .NET oder Windows App SDK
@@ -35,7 +35,7 @@
 [CmdletBinding()]
 param(
     [string] $Version,
-    [string] $OutputDir = 'F:\Entwicklung\publish\LookAway',
+    [string] $OutputDir = 'F:\Publish\LookAway',
     [string] $Runtime = 'win-x64'
 )
 

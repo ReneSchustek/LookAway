@@ -27,6 +27,12 @@
               Deklarationszeile selbst ist nichts, was ein Test durchlaufen könnte.
           -->
           <Exclude>[*.Tests]*,[*]*Log</Exclude>
+          <!--
+              Was ein Generator beim Bauen unter obj/ ablegt, etwa die WinRT-Tabellen
+              der App, trägt nicht überall das Generated-Attribut und fiele sonst als
+              ungeprüfter eigener Code in die Zahl.
+          -->
+          <ExcludeByFile>**/obj/**/*.cs</ExcludeByFile>
         </Configuration>
       </DataCollector>
     </DataCollectors>

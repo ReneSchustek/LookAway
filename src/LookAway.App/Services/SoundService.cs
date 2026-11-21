@@ -1,4 +1,4 @@
-using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using LookAway.Core.Enums;
 using LookAway.Core.Interfaces;
@@ -15,6 +15,7 @@ namespace LookAway.App.Services;
 /// </summary>
 internal sealed class SoundService : ISoundService, IDisposable
 {
+    // Die Einstellung zählt in Prozent, MediaPlayer.Volume von 0 bis 1.
     private const double VolumeDivisor = 100.0;
 
     private readonly ILogger<SoundService> _logger;
@@ -46,9 +47,16 @@ internal sealed class SoundService : ISoundService, IDisposable
             return;
         }
 
+        PlayFile(GetFileName(soundType), clamped / VolumeDivisor);
+    }
+
+    // Spielt eine Datei aus den Paket-Assets ab. Fehler gehen ins Protokoll, nie an den Aufrufer.
+    [ExcludeFromCodeCoverage(Justification = "Spielt über den WinRT-MediaPlayer auf dem echten Audiogerät ab; Wächter und Dateiwahl davor prüft SoundServiceTests.")]
+    private void PlayFile(string fileName, double volume)
+    {
         try
         {
-            Uri uri = new($"ms-appx:///Assets/Sounds/{GetFileName(soundType)}");
+            Uri uri = new($"ms-appx:///Assets/Sounds/{fileName}");
             MediaSource source = MediaSource.CreateFromUri(uri);
             _player.Source = source;
 
@@ -56,26 +64,21 @@ internal sealed class SoundService : ISoundService, IDisposable
             _currentSource?.Dispose();
             _currentSource = source;
 
-            _player.Volume = clamped / VolumeDivisor;
+            _player.Volume = volume;
             _player.Play();
         }
         // Der WinRT-MediaPlayer meldet fehlende oder gewechselte Audiogeräte über
         // COM-Fehler; ein bereits freigegebener Player wirft ObjectDisposedException.
-        catch (COMException ex)
-        {
-            SoundServiceLog.PlaybackFailed(_logger, ex);
-        }
-        catch (ObjectDisposedException ex)
-        {
-            SoundServiceLog.PlaybackFailed(_logger, ex);
-        }
-        catch (InvalidOperationException ex)
+        catch (Exception ex) when (ex is COMException or ObjectDisposedException or InvalidOperationException)
         {
             SoundServiceLog.PlaybackFailed(_logger, ex);
         }
     }
 
-    private static string GetFileName(SoundType soundType) => soundType switch
+    /// <summary>Datei des Erinnerungstons unter <c>Assets/Sounds</c>.</summary>
+    /// <param name="soundType">Gewählter Ton.</param>
+    /// <returns>Dateiname; ein unbekannter Ton fällt auf den Gong zurück.</returns>
+    internal static string GetFileName(SoundType soundType) => soundType switch
     {
         SoundType.Chime => "chime.wav",
         SoundType.Bell => "bell.wav",
@@ -104,7 +107,7 @@ internal sealed class SoundService : ISoundService, IDisposable
 internal static partial class SoundServiceLog
 {
     [LoggerMessage(
-        EventId = 1300,
+        EventId = 1720,
         Level = LogLevel.Warning,
         Message = "Erinnerungston konnte nicht abgespielt werden.")]
     public static partial void PlaybackFailed(ILogger logger, Exception exception);

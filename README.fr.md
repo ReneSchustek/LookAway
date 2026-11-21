@@ -21,9 +21,15 @@ et leur concentration.
 
 ## Version actuelle
 
-**[v1.4.1](https://github.com/ReneSchustek/LookAway/releases/latest)** est la version actuelle –
+**[v1.5.0](https://github.com/ReneSchustek/LookAway/releases/latest)** est la version actuelle –
 disponible en Setup.exe et en ZIP portable. Points forts des versions les plus récentes :
 
+- **Votre propre image pour la pause** – au lieu de la couleur, l'écran de pause peut afficher la
+  photo de votre choix, sur tous les écrans et avec un assombrissement réglable.
+- **Installation dans `C:\Program Files`** – l'installateur remplace une installation dans le
+  profil utilisateur ; les mises à jour passent par l'installateur signé et ne s'installent qu'au clic.
+- **Écran de démarrage et nouvelle police** – LookAway affiche son logo et sa version au démarrage
+  et utilise partout Roboto Flex, fournie avec le programme et jamais chargée depuis le réseau.
 - **La surimpression de pause se place de façon fiable au-dessus de tout** : sur chaque moniteur,
   jusqu'au dernier pixel et sans entrée dans la barre des tâches ni dans Alt-Tab.
   **Ctrl + Alt + S** met fin à une pause en cours.
@@ -50,7 +56,8 @@ disponible en Setup.exe et en ZIP portable. Points forts des versions les plus r
   appel), le minuteur de travail redémarre à zéro, les yeux s'étant déjà reposés
 - **Écran de pause assombri** : une surimpression plein écran apaisante masque l'écran pendant la
   pause, affiche le compte à rebours et l'objectif d'exercice, et se ferme à tout moment avec
-  **ÉCHAP** ; en option sur **tous les moniteurs** et dans une **couleur librement choisie**. Elle se
+  **ÉCHAP** ; en option sur **tous les moniteurs**, dans une **couleur librement choisie** ou avec
+  une **image personnelle** (une photo de forêt, par exemple), assombrie à volonté. Elle se
   place au-dessus de toutes les fenêtres et de la barre des tâches et n'apparaît ni dans la barre
   des tâches ni dans le sélecteur Alt-Tab
 - **Actions de pause** : assombrir l'écran (DDC/CI) et mettre en pause la lecture multimédia
@@ -79,8 +86,10 @@ L'application prête à l'emploi est publiée en deux variantes sur la
 ### Setup.exe
 
 1. Téléchargez `LookAway-Setup-<version>.exe` et exécutez-le.
-2. L'installateur demande le dossier cible, l'entrée au menu Démarrer et le démarrage automatique en
-   option. La désinstallation passe par « Applications et fonctionnalités ».
+2. L'installateur demande les droits d'administrateur et installe dans `C:\Program Files\LookAway`,
+   avec une entrée au menu Démarrer et le démarrage automatique en option. Il remplace une installation
+   antérieure dans le profil utilisateur ; paramètres et historique sont conservés. La désinstallation
+   passe par « Applications et fonctionnalités ».
 
 ### Portable
 
@@ -123,7 +132,7 @@ l'icône ouvre le menu, un double-clic ouvre les paramètres.
 
 Toutes les options se trouvent dans la fenêtre des paramètres (menu de la zone de notification →
 « Paramètres… ») dans le menu latéral repliable : général (avec l'apparence), modèle de pause,
-intervalles personnalisés, son, pause (avec assombrissement et sélecteur de couleur), raccourcis,
+intervalles personnalisés, son, pause (avec assombrissement et arrière-plan en couleur ou image personnelle), raccourcis,
 statistiques, journal et À propos (avec les options de mise à jour).
 
 Les modèles de pause se présentent sous forme de cartes avec un champ de recherche et des filtres :
@@ -136,14 +145,15 @@ LookAway peut se maintenir à jour tout seul :
 
 - Lorsque la vérification est active et qu'une nouvelle version est disponible, l'entrée « Update »
   apparaît dans la zone de notification.
-- Un clic télécharge le nouveau ZIP portable, remplace les fichiers du programme après la fermeture et
-  redémarre.
-- Avec l'option **« Mettre à jour automatiquement »**, cela se fait en arrière-plan et s'applique au
-  prochain démarrage, sans intervention.
-- Avant l'application, la version et le SHA-256 du fichier téléchargé sont vérifiés ; le téléchargement
-  se fait uniquement via HTTPS depuis GitHub. Le remplacement automatique fonctionne pour les
-  installations portables et par utilisateur (pour « tous les utilisateurs », LookAway ouvre plutôt la
-  page de version).
+- **Copie installée :** un clic télécharge l'installateur de la nouvelle version et le lance ; Windows
+  demande les droits d'administrateur. L'installateur ferme LookAway, l'installe et le relance. Avec
+  **« Mettre à jour automatiquement »**, l'installateur est déjà téléchargé et vérifié en arrière-plan,
+  mais il ne s'installe qu'au clic, pour que la demande de droits n'apparaisse jamais sans être sollicitée.
+- **Copie portable :** un clic télécharge le nouveau ZIP portable, remplace les fichiers du programme
+  après la fermeture et redémarre ; avec « Mettre à jour automatiquement », cela se fait au prochain
+  démarrage, sans intervention.
+- L'installateur et le ZIP portent chacun une signature que LookAway vérifie avant de les lancer ou de
+  les appliquer ; le téléchargement se fait uniquement via HTTPS depuis GitHub.
 
 ## Modèles de pause
 
@@ -224,5 +234,7 @@ L'architecture, la compilation, les tests et les détails internes sont décrits
 
 Licence MIT, voir [LICENSE](LICENSE).
 
-La police **Roboto** fournie avec l'application est sous licence Apache 2.0 ; le texte de la
-licence se trouve à côté des fichiers de police, dans `src/LookAway.App/Assets/Fonts/LICENSE.txt`.
+Les polices **Roboto Flex** et **Roboto Mono** fournies avec l'application sont sous licence SIL
+Open Font License 1.1 ; les textes de licence se trouvent à côté des fichiers de police, dans
+`src/LookAway.App/Assets/Fonts/` (`OFL-roboto-flex.txt`, `OFL-roboto-mono.txt`). LookAway ne charge
+aucune police depuis le réseau.

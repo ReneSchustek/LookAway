@@ -18,7 +18,7 @@ public sealed class CurrentWorkTaskTrackerTests
         WorkTask newer = WorkTask.Create("Neuere Aufgabe", Now);
         CurrentWorkTaskTracker tracker = new(new StubRepository([older, newer]));
 
-        await tracker.RefreshAsync();
+        await tracker.RefreshAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(newer.Id, tracker.CurrentTaskId);
         Assert.Equal("Neuere Aufgabe", tracker.CurrentTaskText);
@@ -35,7 +35,7 @@ public sealed class CurrentWorkTaskTrackerTests
         WorkTask doneTask = WorkTask.Create("Schon fertig", Now).Complete(Now.AddHours(1));
         CurrentWorkTaskTracker tracker = new(new StubRepository([openTask, doneTask]));
 
-        await tracker.RefreshAsync();
+        await tracker.RefreshAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(openTask.Id, tracker.CurrentTaskId);
     }
@@ -46,7 +46,7 @@ public sealed class CurrentWorkTaskTrackerTests
         CurrentWorkTaskTracker tracker = new(new StubRepository(
             [WorkTask.Create("Alles doneTask", Now).Complete(Now.AddHours(1))]));
 
-        await tracker.RefreshAsync();
+        await tracker.RefreshAsync(TestContext.Current.CancellationToken);
 
         Assert.Null(tracker.CurrentTaskId);
         Assert.Null(tracker.CurrentTaskText);
@@ -57,7 +57,7 @@ public sealed class CurrentWorkTaskTrackerTests
     {
         CurrentWorkTaskTracker tracker = new(new StubRepository([]));
 
-        await tracker.RefreshAsync();
+        await tracker.RefreshAsync(TestContext.Current.CancellationToken);
 
         Assert.Null(tracker.CurrentTaskId);
     }
@@ -71,11 +71,11 @@ public sealed class CurrentWorkTaskTrackerTests
     {
         StubRepository repository = new([WorkTask.Create("Erst openTask", Now)]);
         CurrentWorkTaskTracker tracker = new(repository);
-        await tracker.RefreshAsync();
+        await tracker.RefreshAsync(TestContext.Current.CancellationToken);
         Assert.True(tracker.CurrentTaskId.HasValue);
 
         repository.Tasks = Array.Empty<WorkTask>();
-        await tracker.RefreshAsync();
+        await tracker.RefreshAsync(TestContext.Current.CancellationToken);
 
         Assert.Null(tracker.CurrentTaskId);
         Assert.Null(tracker.CurrentTaskText);

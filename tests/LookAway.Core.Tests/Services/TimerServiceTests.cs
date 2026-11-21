@@ -22,293 +22,211 @@ public sealed class TimerServiceTests
         TimeSpan.FromMinutes(25),
         TimeSpan.FromMinutes(5));
 
-    private static (TimerService Service, FakeClock Clock, FakePowerModeWatcher Power) CreateService()
+    // Der Takt steht auf 24 Stunden: Phasenwechsel lösen die Tests selbst über Tick aus.
+    private static TimerService CreateService(out FakeClock clock, out FakePowerModeWatcher power)
     {
-        FakeClock clock = new(Start);
-        FakePowerModeWatcher power = new();
-        TimerService service = new(clock, power, NullLogger<TimerService>.Instance, TimeSpan.FromHours(24));
-        return (service, clock, power);
+        power = new FakePowerModeWatcher();
+        return CreateService(power, out clock);
+    }
+
+    // Für Tests, die Standby und Aufwachen selbst auslösen; sie entsorgen die Attrappe selbst.
+    private static TimerService CreateService(FakePowerModeWatcher power, out FakeClock clock)
+    {
+        clock = new FakeClock(Start);
+        return new TimerService(clock, power, NullLogger<TimerService>.Instance, TimeSpan.FromHours(24));
     }
 
     [Fact]
     public void Initial_StateIsIdle()
     {
-        (TimerService service, _, _) = CreateService();
-        try
-        {
-            Assert.Equal(TimerState.Idle, service.State);
-            Assert.Null(service.CurrentInterval);
-            Assert.Equal(TimeSpan.Zero, service.Remaining);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        using TimerService service = CreateService(out _, out _);
+        Assert.Equal(TimerState.Idle, service.State);
+        Assert.Null(service.CurrentInterval);
+        Assert.Equal(TimeSpan.Zero, service.Remaining);
     }
 
     [Fact]
     public void Start_TransitionsToWorkingState()
     {
-        (TimerService service, _, _) = CreateService();
-        try
-        {
-            service.Start(ClassicPomodoro);
+        using TimerService service = CreateService(out _, out _);
+        service.Start(ClassicPomodoro);
 
-            Assert.Equal(TimerState.Working, service.State);
-            Assert.Equal(ClassicPomodoro, service.CurrentInterval);
-            Assert.Equal(TimeSpan.FromMinutes(25), service.Remaining);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        Assert.Equal(TimerState.Working, service.State);
+        Assert.Equal(ClassicPomodoro, service.CurrentInterval);
+        Assert.Equal(TimeSpan.FromMinutes(25), service.Remaining);
     }
 
     [Fact]
     public void RestoreWorking_SetsRemainingWorkTimeAndState()
     {
-        (TimerService service, _, _) = CreateService();
-        try
-        {
-            service.RestoreWorking(ClassicPomodoro, TimeSpan.FromMinutes(7));
+        using TimerService service = CreateService(out _, out _);
+        service.RestoreWorking(ClassicPomodoro, TimeSpan.FromMinutes(7));
 
-            Assert.Equal(TimerState.Working, service.State);
-            Assert.Equal(ClassicPomodoro, service.CurrentInterval);
-            Assert.Equal(TimeSpan.FromMinutes(7), service.Remaining);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        Assert.Equal(TimerState.Working, service.State);
+        Assert.Equal(ClassicPomodoro, service.CurrentInterval);
+        Assert.Equal(TimeSpan.FromMinutes(7), service.Remaining);
     }
 
     [Fact]
     public void RestoreWorking_CapsRemainingTimeAtTheFullWorkDuration()
     {
-        (TimerService service, _, _) = CreateService();
-        try
-        {
-            service.RestoreWorking(ClassicPomodoro, TimeSpan.FromMinutes(999));
+        using TimerService service = CreateService(out _, out _);
+        service.RestoreWorking(ClassicPomodoro, TimeSpan.FromMinutes(999));
 
-            Assert.Equal(TimeSpan.FromMinutes(25), service.Remaining);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        Assert.Equal(TimeSpan.FromMinutes(25), service.Remaining);
     }
 
     [Fact]
     public void Tick_BeforeWorkDurationElapsed_StaysWorking()
     {
-        (TimerService service, FakeClock clock, _) = CreateService();
-        try
-        {
-            service.Start(ClassicPomodoro);
-            clock.Advance(TimeSpan.FromMinutes(10));
-            service.Tick();
+        using TimerService service = CreateService(out FakeClock clock, out _);
+        service.Start(ClassicPomodoro);
+        clock.Advance(TimeSpan.FromMinutes(10));
+        service.Tick();
 
-            Assert.Equal(TimerState.Working, service.State);
-            Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        Assert.Equal(TimerState.Working, service.State);
+        Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
     }
 
     [Fact]
     public async Task Tick_AfterWorkDurationElapsed_TransitionsToOnBreakAndEmitsEvent()
     {
-        (TimerService service, FakeClock clock, _) = CreateService();
-        try
-        {
-            service.Start(ClassicPomodoro);
-            clock.Advance(TimeSpan.FromMinutes(25));
-            service.Tick();
+        using TimerService service = CreateService(out FakeClock clock, out _);
+        service.Start(ClassicPomodoro);
+        clock.Advance(TimeSpan.FromMinutes(25));
+        service.Tick();
 
-            Assert.Equal(TimerState.OnBreak, service.State);
-            BreakDueEvent breakDue = await ReadEventAsync<BreakDueEvent>(service);
-            Assert.Equal(ClassicPomodoro, breakDue.Interval);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        Assert.Equal(TimerState.OnBreak, service.State);
+        BreakDueEvent breakDue = await ReadEventAsync<BreakDueEvent>(service);
+        Assert.Equal(ClassicPomodoro, breakDue.Interval);
     }
 
     [Fact]
     public async Task Tick_AfterBreakDurationElapsed_EmitsBreakCompletedAndWorkResumed()
     {
-        (TimerService service, FakeClock clock, _) = CreateService();
-        try
-        {
-            service.Start(ClassicPomodoro);
-            clock.Advance(TimeSpan.FromMinutes(25));
-            service.Tick();
-            _ = await ReadEventAsync<BreakDueEvent>(service);
+        using TimerService service = CreateService(out FakeClock clock, out _);
+        service.Start(ClassicPomodoro);
+        clock.Advance(TimeSpan.FromMinutes(25));
+        service.Tick();
+        _ = await ReadEventAsync<BreakDueEvent>(service);
 
-            clock.Advance(TimeSpan.FromMinutes(5));
-            service.Tick();
+        clock.Advance(TimeSpan.FromMinutes(5));
+        service.Tick();
 
-            Assert.Equal(TimerState.Working, service.State);
-            _ = await ReadEventAsync<BreakCompletedEvent>(service);
-            _ = await ReadEventAsync<WorkResumedEvent>(service);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        Assert.Equal(TimerState.Working, service.State);
+        _ = await ReadEventAsync<BreakCompletedEvent>(service);
+        _ = await ReadEventAsync<WorkResumedEvent>(service);
     }
 
     [Fact]
     public async Task Pause_FromWorking_StoresRemainingTime()
     {
-        (TimerService service, FakeClock clock, _) = CreateService();
-        try
-        {
-            service.Start(ClassicPomodoro);
-            clock.Advance(TimeSpan.FromMinutes(10));
-            service.Pause();
+        using TimerService service = CreateService(out FakeClock clock, out _);
+        service.Start(ClassicPomodoro);
+        clock.Advance(TimeSpan.FromMinutes(10));
+        service.Pause();
 
-            Assert.Equal(TimerState.Paused, service.State);
-            Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
+        Assert.Equal(TimerState.Paused, service.State);
+        Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
 
-            TimerPausedEvent paused = await ReadEventAsync<TimerPausedEvent>(service);
-            Assert.Equal(TimerState.Working, paused.PausedFromState);
-            Assert.False(paused.PausedBySystem);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        TimerPausedEvent paused = await ReadEventAsync<TimerPausedEvent>(service);
+        Assert.Equal(TimerState.Working, paused.PausedFromState);
+        Assert.False(paused.PausedBySystem);
     }
 
     [Fact]
     public async Task Resume_AfterUserPause_RestoresWorkingStateWithRemainingTime()
     {
-        (TimerService service, FakeClock clock, _) = CreateService();
-        try
-        {
-            service.Start(ClassicPomodoro);
-            clock.Advance(TimeSpan.FromMinutes(10));
-            service.Pause();
-            _ = await ReadEventAsync<TimerPausedEvent>(service);
+        using TimerService service = CreateService(out FakeClock clock, out _);
+        service.Start(ClassicPomodoro);
+        clock.Advance(TimeSpan.FromMinutes(10));
+        service.Pause();
+        _ = await ReadEventAsync<TimerPausedEvent>(service);
 
-            clock.Advance(TimeSpan.FromMinutes(7));
-            service.ResumeAfterPause();
+        clock.Advance(TimeSpan.FromMinutes(7));
+        service.ResumeAfterPause();
 
-            Assert.Equal(TimerState.Working, service.State);
-            Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
+        Assert.Equal(TimerState.Working, service.State);
+        Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
 
-            _ = await ReadEventAsync<WorkResumedEvent>(service);
+        _ = await ReadEventAsync<WorkResumedEvent>(service);
 
-            // Tick nach 14 Minuten — Phase noch nicht abgelaufen.
-            clock.Advance(TimeSpan.FromMinutes(14));
-            service.Tick();
-            Assert.Equal(TimerState.Working, service.State);
+        // Tick nach 14 Minuten — Phase noch nicht abgelaufen.
+        clock.Advance(TimeSpan.FromMinutes(14));
+        service.Tick();
+        Assert.Equal(TimerState.Working, service.State);
 
-            // Tick nach insgesamt 15 Minuten Restzeit — Phase läuft ab.
-            clock.Advance(TimeSpan.FromMinutes(1));
-            service.Tick();
-            Assert.Equal(TimerState.OnBreak, service.State);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        // Tick nach insgesamt 15 Minuten Restzeit — Phase läuft ab.
+        clock.Advance(TimeSpan.FromMinutes(1));
+        service.Tick();
+        Assert.Equal(TimerState.OnBreak, service.State);
     }
 
     [Fact]
     public void Pause_FromIdle_HasNoEffect()
     {
-        (TimerService service, _, _) = CreateService();
-        try
-        {
-            service.Pause();
-            Assert.Equal(TimerState.Idle, service.State);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        using TimerService service = CreateService(out _, out _);
+        service.Pause();
+        Assert.Equal(TimerState.Idle, service.State);
     }
 
     [Fact]
     public void ResumeAfterPause_WhenNotPaused_HasNoEffect()
     {
-        (TimerService service, _, _) = CreateService();
-        try
-        {
-            service.Start(ClassicPomodoro);
-            service.ResumeAfterPause();
-            Assert.Equal(TimerState.Working, service.State);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        using TimerService service = CreateService(out _, out _);
+        service.Start(ClassicPomodoro);
+        service.ResumeAfterPause();
+        Assert.Equal(TimerState.Working, service.State);
     }
 
     [Fact]
     public async Task SystemSuspend_PausesTimerAndMarksAsSystem()
     {
-        (TimerService service, FakeClock clock, FakePowerModeWatcher power) = CreateService();
-        try
-        {
-            service.Start(ClassicPomodoro);
-            clock.Advance(TimeSpan.FromMinutes(10));
-            power.RaiseSuspending();
+        using FakePowerModeWatcher power = new();
+        using TimerService service = CreateService(power, out FakeClock clock);
+        service.Start(ClassicPomodoro);
+        clock.Advance(TimeSpan.FromMinutes(10));
+        power.RaiseSuspending();
 
-            Assert.Equal(TimerState.Paused, service.State);
-            Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
+        Assert.Equal(TimerState.Paused, service.State);
+        Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
 
-            TimerPausedEvent paused = await ReadEventAsync<TimerPausedEvent>(service);
-            Assert.True(paused.PausedBySystem);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        TimerPausedEvent paused = await ReadEventAsync<TimerPausedEvent>(service);
+        Assert.True(paused.PausedBySystem);
     }
 
+    /// <remarks>
+    /// War der Rechner mindestens eine Pausenlänge im Standby, hat der Nutzer nicht auf den
+    /// Bildschirm geschaut — die Augen haben bereits pausiert. Der Arbeits-Timer startet daher
+    /// frisch (volle Arbeitszeit), statt mit der Restzeit weiterzulaufen.
+    /// </remarks>
     [Fact]
     public async Task SystemResume_AfterLongSleep_RestartsWorkPhase()
     {
-        // Semantik: War der Rechner mindestens eine Pausenlänge im Standby, hat
-        // der Nutzer nicht auf den Bildschirm geschaut — die Augen haben bereits
-        // pausiert. Der Arbeits-Timer startet daher frisch (volle Arbeitszeit),
-        // statt mit der Restzeit weiterzulaufen.
-        (TimerService service, FakeClock clock, FakePowerModeWatcher power) = CreateService();
-        try
-        {
-            service.Start(ClassicPomodoro);
-            clock.Advance(TimeSpan.FromMinutes(10));
-            power.RaiseSuspending();
-            _ = await ReadEventAsync<TimerPausedEvent>(service);
+        using FakePowerModeWatcher power = new();
+        using TimerService service = CreateService(power, out FakeClock clock);
+        service.Start(ClassicPomodoro);
+        clock.Advance(TimeSpan.FromMinutes(10));
+        power.RaiseSuspending();
+        _ = await ReadEventAsync<TimerPausedEvent>(service);
 
-            // 30 min Sleep >= 5 min Pause -> Neustart der Arbeitsphase.
-            clock.Advance(TimeSpan.FromMinutes(30));
-            power.RaiseResuming();
+        // 30 min Sleep >= 5 min Pause -> Neustart der Arbeitsphase.
+        clock.Advance(TimeSpan.FromMinutes(30));
+        power.RaiseResuming();
 
-            Assert.Equal(TimerState.Working, service.State);
-            Assert.Equal(TimeSpan.FromMinutes(25), service.Remaining);
+        Assert.Equal(TimerState.Working, service.State);
+        Assert.Equal(TimeSpan.FromMinutes(25), service.Remaining);
 
-            _ = await ReadEventAsync<WorkResumedEvent>(service);
+        _ = await ReadEventAsync<WorkResumedEvent>(service);
 
-            // Erst nach vollen 25 weiteren Minuten ist die frische Phase abgelaufen.
-            clock.Advance(TimeSpan.FromMinutes(24));
-            service.Tick();
-            Assert.Equal(TimerState.Working, service.State);
+        // Erst nach vollen 25 weiteren Minuten ist die frische Phase abgelaufen.
+        clock.Advance(TimeSpan.FromMinutes(24));
+        service.Tick();
+        Assert.Equal(TimerState.Working, service.State);
 
-            clock.Advance(TimeSpan.FromMinutes(1));
-            service.Tick();
-            Assert.Equal(TimerState.OnBreak, service.State);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        clock.Advance(TimeSpan.FromMinutes(1));
+        service.Tick();
+        Assert.Equal(TimerState.OnBreak, service.State);
     }
 
     [Fact]
@@ -317,216 +235,157 @@ public sealed class TimerServiceTests
         // Sleep während einer laufenden Pause: nach langem Standby ist die Pause
         // ohnehin vorbei. Es wird ein reguläres Pausenende signalisiert
         // (BreakCompleted -> Overlay/Helligkeit zurücksetzen) und frisch gearbeitet.
-        (TimerService service, FakeClock clock, FakePowerModeWatcher power) = CreateService();
-        try
-        {
-            service.Start(ClassicPomodoro);
-            clock.Advance(TimeSpan.FromMinutes(25));
-            service.Tick(); // -> OnBreak
-            _ = await ReadEventAsync<BreakDueEvent>(service);
+        using FakePowerModeWatcher power = new();
+        using TimerService service = CreateService(power, out FakeClock clock);
+        service.Start(ClassicPomodoro);
+        clock.Advance(TimeSpan.FromMinutes(25));
+        service.Tick(); // -> OnBreak
+        _ = await ReadEventAsync<BreakDueEvent>(service);
 
-            clock.Advance(TimeSpan.FromMinutes(1));
-            power.RaiseSuspending();
-            _ = await ReadEventAsync<TimerPausedEvent>(service);
+        clock.Advance(TimeSpan.FromMinutes(1));
+        power.RaiseSuspending();
+        _ = await ReadEventAsync<TimerPausedEvent>(service);
 
-            clock.Advance(TimeSpan.FromMinutes(30));
-            power.RaiseResuming();
+        clock.Advance(TimeSpan.FromMinutes(30));
+        power.RaiseResuming();
 
-            Assert.Equal(TimerState.Working, service.State);
-            Assert.Equal(TimeSpan.FromMinutes(25), service.Remaining);
+        Assert.Equal(TimerState.Working, service.State);
+        Assert.Equal(TimeSpan.FromMinutes(25), service.Remaining);
 
-            _ = await ReadEventAsync<BreakCompletedEvent>(service);
-            _ = await ReadEventAsync<WorkResumedEvent>(service);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        _ = await ReadEventAsync<BreakCompletedEvent>(service);
+        _ = await ReadEventAsync<WorkResumedEvent>(service);
     }
 
     [Fact]
     public async Task SystemResume_AfterShortSleep_ContinuesWorking()
     {
-        (TimerService service, FakeClock clock, FakePowerModeWatcher power) = CreateService();
-        try
-        {
-            service.Start(ClassicPomodoro);
-            clock.Advance(TimeSpan.FromMinutes(10));
-            power.RaiseSuspending();
-            _ = await ReadEventAsync<TimerPausedEvent>(service);
+        using FakePowerModeWatcher power = new();
+        using TimerService service = CreateService(power, out FakeClock clock);
+        service.Start(ClassicPomodoro);
+        clock.Advance(TimeSpan.FromMinutes(10));
+        power.RaiseSuspending();
+        _ = await ReadEventAsync<TimerPausedEvent>(service);
 
-            clock.Advance(TimeSpan.FromMinutes(2));
-            power.RaiseResuming();
+        clock.Advance(TimeSpan.FromMinutes(2));
+        power.RaiseResuming();
 
-            Assert.Equal(TimerState.Working, service.State);
-            Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
+        Assert.Equal(TimerState.Working, service.State);
+        Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
 
-            _ = await ReadEventAsync<WorkResumedEvent>(service);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        _ = await ReadEventAsync<WorkResumedEvent>(service);
     }
 
     [Fact]
     public void SystemResume_DoesNotResumeUserPause()
     {
-        (TimerService service, FakeClock clock, FakePowerModeWatcher power) = CreateService();
-        try
-        {
-            service.Start(ClassicPomodoro);
-            clock.Advance(TimeSpan.FromMinutes(5));
-            service.Pause();
+        using FakePowerModeWatcher power = new();
+        using TimerService service = CreateService(power, out FakeClock clock);
+        service.Start(ClassicPomodoro);
+        clock.Advance(TimeSpan.FromMinutes(5));
+        service.Pause();
 
-            // System sendet ein Resume-Event, obwohl die Pause vom Benutzer kam.
-            power.RaiseResuming();
+        // System sendet ein Resume-Event, obwohl die Pause vom Benutzer kam.
+        power.RaiseResuming();
 
-            Assert.Equal(TimerState.Paused, service.State);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        Assert.Equal(TimerState.Paused, service.State);
     }
 
     [Fact]
     public async Task ResumeAfterAway_ShortAway_ResumesRemainingTime()
     {
-        (TimerService service, FakeClock clock, _) = CreateService();
-        try
-        {
-            service.Start(ClassicPomodoro);
-            clock.Advance(TimeSpan.FromMinutes(10));
-            service.Pause();
-            _ = await ReadEventAsync<TimerPausedEvent>(service);
+        using TimerService service = CreateService(out FakeClock clock, out _);
+        service.Start(ClassicPomodoro);
+        clock.Advance(TimeSpan.FromMinutes(10));
+        service.Pause();
+        _ = await ReadEventAsync<TimerPausedEvent>(service);
 
-            // 2 min Abwesenheit < 5 min Pause -> Restzeit (15 min) läuft weiter.
-            service.ResumeAfterAway(TimeSpan.FromMinutes(2));
+        // 2 min Abwesenheit < 5 min Pause -> Restzeit (15 min) läuft weiter.
+        service.ResumeAfterAway(TimeSpan.FromMinutes(2));
 
-            Assert.Equal(TimerState.Working, service.State);
-            Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        Assert.Equal(TimerState.Working, service.State);
+        Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
     }
 
     [Fact]
     public async Task ResumeAfterAway_LongAway_RestartsFullWorkPhase()
     {
-        (TimerService service, FakeClock clock, _) = CreateService();
-        try
-        {
-            service.Start(ClassicPomodoro);
-            clock.Advance(TimeSpan.FromMinutes(10));
-            service.Pause();
-            _ = await ReadEventAsync<TimerPausedEvent>(service);
+        using TimerService service = CreateService(out FakeClock clock, out _);
+        service.Start(ClassicPomodoro);
+        clock.Advance(TimeSpan.FromMinutes(10));
+        service.Pause();
+        _ = await ReadEventAsync<TimerPausedEvent>(service);
 
-            // 5 min Abwesenheit >= 5 min Pause -> frische Arbeitsphase (25 min).
-            service.ResumeAfterAway(TimeSpan.FromMinutes(5));
+        // 5 min Abwesenheit >= 5 min Pause -> frische Arbeitsphase (25 min).
+        service.ResumeAfterAway(TimeSpan.FromMinutes(5));
 
-            Assert.Equal(TimerState.Working, service.State);
-            Assert.Equal(TimeSpan.FromMinutes(25), service.Remaining);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        Assert.Equal(TimerState.Working, service.State);
+        Assert.Equal(TimeSpan.FromMinutes(25), service.Remaining);
     }
 
     [Fact]
     public void ResumeAfterAway_WhenPausedBySystem_IsNoOp()
     {
-        (TimerService service, FakeClock clock, FakePowerModeWatcher power) = CreateService();
-        try
-        {
-            service.Start(ClassicPomodoro);
-            clock.Advance(TimeSpan.FromMinutes(10));
-            power.RaiseSuspending(); // System-Pause
+        using FakePowerModeWatcher power = new();
+        using TimerService service = CreateService(power, out FakeClock clock);
+        service.Start(ClassicPomodoro);
+        clock.Advance(TimeSpan.FromMinutes(10));
+        power.RaiseSuspending(); // System-Pause
 
-            service.ResumeAfterAway(TimeSpan.FromMinutes(30));
+        service.ResumeAfterAway(TimeSpan.FromMinutes(30));
 
-            // System-Pausen werden über den Power-Resume-Pfad behandelt, nicht hier.
-            Assert.Equal(TimerState.Paused, service.State);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        // System-Pausen werden über den Power-Resume-Pfad behandelt, nicht hier.
+        Assert.Equal(TimerState.Paused, service.State);
     }
 
     [Fact]
     public void ResumeAfterAway_WhenNotPaused_IsNoOp()
     {
-        (TimerService service, FakeClock clock, _) = CreateService();
-        try
-        {
-            service.Start(ClassicPomodoro);
-            clock.Advance(TimeSpan.FromMinutes(10));
+        using TimerService service = CreateService(out FakeClock clock, out _);
+        service.Start(ClassicPomodoro);
+        clock.Advance(TimeSpan.FromMinutes(10));
 
-            service.ResumeAfterAway(TimeSpan.FromMinutes(30));
+        service.ResumeAfterAway(TimeSpan.FromMinutes(30));
 
-            Assert.Equal(TimerState.Working, service.State);
-            Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        Assert.Equal(TimerState.Working, service.State);
+        Assert.Equal(TimeSpan.FromMinutes(15), service.Remaining);
     }
 
     [Fact]
     public async Task Stop_FromWorkingState_ResetsToIdleAndEmitsStopEvent()
     {
-        (TimerService service, _, _) = CreateService();
-        try
-        {
-            service.Start(ClassicPomodoro);
-            service.StopCycle();
+        using TimerService service = CreateService(out _, out _);
+        service.Start(ClassicPomodoro);
+        service.StopCycle();
 
-            Assert.Equal(TimerState.Idle, service.State);
-            Assert.Null(service.CurrentInterval);
-            _ = await ReadEventAsync<TimerStoppedEvent>(service);
-        }
-        finally
-        {
-            service.Dispose();
-        }
+        Assert.Equal(TimerState.Idle, service.State);
+        Assert.Null(service.CurrentInterval);
+        _ = await ReadEventAsync<TimerStoppedEvent>(service);
     }
 
     [Fact]
     public async Task Stop_WhenAlreadyIdle_DoesNotEmitEvent()
     {
-        (TimerService service, _, _) = CreateService();
+        using TimerService service = CreateService(out _, out _);
+        service.StopCycle();
+
+        Assert.Equal(TimerState.Idle, service.State);
+
+        using CancellationTokenSource cts = new(TimeSpan.FromMilliseconds(150));
+        bool eventReceived = false;
         try
         {
-            service.StopCycle();
-
-            Assert.Equal(TimerState.Idle, service.State);
-
-            using CancellationTokenSource cts = new(TimeSpan.FromMilliseconds(150));
-            bool eventReceived = false;
-            try
+            await foreach (TimerEvent _ in service.Events.WithCancellation(cts.Token))
             {
-                await foreach (TimerEvent _ in service.Events.WithCancellation(cts.Token))
-                {
-                    eventReceived = true;
-                    break;
-                }
+                eventReceived = true;
+                break;
             }
-            catch (OperationCanceledException)
-            {
-                // erwartet — kein Event in der Wartezeit
-            }
-
-            Assert.False(eventReceived);
         }
-        finally
+        catch (OperationCanceledException)
         {
-            service.Dispose();
+            // erwartet — kein Event in der Wartezeit
         }
+
+        Assert.False(eventReceived);
     }
 
     [Fact]
@@ -557,7 +416,7 @@ public sealed class TimerServiceTests
     [Fact]
     public void OperationsAfterDispose_ThrowObjectDisposed()
     {
-        (TimerService service, _, _) = CreateService();
+        TimerService service = CreateService(out _, out _);
         service.Dispose();
 
         _ = Assert.Throws<ObjectDisposedException>(() => service.Start(ClassicPomodoro));

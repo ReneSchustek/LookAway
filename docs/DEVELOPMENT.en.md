@@ -42,6 +42,30 @@ dotnet build --configuration Release
 dotnet test
 ```
 
+### Measurements
+
+Whatever grows with the data is measured with BenchmarkDotNet, separate from the normal test run
+(`tests/LookAway.Benchmarks`, not a test project):
+
+- loading a year of history, appending one break (every end of a break does this), the statistics
+  page and the CSV export over the full data
+- the log page over a week of log files, quiet and loud, with 500 and 2,000 entries
+- checking an overlay photo of 12 and 50 megapixels, which every break start waits for
+
+The measurement data is generated from fixed seeds (`tests/MeasurementData`) and is the same on every
+machine; every measurement checks during setup that it runs over the whole data. Run it via
+
+```powershell
+./tools/run-benchmarks.ps1 -ResultsDir <storage outside the repository>
+```
+
+The script stores each run's reports with date, version, commit and machine name. Values from
+different machines are not comparable; only a machine's series shows a slowdown.
+
+In the normal test run, three coarse guards (`SpeedGuardTests`) hold what must not get worse: the
+statistics page and appending over a year, the log page in a loud week, a 12-megapixel photo before
+the break. Their limits sit well above the measured values so that no slow machine trips them.
+
 ## Development
 
 ```bash
@@ -92,7 +116,8 @@ LookAway logs into a per-day file per Windows user:
 %APPDATA%\LookAway\logs\crashes\crash-YYYYMMDD-hhmmss-fff.json
 ```
 
-- **Format per entry:** `[Timestamp ISO-8601 UTC] [Level] Category: Message` plus an optional stack trace
+- **Format per entry:** `[Timestamp ISO-8601 UTC] [Level] [p<process id>] Category: Message` plus an optional stack trace
+- **Run tag:** the process id in the third bracket keeps apart what the old instance, the update helper and the new instance write into the same daily file, and lets you follow the steps of an update across processes. The log view still reads older lines without the tag
 - **Rotation:** daily; old files (>7 days) are cleaned up on the first write of the day
 - **Log level:** Debug build = `Debug`, Release = `Information`. Microsoft and System categories default to `Warning`
 - **Sanitization:** the Windows user name and paths under `%LOCALAPPDATA%`, `%APPDATA%`, `%USERPROFILE%` are replaced with generic placeholders before writing
@@ -101,6 +126,25 @@ LookAway logs into a per-day file per Windows user:
 - **Detection:** on the next launch `LogService` reports via `ICrashReporter.HasUnresolvedCrashes` whether the previous run crashed; the result is written to the startup log
 
 The implementation is Microsoft-standard (no Serilog/NLog): a custom `RollingFileLoggerProvider` (Data) with `LoggerMessage` source-generator callers in the consumers.
+
+**Event IDs** (`EventId`) are assigned in ranges of a hundred; each number belongs to exactly one message, checked by `LogEventIdGuardTests`:
+
+| Range | Origin |
+|---|---|
+| 10xx | Lifecycle (`LogService`) |
+| 11xx | App class and update flow (`UpdateOrchestrator`) |
+| 12xx | View models (settings, wizard, statistics) |
+| 13xx | Break flow (`BreakCoordinator`) |
+| 14xx | History and tasks (JSON repositories) |
+| 15xx | Global hotkeys |
+| 16xx | Update check, download and installation |
+| 17xx | Break actions and sound (dimming, media, reminder sound) |
+| 18xx | Reminder and overlay windows |
+| 20xx | Settings (file) |
+| 30xx | Timer and autostart entry |
+| 31xx | Autostart reconciliation |
+| 32xx | Idle detection |
+| 40xx | Tray icon |
 
 ## Timer engine
 
@@ -207,10 +251,24 @@ monitor with a `BreakOverlayWindow` (with `DarkenAllScreens`; otherwise only the
   it reaches the windows. The window is not translucent, so an alpha value could not let anything
   show through — it would merely blend against the window background, which is not the same on
   every monitor. Afterwards all monitors show the identical surface.
+- Instead of the colour, a picture of your own (JPG/PNG) can form the background
+  (`Settings.BreakOverlayBackground`, `BreakOverlayImagePath`, `BreakOverlayImageDimPercent`;
+  combined in `OverlayBackdrop`). Before the first window, `IOverlayImageInspector` (Core) →
+  `WindowsOverlayImageInspector` (Data) reads the picture on trial with the Windows image decoder:
+  size and average colour. If the file is missing or unreadable, it returns `null` and logs the
+  reason, and the presenter shows the colour — a break never depends on a picture. Because reading
+  happens off the UI thread, a generation counter discards a window setup whose break has been
+  closed in the meantime.
+- Every window draws the picture filling the monitor (`UniformToFill`) over the opaque colour, with
+  a black layer at the configured opacity on top. It decodes only as large as the monitor needs to
+  be filled (`OverlayImage.DecodeWidth`); a 50-megapixel photo fully decoded would take around
+  200 MB per monitor. The colour underneath covers the monitor until the picture is drawn and steps
+  in if the window cannot load it after all.
 - Which set of text colours sits on that surface is decided by the contrast ratio
   (`HexColor.ContrastRatio`, WCAG 2.1) between the surface and the two sets from the themes
   (`RcOverlayForeground*` and `…OnLight`). A brightness threshold previously existed in two places
-  with two different formulas and got mid-range greys wrong.
+  with two different formulas and got mid-range greys wrong. With a picture, the surface is its average
+  colour after darkening (`OverlayImage.Dim`).
 - The emergency exit is `BreakCoordinator.SkipOrSnooze`: with an open overlay it closes the overlay
   and runs into the same completion as the regular end of a break (`EndBreakLocked`), so brightness
   and media playback are restored on both paths.
@@ -272,8 +330,14 @@ On the very first launch (no `settings.json` present, `Settings.IsFirstRun`) a t
 The visual design lives in `src/LookAway.App/Themes/` and is merged in `App.xaml`:
 
 - `Tokens.xaml`: everything that is the same in both appearances — spacing (base unit 8 px),
-  corner radii (4–6 px), border thickness, `RcFontFamily` (Roboto with system fallback) and the
-  font scale (H1 28, H2 22, H3 18, Body 14, Caption 12). **No color value.**
+  corner radii (4–6 px), border thickness, `RcFontFamily` (Roboto Flex with system fallback),
+  `RcMonoFontFamily` (Roboto Mono for timestamps and identifiers in the log),
+  `ContentControlThemeFontFamily` (so built-in controls use Roboto Flex too) and the font scale
+  (H1 28, H2 22, H3 18, Body 14, Caption 12). **No color value.** Both typefaces ship as variable
+  TTF files under `Assets/Fonts/`, one file carrying every weight; `SchriftGuardTests` holds the
+  licence text (SIL Open Font License 1.1) and the delivery as `Content` in place. Roboto Flex
+  has equal-width figures by default, so the overlay countdown needs no monospaced typeface to
+  stay still as the seconds change.
 - `Light.xaml` and `Dark.xaml`: the same keys, two sets of values. Surfaces, text, primary colour
   (`RcPrimary`), status colours — plus the framework brushes, so that standard controls do not
   pick up the accent colour configured in Windows.
@@ -377,9 +441,25 @@ LookAway optionally checks for new versions via the GitHub releases API (enabled
   and prerelease suffix are stripped).
 - `UpdateSchedule` (Core) decides, based on the frequency (`OnStartup`/`Daily`/`Weekly`) and the
   last check time, whether to check at startup — sparing the GitHub rate limit.
-- Settings (About tab): enable, frequency, "Check now" with a status display and a download link.
-  If the background check finds an update at startup, the tray shows the entry "Download update",
-  which opens the release page in the browser (no auto-install).
+- Settings (About tab): enable, frequency, "Check now" with a status display, "Install now" and a
+  link to the release page as a manual way out. If the background check finds an update, the tray
+  shows the entry "Update".
+- **Update path by kind of installation:** an **installed** copy (no `portable.flag`, under
+  `C:\Program Files`) updates itself through the signed setup of the release: `SetupUpdate` (App)
+  has `UpdateInstallerService.PrepareSetupAsync` (Data, `SetupStager`) download setup and `.sig` to
+  `%LOCALAPPDATA%\LookAway\updates\<version>`, lock the file against writing and verify the
+  signature on exactly that open stream (`ReleaseSignatureVerifier.VerifyStream`). The lock
+  (`VerifiedSetup`) holds until after the start, so nobody can swap the verified file. The setup runs
+  silently (`InstallerArguments.SilentUpdate`) and elevates itself; LookAway keeps running until then.
+  Only after consent does the setup set the single-instance lock's event
+  `Local\LookAway-Quit-<user>` and wait until its mutex is free; the running instance ends as it
+  would from the tray menu. The
+  setup then restarts LookAway with the user's rights (`/RELAUNCH`, `runasoriginaluser`). With
+  auto-update on, the setup is only prepared in the background; it starts on a click (tray "Update",
+  settings "Install now"), because Windows asks for administrator rights.
+- **Portable copy:** downloads the portable ZIP, verifies its signature, unpacks it to
+  `%LOCALAPPDATA%\LookAway\updates\<version>` and swaps the program files through a short-lived
+  helper process (`--apply-update`), with backup and rollback; with auto-update on, on the next start.
 
 ## Break actions
 
@@ -427,11 +507,20 @@ attaches them to the GitHub release (`.github/workflows/ci.yml`, job `release`):
 | Artifact | Built by | Signature |
 |----------|----------|-----------|
 | `LookAway-Portable-v<version>.zip` | `tools/publish-portable.ps1` | `.zip.sig`, if the secret `LOOKAWAY_SIGNING_KEY` is present |
-| `LookAway-Setup-v<version>.exe` | `tools/publish-setup.ps1` (Inno Setup from the runner) | none — SHA-256 in the release text |
+| `LookAway-Setup-v<version>.exe` | `tools/publish-setup.ps1` (Inno Setup from the runner) | `.exe.sig`, under the same condition |
 
-The Setup.exe deliberately gets **no** `.sig`: the updater picks the first `.sig` of a release
-(`GitHubUpdateChecker.FindSignatureAssetUrl`) and could mistake a second one for the ZIP's signature.
-Both hashes go into the release text instead, which the job puts in front of the generated notes.
+Each signature belongs to the file whose name it carries; that is how `GitHubUpdateChecker` pairs
+them. Versions up to 1.4 still take the first `.sig` of a release. For them it matters that the ZIP's
+comes first: by name (`LookAway-Portable-…` before `LookAway-Setup-…`) as well as by upload order
+(the ZIP first). Both hashes also go into the release text, which the job puts in front of the
+generated notes.
+
+The setup always installs with administrator rights to `C:\Program Files\LookAway`. It closes and
+silently removes an earlier installation in the user profile (uninstall entry under HKCU), including
+files that earlier updates added through the file swap and that the old uninstaller does not know;
+settings
+and history under `%APPDATA%` stay, and the autostart state carries over. An instance before 1.5 does
+not create the event; if one is still running, the setup stops and asks to close LookAway.
 
 ## Review
 

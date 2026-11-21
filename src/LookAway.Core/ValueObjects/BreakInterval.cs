@@ -12,16 +12,20 @@ namespace LookAway.Core.ValueObjects;
 /// </remarks>
 public sealed record BreakInterval
 {
-    /// <summary>Untergrenze für Arbeitsdauer (5 Minuten).</summary>
+    /// <summary>
+    /// Untergrenze für Arbeitsdauer (5 Minuten). So lang ist auch das Zurückstellen
+    /// (<see cref="Domain.BreakDefaults.SnoozeWorkDuration"/>); kürzer wäre die Erinnerung
+    /// eine Dauerstörung.
+    /// </summary>
     public static readonly TimeSpan MinWorkDuration = TimeSpan.FromMinutes(5);
 
-    /// <summary>Obergrenze für Arbeitsdauer (8 Stunden).</summary>
+    /// <summary>Obergrenze für Arbeitsdauer (8 Stunden, ein Arbeitstag).</summary>
     public static readonly TimeSpan MaxWorkDuration = TimeSpan.FromHours(8);
 
     /// <summary>Untergrenze für Pausendauer (1 Minute).</summary>
     public static readonly TimeSpan MinBreakDuration = TimeSpan.FromMinutes(1);
 
-    /// <summary>Obergrenze für Pausendauer (2 Stunden).</summary>
+    /// <summary>Obergrenze für Pausendauer (2 Stunden); länger ist keine Bildschirmpause mehr, sondern Feierabend.</summary>
     public static readonly TimeSpan MaxBreakDuration = TimeSpan.FromHours(2);
 
     private BreakInterval()
@@ -54,31 +58,12 @@ public sealed record BreakInterval
         TimeSpan breakDuration,
         TimeSpan? maxLimit = null)
     {
-        if (workDuration < MinWorkDuration || workDuration > MaxWorkDuration)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(workDuration),
-                workDuration,
-                $"WorkDuration muss zwischen {MinWorkDuration} und {MaxWorkDuration} liegen.");
-        }
-
-        if (breakDuration < MinBreakDuration || breakDuration > MaxBreakDuration)
-        {
-            throw new ArgumentOutOfRangeException(
-                nameof(breakDuration),
-                breakDuration,
-                $"BreakDuration muss zwischen {MinBreakDuration} und {MaxBreakDuration} liegen.");
-        }
+        EnsureInRange(workDuration, MinWorkDuration, MaxWorkDuration, nameof(workDuration), "WorkDuration");
+        EnsureInRange(breakDuration, MinBreakDuration, MaxBreakDuration, nameof(breakDuration), "BreakDuration");
 
         if (maxLimit is { } limit)
         {
-            if (limit < MinWorkDuration || limit > MaxWorkDuration)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(maxLimit),
-                    maxLimit,
-                    $"MaxLimit muss zwischen {MinWorkDuration} und {MaxWorkDuration} liegen.");
-            }
+            EnsureInRange(limit, MinWorkDuration, MaxWorkDuration, nameof(maxLimit), "MaxLimit");
 
             if (limit < workDuration)
             {
@@ -94,5 +79,13 @@ public sealed record BreakInterval
             BreakDuration = breakDuration,
             MaxLimit = maxLimit,
         };
+    }
+
+    private static void EnsureInRange(TimeSpan value, TimeSpan min, TimeSpan max, string parameterName, string label)
+    {
+        if (value < min || value > max)
+        {
+            throw new ArgumentOutOfRangeException(parameterName, value, $"{label} muss zwischen {min} und {max} liegen.");
+        }
     }
 }

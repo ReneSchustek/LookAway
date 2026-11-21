@@ -1,7 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Net.Http;
-using System.Threading;
 using LookAway.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -15,23 +11,66 @@ namespace LookAway.Data.Net;
 public sealed class HttpGetClient : IHttpGetClient, IDisposable
 {
     private const string UserAgent = "LookAway-UpdateChecker/1.0";
+
+    // Die API-Antwort ist wenige Kilobyte groß. Zehn Sekunden reichen dafür auch über eine
+    // langsame Leitung; ein hängendes Netz hält die Prüfung nicht länger auf.
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
 
     private readonly HttpClient _httpClient;
     private readonly ILogger<HttpGetClient> _logger;
+    private readonly long _maxDownloadBytes;
     private bool _disposed;
 
     /// <summary>
-    /// Erzeugt den Client mit User-Agent und Timeout.
+    /// Name, unter dem die App den zugrunde liegenden <see cref="HttpClient"/> bei der
+    /// <c>IHttpClientFactory</c> anmeldet.
     /// </summary>
+    public const string ClientName = "LookAway.Update";
+
+    // Ohne begrenzte Verbindungsdauer hielte ein Handler eine Verbindung über DNS-Wechsel hinweg
+    // fest; eine Viertelstunde ist die übliche Vorgabe dafür.
+    private static readonly TimeSpan PooledConnectionLifetime = TimeSpan.FromMinutes(15);
+
+    /// <summary>
+    /// Übernimmt einen <see cref="HttpClient"/> und setzt User-Agent und Timeout.
+    /// </summary>
+    /// <param name="httpClient">Client aus der Factory; der <see cref="HttpGetClient"/> entsorgt ihn.</param>
     /// <param name="logger">Logger für Netzwerkfehler.</param>
-    public HttpGetClient(ILogger<HttpGetClient> logger)
+    public HttpGetClient(HttpClient httpClient, ILogger<HttpGetClient> logger)
+        : this(httpClient, logger, MaxDownloadBytes)
     {
+    }
+
+    /// <summary>
+    /// Wie der öffentliche Konstruktor, aber mit eigener Größengrenze (für Tests: Grenzfälle ohne
+    /// ein halbes Gigabyte Daten).
+    /// </summary>
+    /// <param name="httpClient">Client, den der <see cref="HttpGetClient"/> übernimmt und entsorgt.</param>
+    /// <param name="logger">Logger für Netzwerkfehler.</param>
+    /// <param name="maxDownloadBytes">Obergrenze eines Downloads in Bytes.</param>
+    internal HttpGetClient(HttpClient httpClient, ILogger<HttpGetClient> logger, long maxDownloadBytes)
+    {
+        ArgumentNullException.ThrowIfNull(httpClient);
         ArgumentNullException.ThrowIfNull(logger);
+        ArgumentOutOfRangeException.ThrowIfLessThan(maxDownloadBytes, 1);
+        _httpClient = httpClient;
         _logger = logger;
-        _httpClient = new HttpClient { Timeout = Timeout };
+        _maxDownloadBytes = maxDownloadBytes;
+        _httpClient.Timeout = Timeout;
         _httpClient.DefaultRequestHeaders.Add("User-Agent", UserAgent);
     }
+
+    /// <summary>
+    /// Baut den Handler, den die Factory für diesen Client verwenden soll.
+    /// </summary>
+    /// <remarks>
+    /// Der <see cref="HttpGetClient"/> lebt als Singleton so lange wie die App und hält seinen
+    /// <see cref="HttpClient"/> fest; die Factory tauscht dessen Handler darum nie aus. Die
+    /// begrenzte Verbindungsdauer übernimmt deshalb das Erneuern der Verbindungen.
+    /// </remarks>
+    /// <returns>Ein neuer Handler mit begrenzter Verbindungsdauer.</returns>
+    public static SocketsHttpHandler CreatePrimaryHandler()
+        => new() { PooledConnectionLifetime = PooledConnectionLifetime };
 
     /// <inheritdoc />
     public async Task<string?> GetStringAsync(Uri requestUri, CancellationToken cancellationToken = default)
@@ -56,11 +95,11 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
         }
     }
 
-    // Obergrenze für Downloads (Schutz vor riesigen/bösartigen Dateien).
+    // Obergrenze für Downloads, mit reichlich Abstand über dem Portable-Paket. Was größer
+    // ist, ist kein Update, sondern ein Versuch, die Platte zu füllen.
     private const long MaxDownloadBytes = 512L * 1024 * 1024;
 
-    // 80-KB-Lesepuffer beim Streamen in die Datei — entspricht der internen
-    // Standard-Puffergröße von Stream.CopyTo und ist ein bewährter Kompromiss.
+    // Die Puffergröße von Stream.CopyTo; knapp unter der Grenze zum Large Object Heap.
     private const int DownloadBufferSize = 81920;
 
     /// <inheritdoc />
@@ -79,46 +118,42 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
 
         try
         {
-            // Asset-Downloads (ggf. mehrere hundert MB) dürfen nicht am 10-s-Timeout
-            // des Clients scheitern; ein eigener, großzügiger Token wird verkettet.
-            using CancellationTokenSource timeoutCts = new(TimeSpan.FromMinutes(10));
-            using CancellationTokenSource linked =
-                CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+            return await DownloadCheckedAsync(requestUri, destinationPath, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (IsDownloadFailure(ex, cancellationToken))
+        {
+            HttpGetClientLog.DownloadFailed(_logger, ex, requestUri.ToString());
+            return false;
+        }
+    }
 
-            using HttpResponseMessage response = await _httpClient
-                .GetAsync(requestUri, HttpCompletionOption.ResponseHeadersRead, linked.Token)
-                .ConfigureAwait(false);
-            _ = response.EnsureSuccessStatusCode();
+    // Netz-, Datei- und Rechtefehler und ein abgelaufener Download-Timeout führen zu false. Bricht
+    // dagegen der Aufrufer ab, geht der Abbruch an ihn weiter.
+    private static bool IsDownloadFailure(Exception exception, CancellationToken callerToken)
+        => exception is HttpRequestException or IOException or UnauthorizedAccessException
+            || (exception is OperationCanceledException && !callerToken.IsCancellationRequested);
 
-            if (!IsAcceptableResponse(response, requestUri))
-            {
-                return false;
-            }
+    private async Task<bool> DownloadCheckedAsync(Uri requestUri, string destinationPath, CancellationToken cancellationToken)
+    {
+        // Mit ResponseHeadersRead gilt der 10-s-Timeout des Clients nur bis zu den
+        // Antwortköpfen. Den Datenstrom begrenzt dieser Token auf zehn Minuten; ohne ihn
+        // könnte ein Server, der Byte für Byte tröpfelt, die Aktualisierung endlos halten.
+        using CancellationTokenSource timeoutCts = new(TimeSpan.FromMinutes(10));
+        using CancellationTokenSource linked =
+            CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
-            using Stream source = await response.Content.ReadAsStreamAsync(linked.Token).ConfigureAwait(false);
-            return await StreamToFileAsync(source, destinationPath, requestUri, linked.Token).ConfigureAwait(false);
-        }
-        catch (HttpRequestException ex)
+        using HttpResponseMessage response = await _httpClient
+            .GetAsync(requestUri, HttpCompletionOption.ResponseHeadersRead, linked.Token)
+            .ConfigureAwait(false);
+        _ = response.EnsureSuccessStatusCode();
+
+        if (!IsAcceptableResponse(response, requestUri))
         {
-            HttpGetClientLog.DownloadFailed(_logger, ex, requestUri.ToString());
             return false;
         }
-        catch (OperationCanceledException ex) when (!cancellationToken.IsCancellationRequested)
-        {
-            // Der großzügige Download-Timeout ist abgelaufen, nicht der Aufrufer-Token.
-            HttpGetClientLog.DownloadFailed(_logger, ex, requestUri.ToString());
-            return false;
-        }
-        catch (IOException ex)
-        {
-            HttpGetClientLog.DownloadFailed(_logger, ex, requestUri.ToString());
-            return false;
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            HttpGetClientLog.DownloadFailed(_logger, ex, requestUri.ToString());
-            return false;
-        }
+
+        using Stream source = await response.Content.ReadAsStreamAsync(linked.Token).ConfigureAwait(false);
+        return await StreamToFileAsync(source, destinationPath, requestUri, linked.Token).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -139,7 +174,7 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
         }
 
         // Früher Abbruch, wenn die angekündigte Größe das Limit sprengt.
-        if (response.Content.Headers.ContentLength is long announced && announced > MaxDownloadBytes)
+        if (response.Content.Headers.ContentLength is long announced && announced > _maxDownloadBytes)
         {
             HttpGetClientLog.DownloadTooLarge(_logger, requestUri.ToString(), announced);
             return false;
@@ -175,7 +210,7 @@ public sealed class HttpGetClient : IHttpGetClient, IDisposable
         while ((read = await source.ReadAsync(buffer, cancellationToken).ConfigureAwait(false)) > 0)
         {
             total += read;
-            if (total > MaxDownloadBytes)
+            if (total > _maxDownloadBytes)
             {
                 HttpGetClientLog.DownloadTooLarge(_logger, requestUri.ToString(), total);
                 return false;

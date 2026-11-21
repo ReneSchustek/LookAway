@@ -50,17 +50,10 @@ internal sealed class RollingFileLogger : ILogger
             string message = formatter(state, exception);
             _sink.Write(DateTimeOffset.UtcNow, logLevel, _category, message, exception);
         }
-        catch (IOException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
         {
-            // Schreibfehler nicht hochwerfen — der Logger darf die App nie zum Absturz bringen.
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // wie oben: Schreibfehler bewusst geschluckt (Logger darf nie abstürzen).
-        }
-        catch (InvalidOperationException)
-        {
-            // Formatter-Fehler tolerieren statt App-Crash zu provozieren.
+            // Weder Schreib- noch Formatierfehler hochwerfen — der Logger darf die App nie zum
+            // Absturz bringen.
         }
     }
 }

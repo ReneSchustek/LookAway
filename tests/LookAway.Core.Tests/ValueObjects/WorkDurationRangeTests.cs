@@ -3,7 +3,9 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Core.Tests;
 
 /// <summary>
-/// Tests für das <see cref="WorkDurationRange"/>-ValueObject.
+/// Ein Bereich mit nicht positiver Untergrenze oder vertauschten Grenzen wird beim Erzeugen
+/// abgewiesen. Sonst bekäme der Schieberegler für die Arbeitsdauer Grenzen, zwischen denen
+/// kein gültiger Wert liegt.
 /// </summary>
 public sealed class WorkDurationRangeTests
 {

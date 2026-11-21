@@ -16,35 +16,32 @@ namespace LookAway.Core.Services;
 /// <remarks>
 /// Zustandswechsel werden von einem Hintergrund-Loop und von externen
 /// Power-Events ausgelöst. Beide Pfade gehen durch <see cref="Tick"/>,
-/// damit die Logik einheitlich getestet werden kann.
+/// damit die Logik einheitlich getestet werden kann. Die Übergänge selbst stehen
+/// in <see cref="TimerStateMachine"/>; dieser Dienst macht sie threadsicher und
+/// betreibt Takt, Energie-Ereignisse und den Ereignisstrom.
 /// </remarks>
 public sealed class TimerService : ITimerService, IDisposable
 {
-    /// <summary>Default-Tickintervall für den Hintergrund-Loop.</summary>
+    /// <summary>
+    /// Default-Tickintervall für den Hintergrund-Loop. Ein Phasenwechsel kommt so
+    /// höchstens eine Viertelsekunde nach seiner Fälligkeit; ein Tick vergleicht nur
+    /// zwei Zeitpunkte und kostet entsprechend wenig.
+    /// </summary>
     public static readonly TimeSpan DefaultTickInterval = TimeSpan.FromMilliseconds(250);
 
     private readonly IClock _clock;
     private readonly IPowerModeWatcher _powerWatcher;
-    private readonly ILogger<TimerService> _logger;
-    private readonly TimeSpan _tickInterval;
     private readonly Channel<TimerEvent> _events;
     private readonly Lock _lock = new();
-
-    private TimerState _state = TimerState.Idle;
-    private BreakInterval? _interval;
-    private DateTimeOffset _phaseStartUtc;
-    private TimeSpan _phaseDuration;
-    private TimeSpan _pausedRemaining;
-    private TimerState _previousStateBeforePause;
-    private bool _pausedBySystem;
-    private DateTimeOffset _pauseStartUtc;
-
-    private CancellationTokenSource? _loopCts;
-    private Task? _loopTask;
+    private readonly TimerStateMachine _machine;
+    private readonly TimerTickLoop _loop;
     // Wird vom Hintergrund-Loop und von Power-Events außerhalb des Locks gelesen.
     private volatile bool _disposed;
 
     /// <summary>Erzeugt einen <see cref="TimerService"/> mit Default-Tickintervall.</summary>
+    /// <param name="clock">Uhr für Phasen und Restzeit.</param>
+    /// <param name="powerWatcher">Meldet Standby und Aufwachen.</param>
+    /// <param name="logger">Protokolliert Übergänge und einen abgestürzten Takt.</param>
     public TimerService(IClock clock, IPowerModeWatcher powerWatcher, ILogger<TimerService> logger)
         : this(clock, powerWatcher, logger, DefaultTickInterval)
     {
@@ -66,53 +63,29 @@ public sealed class TimerService : ITimerService, IDisposable
 
         _clock = clock;
         _powerWatcher = powerWatcher;
-        _logger = logger;
-        _tickInterval = tickInterval;
+        // Unbeschränkt, weil je Phase nur eine Handvoll Ereignisse entsteht. Ein
+        // beschränkter Kanal müsste entscheiden, welches er verwirft, und jedes trägt
+        // einen Zustandswechsel, den der Pausenablauf braucht.
         _events = Channel.CreateUnbounded<TimerEvent>(new UnboundedChannelOptions
         {
             SingleReader = false,
             SingleWriter = false,
         });
+        _machine = new TimerStateMachine(clock, logger, EnqueueEvent);
+        _loop = new TimerTickLoop(tickInterval, Tick, exception => TimerServiceLog.LoopCrashed(logger, exception));
 
         _powerWatcher.Suspending += OnSystemSuspending;
         _powerWatcher.Resuming += OnSystemResuming;
     }
 
     /// <inheritdoc />
-    public TimerState State
-    {
-        get
-        {
-            lock (_lock)
-            {
-                return _state;
-            }
-        }
-    }
+    public TimerState State => Locked(() => _machine.State);
 
     /// <inheritdoc />
-    public BreakInterval? CurrentInterval
-    {
-        get
-        {
-            lock (_lock)
-            {
-                return _interval;
-            }
-        }
-    }
+    public BreakInterval? CurrentInterval => Locked(() => _machine.Interval);
 
     /// <inheritdoc />
-    public TimeSpan Remaining
-    {
-        get
-        {
-            lock (_lock)
-            {
-                return ComputeRemaining();
-            }
-        }
-    }
+    public TimeSpan Remaining => Locked(() => _machine.Remaining);
 
     /// <inheritdoc />
     public IAsyncEnumerable<TimerEvent> Events => _events.Reader.ReadAllAsync();
@@ -125,14 +98,7 @@ public sealed class TimerService : ITimerService, IDisposable
 
         lock (_lock)
         {
-            _interval = interval;
-            _phaseDuration = interval.WorkDuration;
-            _phaseStartUtc = _clock.UtcNow;
-            _state = TimerState.Working;
-            _pausedBySystem = false;
-            _pausedRemaining = TimeSpan.Zero;
-
-            TimerServiceLog.TimerStarted(_logger, interval.WorkDuration, interval.BreakDuration);
+            _machine.Start(interval);
             EnsureLoopStarted();
         }
     }
@@ -145,20 +111,7 @@ public sealed class TimerService : ITimerService, IDisposable
 
         lock (_lock)
         {
-            // Restzeit auf einen gültigen Bereich begrenzen: nie negativ und nie
-            // länger als eine volle Arbeitsphase (Schutz vor manipulierten/alten Werten).
-            TimeSpan remaining = workRemaining < TimeSpan.Zero
-                ? TimeSpan.Zero
-                : (workRemaining > interval.WorkDuration ? interval.WorkDuration : workRemaining);
-
-            _interval = interval;
-            _phaseDuration = remaining;
-            _phaseStartUtc = _clock.UtcNow;
-            _state = TimerState.Working;
-            _pausedBySystem = false;
-            _pausedRemaining = TimeSpan.Zero;
-
-            TimerServiceLog.TimerRestored(_logger, remaining, interval.BreakDuration);
+            _machine.Restore(interval, workRemaining);
             EnsureLoopStarted();
         }
     }
@@ -168,21 +121,9 @@ public sealed class TimerService : ITimerService, IDisposable
     {
         ThrowIfDisposed();
 
-        bool wasActive;
         lock (_lock)
         {
-            wasActive = _state != TimerState.Idle;
-            _state = TimerState.Idle;
-            _interval = null;
-            _phaseDuration = TimeSpan.Zero;
-            _pausedRemaining = TimeSpan.Zero;
-            _pausedBySystem = false;
-
-            if (wasActive)
-            {
-                TimerServiceLog.TimerStopped(_logger);
-                EnqueueEvent(new TimerStoppedEvent());
-            }
+            _machine.Stop();
         }
 
         StopLoop();
@@ -195,7 +136,7 @@ public sealed class TimerService : ITimerService, IDisposable
 
         lock (_lock)
         {
-            PauseInternal(bySystem: false);
+            _machine.Pause(bySystem: false);
         }
     }
 
@@ -206,13 +147,7 @@ public sealed class TimerService : ITimerService, IDisposable
 
         lock (_lock)
         {
-            // Nur eine echte Benutzer-Pause faktisch fortsetzen. Wenn der
-            // Service nur durch System-Sleep pausiert ist, behält er die
-            // Wiederaufnahme dem Power-Resume-Pfad vor.
-            if (_state == TimerState.Paused && !_pausedBySystem)
-            {
-                ResumeInternal();
-            }
+            _machine.ResumeUserPause();
         }
     }
 
@@ -223,12 +158,7 @@ public sealed class TimerService : ITimerService, IDisposable
 
         lock (_lock)
         {
-            // Betrifft nur automatische Pausen (Idle). System-Pausen werden über
-            // den Power-Resume-Pfad behandelt; Benutzer-Pausen über ResumeAfterPause().
-            if (_state == TimerState.Paused && !_pausedBySystem)
-            {
-                ResumeOrRestart(awayDuration);
-            }
+            _machine.ResumeAfterAway(awayDuration);
         }
     }
 
@@ -246,7 +176,7 @@ public sealed class TimerService : ITimerService, IDisposable
 
         lock (_lock)
         {
-            EvaluatePhase();
+            _machine.Evaluate();
         }
     }
 
@@ -270,272 +200,60 @@ public sealed class TimerService : ITimerService, IDisposable
             // Abbrechen und Entsorgen der Loop-CTS unter demselben Lock wie
             // EnsureLoopStarted, damit kein paralleler Start eine bereits entsorgte
             // (oder frisch erzeugte) CTS trifft.
-            if (_loopCts is not null)
-            {
-                try
-                {
-                    _loopCts.Cancel();
-                }
-                catch (ObjectDisposedException)
-                {
-                    // Bereits entsorgt — nichts zu tun.
-                }
-
-                _loopCts.Dispose();
-                _loopCts = null;
-            }
+            _loop.Dispose();
 
             _ = _events.Writer.TryComplete();
         }
     }
 
-    private void EvaluatePhase()
+    private T Locked<T>(Func<T> read)
     {
-        if (_state == TimerState.Working)
+        lock (_lock)
         {
-            if (PhaseElapsed())
-            {
-                TransitionToOnBreak();
-            }
+            return read();
         }
-        else if (_state == TimerState.OnBreak)
-        {
-            if (PhaseElapsed())
-            {
-                TransitionToWorking();
-            }
-        }
-    }
-
-    private bool PhaseElapsed() => _clock.UtcNow >= _phaseStartUtc + _phaseDuration;
-
-    private void TransitionToOnBreak()
-    {
-        BreakInterval interval = _interval!;
-        _state = TimerState.OnBreak;
-        _phaseStartUtc = _clock.UtcNow;
-        _phaseDuration = interval.BreakDuration;
-
-        TimerServiceLog.BreakDue(_logger, interval.WorkDuration);
-        EnqueueEvent(new BreakDueEvent(interval) { Timestamp = _clock.UtcNow });
-    }
-
-    private void TransitionToWorking()
-    {
-        BreakInterval interval = _interval!;
-        _state = TimerState.Working;
-        _phaseStartUtc = _clock.UtcNow;
-        _phaseDuration = interval.WorkDuration;
-
-        TimerServiceLog.BreakCompleted(_logger, interval.BreakDuration);
-        EnqueueEvent(new BreakCompletedEvent { Timestamp = _clock.UtcNow });
-        EnqueueEvent(new WorkResumedEvent { Timestamp = _clock.UtcNow });
-    }
-
-    private void PauseInternal(bool bySystem)
-    {
-        if (_state != TimerState.Working && _state != TimerState.OnBreak)
-        {
-            return;
-        }
-
-        _pausedRemaining = ComputeRemaining();
-        _previousStateBeforePause = _state;
-        _pausedBySystem = bySystem;
-        _pauseStartUtc = _clock.UtcNow;
-        _state = TimerState.Paused;
-
-        TimerServiceLog.TimerPaused(_logger, _previousStateBeforePause, bySystem, _pausedRemaining);
-        EnqueueEvent(new TimerPausedEvent(_previousStateBeforePause, bySystem) { Timestamp = _clock.UtcNow });
-    }
-
-    private void ResumeInternal()
-    {
-        TimerState resumedState = _previousStateBeforePause;
-        _state = resumedState;
-        _phaseStartUtc = _clock.UtcNow;
-        _phaseDuration = _pausedRemaining;
-        _pausedBySystem = false;
-        _pausedRemaining = TimeSpan.Zero;
-
-        TimerServiceLog.TimerResumed(_logger, resumedState);
-
-        // Nach Resume in eine Arbeitsphase wird ein WorkResumed-Event emittiert;
-        // beim Resume aus einer Pause (OnBreak) verlässt sich der Konsument auf den State.
-        if (resumedState == TimerState.Working)
-        {
-            EnqueueEvent(new WorkResumedEvent { Timestamp = _clock.UtcNow });
-        }
-    }
-
-    /// <summary>
-    /// Entscheidet beim Fortsetzen, ob die Restzeit weiterläuft oder eine frische
-    /// Arbeitsphase beginnt: War die Abwesenheit mindestens so lang wie eine Pause,
-    /// haben die Augen bereits geruht — dann wird neu gestartet.
-    /// </summary>
-    private void ResumeOrRestart(TimeSpan awayDuration)
-    {
-        if (_interval is not null && awayDuration >= _interval.BreakDuration)
-        {
-            TimerServiceLog.TimerRestartedAfterAway(_logger, _previousStateBeforePause, awayDuration);
-            RestartWorkingPhase();
-        }
-        else
-        {
-            ResumeInternal();
-            // Falls die Restzeit während der Abwesenheit abgelaufen wäre,
-            // sofort den nächsten Phasenübergang ausführen.
-            EvaluatePhase();
-        }
-    }
-
-    /// <summary>
-    /// Beginnt eine frische Arbeitsphase mit voller Arbeitsdauer. Lag die
-    /// Abwesenheit in einer Pause, wird zuvor das reguläre Pausenende signalisiert
-    /// (damit Overlay/Helligkeit/Medien sauber zurückgesetzt werden).
-    /// </summary>
-    private void RestartWorkingPhase()
-    {
-        _pausedBySystem = false;
-        _pausedRemaining = TimeSpan.Zero;
-
-        if (_previousStateBeforePause == TimerState.OnBreak)
-        {
-            TransitionToWorking();
-            return;
-        }
-
-        BreakInterval interval = _interval!;
-        _state = TimerState.Working;
-        _phaseStartUtc = _clock.UtcNow;
-        _phaseDuration = interval.WorkDuration;
-        EnqueueEvent(new WorkResumedEvent { Timestamp = _clock.UtcNow });
-    }
-
-    private TimeSpan ComputeRemaining()
-    {
-        if (_state == TimerState.Idle)
-        {
-            return TimeSpan.Zero;
-        }
-
-        if (_state == TimerState.Paused)
-        {
-            return _pausedRemaining;
-        }
-
-        TimeSpan remaining = (_phaseStartUtc + _phaseDuration) - _clock.UtcNow;
-        return remaining < TimeSpan.Zero ? TimeSpan.Zero : remaining;
     }
 
     private void OnSystemSuspending(object? sender, EventArgs e)
     {
-        if (_disposed)
+        if (!_disposed)
         {
-            return;
-        }
-
-        lock (_lock)
-        {
-            if (_state is TimerState.Working or TimerState.OnBreak)
+            lock (_lock)
             {
-                PauseInternal(bySystem: true);
+                _machine.SystemSuspending();
             }
         }
     }
 
     private void OnSystemResuming(object? sender, EventArgs e)
     {
-        if (_disposed)
+        if (!_disposed)
         {
-            return;
-        }
-
-        lock (_lock)
-        {
-            if (_state == TimerState.Paused && _pausedBySystem)
+            lock (_lock)
             {
-                // Sleep zählt als Abwesenheit: War der Rechner mindestens eine
-                // Pausenlänge im Standby, beginnt eine frische Arbeitsphase.
-                ResumeOrRestart(_clock.UtcNow - _pauseStartUtc);
+                _machine.SystemResuming();
             }
         }
     }
 
+    // Erwartet den gehaltenen Lock. Nach Dispose keinen neuen Loop mehr aufsetzen; Dispose
+    // entsorgt die Abbruchquelle unter demselben Lock.
     private void EnsureLoopStarted()
     {
-        // Nach Dispose keinen neuen Loop mehr aufsetzen (aufrufende Methoden halten
-        // bereits den Lock; Dispose entsorgt die CTS unter demselben Lock).
-        if (_disposed)
+        if (!_disposed)
         {
-            return;
+            _loop.EnsureRunning();
         }
-
-        // Nur weiterlaufen lassen, wenn der Loop aktiv UND nicht bereits abgebrochen
-        // ist (sonst würde ein Start nach Stop keinen neuen Loop aufsetzen).
-        if (_loopTask is { IsCompleted: false } && _loopCts is { IsCancellationRequested: false })
-        {
-            return;
-        }
-
-        _loopCts?.Dispose();
-        _loopCts = new CancellationTokenSource();
-        // Token lokal festhalten: ein zwischenzeitliches StopCycle()+Start() darf den
-        // gerade gestarteten Loop nicht mit dem Token einer neuen CTS laufen lassen.
-        CancellationToken token = _loopCts.Token;
-        _loopTask = Task.Run(() => RunLoopAsync(token));
     }
 
     private void StopLoop()
     {
-        // Zugriff auf das Lebenszyklus-Feld konsistent zu EnsureLoopStarted unter
-        // demselben Lock. Die Entsorgung erfolgt in EnsureLoopStarted (vor dem
-        // Neustart) bzw. in Dispose — hier wird nur abgebrochen.
+        // Derselbe Lock wie in EnsureLoopStarted. Abgebrochen wird nur; entsorgt wird die
+        // Abbruchquelle vor dem Neustart oder in Dispose.
         lock (_lock)
         {
-            if (_loopCts is null)
-            {
-                return;
-            }
-
-            try
-            {
-                _loopCts.Cancel();
-            }
-            catch (ObjectDisposedException)
-            {
-                // Bereits freigegeben (paralleler Stop/Dispose) — kein Handlungsbedarf.
-            }
+            _loop.Cancel();
         }
-    }
-
-    private async Task RunLoopAsync(CancellationToken cancellationToken)
-    {
-        try
-        {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                await Task.Delay(_tickInterval, cancellationToken).ConfigureAwait(false);
-                Tick();
-            }
-        }
-        catch (OperationCanceledException)
-        {
-            // erwarteter Beendigungspfad
-        }
-        // Letzte Verteidigungslinie: der Tick-Loop trägt den gesamten Pausen-Zyklus.
-        // Ein unerwarteter Fehler wird strukturiert protokolliert, damit der Loop nicht
-        // stillschweigend endet; der Filter hält den Fehler diagnostizierbar.
-        catch (Exception ex) when (LogLoopCrash(ex))
-        {
-            // Der Filter hat bereits protokolliert; der Loop terminiert kontrolliert.
-        }
-    }
-
-    private bool LogLoopCrash(Exception exception)
-    {
-        TimerServiceLog.LoopCrashed(_logger, exception);
-        return true;
     }
 
     private void EnqueueEvent(TimerEvent evt)

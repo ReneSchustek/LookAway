@@ -1,9 +1,6 @@
-using System;
-using System.IO;
 using LookAway.Core.Enums;
 using LookAway.Core.Interfaces;
 using LookAway.Core.Services;
-using LookAway.Data;
 using LookAway.Data.Logging;
 using LookAway.Data.Net;
 using LookAway.Data.Power;
@@ -17,9 +14,8 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.App.Services;
 
 /// <summary>
-/// Baut den DI-Container der Anwendung auf. Ausgelagert aus der App-Klasse, damit
-/// diese nur noch den Lebenszyklus verantwortet; die Registrierung aller Dienste
-/// ist hier gebündelt.
+/// Baut den DI-Container der Anwendung auf. Die Registrierung aller Dienste steht
+/// hier gebündelt, damit die App-Klasse nur den Lebenszyklus verantwortet.
 /// </summary>
 internal static class ServiceRegistration
 {
@@ -35,10 +31,24 @@ internal static class ServiceRegistration
     /// <param name="debugLogging">Wahr im Debug-Build: ausführlicheres Log-Level.</param>
     public static ServiceProvider Build(string dataDirectory, Version appVersion, bool debugLogging)
     {
+        ServiceCollection services = new();
+        Register(services, dataDirectory, appVersion, debugLogging);
+        return services.BuildServiceProvider();
+    }
+
+    /// <summary>
+    /// Meldet alle Dienste an, ohne den Provider zu bauen. Getrennt von <see cref="Build"/>, damit
+    /// sich prüfen lässt, dass jede angemeldete Dienstart auflösbar ist.
+    /// </summary>
+    /// <param name="services">Die Dienstsammlung, in die registriert wird.</param>
+    /// <param name="dataDirectory">Datenverzeichnis (Logs, Einstellungen, Historie).</param>
+    /// <param name="appVersion">Laufende Anwendungsversion (für den Update-Vergleich).</param>
+    /// <param name="debugLogging">Wahr im Debug-Build: ausführlicheres Log-Level.</param>
+    internal static void Register(IServiceCollection services, string dataDirectory, Version appVersion, bool debugLogging)
+    {
+        ArgumentNullException.ThrowIfNull(services);
         ArgumentException.ThrowIfNullOrWhiteSpace(dataDirectory);
         ArgumentNullException.ThrowIfNull(appVersion);
-
-        ServiceCollection services = new();
 
         string logDirectory = Path.Combine(dataDirectory, LogFolderName);
         string crashDirectory = Path.Combine(logDirectory, CrashFolderName);
@@ -95,11 +105,12 @@ internal static class ServiceRegistration
         _ = services.AddSingleton<ITopmostWindowGuard, WindowsTopmostWindowGuard>();
         _ = services.AddSingleton<IWindowFrameSuppressor, WindowsWindowFrameSuppressor>();
         _ = services.AddSingleton<IScreenDimmer>(sp => new WindowsScreenDimmer(sp.GetRequiredService<ILogger<WindowsScreenDimmer>>()));
+        _ = services.AddSingleton<IOverlayImageInspector, WindowsOverlayImageInspector>();
         _ = services.AddSingleton<IMediaController>(sp => new WindowsMediaController(sp.GetRequiredService<ILogger<WindowsMediaController>>()));
         _ = services.AddSingleton<PauseActionService>();
 
         // Update-Prüfung und automatische Installation
-        _ = services.AddSingleton<IHttpGetClient>(sp => new HttpGetClient(sp.GetRequiredService<ILogger<HttpGetClient>>()));
+        AddHttpGetClient(services);
         _ = services.AddSingleton<IUpdateChecker>(sp => new GitHubUpdateChecker(
             sp.GetRequiredService<IHttpGetClient>(),
             appVersion,
@@ -109,6 +120,11 @@ internal static class ServiceRegistration
             sp.GetRequiredService<ILogger<UpdateInstallerService>>()));
         // Schmale Sicht für das Settings-ViewModel (Ein-Klick-Installation).
         _ = services.AddSingleton<IUpdateInstaller>(sp => sp.GetRequiredService<UpdateInstallerService>());
+        _ = services.AddSingleton<IUpdateProcess, UpdateProcess>();
+        _ = services.AddSingleton<ISetupUpdate>(sp => new SetupUpdate(
+            sp.GetRequiredService<IUpdateInstaller>(),
+            sp.GetRequiredService<IUpdateProcess>(),
+            sp.GetRequiredService<ILogger<SetupUpdate>>()));
 
         // Autostart
         _ = services.AddSingleton<IAutoStartService, RegistryAutoStartService>();
@@ -128,7 +144,25 @@ internal static class ServiceRegistration
         _ = services.AddSingleton<IPowerModeWatcher, WindowsPowerModeWatcher>();
         _ = services.AddSingleton<TimerService>();
         _ = services.AddSingleton<ITimerService>(sp => sp.GetRequiredService<TimerService>());
+    }
 
-        return services.BuildServiceProvider();
+    /// <summary>
+    /// Meldet den Netzwerk-Client der Update-Prüfung an: den <see cref="HttpClient"/> aus der
+    /// Factory, darüber den <see cref="HttpGetClient"/> als Singleton.
+    /// </summary>
+    /// <param name="services">Die Dienstsammlung, in die registriert wird.</param>
+    internal static void AddHttpGetClient(IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+
+        // Der Singleton hält seinen Client für die ganze Laufzeit; einen Handler, den die Factory
+        // nach Ablauf austauschen wollte, bekäme er nie zu sehen. Die Verbindungsdauer des Handlers
+        // erneuert die Verbindungen, die Factory behält ihn darum unbegrenzt.
+        _ = services.AddHttpClient(HttpGetClient.ClientName)
+            .ConfigurePrimaryHttpMessageHandler(HttpGetClient.CreatePrimaryHandler)
+            .SetHandlerLifetime(Timeout.InfiniteTimeSpan);
+        _ = services.AddSingleton<IHttpGetClient>(sp => new HttpGetClient(
+            sp.GetRequiredService<IHttpClientFactory>().CreateClient(HttpGetClient.ClientName),
+            sp.GetRequiredService<ILogger<HttpGetClient>>()));
     }
 }

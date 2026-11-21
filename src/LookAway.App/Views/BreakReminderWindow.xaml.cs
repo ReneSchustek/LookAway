@@ -1,5 +1,6 @@
-using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using LookAway.App.Services;
 using LookAway.Core.Interfaces;
 using LookAway.Core.Localization;
 using LookAway.App.ViewModels;
@@ -14,8 +15,11 @@ namespace LookAway.App.Views;
 /// Eigenständiges, dezentes Erinnerungsfenster. Bindet an das UI-freie
 /// <see cref="BreakReminderViewModel"/>; die Texte kommen aus der Lokalisierung.
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "Fenster-Code-Behind: legt WinUI-Elemente an und braucht den Fenster-Thread. Entscheidungen stehen in prüfbaren Klassen (BreakReminderViewModel, ReminderPresenter, WindowPlacement).")]
 internal sealed partial class BreakReminderWindow : Window
 {
+    // Feste Größe für Titel, Hinweis, Countdown und drei Schaltflächen. Klein genug, um
+    // nicht wie eine Sperre zu wirken; das Fenster lässt sich nicht ziehen.
     private const int WindowWidth = 480;
     private const int WindowHeight = 320;
 
@@ -68,10 +72,8 @@ internal sealed partial class BreakReminderWindow : Window
 
     private void CenterOnPrimaryDisplay()
     {
-        DisplayArea display = DisplayArea.Primary;
-        RectInt32 work = display.WorkArea;
-        int left = work.X + ((work.Width - WindowWidth) / 2);
-        int top = work.Y + ((work.Height - WindowHeight) / 2);
+        RectInt32 work = DisplayArea.Primary.WorkArea;
+        (int left, int top) = WindowPlacement.CenterIn(work.X, work.Y, work.Width, work.Height, WindowWidth, WindowHeight);
         AppWindow.Move(new PointInt32(left, top));
     }
 
@@ -124,9 +126,9 @@ internal sealed partial class BreakReminderWindow : Window
         }
     }
 
-    private void OnStartBreakClick(object sender, RoutedEventArgs e) => _viewModel.StartBreak();
+    private void OnStartBreakClick(object _, RoutedEventArgs __) => _viewModel.StartBreak();
 
-    private void OnSnoozeClick(object sender, RoutedEventArgs e) => _viewModel.Snooze();
+    private void OnSnoozeClick(object _, RoutedEventArgs __) => _viewModel.Snooze();
 
-    private void OnSkipClick(object sender, RoutedEventArgs e) => _viewModel.Skip();
+    private void OnSkipClick(object _, RoutedEventArgs __) => _viewModel.Skip();
 }

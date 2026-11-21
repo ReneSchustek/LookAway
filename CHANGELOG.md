@@ -8,6 +8,49 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+## [1.5.0] – 2026-11-21
+
+### Hinzugefügt
+
+- **Eigenes Bild für den Pausen-Bildschirm.** Statt der Farbe kann die Pause ein eigenes Foto zeigen,
+  etwa einen Wald. Es füllt jeden Monitor, eine einstellbare Abdunklung hält die Schrift lesbar.
+  Fehlt die Datei oder lässt sie sich nicht lesen, zeigt die Pause die Farbe.
+
+- **Startbild beim Programmstart.** Solange LookAway Einstellungen liest und den Timer
+  einrichtet, zeigt es Logo und Version, mindestens anderthalb Sekunden lang.
+
+### Behoben
+
+- **Das Erinnerungsfenster zeigt den Hinweis vollständig.** Ein längerer Hinweis, etwa beim
+  Pausenmodell nach Aufgaben, war am rechten Rand abgeschnitten; er bricht jetzt um.
+
+- **Im Pausen-Overlay erscheint kein „Esc“ mehr unter dem Mauszeiger.** Wo die Maus während der
+  Pause anhielt, blendete Windows einen kleinen Hinweis mit der Taste ein. Esc beendet die Pause
+  weiterhin.
+
+- **Die Statistik zählt die tatsächlich gemachte Pausenzeit.** Eine Pause, die per Esc oder
+  Strg+Alt+S früher endete, ging bisher mit ihrer vollen geplanten Länge ein.
+
+- **Der CSV-Export meldet, ob die Datei gespeichert wurde.** Scheiterte das Speichern, etwa
+  mangels Schreibrechten am Zielort, blieb das bisher ohne jedes Zeichen.
+
+### Geändert
+
+- **LookAway installiert sich unter `C:\Program Files`.** Das Setup fragt dafür nach
+  Administratorrechten und löst eine frühere Installation im Benutzerprofil ab; Einstellungen,
+  Verlauf und der Autostart bleiben erhalten. Eine installierte Kopie aktualisiert sich über das
+  signierte Setup: Windows fragt dabei nach Administratorrechten, und installiert wird erst auf
+  Klick, nie ungefragt beim Start.
+
+- **Neue Schrift: Roboto Flex, im Protokoll Roboto Mono.** Beide liegen dem Programm bei, auch
+  Schaltflächen und Auswahlfelder nutzen sie jetzt.
+
+- Kommentare im Quelltext überarbeitet und, wo sie nicht mehr stimmten, berichtigt. Am Verhalten
+  des Programms ändert sich nichts.
+
+- Die Oberfläche läuft auf einer neueren Version des Windows App SDK. Sichtbar ändert sich
+  dadurch nichts.
+
 ## [1.4.1] – 2026-08-19
 
 ### Behoben
@@ -352,7 +395,21 @@ Erste vollständige Version.
 - Autostart mit Windows über den benutzerspezifischen Run-Eintrag
 - Distribution als portable ZIP und MSIX-Paket
 
-[Unveröffentlicht]: https://github.com/ReneSchustek/LookAway/compare/v1.1.1...HEAD
+[Unveröffentlicht]: https://github.com/ReneSchustek/LookAway/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/ReneSchustek/LookAway/compare/v1.4.1...v1.5.0
+[1.4.1]: https://github.com/ReneSchustek/LookAway/compare/v1.4.0...v1.4.1
+[1.4.0]: https://github.com/ReneSchustek/LookAway/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/ReneSchustek/LookAway/compare/v1.2.9...v1.3.0
+[1.2.9]: https://github.com/ReneSchustek/LookAway/compare/v1.2.8...v1.2.9
+[1.2.8]: https://github.com/ReneSchustek/LookAway/compare/v1.2.7...v1.2.8
+[1.2.7]: https://github.com/ReneSchustek/LookAway/compare/v1.2.6...v1.2.7
+[1.2.6]: https://github.com/ReneSchustek/LookAway/compare/v1.2.5...v1.2.6
+[1.2.5]: https://github.com/ReneSchustek/LookAway/compare/v1.2.4...v1.2.5
+[1.2.4]: https://github.com/ReneSchustek/LookAway/compare/v1.2.3...v1.2.4
+[1.2.3]: https://github.com/ReneSchustek/LookAway/compare/v1.2.2...v1.2.3
+[1.2.2]: https://github.com/ReneSchustek/LookAway/compare/v1.2.1...v1.2.2
+[1.2.1]: https://github.com/ReneSchustek/LookAway/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/ReneSchustek/LookAway/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/ReneSchustek/LookAway/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/ReneSchustek/LookAway/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/ReneSchustek/LookAway/compare/v1.0.1...v1.0.2

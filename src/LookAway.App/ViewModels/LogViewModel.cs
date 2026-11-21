@@ -14,10 +14,10 @@ namespace LookAway.App.ViewModels;
 /// ohne WinUI testbar.
 /// </summary>
 /// <remarks>
-/// Bis hierher lag das Protokoll nur als Datei im Datenverzeichnis: Wer nach einem
-/// fehlgeschlagenen Update oder einem stummen Hotkey nachsehen wollte, musste den
-/// Ordner erst finden. Gezeigt werden die jüngsten Einträge, nicht der ganze
-/// Bestand — mehr braucht niemand, um zu sehen, was gerade schiefgegangen ist.
+/// Ohne diese Ansicht läge das Protokoll nur als Datei im Datenverzeichnis, und wer
+/// nach einem fehlgeschlagenen Update oder einem stummen Hotkey nachsehen will, müsste
+/// den Ordner erst finden. Gezeigt werden die jüngsten Einträge, nicht der ganze
+/// Bestand; mehr braucht niemand, um zu sehen, was gerade schiefgegangen ist.
 /// </remarks>
 internal sealed partial class LogViewModel : ObservableObject
 {

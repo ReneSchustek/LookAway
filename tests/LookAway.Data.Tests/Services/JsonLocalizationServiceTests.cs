@@ -1,13 +1,15 @@
 using System.Reflection;
 using System.Text.Json;
 using LookAway.Core.Enums;
+using LookAway.Core.Localization;
 using LookAway.Data.Services;
 
 namespace LookAway.Data.Tests;
 
 /// <summary>
-/// Tests für den <see cref="JsonLocalizationService"/> gegen die echten,
-/// eingebetteten Sprachtabellen.
+/// Die echten, eingebetteten Sprachtabellen: Texte je Sprache, Rückfall auf den Schlüssel
+/// und dieselben Schlüssel in allen Sprachen. Fehlt einer in einer Sprache, stünde dort
+/// unbemerkt der deutsche Text.
 /// </summary>
 public sealed class JsonLocalizationServiceTests
 {
@@ -88,6 +90,30 @@ public sealed class JsonLocalizationServiceTests
         string[] extra = other.Except(german).Order().ToArray();
         Assert.True(extra.Length == 0, $"Überzählige Schlüssel in {otherFile}: {string.Join(", ", extra)}");
     }
+
+    /// <remarks>
+    /// Ein Schlüssel, den der Code nennt, aber keine Datei kennt, fiele erst auf der Oberfläche auf:
+    /// Dort stünde dann der Schlüssel selbst statt des Texts.
+    /// </remarks>
+    [Fact]
+    public void EveryDeclaredKey_ExistsInGerman()
+    {
+        HashSet<string> german = LoadKeys("de.json");
+        IEnumerable<string> declared = typeof(SettingsTextKeys).Assembly.GetTypes()
+            .Where(type => type.Namespace == typeof(SettingsTextKeys).Namespace && type.Name.EndsWith("TextKeys", StringComparison.Ordinal))
+            .SelectMany(type => type.GetFields(BindingFlags.Public | BindingFlags.Static))
+            .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+            .Select(field => (string)field.GetRawConstantValue()!); // Konstanten vom Typ string sind nie null
+
+        string[] missing = declared.Where(key => !german.Contains(key)).Order().ToArray();
+        Assert.True(missing.Length == 0, $"Fehlende Schlüssel in de.json: {string.Join(", ", missing)}");
+    }
+
+    [Theory]
+    [InlineData(OverlayBackground.Color)]
+    [InlineData(OverlayBackground.Image)]
+    public void EveryOverlayBackground_HasAGermanLabel(OverlayBackground background)
+        => Assert.Contains(SettingsTextKeys.ForOverlayBackground(background), LoadKeys("de.json"));
 
     private static HashSet<string> LoadKeys(string fileName)
     {

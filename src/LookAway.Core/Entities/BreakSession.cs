@@ -13,7 +13,9 @@ public sealed class BreakSession
     /// Erzeugt eine validierte Sitzung.
     /// </summary>
     /// <param name="id">Eindeutige Kennung.</param>
-    /// <param name="startedAt">Beginn (Anzeige der Erinnerung).</param>
+    /// <param name="startedAt">
+    /// Beginn: bei einer angenommenen Pause der Pausenbeginn, sonst die Anzeige der Erinnerung.
+    /// </param>
     /// <param name="endedAt">Ende; darf nicht vor <paramref name="startedAt"/> liegen.</param>
     /// <param name="model">Aktives Pausenmodell.</param>
     /// <param name="outcome">Ergebnis der Erinnerung.</param>
@@ -33,6 +35,20 @@ public sealed class BreakSession
         BreakModel model,
         BreakOutcome outcome,
         Guid? taskId = null)
+    {
+        Validate(id, startedAt, endedAt, model, outcome);
+
+        Id = id;
+        StartedAt = startedAt;
+        EndedAt = endedAt;
+        Model = model;
+        Outcome = outcome;
+        TaskId = taskId;
+    }
+
+    // Die Historie wird aus einer Datei gelesen; ein unbrauchbarer Wert lässt den Eintrag
+    // scheitern, statt eine Statistik zu verfälschen.
+    private static void Validate(Guid id, DateTimeOffset startedAt, DateTimeOffset endedAt, BreakModel model, BreakOutcome outcome)
     {
         if (id == Guid.Empty)
         {
@@ -56,19 +72,12 @@ public sealed class BreakSession
         {
             throw new ArgumentOutOfRangeException(nameof(outcome), outcome, "Unbekanntes Ergebnis.");
         }
-
-        Id = id;
-        StartedAt = startedAt;
-        EndedAt = endedAt;
-        Model = model;
-        Outcome = outcome;
-        TaskId = taskId;
     }
 
     /// <summary>Eindeutige Kennung der Sitzung.</summary>
     public Guid Id { get; }
 
-    /// <summary>Beginn (Anzeige der Erinnerung).</summary>
+    /// <summary>Beginn: bei einer angenommenen Pause der Pausenbeginn, sonst die Anzeige der Erinnerung.</summary>
     public DateTimeOffset StartedAt { get; }
 
     /// <summary>Ende der Sitzung.</summary>

@@ -48,15 +48,7 @@ public sealed class GitHubUpdateChecker : IUpdateChecker
         try
         {
             using JsonDocument document = JsonDocument.Parse(json);
-            JsonElement root = document.RootElement;
-
-            string? tag = GetString(root, "tag_name");
-            string? htmlUrl = GetString(root, "html_url");
-            string? body = GetString(root, "body");
-            string? packageUrl = FindPackageAssetUrl(root);
-            string? signatureUrl = FindSignatureAssetUrl(root);
-
-            UpdateInfo info = UpdateInfo.Create(_currentVersion, tag, htmlUrl, body, packageUrl, signatureUrl);
+            UpdateInfo info = ReadRelease(document.RootElement);
             if (info.IsUpdateAvailable)
             {
                 GitHubUpdateCheckerLog.UpdateAvailable(_logger, info.LatestVersion);
@@ -71,74 +63,79 @@ public sealed class GitHubUpdateChecker : IUpdateChecker
         }
     }
 
+    // Liest Version, Release-Seite, Notizen und die Download-Adressen aus der API-Antwort.
+    private UpdateInfo ReadRelease(JsonElement root)
+        => UpdateInfo.Create(
+            _currentVersion,
+            GetString(root, "tag_name"),
+            GetString(root, "html_url"),
+            GetString(root, "body"),
+            ReadAssets(root));
+
     private static string? GetString(JsonElement root, string propertyName)
         => root.TryGetProperty(propertyName, out JsonElement value) && value.ValueKind == JsonValueKind.String
             ? value.GetString()
             : null;
 
     /// <summary>
-    /// Sucht in den Release-Assets die Portable-ZIP und liefert deren direkte
-    /// Download-URL. Bevorzugt einen Namen mit "portable"; fällt sonst auf das
-    /// erste <c>.zip</c>-Asset zurück. Akzeptiert nur vertrauenswürdige
-    /// GitHub-HTTPS-URLs, damit kein Downgrade-/Fremdhost-Asset eingespielt wird.
+    /// Wählt aus den Release-Assets Portable-ZIP und Setup samt ihren Signaturen.
     /// </summary>
-    private static string? FindPackageAssetUrl(JsonElement root)
+    /// <remarks>
+    /// Eine Signatur gehört zu der Datei, deren Namen sie trägt (<c>&lt;datei&gt;.sig</c>). Seit auch
+    /// das Setup signiert ist, liegen zwei <c>.sig</c> im Release; „die erste“ zu nehmen, könnte die
+    /// Signatur des Setups gegen das ZIP prüfen. Berücksichtigt werden nur HTTPS-Adressen auf
+    /// GitHub-Hosts, damit nichts von einem fremden Server geladen wird.
+    /// </remarks>
+    private static ReleaseAssets ReadAssets(JsonElement root)
     {
-        if (!root.TryGetProperty("assets", out JsonElement assets) || assets.ValueKind != JsonValueKind.Array)
-        {
-            return null;
-        }
+        List<(string Name, string Url)> assets = TrustedAssets(root);
+        string? package = PickPackage(assets);
+        string? setup = assets.Select(asset => asset.Name).FirstOrDefault(IsSetup);
 
-        string? firstZip = null;
-        foreach (JsonElement asset in assets.EnumerateArray())
-        {
-            string? name = GetString(asset, "name");
-            string? url = GetString(asset, "browser_download_url");
-            if (name is null
-                || url is null
-                || !name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase)
-                || !IsTrustedGitHubUrl(url))
-            {
-                continue;
-            }
+        return new ReleaseAssets(UrlOf(package), UrlOf(SignatureNameOf(package)), UrlOf(setup), UrlOf(SignatureNameOf(setup)));
 
-            firstZip ??= url;
-            if (name.Contains("portable", StringComparison.OrdinalIgnoreCase))
-            {
-                return url;
-            }
-        }
-
-        return firstZip;
+        string? UrlOf(string? name)
+            => name is null ? null : assets.FirstOrDefault(asset => string.Equals(asset.Name, name, StringComparison.OrdinalIgnoreCase)).Url;
     }
 
-    /// <summary>
-    /// Sucht in den Release-Assets die losgelöste Signatur (Name endet auf
-    /// <c>.sig</c>) und liefert deren direkte Download-URL. Akzeptiert nur
-    /// vertrauenswürdige GitHub-HTTPS-URLs.
-    /// </summary>
-    private static string? FindSignatureAssetUrl(JsonElement root)
+    // Name und Adresse jedes Assets, das über HTTPS von GitHub kommt, in der Reihenfolge der Antwort.
+    private static List<(string Name, string Url)> TrustedAssets(JsonElement root)
     {
+        List<(string Name, string Url)> trusted = [];
         if (!root.TryGetProperty("assets", out JsonElement assets) || assets.ValueKind != JsonValueKind.Array)
         {
-            return null;
+            return trusted;
         }
 
         foreach (JsonElement asset in assets.EnumerateArray())
         {
             string? name = GetString(asset, "name");
             string? url = GetString(asset, "browser_download_url");
-            if (name is not null
-                && url is not null
-                && name.EndsWith(".sig", StringComparison.OrdinalIgnoreCase)
-                && IsTrustedGitHubUrl(url))
+            if (name is not null && url is not null && IsTrustedGitHubUrl(url))
             {
-                return url;
+                trusted.Add((name, url));
             }
         }
 
-        return null;
+        return trusted;
     }
+
+    // Bevorzugt ein ZIP mit "portable" im Namen, sonst das erste ZIP.
+    private static string? PickPackage(List<(string Name, string Url)> assets)
+    {
+        List<string> zips = assets
+            .Select(asset => asset.Name)
+            .Where(name => name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+        return zips.FirstOrDefault(name => name.Contains("portable", StringComparison.OrdinalIgnoreCase)) ?? zips.FirstOrDefault();
+    }
+
+    private static bool IsSetup(string name)
+        => name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)
+            && name.Contains("setup", StringComparison.OrdinalIgnoreCase);
+
+    private static string? SignatureNameOf(string? name) => name is null ? null : name + ".sig";
 
     /// <summary>
     /// Prüft, ob eine URL über HTTPS auf einen GitHub-Releasehost zeigt

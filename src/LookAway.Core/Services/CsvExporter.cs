@@ -12,6 +12,7 @@ namespace LookAway.Core.Services;
 public sealed class CsvExporter
 {
     private const string Header = "StartedAt,EndedAt,Duration,Model,Outcome";
+    // CRLF nach RFC 4180; Tabellenprogramme lesen damit jede Zeile als Datensatz.
     private const string LineEnding = "\r\n";
 
     /// <summary>

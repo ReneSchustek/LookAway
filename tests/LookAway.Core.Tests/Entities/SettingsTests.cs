@@ -5,8 +5,9 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Core.Tests;
 
 /// <summary>
-/// Tests für die Default-Werte und die Setter-Validierung der
-/// <see cref="Settings"/>-Entität.
+/// Vorgaben und Setter-Prüfung der Einstellungen. Nähme ein Setter einen Wert außerhalb der
+/// Grenzen an, landete er in der Datei, und beim nächsten Lesen verwürfe das Repository die
+/// ganze Konfiguration.
 /// </summary>
 public sealed class SettingsTests
 {
@@ -16,7 +17,7 @@ public sealed class SettingsTests
         Settings settings = new();
 
         Assert.Equal(Language.German, settings.Language);
-        Assert.Equal(BreakModel.ClassicPomodoro, settings.BreakModel);
+        Assert.Equal(BreakModel.ModifiedPomodoro, settings.BreakModel);
         Assert.False(settings.AutoStart);
         Assert.True(settings.PauseOnIdle);
         Assert.Equal(5, settings.IdleThresholdMinutes);
@@ -287,5 +288,44 @@ public sealed class SettingsTests
 
         _ = Assert.Throws<ArgumentOutOfRangeException>(
             () => settings.DimBrightnessPercent = percent);
+    }
+
+    [Fact]
+    public void OverlayImage_DefaultsToColorWithoutImage()
+    {
+        Settings settings = new();
+
+        Assert.Equal(OverlayBackground.Color, settings.BreakOverlayBackground);
+        Assert.Null(settings.BreakOverlayImagePath);
+        Assert.Equal(Settings.DefaultOverlayImageDimPercent, settings.BreakOverlayImageDimPercent);
+    }
+
+    [Fact]
+    public void BreakOverlayBackground_RejectsUnknownValues()
+    {
+        Settings settings = new();
+
+        _ = Assert.Throws<ArgumentOutOfRangeException>(
+            () => settings.BreakOverlayBackground = (OverlayBackground)99);
+    }
+
+    [Theory]
+    [InlineData(Settings.MinOverlayImageDimPercent)]
+    [InlineData(Settings.MaxOverlayImageDimPercent)]
+    public void BreakOverlayImageDimPercent_AcceptsBoundaryValues(int percent)
+    {
+        Settings settings = new() { BreakOverlayImageDimPercent = percent };
+        Assert.Equal(percent, settings.BreakOverlayImageDimPercent);
+    }
+
+    [Theory]
+    [InlineData(Settings.MinOverlayImageDimPercent - 1)]
+    [InlineData(Settings.MaxOverlayImageDimPercent + 1)]
+    public void BreakOverlayImageDimPercent_ThrowsOutsideTheRange(int percent)
+    {
+        Settings settings = new();
+
+        _ = Assert.Throws<ArgumentOutOfRangeException>(
+            () => settings.BreakOverlayImageDimPercent = percent);
     }
 }

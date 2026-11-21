@@ -3,8 +3,9 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Core.Tests;
 
 /// <summary>
-/// Tests für das Erzeugen und Parsen der Update-Helfer-Argumente
-/// (<see cref="UpdateApplyArgs"/>).
+/// Erzeugen und Lesen der Argumente des Update-Helfers. Beide Seiten müssen dasselbe Format
+/// sprechen, und eine unvollständige Zeile darf nicht als Helfer-Aufruf gelten, sonst liefe
+/// der Helfer ohne Quelle oder Ziel los.
 /// </summary>
 public sealed class UpdateApplyArgsTests
 {

@@ -1,12 +1,13 @@
 <#
 .SYNOPSIS
-    Signiert ein Release-Paket (Portable-ZIP) mit dem privaten Release-Schlüssel und
-    schreibt die losgelöste Signatur als <Paket>.sig daneben.
+    Signiert ein Release-Artefakt (Portable-ZIP oder Setup) mit dem privaten Release-Schlüssel
+    und schreibt die losgelöste Signatur als <Datei>.sig daneben.
 
 .DESCRIPTION
-    Der Auto-Updater von LookAway lädt zusätzlich zum Paket dessen Signatur und prüft
-    sie vor dem Einspielen gegen den eingebetteten öffentlichen Schlüssel
-    (ReleaseSignatureVerifier, fail-closed). Dieses Skript erzeugt genau diese Signatur:
+    Der Auto-Updater von LookAway lädt zusätzlich zum Paket (portable Kopie) bzw. zum Setup
+    (installierte Kopie) dessen Signatur und prüft sie vor dem Einspielen oder Starten gegen den
+    eingebetteten öffentlichen Schlüssel (ReleaseSignatureVerifier, fail-closed). Die Signatur
+    gehört zu der Datei, deren Namen sie trägt. Dieses Skript erzeugt genau diese Signatur:
 
       * Verfahren: ECDSA P-256 über SHA-256 der gesamten Paketdatei (IEEE-P1363-Format).
       * Ausgabe: rohe Signaturbytes in <Paket>.sig (bzw. -OutPath).

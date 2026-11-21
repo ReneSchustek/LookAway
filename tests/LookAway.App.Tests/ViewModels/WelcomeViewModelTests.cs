@@ -8,8 +8,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace LookAway.App.Tests;
 
 /// <summary>
-/// Tests für die UI-freie State-Machine des First-Run-Wizards
-/// <see cref="WelcomeViewModel"/>.
+/// Der Einrichtungsassistent als Zustandsautomat: Schritte, Schaltflächen je Schritt und das
+/// Speichern beim Abschluss. Ein Abschluss, der nicht speichert, führte bei jedem Start erneut
+/// in den Assistenten.
 /// </summary>
 public sealed class WelcomeViewModelTests
 {
@@ -99,7 +100,7 @@ public sealed class WelcomeViewModelTests
         await viewModel.FinishCommand.ExecuteAsync(null);
 
         Assert.NotNull(completed);
-        Settings persisted = await repository.LoadAsync();
+        Settings persisted = await repository.LoadAsync(TestContext.Current.CancellationToken);
         Assert.Equal(Language.English, persisted.Language);
         Assert.Equal(BreakModel.Ultradian, persisted.BreakModel);
         Assert.True(autoStart.IsEnabled());

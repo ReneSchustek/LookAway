@@ -3,10 +3,10 @@
     Zentrale Paketverwaltung: Die Versionen stehen hier einmal, die Projektdateien
     nennen nur noch die Pakete.
 
-    Vorher stand dieselbe Version an bis zu drei Stellen (etwa
+    Ohne sie stünde dieselbe Version an bis zu drei Stellen (etwa
     Microsoft.Extensions.Logging.Abstractions in Core, Data und Core.Tests). Wer eine
-    davon anhebt und die anderen vergisst, bekommt beim Wiederherstellen die höhere —
-    das fällt nicht auf, bis eine der beiden Fassungen etwas anders macht.
+    davon anhebt und die anderen vergisst, bekommt beim Wiederherstellen die höhere,
+    und das fällt erst auf, wenn eine der beiden Fassungen etwas anders macht.
   -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
@@ -17,17 +17,22 @@
     <PackageVersion Include="H.NotifyIcon.WinUI" Version="2.4.1" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.10" />
     <PackageVersion Include="Microsoft.Win32.SystemEvents" Version="10.0.10" />
-    <PackageVersion Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2526" />
-    <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.3.1" />
+    <PackageVersion Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2957" />
+    <PackageVersion Include="Microsoft.WindowsAppSDK" Version="2.7.0" />
   </ItemGroup>
 
   <ItemGroup Label="Tests">
-    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.8.1" />
-    <PackageVersion Include="xunit" Version="2.9.3" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <!-- Nur im Messprojekt tests/LookAway.Benchmarks; nicht Teil des ausgelieferten Programms. -->
+    <PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
+    <PackageVersion Include="coverlet.collector" Version="10.1.1" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.12.0" />
+    <!-- xUnit v3 ohne Microsoft Testing Platform: Die Tests laufen weiter über VSTest, sodass
+         dotnet test, coverlet.collector und die Gates unverändert bleiben. -->
+    <PackageVersion Include="xunit.v3.mtp-off" Version="4.0.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="4.0.1" />
   </ItemGroup>
 </Project>

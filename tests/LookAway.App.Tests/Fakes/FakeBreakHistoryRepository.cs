@@ -4,8 +4,8 @@ using LookAway.Core.Interfaces;
 namespace LookAway.App.Tests.Fakes;
 
 /// <summary>
-/// In-Memory-Fake für <see cref="IBreakHistoryRepository"/>. Hält die
-/// Sitzungen in einer Liste und ermöglicht deterministische Statistik-Tests.
+/// In-Memory-Fake für <see cref="IBreakHistoryRepository"/>. Hält die Sitzungen in einer
+/// Liste und macht Statistik-Tests damit deterministisch.
 /// </summary>
 internal sealed class FakeBreakHistoryRepository : IBreakHistoryRepository
 {

@@ -7,14 +7,15 @@ using LookAway.Core.Tests.Fakes;
 namespace LookAway.Core.Tests;
 
 /// <summary>
-/// Tests für die Statistik-Aggregation und den CSV-Export.
+/// Zählung je Tag, Woche und Jahr und der CSV-Export. Eine falsche Tagesgrenze schöbe Pausen
+/// in den falschen Balken; der Export muss je Sitzung genau eine Zeile liefern.
 /// </summary>
 public sealed class StatisticsTests
 {
     private static readonly DateTimeOffset Now = new(2026, 6, 28, 12, 0, 0, TimeSpan.Zero);
 
     private static BreakSession Session(DateTimeOffset start, TimeSpan duration, BreakOutcome outcome)
-        => new(Guid.NewGuid(), start, start + duration, BreakModel.ClassicPomodoro, outcome);
+        => new(TestIds.Next(), start, start + duration, BreakModel.ClassicPomodoro, outcome);
 
     private static (StatisticsService Service, FakeBreakHistoryRepository History) CreateService()
     {
@@ -33,7 +34,7 @@ public sealed class StatisticsTests
     {
         (StatisticsService service, _) = CreateService();
 
-        PeriodStatistics today = await service.GetTodayAsync();
+        PeriodStatistics today = await service.GetTodayAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(2, today.Count);
         Assert.Equal(1, today.Skipped);
@@ -45,7 +46,7 @@ public sealed class StatisticsTests
     {
         (StatisticsService service, _) = CreateService();
 
-        PeriodStatistics week = await service.GetThisWeekAsync();
+        PeriodStatistics week = await service.GetThisWeekAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(7, week.Buckets.Count);
         Assert.Equal(2, week.Count); // die Sitzung vor 10 Tagen liegt außerhalb dieser Woche
@@ -57,7 +58,7 @@ public sealed class StatisticsTests
     {
         (StatisticsService service, _) = CreateService();
 
-        PeriodStatistics year = await service.GetThisYearAsync();
+        PeriodStatistics year = await service.GetThisYearAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(12, year.Buckets.Count);
         Assert.Equal(3, year.Count);

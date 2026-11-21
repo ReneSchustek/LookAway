@@ -47,6 +47,25 @@ public sealed class ReleaseSignatureVerifier
     public bool VerifyFile(string filePath, byte[] signature)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
+
+        using FileStream stream = File.OpenRead(filePath);
+        return VerifyStream(stream, signature);
+    }
+
+    /// <summary>
+    /// Prüft, ob <paramref name="signature"/> eine gültige Signatur des Inhalts von
+    /// <paramref name="stream"/> ab seiner aktuellen Position ist.
+    /// </summary>
+    /// <param name="stream">Lesbarer Datenstrom, etwa eine gegen Schreiben gesperrte Datei.</param>
+    /// <param name="signature">Rohe Signaturbytes (IEEE-P1363-Format, SHA-256).</param>
+    /// <returns><see langword="true"/> nur bei gültiger Signatur.</returns>
+    /// <remarks>
+    /// Wer die Datei nach der Prüfung noch verwendet, prüft besser den Strom, den er offen hält:
+    /// Zwischen einem Prüfen per Pfad und dem Verwenden könnte die Datei ausgetauscht werden.
+    /// </remarks>
+    public bool VerifyStream(Stream stream, byte[] signature)
+    {
+        ArgumentNullException.ThrowIfNull(stream);
         ArgumentNullException.ThrowIfNull(signature);
 
         if (signature.Length == 0)
@@ -58,8 +77,6 @@ public sealed class ReleaseSignatureVerifier
         {
             using ECDsa ecdsa = ECDsa.Create();
             ecdsa.ImportSubjectPublicKeyInfo(_publicKeySpki, out _);
-
-            using FileStream stream = File.OpenRead(filePath);
             return ecdsa.VerifyData(stream, signature, HashAlgorithmName.SHA256);
         }
         catch (CryptographicException)

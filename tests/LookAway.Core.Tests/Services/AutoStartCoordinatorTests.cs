@@ -21,7 +21,7 @@ public sealed class AutoStartCoordinatorTests
         InMemorySettingsRepository repository = new();
         AutoStartCoordinator coordinator = CreateCoordinator(autoStart, repository);
 
-        await coordinator.SetEnabledAsync(true);
+        await coordinator.SetEnabledAsync(true, TestContext.Current.CancellationToken);
 
         Assert.Equal(1, autoStart.EnableCallCount);
         Assert.True(repository.PersistedAutoStart);
@@ -35,7 +35,7 @@ public sealed class AutoStartCoordinatorTests
         InMemorySettingsRepository repository = new(new Settings { AutoStart = true });
         AutoStartCoordinator coordinator = CreateCoordinator(autoStart, repository);
 
-        await coordinator.SetEnabledAsync(false);
+        await coordinator.SetEnabledAsync(false, TestContext.Current.CancellationToken);
 
         Assert.Equal(1, autoStart.DisableCallCount);
         Assert.False(repository.PersistedAutoStart);
@@ -49,7 +49,7 @@ public sealed class AutoStartCoordinatorTests
         InMemorySettingsRepository repository = new(new Settings { AutoStart = true });
         AutoStartCoordinator coordinator = CreateCoordinator(autoStart, repository);
 
-        await coordinator.SetEnabledAsync(true);
+        await coordinator.SetEnabledAsync(true, TestContext.Current.CancellationToken);
 
         Assert.Equal(1, autoStart.EnableCallCount);
         Assert.Equal(0, repository.SaveCallCount);
@@ -62,7 +62,7 @@ public sealed class AutoStartCoordinatorTests
         InMemorySettingsRepository repository = new();
         AutoStartCoordinator coordinator = CreateCoordinator(autoStart, repository);
 
-        _ = await Assert.ThrowsAsync<AutoStartException>(() => coordinator.SetEnabledAsync(true));
+        _ = await Assert.ThrowsAsync<AutoStartException>(() => coordinator.SetEnabledAsync(true, TestContext.Current.CancellationToken));
         Assert.Equal(0, repository.SaveCallCount);
     }
 
@@ -73,7 +73,7 @@ public sealed class AutoStartCoordinatorTests
         InMemorySettingsRepository repository = new(new Settings { AutoStart = false });
         AutoStartCoordinator coordinator = CreateCoordinator(autoStart, repository);
 
-        bool result = await coordinator.SynchronizeFromRegistryAsync();
+        bool result = await coordinator.SynchronizeFromRegistryAsync(TestContext.Current.CancellationToken);
 
         Assert.True(result);
         Assert.True(repository.PersistedAutoStart);
@@ -88,7 +88,7 @@ public sealed class AutoStartCoordinatorTests
         InMemorySettingsRepository repository = new(new Settings { AutoStart = true });
         AutoStartCoordinator coordinator = CreateCoordinator(autoStart, repository);
 
-        bool result = await coordinator.SynchronizeFromRegistryAsync();
+        bool result = await coordinator.SynchronizeFromRegistryAsync(TestContext.Current.CancellationToken);
 
         Assert.False(result);
         Assert.False(repository.PersistedAutoStart);
@@ -103,7 +103,7 @@ public sealed class AutoStartCoordinatorTests
         InMemorySettingsRepository repository = new(new Settings { AutoStart = true });
         AutoStartCoordinator coordinator = CreateCoordinator(autoStart, repository);
 
-        bool result = await coordinator.SynchronizeFromRegistryAsync();
+        bool result = await coordinator.SynchronizeFromRegistryAsync(TestContext.Current.CancellationToken);
 
         Assert.True(result);
         Assert.Equal(0, repository.SaveCallCount);
@@ -117,7 +117,7 @@ public sealed class AutoStartCoordinatorTests
         InMemorySettingsRepository repository = new(new Settings { AutoStart = false });
         AutoStartCoordinator coordinator = CreateCoordinator(autoStart, repository);
 
-        bool result = await coordinator.SynchronizeFromRegistryAsync();
+        bool result = await coordinator.SynchronizeFromRegistryAsync(TestContext.Current.CancellationToken);
 
         Assert.False(result);
         Assert.Equal(0, repository.SaveCallCount);

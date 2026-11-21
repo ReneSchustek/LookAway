@@ -18,6 +18,11 @@ public sealed class BreakCoordinatorTests
 {
     private static readonly DateTimeOffset Start = new(2026, 6, 30, 9, 0, 0, TimeSpan.Zero);
 
+    // Arbeitsdauer des Vorgabemodells; neue Einstellungen starten mit ihm.
+    private static readonly TimeSpan DefaultWorkDuration =
+        BreakModelRegistry.GetDefault(Settings.DefaultBreakModel).WorkDuration;
+
+    // Der Coordinator samt aller Attrappen, damit jeder Test an jede Seite herankommt.
     private sealed record Harness(
         BreakCoordinator Coordinator,
         TimerService Timer,
@@ -43,15 +48,12 @@ public sealed class BreakCoordinatorTests
 
         BreakCoordinator coordinator = new(
             timer,
-            reminder,
-            overlay,
+            new BreakPresenters(reminder, overlay, tray),
             pauseActions,
             sound,
             clock,
-            history,
-            tray,
-            fullscreen,
-            NullLogger<BreakCoordinator>.Instance);
+            new BreakHistoryRecorder(history, NullLogger<BreakHistoryRecorder>.Instance),
+            fullscreen);
 
         if (applyInitialSchedule)
         {
@@ -62,7 +64,7 @@ public sealed class BreakCoordinatorTests
     }
 
     private static IReadOnlyList<BreakSession> Sessions(Harness h)
-        => h.History.LoadAllAsync().GetAwaiter().GetResult();
+        => h.History.Sessions;
 
     [Fact]
     public void ApplySchedule_StartsTimerAndSetsTrayModel()
@@ -83,14 +85,68 @@ public sealed class BreakCoordinatorTests
     });
 
     [Fact]
-    public void StartBreak_ShowsOverlayAndRecordsTakenSession() => Run(h =>
+    public void StartBreak_ShowsTheOverlayAsConfigured()
+        => Run(
+            h =>
+            {
+                h.Coordinator.RequestReminder();
+                h.Reminder.CompleteWith(ReminderResult.StartBreak);
+
+                Assert.Equal(new OverlayBackdrop("#123456", @"C:\Bilder\wald.jpg", 60), h.Overlay.LastBackdrop);
+                Assert.False(h.Overlay.LastDarkenAllScreens);
+            },
+            new Settings
+            {
+                BreakOverlayColor = "#123456",
+                BreakOverlayBackground = OverlayBackground.Image,
+                BreakOverlayImagePath = @"C:\Bilder\wald.jpg",
+                BreakOverlayImageDimPercent = 60,
+                DarkenAllScreens = false,
+            });
+
+    [Fact]
+    public void StartBreak_ShowsOverlay_AndRecordsOnlyWhenTheBreakEnds() => Run(h =>
     {
         h.Coordinator.RequestReminder();
         h.Reminder.CompleteWith(ReminderResult.StartBreak);
 
         Assert.Equal(1, h.Overlay.ShowCount);
         Assert.True(h.Overlay.IsOverlayOpen);
+        Assert.Empty(Sessions(h));
+
+        h.Overlay.EndWith(BreakEndReason.Elapsed);
+
         Assert.Equal(BreakOutcome.Taken, Assert.Single(Sessions(h)).Outcome);
+    });
+
+    /// <remarks>
+    /// Die Statistik zählt gemachte Pausenzeit. Wer die Pause per Esc nach einer Minute
+    /// beendet, darf nicht mit der vollen geplanten Dauer in der Historie stehen.
+    /// </remarks>
+    [Fact]
+    public void BreakEndedEarly_RecordsTheActualDuration() => Run(h =>
+    {
+        h.Coordinator.RequestReminder();
+        h.Reminder.CompleteWith(ReminderResult.StartBreak);
+
+        h.Clock.Advance(TimeSpan.FromMinutes(1));
+        h.Overlay.EndWith(BreakEndReason.EndedByUser);
+
+        BreakSession session = Assert.Single(Sessions(h));
+        Assert.Equal(BreakOutcome.Taken, session.Outcome);
+        Assert.Equal(TimeSpan.FromMinutes(1), session.Duration);
+    });
+
+    [Fact]
+    public void BreakEndedByHotkey_RecordsTheActualDuration() => Run(h =>
+    {
+        h.Coordinator.RequestReminder();
+        h.Reminder.CompleteWith(ReminderResult.StartBreak);
+
+        h.Clock.Advance(TimeSpan.FromMinutes(3));
+        h.Coordinator.SkipOrSnooze();
+
+        Assert.Equal(TimeSpan.FromMinutes(3), Assert.Single(Sessions(h)).Duration);
     });
 
     [Fact]
@@ -131,7 +187,7 @@ public sealed class BreakCoordinatorTests
         h.Reminder.CompleteWith(ReminderResult.Skip);
 
         Assert.Equal(TimerState.Working, h.Timer.State);
-        Assert.Equal(TimeSpan.FromMinutes(25), h.Timer.Remaining);
+        Assert.Equal(DefaultWorkDuration, h.Timer.Remaining);
         Assert.Equal(BreakOutcome.Skipped, Assert.Single(Sessions(h)).Outcome);
     });
 
@@ -144,7 +200,7 @@ public sealed class BreakCoordinatorTests
         h.Overlay.EndWith(BreakEndReason.EndedByUser);
 
         Assert.Equal(TimerState.Working, h.Timer.State);
-        Assert.Equal(TimeSpan.FromMinutes(25), h.Timer.Remaining);
+        Assert.Equal(DefaultWorkDuration, h.Timer.Remaining);
     });
 
     [Fact]
@@ -237,7 +293,7 @@ public sealed class BreakCoordinatorTests
     [Fact]
     public void ActiveModel_FollowsTheSchedule() => Run(h =>
     {
-        Assert.Equal(BreakModel.ClassicPomodoro, h.Coordinator.ActiveModel);
+        Assert.Equal(Settings.DefaultBreakModel, h.Coordinator.ActiveModel);
 
         h.Coordinator.ApplySchedule(new Settings { BreakModel = BreakModel.Ultradian });
 
@@ -319,7 +375,7 @@ public sealed class BreakCoordinatorTests
 
         Assert.False(h.Overlay.IsOverlayOpen);
         Assert.Equal(TimerState.Working, h.Timer.State);
-        Assert.Equal(TimeSpan.FromMinutes(25), h.Timer.Remaining);
+        Assert.Equal(DefaultWorkDuration, h.Timer.Remaining);
     });
 
     /// <remarks>

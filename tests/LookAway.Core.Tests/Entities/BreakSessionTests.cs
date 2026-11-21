@@ -1,10 +1,12 @@
 using LookAway.Core.Entities;
 using LookAway.Core.Enums;
+using LookAway.Core.Tests.Fakes;
 
 namespace LookAway.Core.Tests;
 
 /// <summary>
-/// Tests für die Invarianten der <see cref="BreakSession"/>-Entität.
+/// Die Invarianten einer aufgezeichneten Pause: Leere Kennung, Ende vor Beginn und unbekannte
+/// Werte werden abgewiesen. Eine solche Sitzung verfälschte sonst die Statistik.
 /// </summary>
 public sealed class BreakSessionTests
 {
@@ -14,7 +16,7 @@ public sealed class BreakSessionTests
     public void Constructor_SetsTheValuesAndComputesTheDuration()
     {
         BreakSession session = new(
-            Guid.NewGuid(),
+            TestIds.Next(),
             Start,
             Start.AddMinutes(5),
             BreakModel.ClassicPomodoro,
@@ -35,7 +37,7 @@ public sealed class BreakSessionTests
     public void EndBeforeStart_IsRejected()
     {
         _ = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            new BreakSession(Guid.NewGuid(), Start, Start.AddMinutes(-1), BreakModel.ClassicPomodoro, BreakOutcome.Taken));
+            new BreakSession(TestIds.Next(), Start, Start.AddMinutes(-1), BreakModel.ClassicPomodoro, BreakOutcome.Taken));
     }
 
     /// <remarks>
@@ -46,13 +48,13 @@ public sealed class BreakSessionTests
     public void UndefinedModel_IsRejected()
     {
         _ = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            new BreakSession(Guid.NewGuid(), Start, Start.AddMinutes(5), (BreakModel)99, BreakOutcome.Taken));
+            new BreakSession(TestIds.Next(), Start, Start.AddMinutes(5), (BreakModel)99, BreakOutcome.Taken));
     }
 
     [Fact]
     public void UndefinedOutcome_IsRejected()
     {
         _ = Assert.Throws<ArgumentOutOfRangeException>(() =>
-            new BreakSession(Guid.NewGuid(), Start, Start.AddMinutes(5), BreakModel.ClassicPomodoro, (BreakOutcome)99));
+            new BreakSession(TestIds.Next(), Start, Start.AddMinutes(5), BreakModel.ClassicPomodoro, (BreakOutcome)99));
     }
 }

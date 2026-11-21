@@ -58,6 +58,12 @@
         <Setter Property="Foreground" Value="{ThemeResource RcTextMuted}" />
     </Style>
 
+    <!-- Zeitstempel und Kennungen im Protokoll: Roboto Mono, damit Uhrzeiten untereinander bündig
+         stehen und Bezeichner wie Namensräume als Kennung erkennbar sind. -->
+    <Style x:Key="RcMonoMutedTextStyle" TargetType="TextBlock" BasedOn="{StaticResource RcMutedTextStyle}">
+        <Setter Property="FontFamily" Value="{StaticResource RcMonoFontFamily}" />
+    </Style>
+
     <Style x:Key="RcCaptionTextStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource RcFontFamily}" />
         <Setter Property="FontSize" Value="{StaticResource RcFontSizeCaption}" />

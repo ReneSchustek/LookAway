@@ -4,7 +4,9 @@ using LookAway.Core.Domain;
 namespace LookAway.Core.Tests;
 
 /// <summary>
-/// Tests für die Datenverzeichnis-Auflösung (Portable-Modus).
+/// Die Datenverzeichnis-Auflösung: portabel neben der EXE, sonst unter <c>%APPDATA%</c>.
+/// Vertauscht, fände eine Installation ihre Einstellungen nicht wieder und begänne beim
+/// nächsten Start mit dem Einrichtungsassistenten.
 /// </summary>
 public sealed class AppPathsTests
 {

@@ -4,8 +4,8 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Data.Services;
 
 /// <summary>
-/// Stellt sicher, dass pro Windows-Benutzer nur eine LookAway-Instanz
-/// aktiv ist. Verwendet einen benannten <see cref="Mutex"/> im
+/// Lässt je Windows-Benutzer nur eine LookAway-Instanz laufen. Verwendet
+/// einen benannten <see cref="Mutex"/> im
 /// <c>Local\</c>-Namespace und einen <see cref="EventWaitHandle"/> als
 /// minimaler IPC, damit eine Zweit-Instanz die laufende Instanz benachrichtigen
 /// kann (z. B. um das Settings-Fenster anzuzeigen).
@@ -15,10 +15,21 @@ public sealed class SingleInstanceLock : ISingleInstanceLock
     /// <summary>Wird gefeuert, wenn eine Zweit-Instanz signalisiert hat.</summary>
     public event EventHandler? ActivationRequested;
 
+    /// <inheritdoc />
+    /// <remarks>
+    /// Das Setup setzt das Ereignis <c>Local\LookAway-Quit-&lt;Benutzer&gt;</c> selbst und wartet, bis der
+    /// Mutex frei ist. Die Instanz beendet sich dann wie über das Tray-Menü, sichert also Countdown
+    /// und Protokoll, statt vom Installer hart beendet zu werden. Eine Instanz vor 1.5 legt das
+    /// Ereignis nicht an; das Setup erkennt so, dass es sie nicht beenden kann.
+    /// </remarks>
+    public event EventHandler? QuitRequested;
+
     private readonly string _mutexName;
     private readonly string _eventName;
+    private readonly string _quitEventName;
     private Mutex? _mutex;
     private EventWaitHandle? _activationEvent;
+    private EventWaitHandle? _quitEvent;
     private CancellationTokenSource? _listenerCts;
     private Task? _listenerTask;
     private bool _ownsMutex;
@@ -32,6 +43,7 @@ public sealed class SingleInstanceLock : ISingleInstanceLock
 
         _mutexName = string.Create(CultureInfo.InvariantCulture, $@"Local\LookAway-{userName}");
         _eventName = string.Create(CultureInfo.InvariantCulture, $@"Local\LookAway-Activate-{userName}");
+        _quitEventName = string.Create(CultureInfo.InvariantCulture, $@"Local\LookAway-Quit-{userName}");
     }
 
     /// <summary>
@@ -61,6 +73,7 @@ public sealed class SingleInstanceLock : ISingleInstanceLock
 
         _ownsMutex = true;
         _activationEvent = new EventWaitHandle(initialState: false, EventResetMode.AutoReset, _eventName);
+        _quitEvent = new EventWaitHandle(initialState: false, EventResetMode.AutoReset, _quitEventName);
         StartActivationListener();
         return true;
     }
@@ -96,6 +109,15 @@ public sealed class SingleInstanceLock : ISingleInstanceLock
 
         _disposed = true;
 
+        StopActivationListener();
+        _listenerCts?.Dispose();
+        _activationEvent?.Dispose();
+        _quitEvent?.Dispose();
+        ReleaseMutex();
+    }
+
+    private void StopActivationListener()
+    {
         try
         {
             _listenerCts?.Cancel();
@@ -107,60 +129,72 @@ public sealed class SingleInstanceLock : ISingleInstanceLock
 
         try
         {
+            // Der Listener wacht auf das Abbruch-Handle sofort auf; die Sekunde ist nur
+            // die Grenze, falls er hängt, damit das Beenden nicht an ihm stehenbleibt.
             _ = _listenerTask?.Wait(TimeSpan.FromSeconds(1));
         }
         catch (AggregateException)
         {
-            // Fehler des Listener-Tasks beim Herunterfahren werden bewusst toleriert.
+            // Ein Fehler des Listeners beim Herunterfahren ändert am Beenden nichts mehr.
         }
+    }
 
-        _listenerCts?.Dispose();
-        _activationEvent?.Dispose();
-
-        if (_mutex is not null)
+    private void ReleaseMutex()
+    {
+        if (_mutex is null)
         {
-            if (_ownsMutex)
-            {
-                try
-                {
-                    _mutex.ReleaseMutex();
-                }
-                catch (ApplicationException)
-                {
-                    // Mutex bereits freigegeben oder Thread-Affinitäts-Verletzung — tolerieren.
-                }
-            }
-            _mutex.Dispose();
-            _mutex = null;
+            return;
         }
+
+        if (_ownsMutex)
+        {
+            try
+            {
+                _mutex.ReleaseMutex();
+            }
+            catch (ApplicationException)
+            {
+                // Mutex bereits freigegeben oder Thread-Affinitäts-Verletzung — tolerieren.
+            }
+        }
+
+        _mutex.Dispose();
+        _mutex = null;
     }
 
     private void StartActivationListener()
     {
         _listenerCts = new CancellationTokenSource();
         CancellationToken token = _listenerCts.Token;
-        EventWaitHandle handle = _activationEvent!;
+        EventWaitHandle activation = _activationEvent!; // TryAcquire legt beide Ereignisse unmittelbar vor diesem Aufruf an
+        EventWaitHandle quit = _quitEvent!;
 
-        _listenerTask = Task.Run(
-            () =>
+        _listenerTask = Task.Run(() => Listen(activation, quit, token), token);
+    }
+
+    // Wartet, bis eine zweite Instanz aktiviert oder das Setup zum Beenden auffordert, und meldet
+    // es weiter, bis der Listener beim Freigeben abgebrochen wird.
+    private void Listen(EventWaitHandle activation, EventWaitHandle quit, CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            int signaled = WaitHandle.WaitAny(
+                new WaitHandle[] { activation, quit, token.WaitHandle },
+                millisecondsTimeout: Timeout.Infinite);
+
+            if (token.IsCancellationRequested)
             {
-                while (!token.IsCancellationRequested)
-                {
-                    int signaled = WaitHandle.WaitAny(
-                        new WaitHandle[] { handle, token.WaitHandle },
-                        millisecondsTimeout: Timeout.Infinite);
+                return;
+            }
 
-                    if (token.IsCancellationRequested)
-                    {
-                        return;
-                    }
-
-                    if (signaled == 0)
-                    {
-                        ActivationRequested?.Invoke(this, EventArgs.Empty);
-                    }
-                }
-            },
-            token);
+            if (signaled == 0)
+            {
+                ActivationRequested?.Invoke(this, EventArgs.Empty);
+            }
+            else if (signaled == 1)
+            {
+                QuitRequested?.Invoke(this, EventArgs.Empty);
+            }
+        }
     }
 }

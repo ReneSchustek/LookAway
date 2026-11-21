@@ -1,5 +1,7 @@
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LookAway.Core.Domain;
+using LookAway.Core.Entities;
 using LookAway.Core.Enums;
 using LookAway.Core.Localization;
 using LookAway.Core.ValueObjects;
@@ -10,13 +12,15 @@ namespace LookAway.App.ViewModels;
 /// Hotkey-Belange des <see cref="SettingsViewModel"/>: Belegung der drei globalen
 /// Aktionen, ihre lokalisierten Beschriftungen/Anzeigetexte, das Aufnehmen einer
 /// eigenen Tastenkombination und das Zurücksetzen auf die Standardbelegung.
-/// Laden und Speichern liegen im Kern-ViewModel.
 /// </summary>
 internal sealed partial class SettingsViewModel
 {
     private HotkeyDefinition _hotkeyStartBreak = HotkeyDefaults.StartBreak;
     private HotkeyDefinition _hotkeySkipOrSnooze = HotkeyDefaults.SkipOrSnooze;
     private HotkeyDefinition _hotkeyToggleDnd = HotkeyDefaults.ToggleDnd;
+
+    [ObservableProperty]
+    public partial bool HotkeysEnabled { get; set; }
 
     // Läuft gerade eine Aufnahme, steht hier die Aktion, die neu belegt wird.
     // Die Oberfläche liest daran ab, welche Zeile auf einen Tastendruck wartet.
@@ -25,7 +29,7 @@ internal sealed partial class SettingsViewModel
     /// <summary>
     /// Meldet Beginn (<c>true</c>) und Ende (<c>false</c>) einer Aufnahme.
     /// <para>
-    /// Hintergrund: Solange die eigenen Hotkeys systemweit registriert sind, fängt
+    /// Solange die eigenen Hotkeys systemweit registriert sind, fängt
     /// Windows genau diese Kombinationen ab — sie erreichen das Fenster nie und
     /// lösen stattdessen die Aktion aus. Wer die Registrierung hält, muss sie
     /// deshalb während der Aufnahme lösen. Das Ereignis sagt nur Bescheid; die
@@ -161,8 +165,8 @@ internal sealed partial class SettingsViewModel
 
     /// <summary>
     /// Beendet eine noch laufende Aufnahme. Wird beim Schließen des Fensters
-    /// gerufen: Ein Aufnahmezustand, der niemand mehr sieht, dürfte sonst die
-    /// Hotkeys dauerhaft abgemeldet lassen.
+    /// gerufen: Ein Aufnahmezustand, den niemand mehr sieht, ließe sonst die
+    /// Hotkeys dauerhaft abgemeldet.
     /// </summary>
     private void EndCaptureOnDispose()
     {
@@ -220,5 +224,21 @@ internal sealed partial class SettingsViewModel
         OnPropertyChanged(nameof(HotkeyStartBreakText));
         OnPropertyChanged(nameof(HotkeySkipOrSnoozeText));
         OnPropertyChanged(nameof(HotkeyToggleDndText));
+    }
+
+    private void LoadHotkeys(Settings settings)
+    {
+        HotkeysEnabled = settings.HotkeysEnabled;
+        _hotkeyStartBreak = settings.HotkeyStartBreak;
+        _hotkeySkipOrSnooze = settings.HotkeySkipOrSnooze;
+        _hotkeyToggleDnd = settings.HotkeyToggleDnd;
+    }
+
+    private void StoreHotkeys(Settings settings)
+    {
+        settings.HotkeysEnabled = HotkeysEnabled;
+        settings.HotkeyStartBreak = _hotkeyStartBreak;
+        settings.HotkeySkipOrSnooze = _hotkeySkipOrSnooze;
+        settings.HotkeyToggleDnd = _hotkeyToggleDnd;
     }
 }

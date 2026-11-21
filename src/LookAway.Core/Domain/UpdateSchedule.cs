@@ -27,6 +27,7 @@ public static class UpdateSchedule
             UpdateCheckFrequency.OnStartup => true,
             UpdateCheckFrequency.Daily => now - last >= TimeSpan.FromDays(1),
             UpdateCheckFrequency.Weekly => now - last >= TimeSpan.FromDays(7),
+            // Bei einem unbekannten Wert lieber einmal zu oft prüfen als nie wieder.
             _ => true,
         };
     }

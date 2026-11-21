@@ -4,8 +4,8 @@ using LookAway.Core.Interfaces;
 namespace LookAway.Core.Tests.Fakes;
 
 /// <summary>
-/// In-Memory-Fake für <see cref="IBreakHistoryRepository"/>. Hält die
-/// Sitzungen in einer Liste und ermöglicht deterministische Statistik-Tests.
+/// In-Memory-Fake für <see cref="IBreakHistoryRepository"/>. Hält die Sitzungen in einer
+/// Liste und macht Statistik-Tests damit deterministisch.
 /// </summary>
 internal sealed class FakeBreakHistoryRepository : IBreakHistoryRepository
 {
@@ -18,9 +18,20 @@ internal sealed class FakeBreakHistoryRepository : IBreakHistoryRepository
         _sessions = initial is null ? new List<BreakSession>() : new List<BreakSession>(initial);
     }
 
+    /// <summary>Bisher abgelegte Sitzungen, ohne den Umweg über eine Task.</summary>
+    public IReadOnlyList<BreakSession> Sessions => _sessions.ToList();
+
+    /// <summary>Wird beim Anhängen geworfen, wenn gesetzt (etwa eine gesperrte Datei).</summary>
+    public Exception? AppendFailure { get; set; }
+
     /// <inheritdoc />
     public Task AppendAsync(BreakSession session, CancellationToken cancellationToken = default)
     {
+        if (AppendFailure is not null)
+        {
+            return Task.FromException(AppendFailure);
+        }
+
         _sessions.Add(session);
         return Task.CompletedTask;
     }

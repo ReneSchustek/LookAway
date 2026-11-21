@@ -40,41 +40,41 @@ public sealed class RollingFileLogReader : ILogEntryReader
 
         try
         {
-            if (!Directory.Exists(_directory))
+            if (Directory.Exists(_directory))
             {
-                return collected;
-            }
-
-            foreach (string path in FilesNewestFirst())
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                string[] lines = await File.ReadAllLinesAsync(path, cancellationToken).ConfigureAwait(false);
-                IReadOnlyList<LogEntry> entries = LogEntryParser.Parse(lines);
-
-                // Innerhalb einer Datei stehen die Einträge chronologisch; für die
-                // Anzeige zählt der jüngste zuerst.
-                collected.AddRange(entries.Reverse());
-
-                if (collected.Count >= maxEntries)
-                {
-                    break;
-                }
+                await CollectNewestFirstAsync(collected, maxEntries, cancellationToken).ConfigureAwait(false);
             }
         }
-        catch (IOException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             // Das Protokoll wird nebenher geschrieben; ein belegter Zugriff ist kein
             // Fehler, den der Benutzer beheben könnte. Was gelesen wurde, wird gezeigt.
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // Gleiche Begründung: fehlende Leserechte machen die Ansicht leer, nicht kaputt.
         }
 
         return collected.Count > maxEntries
             ? collected[..maxEntries]
             : collected;
+    }
+
+    // Liest Datei für Datei, die jüngste zuerst, bis genug Einträge beisammen sind. Was bis zu einem
+    // Lesefehler gesammelt wurde, bleibt in der Liste.
+    private async Task CollectNewestFirstAsync(List<LogEntry> collected, int maxEntries, CancellationToken cancellationToken)
+    {
+        foreach (string path in FilesNewestFirst())
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            string[] lines = await File.ReadAllLinesAsync(path, cancellationToken).ConfigureAwait(false);
+
+            // Innerhalb einer Datei stehen die Einträge chronologisch; für die
+            // Anzeige zählt der jüngste zuerst.
+            collected.AddRange(LogEntryParser.Parse(lines).Reverse());
+
+            if (collected.Count >= maxEntries)
+            {
+                return;
+            }
+        }
     }
 
     // Der Dateiname trägt das Datum (lookaway-yyyy-MM-dd.log), deshalb sortiert die

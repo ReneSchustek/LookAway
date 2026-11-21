@@ -15,8 +15,6 @@ namespace LookAway.App.Tests;
 /// </summary>
 public sealed class SettingsViewModelTests
 {
-    private const string TestVersion = "1.0.0";
-
     private static SettingsViewModel CreateViewModel(
         out InMemorySettingsRepository repository,
         out FakeAutoStartService autoStart,
@@ -31,38 +29,9 @@ public sealed class SettingsViewModelTests
         out FakeSoundService sound,
         Settings? initial = null)
     {
-        repository = new InMemorySettingsRepository(initial);
-        autoStart = new FakeAutoStartService();
-        localization = new FakeLocalizationService();
-        sound = new FakeSoundService();
-
-        AutoStartCoordinator coordinator = new(
-            autoStart,
-            repository,
-            NullLogger<AutoStartCoordinator>.Instance);
-
-        FakeBreakHistoryRepository history = new();
-        FakeClock clock = new(new DateTimeOffset(2026, 6, 28, 12, 0, 0, TimeSpan.Zero));
-        StatisticsViewModel statistics = new(
-            new StatisticsService(history, clock),
-            history,
-            new CsvExporter(),
-            localization);
-
-        return new SettingsViewModel(
-            repository,
-            coordinator,
-            localization,
-            sound,
-            new FakeUpdateChecker(),
-            new FakeUpdateInstaller(),
-            new SettingsSections(
-                statistics,
-                new BreakModelListViewModel(localization, history),
-                new LogViewModel(new FakeLogEntryReader(), localization, clock),
-                new WorkTaskListViewModel(new FakeWorkTaskRepository(), history, localization, clock)),
-            NullLogger<SettingsViewModel>.Instance,
-            TestVersion);
+        SettingsFakes fakes = new(new InMemorySettingsRepository(initial), new FakeAutoStartService(), new FakeLocalizationService(), new FakeSoundService());
+        (repository, autoStart, localization, sound) = fakes;
+        return TestSettingsViewModels.Create(fakes);
     }
 
     // Variante mit gezielt vorgegebenem Update-Checker/-Installer für die Update-Tests.
@@ -72,33 +41,7 @@ public sealed class SettingsViewModelTests
         out InMemorySettingsRepository repository)
     {
         repository = new InMemorySettingsRepository(null);
-        FakeLocalizationService localization = new();
-        AutoStartCoordinator coordinator = new(
-            new FakeAutoStartService(),
-            repository,
-            NullLogger<AutoStartCoordinator>.Instance);
-        FakeBreakHistoryRepository history = new();
-        FakeClock clock = new(new DateTimeOffset(2026, 6, 28, 12, 0, 0, TimeSpan.Zero));
-        StatisticsViewModel statistics = new(
-            new StatisticsService(history, clock),
-            history,
-            new CsvExporter(),
-            localization);
-
-        return new SettingsViewModel(
-            repository,
-            coordinator,
-            localization,
-            new FakeSoundService(),
-            checker,
-            installer,
-            new SettingsSections(
-                statistics,
-                new BreakModelListViewModel(localization, history),
-                new LogViewModel(new FakeLogEntryReader(), localization, clock),
-                new WorkTaskListViewModel(new FakeWorkTaskRepository(), history, localization, clock)),
-            NullLogger<SettingsViewModel>.Instance,
-            TestVersion);
+        return TestSettingsViewModels.Create(repository, checker, installer);
     }
 
     [Fact]
@@ -106,7 +49,7 @@ public sealed class SettingsViewModelTests
     {
         UpdateInfo info = UpdateInfo.Create(
             new Version(1, 0, 0), "v2.0.0", "https://example.com/r", null,
-            "https://example.com/p.zip", "https://example.com/p.zip.sig");
+            new ReleaseAssets("https://example.com/p.zip", "https://example.com/p.zip.sig"));
         using SettingsViewModel viewModel = CreateViewModelWithUpdates(
             new FakeUpdateChecker(info), new FakeUpdateInstaller(), out _);
 
@@ -120,7 +63,7 @@ public sealed class SettingsViewModelTests
     {
         UpdateInfo info = UpdateInfo.Create(
             new Version(1, 0, 0), "v2.0.0", null, null,
-            "https://example.com/p.zip", "https://example.com/p.zip.sig");
+            new ReleaseAssets("https://example.com/p.zip", "https://example.com/p.zip.sig"));
         StagedUpdate staged = new("C:/staging/2.0.0", "2.0.0", "abc123");
         FakeUpdateInstaller installer = new(staged);
         using SettingsViewModel viewModel = CreateViewModelWithUpdates(
@@ -130,7 +73,7 @@ public sealed class SettingsViewModelTests
         await viewModel.InstallUpdateCommand.ExecuteAsync(null);
 
         Assert.Equal(1, installer.StageCallCount);
-        Settings saved = await repository.LoadAsync();
+        Settings saved = await repository.LoadAsync(TestContext.Current.CancellationToken);
         Assert.Equal("2.0.0", saved.PendingUpdateVersion);
         Assert.Equal("abc123", saved.PendingUpdateSha256);
         // Nach erfolgreichem Staging ist der Button ausgeblendet (kein Doppelklick).
@@ -142,7 +85,7 @@ public sealed class SettingsViewModelTests
     {
         UpdateInfo info = UpdateInfo.Create(
             new Version(1, 0, 0), "v2.0.0", null, null,
-            "https://example.com/p.zip", "https://example.com/p.zip.sig");
+            new ReleaseAssets("https://example.com/p.zip", "https://example.com/p.zip.sig"));
         // Installer ohne Ergebnis -> Staging schlägt fehl.
         using SettingsViewModel viewModel = CreateViewModelWithUpdates(
             new FakeUpdateChecker(info), new FakeUpdateInstaller(result: null), out _);
@@ -164,7 +107,7 @@ public sealed class SettingsViewModelTests
         };
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _, stored);
 
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(Language.French, viewModel.SelectedLanguage);
         Assert.Equal(BreakModel.Ultradian, viewModel.SelectedModel);
@@ -182,7 +125,7 @@ public sealed class SettingsViewModelTests
         };
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _, stored);
 
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.True(viewModel.UseCustomDurations);
         Assert.Equal(30, viewModel.WorkMinutes);
@@ -193,14 +136,14 @@ public sealed class SettingsViewModelTests
     public async Task Save_WritesTheChangedValuesToTheRepository()
     {
         using SettingsViewModel viewModel = CreateViewModel(out InMemorySettingsRepository repository, out _, out _);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SelectModel(BreakModel.LegalCompliance);
         viewModel.SelectLanguage(Language.English);
 
         await viewModel.SaveCommand.ExecuteAsync(null);
 
-        Settings persisted = await repository.LoadAsync();
+        Settings persisted = await repository.LoadAsync(TestContext.Current.CancellationToken);
         Assert.Equal(BreakModel.LegalCompliance, persisted.BreakModel);
         Assert.Equal(Language.English, persisted.Language);
     }
@@ -209,7 +152,7 @@ public sealed class SettingsViewModelTests
     public async Task Save_RaisesCloseRequested()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         bool closed = false;
         viewModel.CloseRequested += (_, _) => closed = true;
 
@@ -222,7 +165,7 @@ public sealed class SettingsViewModelTests
     public async Task Apply_SavesWithoutClosingAndReportsTheSettings()
     {
         using SettingsViewModel viewModel = CreateViewModel(out InMemorySettingsRepository repository, out _, out _);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         bool closed = false;
         Settings? applied = null;
         viewModel.CloseRequested += (_, _) => closed = true;
@@ -244,7 +187,7 @@ public sealed class SettingsViewModelTests
             out InMemorySettingsRepository repository,
             out _,
             out FakeLocalizationService localization);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         int savesAfterLoad = repository.SaveCallCount;
         bool closed = false;
         viewModel.CloseRequested += (_, _) => closed = true;
@@ -264,7 +207,7 @@ public sealed class SettingsViewModelTests
             out _,
             out _,
             out FakeLocalizationService localization);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SelectLanguage(Language.English);
 
@@ -276,7 +219,7 @@ public sealed class SettingsViewModelTests
     public async Task InvalidWorkDuration_BlocksSaving()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.UseCustomDurations = true;
         viewModel.WorkMinutes = 2; // unter dem Minimum von 5
@@ -290,7 +233,7 @@ public sealed class SettingsViewModelTests
     public async Task InvalidOverlayColor_BlocksSaving()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.BreakOverlayColor = "kein-hex";
 
@@ -299,21 +242,24 @@ public sealed class SettingsViewModelTests
         Assert.False(viewModel.ApplyCommand.CanExecute(null));
     }
 
-    [Fact]
-    public async Task OverlayAndUpdateSettings_AreLoadedAndSaved()
+    // Gespeicherter Stand mit vom Standard abweichenden Overlay- und Update-Werten.
+    private static Settings OverlayAndUpdateValues() => new()
     {
-        Settings stored = new()
-        {
-            DarkenAllScreens = false,
-            BreakOverlayColor = "#80123456",
-            DimScreenDuringBreak = true,
-            DimBrightnessPercent = 50,
-            PauseMediaDuringBreak = true,
-            AutoUpdate = true,
-            UpdateCheckEnabled = false,
-        };
-        SettingsViewModel viewModel = CreateViewModel(out InMemorySettingsRepository repository, out _, out _, stored);
-        await viewModel.LoadAsync();
+        DarkenAllScreens = false,
+        BreakOverlayColor = "#80123456",
+        DimScreenDuringBreak = true,
+        DimBrightnessPercent = 50,
+        PauseMediaDuringBreak = true,
+        AutoUpdate = true,
+        UpdateCheckEnabled = false,
+    };
+
+    [Fact]
+    public async Task OverlayAndUpdateSettings_AreLoaded()
+    {
+        using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _, OverlayAndUpdateValues());
+
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.False(viewModel.DarkenAllScreens);
         // Halbtransparent gespeicherte Farbe wird beim Laden auf ihr deckendes
@@ -323,24 +269,30 @@ public sealed class SettingsViewModelTests
         Assert.Equal(50, viewModel.DimBrightnessPercent);
         Assert.True(viewModel.AutoUpdate);
         Assert.False(viewModel.UpdateCheckEnabled);
+    }
+
+    [Fact]
+    public async Task OverlayAndUpdateSettings_AreSaved()
+    {
+        using SettingsViewModel viewModel = CreateViewModel(out InMemorySettingsRepository repository, out _, out _, OverlayAndUpdateValues());
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.DarkenAllScreens = true;
         viewModel.BreakOverlayColor = "#FF222222";
         viewModel.AutoUpdate = false;
         await viewModel.SaveCommand.ExecuteAsync(null);
 
-        Settings saved = await repository.LoadAsync();
+        Settings saved = await repository.LoadAsync(TestContext.Current.CancellationToken);
         Assert.True(saved.DarkenAllScreens);
         Assert.Equal("#FF222222", saved.BreakOverlayColor);
         Assert.False(saved.AutoUpdate);
-        viewModel.Dispose();
     }
 
     [Fact]
     public async Task ValidWorkDuration_AllowsSaving()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.UseCustomDurations = true;
         viewModel.WorkMinutes = 25;
@@ -359,12 +311,12 @@ public sealed class SettingsViewModelTests
             CustomDurations = new CustomDurations { WorkMinutes = 30, BreakMinutes = 7 },
         };
         using SettingsViewModel viewModel = CreateViewModel(out InMemorySettingsRepository repository, out _, out _, stored);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.UseCustomDurations = false;
         await viewModel.SaveCommand.ExecuteAsync(null);
 
-        Settings persisted = await repository.LoadAsync();
+        Settings persisted = await repository.LoadAsync(TestContext.Current.CancellationToken);
         Assert.Null(persisted.CustomDurations);
     }
 
@@ -375,13 +327,13 @@ public sealed class SettingsViewModelTests
             out InMemorySettingsRepository repository,
             out FakeAutoStartService autoStart,
             out _);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.AutoStart = true;
         await viewModel.SaveCommand.ExecuteAsync(null);
 
         Assert.True(autoStart.IsEnabled());
-        Settings persisted = await repository.LoadAsync();
+        Settings persisted = await repository.LoadAsync(TestContext.Current.CancellationToken);
         Assert.True(persisted.AutoStart);
     }
 
@@ -389,7 +341,7 @@ public sealed class SettingsViewModelTests
     public async Task PhysicalCounter_LimitsWorkDurationToTheModelRange()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SelectModel(BreakModel.PhysicalCounter);
 
@@ -402,7 +354,7 @@ public sealed class SettingsViewModelTests
     public async Task ModelChange_ResetsTheDurationsToTheDefaults()
     {
         using SettingsViewModel viewModel = CreateViewModel(out _, out _, out _);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SelectModel(BreakModel.Ultradian);
 
@@ -421,7 +373,7 @@ public sealed class SettingsViewModelTests
         };
         using SettingsViewModel viewModel = CreateViewModel(
             out InMemorySettingsRepository repository, out _, out _, out _, stored);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.True(viewModel.SoundEnabled);
         Assert.Equal(SoundType.Bell, viewModel.SelectedSound);
@@ -431,7 +383,7 @@ public sealed class SettingsViewModelTests
         viewModel.SoundVolume = 40;
         await viewModel.SaveCommand.ExecuteAsync(null);
 
-        Settings persisted = await repository.LoadAsync();
+        Settings persisted = await repository.LoadAsync(TestContext.Current.CancellationToken);
         Assert.True(persisted.SoundEnabled);
         Assert.Equal(SoundType.Pop, persisted.ReminderSound);
         Assert.Equal(40, persisted.SoundVolumePercent);
@@ -442,7 +394,7 @@ public sealed class SettingsViewModelTests
     {
         using SettingsViewModel viewModel = CreateViewModel(
             out _, out _, out _, out FakeSoundService sound);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SelectSound(SoundType.Bell);
         viewModel.SoundVolume = 70;

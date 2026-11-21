@@ -23,6 +23,8 @@ public sealed class RollingFileSink : IDisposable
     private readonly string _directory;
     private readonly int _retentionDays;
     private readonly LogMessageSanitizer _sanitizer;
+    private readonly Func<DateTimeOffset> _utcNow;
+    private readonly string _runTag;
     private readonly object _lock = new();
     private DateOnly _lastRetentionRunOn = DateOnly.MinValue;
     private bool _disposed;
@@ -31,9 +33,26 @@ public sealed class RollingFileSink : IDisposable
     /// Erzeugt einen Sink, der in <paramref name="directory"/> schreibt.
     /// </summary>
     /// <param name="directory">Zielverzeichnis für die Log-Dateien.</param>
-    /// <param name="retentionDays">Wie viele Tage Historie behalten werden (Default 7).</param>
+    /// <param name="retentionDays">
+    /// Wie viele Tage Historie behalten werden. Die Vorgabe von sieben Tagen lässt einen
+    /// Fehler vom Wochenanfang am Freitag noch nachlesen; ältere Protokolle sucht niemand.
+    /// </param>
     /// <param name="sanitizer">Sanitizer für Benutzerpfade. Wenn <c>null</c>, wird ein Default angelegt.</param>
-    public RollingFileSink(string directory, int retentionDays = 7, LogMessageSanitizer? sanitizer = null)
+    /// <param name="utcNow">
+    /// Uhr für das Aufräumen; <c>null</c> nimmt die Systemuhr. Tests geben eine feste Zeit vor,
+    /// damit „zehn Tage alt“ nicht davon abhängt, wann der Test läuft.
+    /// </param>
+    /// <param name="runId">
+    /// Kennung dieses Laufs in jeder Zeile; <c>null</c> nimmt die Prozess-ID. Sie hält die
+    /// Zeilen auseinander, die alte Instanz, Update-Helfer und neue Instanz in dieselbe
+    /// Tagesdatei schreiben, und verbindet die Schritte eines Updates über die Prozesse hinweg.
+    /// </param>
+    public RollingFileSink(
+        string directory,
+        int retentionDays = 7,
+        LogMessageSanitizer? sanitizer = null,
+        Func<DateTimeOffset>? utcNow = null,
+        string? runId = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(directory);
         ArgumentOutOfRangeException.ThrowIfLessThan(retentionDays, 1);
@@ -41,6 +60,8 @@ public sealed class RollingFileSink : IDisposable
         _directory = directory;
         _retentionDays = retentionDays;
         _sanitizer = sanitizer ?? new LogMessageSanitizer();
+        _utcNow = utcNow ?? (static () => DateTimeOffset.UtcNow);
+        _runTag = "[p" + (runId ?? Environment.ProcessId.ToString(CultureInfo.InvariantCulture)) + "] ";
     }
 
     /// <summary>
@@ -61,42 +82,38 @@ public sealed class RollingFileSink : IDisposable
         ArgumentNullException.ThrowIfNull(category);
         ArgumentNullException.ThrowIfNull(message);
 
-        if (_disposed)
-        {
-            return;
-        }
-
         DateOnly today = DateOnly.FromDateTime(timestamp.UtcDateTime);
         string filePath = Path.Combine(_directory, $"{LogFilePrefix}{today:yyyy-MM-dd}{LogFileSuffix}");
         string line = FormatLine(timestamp, level, category, message, exception);
 
         lock (_lock)
         {
-            if (_disposed)
+            if (!_disposed)
             {
-                return;
+                AppendUnderLock(today, filePath, line);
+            }
+        }
+    }
+
+    // Hängt die Zeile an und räumt beim ersten Eintrag eines Tages alte Dateien ab. Aufrufer hält
+    // die Sperre.
+    private void AppendUnderLock(DateOnly today, string filePath, string line)
+    {
+        try
+        {
+            _ = Directory.CreateDirectory(_directory);
+
+            if (today != _lastRetentionRunOn)
+            {
+                PruneOldFiles(today);
+                _lastRetentionRunOn = today;
             }
 
-            try
-            {
-                _ = Directory.CreateDirectory(_directory);
-
-                if (today != _lastRetentionRunOn)
-                {
-                    PruneOldFiles(today);
-                    _lastRetentionRunOn = today;
-                }
-
-                File.AppendAllText(filePath, line, Encoding.UTF8);
-            }
-            catch (IOException)
-            {
-                // Logging-Fehler darf die App nicht crashen — bewusst geschluckt.
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // Keine Schreibrechte: gleiche Begründung.
-            }
+            File.AppendAllText(filePath, line, Encoding.UTF8);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Ein Protokoll, das nicht schreiben kann, darf die Anwendung nicht mitreißen.
         }
     }
 
@@ -106,12 +123,7 @@ public sealed class RollingFileSink : IDisposable
     /// </summary>
     public void PruneNow()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        DateOnly today = DateOnly.FromDateTime(DateTimeOffset.UtcNow.UtcDateTime);
+        DateOnly today = DateOnly.FromDateTime(_utcNow().UtcDateTime);
         lock (_lock)
         {
             if (_disposed)
@@ -127,11 +139,9 @@ public sealed class RollingFileSink : IDisposable
                     _lastRetentionRunOn = today;
                 }
             }
-            catch (IOException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-            }
-            catch (UnauthorizedAccessException)
-            {
+                // Aufräumen ist best-effort; der nächste Tageswechsel versucht es erneut.
             }
         }
     }
@@ -160,6 +170,7 @@ public sealed class RollingFileSink : IDisposable
               .Append("] [")
               .Append(LevelToString(level))
               .Append("] ")
+              .Append(_runTag)
               .Append(category)
               .Append(": ")
               .AppendLine(_sanitizer.Sanitize(message));
@@ -172,13 +183,10 @@ public sealed class RollingFileSink : IDisposable
         return sb.ToString();
     }
 
+    // Beide Aufrufer stellen den Ordner vorher sicher; verschwindet er dazwischen, meldet das
+    // Aufzählen einen Ein-/Ausgabefehler, den sie abfangen.
     private void PruneOldFiles(DateOnly today)
     {
-        if (!Directory.Exists(_directory))
-        {
-            return;
-        }
-
         DateTime cutoff = today.AddDays(-_retentionDays).ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc);
 
         foreach (string filePath in Directory.EnumerateFiles(_directory, LogFileSearchPattern))
@@ -191,11 +199,9 @@ public sealed class RollingFileSink : IDisposable
                     info.Delete();
                 }
             }
-            catch (IOException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-            }
-            catch (UnauthorizedAccessException)
-            {
+                // Eine Datei, die gerade gelesen wird, bleibt bis zur nächsten Runde liegen.
             }
         }
     }

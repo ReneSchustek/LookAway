@@ -84,9 +84,9 @@ jobs:
         shell: pwsh
         run: ./tools/review.ps1 -Mode security
 
-      # Die READMEs nennen die aktuelle Version im Abschnitt "Aktuelles Release". Sie stand
-      # dort auf v1.1.1, während v1.2.8 veröffentlicht war — eine Angabe, die niemand prüft,
-      # veraltet zuverlässig. Der Abgleich gegen Directory.Build.props kostet Sekunden.
+      # Die READMEs nennen die aktuelle Version im Abschnitt "Aktuelles Release". Eine
+      # Angabe, die niemand prüft, veraltet zuverlässig; der Abgleich gegen
+      # Directory.Build.props kostet Sekunden.
       - name: Doku-Abgleich (README-Version)
         shell: pwsh
         run: ./tools/review.ps1 -Mode docs
@@ -150,16 +150,17 @@ jobs:
         shell: pwsh
         run: ./tools/publish-setup.ps1 -Version ${{ steps.version.outputs.value }}
 
-      # Bewusst nur das ZIP: Der Updater greift sich die erste '.sig' im Release. Eine
-      # zweite Signatur — etwa für die Setup.exe — würde er womöglich als Signatur des
-      # Pakets lesen und die Prüfung fehlschlagen lassen. Die Setup.exe weist stattdessen
-      # ihren SHA-256 im Release-Text aus.
-      - name: Portable-Paket signieren (falls Schlüssel hinterlegt)
-        # Signiert das ZIP mit dem offline gehaltenen Release-Schlüssel, sofern er als
+      # ZIP und Setup bekommen je eine eigene Signatur (<datei>.sig). Eine installierte
+      # Kopie aktualisiert sich über das Setup, eine portable über das ZIP; der Updater
+      # ordnet jede Signatur über ihren Namen zu. Versionen bis 1.4 nehmen noch die erste
+      # '.sig' des Releases: Nach Name wie nach Upload-Reihenfolge ist das die des ZIPs
+      # ('LookAway-Portable-…' vor 'LookAway-Setup-…', und das ZIP wird zuerst hochgeladen).
+      - name: Pakete signieren (falls Schlüssel hinterlegt)
+        # Signiert ZIP und Setup mit dem offline gehaltenen Release-Schlüssel, sofern er als
         # Repository-Secret LOOKAWAY_SIGNING_KEY (privates PKCS#8-PEM) hinterlegt ist.
-        # Ohne Secret bleibt das Paket unsigniert; der Auto-Updater weist es dann ab
+        # Ohne Secret bleiben beide unsigniert; der Auto-Updater weist sie dann ab
         # (fail-closed). Alternative ohne Secret: lokal mit tools/sign-release.ps1
-        # signieren und die .sig-Datei manuell an das Release anhängen.
+        # signieren und die .sig-Dateien manuell an das Release anhängen.
         shell: pwsh
         env:
           SIGNING_KEY: ${{ secrets.LOOKAWAY_SIGNING_KEY }}
@@ -172,6 +173,7 @@ jobs:
           Set-Content -LiteralPath $keyPath -Value $env:SIGNING_KEY -NoNewline
           try {
             ./tools/sign-release.ps1 -PackagePath "dist/LookAway-Portable-v${{ steps.version.outputs.value }}.zip" -KeyPath $keyPath
+            ./tools/sign-release.ps1 -PackagePath "dist/LookAway-Setup-v${{ steps.version.outputs.value }}.exe" -KeyPath $keyPath
           }
           finally {
             Remove-Item -LiteralPath $keyPath -Force -ErrorAction SilentlyContinue
@@ -196,20 +198,19 @@ jobs:
       - name: Release veröffentlichen
         uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # v3.0.1
         with:
-          # Der Glob '...zip*' lädt das Paket und – falls vorhanden – die '.sig' mit hoch,
-          # die Setup.exe kommt als eigener Eintrag dazu.
+          # Die Globs laden ZIP und Setup samt ihrer '.sig' (falls vorhanden) hoch, das ZIP zuerst.
           files: |
             dist/LookAway-Portable-v${{ steps.version.outputs.value }}.zip*
-            dist/LookAway-Setup-v${{ steps.version.outputs.value }}.exe
+            dist/LookAway-Setup-v${{ steps.version.outputs.value }}.exe*
           generate_release_notes: true
           # Steht vor den generierten Notizen.
           body: |
             ## Downloads
 
-            - **LookAway-Setup-v${{ steps.version.outputs.value }}.exe** — Installer (Inno Setup): freie Wahl des Zielordners, Startmenü-Eintrag, optionaler Autostart.
+            - **LookAway-Setup-v${{ steps.version.outputs.value }}.exe** — Installer (Inno Setup): installiert unter C:\Program Files (Administratorrechte nötig), Startmenü-Eintrag, optionaler Autostart. Eine frühere Installation im Benutzerprofil wird dabei abgelöst, Einstellungen bleiben erhalten.
             - **LookAway-Portable-v${{ steps.version.outputs.value }}.zip** — portable Variante, entpacken und starten. Alle Daten liegen neben der EXE.
 
-            Die automatische Update-Funktion verwendet weiterhin die portable ZIP samt beiliegender Signatur (`.zip.sig`).
+            Die automatische Update-Funktion verwendet bei einer installierten Kopie das Setup, bei einer portablen das ZIP, jeweils samt beiliegender Signatur (`.sig`).
 
             ## Integritätsprüfung
 

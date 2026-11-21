@@ -6,13 +6,15 @@ namespace LookAway.Core.ValueObjects;
 /// </summary>
 public sealed class UpdateInfo
 {
-    private UpdateInfo(bool isUpdateAvailable, string latestVersion, Uri? downloadUrl, Uri? packageUrl, Uri? signatureUrl, string releaseNotes)
+    private UpdateInfo(bool isUpdateAvailable, string latestVersion, Uri? downloadUrl, ReleaseAssets assets, string releaseNotes)
     {
         IsUpdateAvailable = isUpdateAvailable;
         LatestVersion = latestVersion;
         DownloadUrl = downloadUrl;
-        PackageUrl = packageUrl;
-        SignatureUrl = signatureUrl;
+        PackageUrl = ToUri(assets.Package);
+        SignatureUrl = ToUri(assets.PackageSignature);
+        SetupUrl = ToUri(assets.Setup);
+        SetupSignatureUrl = ToUri(assets.SetupSignature);
         ReleaseNotes = releaseNotes;
     }
 
@@ -38,6 +40,18 @@ public sealed class UpdateInfo
     /// </summary>
     public Uri? SignatureUrl { get; }
 
+    /// <summary>
+    /// Direkte Download-URL des Setups aus den Release-Assets, falls vorhanden. Grundlage der
+    /// Aktualisierung einer installierten (nicht portablen) Kopie.
+    /// </summary>
+    public Uri? SetupUrl { get; }
+
+    /// <summary>
+    /// Direkte Download-URL der losgelösten Signatur des Setups (<c>&lt;setup&gt;.sig</c>), falls
+    /// vorhanden. Ohne sie wird kein Setup gestartet.
+    /// </summary>
+    public Uri? SetupSignatureUrl { get; }
+
     /// <summary>Release-Notes (Plaintext/Markdown), ggf. leer.</summary>
     public string ReleaseNotes { get; }
 
@@ -46,7 +60,7 @@ public sealed class UpdateInfo
     public static UpdateInfo NoUpdate(Version current)
     {
         ArgumentNullException.ThrowIfNull(current);
-        return new UpdateInfo(false, current.ToString(), downloadUrl: null, packageUrl: null, signatureUrl: null, releaseNotes: string.Empty);
+        return new UpdateInfo(false, current.ToString(), downloadUrl: null, ReleaseAssets.None, releaseNotes: string.Empty);
     }
 
     /// <summary>
@@ -56,13 +70,12 @@ public sealed class UpdateInfo
     /// <param name="tagName">Tag der Release (z. B. <c>"v1.2.0"</c>).</param>
     /// <param name="htmlAddress">Adresse der Release-Seite (Roh-String aus der API).</param>
     /// <param name="releaseNotes">Release-Notes.</param>
-    /// <param name="packageAddress">Direkte Download-URL des Installationspakets (Portable-ZIP), optional.</param>
-    /// <param name="signatureAddress">Direkte Download-URL der losgelösten Paket-Signatur, optional.</param>
+    /// <param name="assets">Download-Adressen von Paket und Setup samt Signaturen, optional.</param>
     /// <returns>
     /// Ein <see cref="UpdateInfo"/>; <see cref="IsUpdateAvailable"/> ist nur dann
     /// <c>true</c>, wenn das Tag eine höhere Version als <paramref name="current"/> ergibt.
     /// </returns>
-    public static UpdateInfo Create(Version current, string? tagName, string? htmlAddress, string? releaseNotes, string? packageAddress = null, string? signatureAddress = null)
+    public static UpdateInfo Create(Version current, string? tagName, string? htmlAddress, string? releaseNotes, ReleaseAssets? assets = null)
     {
         ArgumentNullException.ThrowIfNull(current);
 
@@ -71,19 +84,18 @@ public sealed class UpdateInfo
             return NoUpdate(current);
         }
 
-        Uri? downloadUrl = Uri.TryCreate(htmlAddress, UriKind.Absolute, out Uri? uri) ? uri : null;
-        Uri? packageUrl = Uri.TryCreate(packageAddress, UriKind.Absolute, out Uri? pkg) ? pkg : null;
-        Uri? signatureUrl = Uri.TryCreate(signatureAddress, UriKind.Absolute, out Uri? sig) ? sig : null;
         bool isNewer = latest > current;
 
         return new UpdateInfo(
             isNewer,
             latest.ToString(),
-            downloadUrl,
-            packageUrl,
-            signatureUrl,
+            ToUri(htmlAddress),
+            assets ?? ReleaseAssets.None,
             releaseNotes ?? string.Empty);
     }
+
+    private static Uri? ToUri(string? address)
+        => Uri.TryCreate(address, UriKind.Absolute, out Uri? uri) ? uri : null;
 
     private static bool TryParseTag(string? tagName, out Version? version)
     {

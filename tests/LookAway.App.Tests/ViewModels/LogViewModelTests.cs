@@ -18,7 +18,7 @@ public sealed class LogViewModelTests
     {
         LogViewModel viewModel = CreateViewModel(Entries());
 
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(4, viewModel.VisibleEntries.Count);
         Assert.False(viewModel.ShowEmpty);
@@ -29,7 +29,7 @@ public sealed class LogViewModelTests
     public async Task SearchText_FiltersByMessageWhileTyping()
     {
         LogViewModel viewModel = CreateViewModel(Entries());
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SearchText = "hotkey";
 
@@ -41,7 +41,7 @@ public sealed class LogViewModelTests
     public async Task LevelFilter_Error_KeepsErrorsAndCriticals()
     {
         LogViewModel viewModel = CreateViewModel(Entries());
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.LevelFilter = LogLevelFilter.Error;
 
@@ -55,7 +55,7 @@ public sealed class LogViewModelTests
     public async Task LevelFilter_Warning_KeepsOnlyWarnings()
     {
         LogViewModel viewModel = CreateViewModel(Entries());
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.LevelFilter = LogLevelFilter.Warning;
 
@@ -67,7 +67,7 @@ public sealed class LogViewModelTests
     public async Task PeriodFilter_Today_DropsOlderEntries()
     {
         LogViewModel viewModel = CreateViewModel(Entries());
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.PeriodFilter = LogPeriodFilter.Today;
 
@@ -81,7 +81,7 @@ public sealed class LogViewModelTests
     public async Task PeriodFilter_Week_KeepsTheLastSevenDays()
     {
         LogViewModel viewModel = CreateViewModel(Entries());
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.PeriodFilter = LogPeriodFilter.Week;
 
@@ -93,7 +93,7 @@ public sealed class LogViewModelTests
     public async Task SearchAndFilterCombine()
     {
         LogViewModel viewModel = CreateViewModel(Entries());
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.LevelFilter = LogLevelFilter.Error;
         viewModel.SearchText = "speichern";
@@ -111,7 +111,7 @@ public sealed class LogViewModelTests
     {
         LogViewModel viewModel = CreateViewModel([]);
 
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.True(viewModel.ShowEmpty);
         Assert.False(viewModel.ShowNoResults);
@@ -125,7 +125,7 @@ public sealed class LogViewModelTests
     public async Task ShowNoResults_IsSetWhenTheFilterHidesEverything()
     {
         LogViewModel viewModel = CreateViewModel(Entries());
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SearchText = "gibt es nicht";
 
@@ -138,7 +138,7 @@ public sealed class LogViewModelTests
     public async Task ResetSearch_ClearsTextAndBothFilters()
     {
         LogViewModel viewModel = CreateViewModel(Entries());
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         viewModel.SearchText = "gibt es nicht";
         viewModel.LevelFilter = LogLevelFilter.Error;
         viewModel.PeriodFilter = LogPeriodFilter.Today;
@@ -157,10 +157,10 @@ public sealed class LogViewModelTests
         // Neu laden darf die Eingabe nicht wegwerfen — sonst tippt man nach jedem
         // Aktualisieren neu.
         LogViewModel viewModel = CreateViewModel(Entries());
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         viewModel.LevelFilter = LogLevelFilter.Warning;
 
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(LogLevelFilter.Warning, viewModel.LevelFilter);
         _ = Assert.Single(viewModel.VisibleEntries);
@@ -182,7 +182,7 @@ public sealed class LogViewModelTests
     public async Task Chip_StaysSelectedWhenClickedAgain(string chip)
     {
         LogViewModel viewModel = CreateViewModel(Entries());
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         SetChip(viewModel, chip, value: true);
 
         SetChip(viewModel, chip, value: false);
@@ -203,7 +203,7 @@ public sealed class LogViewModelTests
     public async Task Chip_TakesTheSelectionFromTheOthers(string chosen, string previous)
     {
         LogViewModel viewModel = CreateViewModel(Entries());
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         SetChip(viewModel, chosen, value: true);
 
@@ -216,7 +216,7 @@ public sealed class LogViewModelTests
     {
         FakeLogEntryReader reader = new(Entries());
         LogViewModel viewModel = new(reader, new FakeLocalizationService(), new FakeClock(Now));
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         int before = reader.ReadCallCount;
 
         await viewModel.ReloadCommand.ExecuteAsync(null);

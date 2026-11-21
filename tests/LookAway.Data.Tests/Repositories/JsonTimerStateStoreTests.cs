@@ -146,4 +146,29 @@ public sealed class JsonTimerStateStoreTests : IDisposable
 
         Assert.Null(thrown);
     }
+
+    [Fact]
+    public void Load_WhenTheFileIsLocked_ReturnsNull()
+    {
+        JsonTimerStateStore store = new(_filePath);
+        using LockedFile locked = new(_filePath, "{}");
+
+        Assert.Null(store.Load());
+    }
+
+    /// <remarks>Aufräumen ist best-effort: Eine gesperrte Datei bleibt liegen, ohne dass Clear wirft.</remarks>
+    [Fact]
+    public void Clear_WhenTheFileIsLocked_LeavesItWithoutThrowing()
+    {
+        JsonTimerStateStore store = new(_filePath);
+
+        using (LockedFile locked = new(_filePath, "{}"))
+        {
+            Exception? thrown = Record.Exception(store.Clear);
+
+            Assert.Null(thrown);
+        }
+
+        Assert.True(File.Exists(_filePath));
+    }
 }

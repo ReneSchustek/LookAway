@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
@@ -6,6 +7,7 @@ namespace LookAway.App.Controls;
 /// <summary>
 /// Kopf einer Listen-Ansicht: Titel, erklärende Zeile, Primäraktion.
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "Steuerelement aus Abhängigkeitseigenschaften ohne eigene Logik; braucht die WinUI-Laufzeit.")]
 internal sealed partial class ListPageHeader : UserControl
 {
     /// <summary>Titel der Ansicht.</summary>

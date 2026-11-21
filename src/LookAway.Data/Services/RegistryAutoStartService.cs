@@ -79,24 +79,12 @@ public sealed class RegistryAutoStartService : IAutoStartService
     /// <inheritdoc />
     public bool IsEnabled()
     {
-        try
+        return TranslateRegistryErrors(ReadFailedMessage, () =>
         {
             using RegistryKey? runKey = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: false);
             object? value = runKey?.GetValue(_valueName);
             return value is string entry && !string.IsNullOrWhiteSpace(entry);
-        }
-        catch (SecurityException ex)
-        {
-            throw new AutoStartException(ReadFailedMessage, ex);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            throw new AutoStartException(ReadFailedMessage, ex);
-        }
-        catch (IOException ex)
-        {
-            throw new AutoStartException(ReadFailedMessage, ex);
-        }
+        });
     }
 
     /// <inheritdoc />
@@ -104,7 +92,7 @@ public sealed class RegistryAutoStartService : IAutoStartService
     {
         string desiredEntry = BuildRunCommand(_executablePathProvider());
 
-        try
+        _ = TranslateRegistryErrors(WriteFailedMessage, () =>
         {
             using RegistryKey runKey = Registry.CurrentUser.CreateSubKey(RunKeyPath, writable: true);
             object? currentValue = runKey.GetValue(_valueName);
@@ -112,51 +100,50 @@ public sealed class RegistryAutoStartService : IAutoStartService
                 && string.Equals(existing, desiredEntry, StringComparison.OrdinalIgnoreCase))
             {
                 RegistryAutoStartServiceLog.AlreadyCurrent(_logger, _valueName);
-                return;
+                return false;
             }
 
             runKey.SetValue(_valueName, desiredEntry, RegistryValueKind.String);
             RegistryAutoStartServiceLog.Enabled(_logger, _valueName);
-        }
-        catch (SecurityException ex)
-        {
-            throw new AutoStartException(WriteFailedMessage, ex);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            throw new AutoStartException(WriteFailedMessage, ex);
-        }
-        catch (IOException ex)
-        {
-            throw new AutoStartException(WriteFailedMessage, ex);
-        }
+            return true;
+        });
     }
 
     /// <inheritdoc />
     public void Disable()
     {
-        try
+        _ = TranslateRegistryErrors(DeleteFailedMessage, () =>
         {
             using RegistryKey? runKey = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: true);
             if (runKey is null)
             {
-                return;
+                return false;
             }
 
             runKey.DeleteValue(_valueName, throwOnMissingValue: false);
             RegistryAutoStartServiceLog.Disabled(_logger, _valueName);
-        }
-        catch (SecurityException ex)
+            return true;
+        });
+    }
+
+    /// <summary>
+    /// Führt einen Registry-Zugriff aus und übersetzt die drei Fehlerarten, die er werfen kann
+    /// (Richtlinie, fehlende Rechte, E/A), in eine <see cref="AutoStartException"/>. Aufrufer
+    /// müssen so nur eine Ausnahme kennen und behalten die Ursache als innere Ausnahme.
+    /// </summary>
+    /// <typeparam name="T">Ergebnis des Zugriffs.</typeparam>
+    /// <param name="message">Meldung der übersetzten Ausnahme.</param>
+    /// <param name="access">Der Registry-Zugriff.</param>
+    /// <returns>Das Ergebnis des Zugriffs.</returns>
+    internal static T TranslateRegistryErrors<T>(string message, Func<T> access)
+    {
+        try
         {
-            throw new AutoStartException(DeleteFailedMessage, ex);
+            return access();
         }
-        catch (UnauthorizedAccessException ex)
+        catch (Exception ex) when (ex is SecurityException or UnauthorizedAccessException or IOException)
         {
-            throw new AutoStartException(DeleteFailedMessage, ex);
-        }
-        catch (IOException ex)
-        {
-            throw new AutoStartException(DeleteFailedMessage, ex);
+            throw new AutoStartException(message, ex);
         }
     }
 
@@ -177,7 +164,7 @@ public sealed class RegistryAutoStartService : IAutoStartService
     /// Hauptmodul des Prozesses.
     /// </summary>
     /// <returns>Vollständiger Pfad zur LookAway.App.exe.</returns>
-    private static string ResolveCurrentExecutablePath()
+    internal static string ResolveCurrentExecutablePath()
     {
         try
         {
@@ -190,15 +177,7 @@ public sealed class RegistryAutoStartService : IAutoStartService
 
             return path;
         }
-        catch (InvalidOperationException ex)
-        {
-            throw new AutoStartException(PathFailedMessage, ex);
-        }
-        catch (NotSupportedException ex)
-        {
-            throw new AutoStartException(PathFailedMessage, ex);
-        }
-        catch (Win32Exception ex)
+        catch (Exception ex) when (ex is InvalidOperationException or NotSupportedException or Win32Exception)
         {
             throw new AutoStartException(PathFailedMessage, ex);
         }

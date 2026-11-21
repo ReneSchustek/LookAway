@@ -44,31 +44,35 @@ public sealed partial class WindowsScreenDimmer : IScreenDimmer, IDisposable
         {
             foreach (PhysicalMonitor monitor in EnumeratePhysicalMonitors())
             {
-                if (GetMonitorBrightness(monitor.Handle, out uint min, out uint current, out uint max) && max > min)
+                if (!TryDim(monitor, clamped))
                 {
-                    uint target = min + (uint)((max - min) * clamped / 100.0);
-                    if (SetMonitorBrightness(monitor.Handle, target))
-                    {
-                        _dimmed.Add(new MonitorBrightness(monitor.Handle, current));
-                        continue;
-                    }
+                    _ = DestroyPhysicalMonitor(monitor.Handle);
                 }
-
-                _ = DestroyPhysicalMonitor(monitor.Handle);
             }
         }
-        catch (DllNotFoundException ex)
+        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or SEHException)
         {
             OnDimFailed(ex);
         }
-        catch (EntryPointNotFoundException ex)
+    }
+
+    // Dunkelt einen Monitor auf den Anteil seines Helligkeitsbereichs ab und merkt sich den alten
+    // Wert. Monitore ohne regelbare Helligkeit (etwa ohne DDC/CI) lehnen ab.
+    private bool TryDim(PhysicalMonitor monitor, int percent)
+    {
+        if (!GetMonitorBrightness(monitor.Handle, out uint min, out uint current, out uint max) || max <= min)
         {
-            OnDimFailed(ex);
+            return false;
         }
-        catch (SEHException ex)
+
+        uint target = min + (uint)((max - min) * percent / 100.0);
+        if (!SetMonitorBrightness(monitor.Handle, target))
         {
-            OnDimFailed(ex);
+            return false;
         }
+
+        _dimmed.Add(new MonitorBrightness(monitor.Handle, current));
+        return true;
     }
 
     // Hardware-Fehler melden die Dxva2-Aufrufe über ihren Rückgabewert. Werfen können sie
@@ -89,15 +93,7 @@ public sealed partial class WindowsScreenDimmer : IScreenDimmer, IDisposable
             {
                 _ = SetMonitorBrightness(monitor.Handle, monitor.Original);
             }
-            catch (DllNotFoundException ex)
-            {
-                ScreenDimmerLog.RestoreFailed(_logger, ex);
-            }
-            catch (EntryPointNotFoundException ex)
-            {
-                ScreenDimmerLog.RestoreFailed(_logger, ex);
-            }
-            catch (SEHException ex)
+            catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException or SEHException)
             {
                 ScreenDimmerLog.RestoreFailed(_logger, ex);
             }
@@ -125,22 +121,24 @@ public sealed partial class WindowsScreenDimmer : IScreenDimmer, IDisposable
 
         foreach (nint hMonitor in hMonitors)
         {
-            if (!GetNumberOfPhysicalMonitorsFromHMONITOR(hMonitor, out uint count) || count == 0)
-            {
-                continue;
-            }
-
-            PHYSICAL_MONITOR[] monitors = new PHYSICAL_MONITOR[count];
-            if (GetPhysicalMonitorsFromHMONITOR(hMonitor, count, monitors))
-            {
-                foreach (PHYSICAL_MONITOR monitor in monitors)
-                {
-                    result.Add(new PhysicalMonitor(monitor.hPhysicalMonitor));
-                }
-            }
+            result.AddRange(PhysicalMonitorsOf(hMonitor));
         }
 
         return result;
+    }
+
+    // Die physischen Monitore hinter einem Anzeige-Monitor; ein gespiegelter Ausgang hat mehrere.
+    private static IEnumerable<PhysicalMonitor> PhysicalMonitorsOf(nint hMonitor)
+    {
+        if (!GetNumberOfPhysicalMonitorsFromHMONITOR(hMonitor, out uint count) || count == 0)
+        {
+            return [];
+        }
+
+        PHYSICAL_MONITOR[] monitors = new PHYSICAL_MONITOR[count];
+        return GetPhysicalMonitorsFromHMONITOR(hMonitor, count, monitors)
+            ? monitors.Select(monitor => new PhysicalMonitor(monitor.hPhysicalMonitor))
+            : [];
     }
 
     /// <summary>Stellt die Helligkeit wieder her und gibt Ressourcen frei.</summary>
@@ -155,12 +153,16 @@ public sealed partial class WindowsScreenDimmer : IScreenDimmer, IDisposable
         _disposed = true;
     }
 
+    // Handle eines Monitors aus Dxva2; muss mit DestroyPhysicalMonitor freigegeben werden.
     private readonly record struct PhysicalMonitor(nint Handle);
 
+    // Ein gedimmter Monitor samt der Helligkeit, die Restore zurückschreibt.
     private readonly record struct MonitorBrightness(nint Handle, uint Original);
 
     private delegate bool MonitorEnumProc(nint hMonitor, nint hdc, nint lprcMonitor, nint data);
 
+    // Gegenstück zur Win32-Struktur PHYSICAL_MONITOR; der Name folgt ihr, damit die
+    // Zuordnung zur Dokumentation auf einen Blick stimmt.
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     private struct PHYSICAL_MONITOR
     {

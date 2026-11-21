@@ -1,4 +1,3 @@
-using LookAway.Core.Enums;
 using LookAway.Core.Interfaces;
 using Microsoft.Extensions.Logging;
 
@@ -38,17 +37,20 @@ public sealed class LogService
     /// Lauf in einen Crash gemündet ist.
     /// </summary>
     /// <param name="version">Versionskennung der Anwendung (z. B. <c>1.0.0</c>).</param>
-    /// <param name="language">Aktuelle Anzeigesprache.</param>
     /// <returns>
     /// <c>true</c>, wenn seit dem letzten Acknowledgement ein neuer
     /// Crash-Bericht vorliegt; sonst <c>false</c>.
     /// </returns>
-    public bool LogStart(string version, Language language)
+    /// <remarks>
+    /// Die Sprache gehört nicht hierher: Der Vermerk entsteht beim Aufbau der Anwendung, bevor
+    /// die Einstellungen gelesen sind. Sie steht im Vermerk nach dem Laden der Einstellungen.
+    /// </remarks>
+    public bool LogStart(string version)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(version);
 
         bool lastRunCrashed = _crashReporter.HasUnresolvedCrashes();
-        LogServiceLog.AppStarted(_logger, version, language, lastRunCrashed);
+        LogServiceLog.AppStarted(_logger, version, lastRunCrashed);
         return lastRunCrashed;
     }
 
@@ -80,7 +82,8 @@ public sealed class LogService
         }
         catch (IOException ex)
         {
-            // CrashReporter selber ist robust; falls hier doch etwas durchschlägt, loggen wir es.
+            // Der CrashReporter fängt seine Schreibfehler selbst ab. Kommt trotzdem einer
+            // durch, soll er die Behandlung der eigentlichen Ausnahme nicht verdrängen.
             LogServiceLog.CrashReportFailed(_logger, ex);
         }
         catch (UnauthorizedAccessException ex)

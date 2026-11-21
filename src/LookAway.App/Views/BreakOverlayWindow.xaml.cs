@@ -1,25 +1,29 @@
-using System;
+using System.Diagnostics.CodeAnalysis;
 using LookAway.Core.Domain;
 using LookAway.Core.Interfaces;
 using LookAway.Core.Localization;
+using LookAway.App.Services;
 using LookAway.App.ViewModels;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Windows.Graphics;
 using WinColor = Windows.UI.Color;
 
 namespace LookAway.App.Views;
 
 /// <summary>
-/// Abgedunkeltes Vollbild-Overlay während einer Pause — eine Instanz je Monitor.
+/// Abgedunkeltes Vollbild-Overlay während einer Pause — eine Instanz je Monitor, in der
+/// Overlay-Farbe oder mit einem eigenen Bild.
 /// Bindet an das UI-freie <see cref="BreakOverlayViewModel"/>, zeigt einen
 /// Sekunden-Countdown und lässt sich mit ESC vorzeitig beenden. Der Countdown
 /// wird zentral vom <see cref="Services.BreakOverlayPresenter"/> getaktet, damit
 /// mehrere Fenster synchron bleiben und der Zähler nicht mehrfach läuft.
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "Fenster-Code-Behind: legt WinUI-Elemente an und braucht den Fenster-Thread. Entscheidungen stehen in prüfbaren Klassen (BreakOverlayPresenter, OverlayLook, OverlayImage, DisplayOrder, HexColor).")]
 internal sealed partial class BreakOverlayWindow : Window
 {
     // Schlüssel der Haupt-Schriftfarbe; die beiden Nebentöne folgen demselben Muster,
@@ -29,6 +33,7 @@ internal sealed partial class BreakOverlayWindow : Window
     private readonly BreakOverlayViewModel _viewModel;
     private readonly ITopmostWindowGuard _topmost;
     private readonly IWindowFrameSuppressor _frameSuppressor;
+    private readonly OverlayLook _look;
     private readonly bool _showContent;
     private bool _closedByCaller;
 
@@ -39,9 +44,10 @@ internal sealed partial class BreakOverlayWindow : Window
     /// <param name="localization">Liefert die sprachabhängigen Texte.</param>
     /// <param name="topmost">Hält das Fenster über allen anderen.</param>
     /// <param name="frameSuppressor">Nimmt dem Fenster Randlinie und runde Ecken.</param>
-    /// <param name="background">
-    /// Deckende Hintergrundfarbe des Overlays. Der <see cref="Services.BreakOverlayPresenter"/>
-    /// rechnet eine Alpha-Angabe vorher heraus, damit jeder Monitor dieselbe Fläche zeigt.
+    /// <param name="look">
+    /// Deckende Overlay-Farbe und gegebenenfalls das Bild. Der
+    /// <see cref="Services.BreakOverlayPresenter"/> rechnet eine Alpha-Angabe vorher heraus und
+    /// liest das Bild probeweise, damit jeder Monitor dieselbe Fläche zeigt.
     /// </param>
     /// <param name="showContent">
     /// Zeigt dieses Fenster Titel, Hinweis und Countdown? Nur der Hauptmonitor zeigt
@@ -52,43 +58,53 @@ internal sealed partial class BreakOverlayWindow : Window
         ILocalizationService localization,
         ITopmostWindowGuard topmost,
         IWindowFrameSuppressor frameSuppressor,
-        WinColor background,
+        OverlayLook look,
         bool showContent)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
         ArgumentNullException.ThrowIfNull(localization);
         ArgumentNullException.ThrowIfNull(topmost);
         ArgumentNullException.ThrowIfNull(frameSuppressor);
+        ArgumentNullException.ThrowIfNull(look);
         _viewModel = viewModel;
         _topmost = topmost;
         _frameSuppressor = frameSuppressor;
+        _look = look;
         _showContent = showContent;
 
         InitializeComponent();
 
         Title = "LookAway";
-        RootGrid.Background = new SolidColorBrush(background);
+        RootGrid.Background = new SolidColorBrush(WinColor.FromArgb(0xFF, look.Color.R, look.Color.G, look.Color.B));
 
-        if (showContent)
-        {
-            // Hauptmonitor: Titel, Hinweis und Countdown anzeigen. Die Textfarbe an
-            // die gewählte Overlay-Farbe anpassen (auf hellen Farben dunkler Text,
-            // sonst heller), damit der Inhalt immer lesbar bleibt.
-            ApplyReadableForeground(background);
+        ArrangeContent(localization);
+        Closed += OnWindowClosed;
+    }
 
-            TitleText.Text = localization.GetText(OverlayTextKeys.Title);
-            HintText.Text = localization.GetText(viewModel.HintKey);
-            EndHintText.Text = localization.GetText(OverlayTextKeys.EndHint);
-            CountdownText.Text = viewModel.RemainingDisplay;
-        }
-        else
+    /// <summary>
+    /// Meldet, dass sich das Bild im Fenster nicht laden ließ; das Fenster zeigt dann die Farbe.
+    /// Das Argument nennt den Grund.
+    /// </summary>
+    public event EventHandler<string>? ImageFailed;
+
+    // Hauptmonitor: Titel, Hinweis und Countdown anzeigen. Welcher Schriftsatz besser liest,
+    // entscheidet ApplyReadableForeground gegen die Fläche, auf der die Schrift steht.
+    private void ArrangeContent(ILocalizationService localization)
+    {
+        if (!_showContent)
         {
             // Nebenmonitor: nur abdunkeln, keinen Inhalt zeigen. Der ESC-Kurzbefehl
             // (auf dem RootGrid) bleibt aktiv, sodass die Pause auch hier endbar ist.
             ContentPanel.Visibility = Visibility.Collapsed;
+            return;
         }
 
-        Closed += OnWindowClosed;
+        ApplyReadableForeground(_look.TextSurface);
+
+        TitleText.Text = localization.GetText(OverlayTextKeys.Title);
+        HintText.Text = localization.GetText(_viewModel.HintKey);
+        EndHintText.Text = localization.GetText(OverlayTextKeys.EndHint);
+        CountdownText.Text = _viewModel.RemainingDisplay;
     }
 
     /// <summary>
@@ -109,6 +125,7 @@ internal sealed partial class BreakOverlayWindow : Window
 
         RectInt32 bounds = area.OuterBounds;
         AppWindow.MoveAndResize(new RectInt32(bounds.X, bounds.Y, bounds.Width, bounds.Height));
+        ShowImage(bounds);
 
         Activate();
 
@@ -124,13 +141,46 @@ internal sealed partial class BreakOverlayWindow : Window
     /// </summary>
     public void KeepOnTop() => _topmost.BringToTop(Win32Interop.GetWindowFromWindowId(AppWindow.Id));
 
+    // Das Bild füllt den Monitor (Seitenverhältnis bleibt, Ränder werden beschnitten) und wird nur
+    // so groß dekodiert, wie dieser Monitor es braucht.
+    private void ShowImage(RectInt32 bounds)
+    {
+        if (_look.Image is not { } image)
+        {
+            return;
+        }
+
+        BitmapImage bitmap = new()
+        {
+            DecodePixelWidth = OverlayImage.DecodeWidth(image.PixelWidth, image.PixelHeight, bounds.Width, bounds.Height),
+        };
+        bitmap.ImageFailed += OnImageFailed;
+        bitmap.UriSource = new Uri(image.Path);
+
+        ImageLayer.Background = new ImageBrush { ImageSource = bitmap, Stretch = Stretch.UniformToFill };
+        DimLayer.Opacity = image.DimOpacity;
+        ImageLayer.Visibility = Visibility.Visible;
+        DimLayer.Visibility = Visibility.Visible;
+    }
+
+    private void OnImageFailed(object sender, ExceptionRoutedEventArgs args)
+    {
+        ImageLayer.Visibility = Visibility.Collapsed;
+        DimLayer.Visibility = Visibility.Collapsed;
+        if (_showContent)
+        {
+            ApplyReadableForeground(_look.Color);
+        }
+
+        ImageFailed?.Invoke(this, args.ErrorMessage);
+    }
+
     private void ConfigureAsOverlay()
     {
-        // Kein Vollbild-Presenter mehr: Er fällt zurück, sobald das Fenster den
-        // Vordergrund verliert — bei mehreren Monitoren also überall dort, wo der Fokus
-        // gerade nicht sitzt. Sichtbar wurde das an der wieder auftauchenden Titelleiste
-        // auf den Nebenmonitoren. Ein randloses Fenster in Monitorgröße, das immer oben
-        // liegt, hält die Abdeckung unabhängig vom Fokus.
+        // Kein Vollbild-Presenter: Er fällt zurück, sobald das Fenster den Vordergrund
+        // verliert, bei mehreren Monitoren also überall dort, wo der Fokus gerade nicht
+        // sitzt, und auf den Nebenmonitoren erschiene die Titelleiste wieder. Ein randloses
+        // Fenster in Monitorgröße, das immer oben liegt, hält die Abdeckung unabhängig vom Fokus.
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
             presenter.SetBorderAndTitleBar(hasBorder: false, hasTitleBar: false);
@@ -158,12 +208,12 @@ internal sealed partial class BreakOverlayWindow : Window
         }
     }
 
-    private void ApplyReadableForeground(WinColor background)
+    private void ApplyReadableForeground((byte R, byte G, byte B) surface)
     {
-        // Welcher der beiden Schriftsätze auf der gewählten Overlay-Farbe besser liest,
+        // Welcher der beiden Schriftsätze auf der Fläche unter der Schrift besser liest,
         // entscheidet das Kontrastverhältnis (LookAway.Core) und keine Helligkeitsschwelle.
         // Die Farbwerte selbst stehen in den Belegungen, nicht hier.
-        bool onLight = DarkInkReadsBetter(background);
+        bool onLight = DarkInkReadsBetter(surface);
 
         TitleText.Foreground = OverlayBrush(PrimaryInkKey, onLight);
         CountdownText.Foreground = OverlayBrush(PrimaryInkKey, onLight);
@@ -171,13 +221,12 @@ internal sealed partial class BreakOverlayWindow : Window
         EndHintText.Foreground = OverlayBrush("RcOverlayForegroundFaint", onLight);
     }
 
-    private static bool DarkInkReadsBetter(WinColor background)
+    private static bool DarkInkReadsBetter((byte R, byte G, byte B) surface)
     {
-        (byte R, byte G, byte B) surface = (background.R, background.G, background.B);
         (byte R, byte G, byte B) darkInk = Channels(OverlayBrush(PrimaryInkKey, onLight: true).Color);
         (byte R, byte G, byte B) lightInk = Channels(OverlayBrush(PrimaryInkKey, onLight: false).Color);
 
-        return HexColor.ContrastRatio(surface, darkInk) > HexColor.ContrastRatio(surface, lightInk);
+        return HexColor.PrefersDarkInk(surface, darkInk, lightInk);
     }
 
     private static SolidColorBrush OverlayBrush(string themeKey, bool onLight)
@@ -196,7 +245,7 @@ internal sealed partial class BreakOverlayWindow : Window
         Close();
     }
 
-    private void OnEscapeInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+    private void OnEscapeInvoked(KeyboardAccelerator _, KeyboardAcceleratorInvokedEventArgs args)
     {
         args.Handled = true;
         _viewModel.EndByUser();

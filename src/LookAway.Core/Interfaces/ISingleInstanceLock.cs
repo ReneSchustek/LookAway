@@ -1,14 +1,20 @@
 namespace LookAway.Core.Interfaces;
 
 /// <summary>
-/// Stellt sicher, dass pro Benutzer nur eine Instanz der Anwendung aktiv ist, und
-/// erlaubt einer Zweit-Instanz, die laufende Instanz zu benachrichtigen
+/// Lässt je Benutzer nur eine Instanz der Anwendung laufen und erlaubt einer
+/// Zweit-Instanz, die laufende zu benachrichtigen
 /// (z. B. um deren Fenster in den Vordergrund zu holen).
 /// </summary>
 public interface ISingleInstanceLock : IDisposable
 {
     /// <summary>Wird ausgelöst, wenn eine Zweit-Instanz die Aktivierung angefordert hat.</summary>
     event EventHandler? ActivationRequested;
+
+    /// <summary>
+    /// Wird ausgelöst, wenn das Setup diese Instanz zum Beenden auffordert, bevor es Dateien ersetzt
+    /// (Hintergrund-Thread).
+    /// </summary>
+    event EventHandler? QuitRequested;
 
     /// <summary>Wahr, wenn dieser Prozess die Sperre hält (also die einzige Instanz ist).</summary>
     bool IsOwner { get; }

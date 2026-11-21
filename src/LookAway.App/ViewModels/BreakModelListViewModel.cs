@@ -7,7 +7,6 @@ using LookAway.Core.Entities;
 using LookAway.Core.Enums;
 using LookAway.Core.Interfaces;
 using LookAway.Core.Localization;
-using LookAway.Core.ValueObjects;
 
 namespace LookAway.App.ViewModels;
 
@@ -178,7 +177,7 @@ internal sealed partial class BreakModelListViewModel : ObservableObject
         return LoadAsync(cancellationToken);
     }
 
-    private BreakModel ActiveModel { get; set; } = BreakModel.ClassicPomodoro;
+    private BreakModel ActiveModel { get; set; } = Settings.DefaultBreakModel;
 
     [RelayCommand]
     private void Select(BreakModelListItem? item)

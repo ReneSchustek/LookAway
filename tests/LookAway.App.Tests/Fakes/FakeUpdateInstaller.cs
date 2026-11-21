@@ -31,4 +31,16 @@ internal sealed class FakeUpdateInstaller : IUpdateInstaller
         LastInfo = info;
         return Task.FromResult(_result);
     }
+
+    /// <summary>Was <see cref="PrepareSetupAsync"/> liefert; <c>null</c> heißt „gescheitert“.</summary>
+    public Func<UpdateInfo, VerifiedSetup?> Setup { get; set; } = _ => null;
+
+    public int PrepareSetupCallCount { get; private set; }
+
+    public Task<VerifiedSetup?> PrepareSetupAsync(UpdateInfo info, CancellationToken cancellationToken = default)
+    {
+        PrepareSetupCallCount++;
+        LastInfo = info;
+        return Task.FromResult(Setup(info));
+    }
 }

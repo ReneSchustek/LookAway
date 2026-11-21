@@ -28,12 +28,15 @@ namespace LookAway.Data.Services;
 [SupportedOSPlatform("windows")]
 public sealed partial class WindowsWindowFrameSuppressor : IWindowFrameSuppressor
 {
+    // DWMWA_WINDOW_CORNER_PREFERENCE mit DWMWCP_DONOTROUND.
     private const int WindowCornerPreference = 33;
     private const int DoNotRound = 1;
 
+    // DWMWA_BORDER_COLOR mit DWMWA_COLOR_NONE: keine Randlinie statt einer in Systemfarbe.
     private const int BorderColor = 34;
     private const int ColorNone = unchecked((int)0xFFFFFFFE);
 
+    // GWL_STYLE und GWL_EXSTYLE für Get-/SetWindowLongPtr.
     private const int StyleIndex = -16;
     private const int ExtendedStyleIndex = -20;
 

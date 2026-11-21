@@ -4,9 +4,9 @@ using Microsoft.Extensions.Logging;
 namespace LookAway.Data.Tests;
 
 /// <summary>
-/// Integrationstests für den <see cref="RollingFileLoggerProvider"/>:
-/// stellt sicher, dass Logger pro Kategorie wiederverwendet werden und
-/// IO-/Formatter-Fehler die Anwendung nicht zum Absturz bringen.
+/// Integrationstests für den <see cref="RollingFileLoggerProvider"/>: Logger werden je
+/// Kategorie wiederverwendet, und IO- oder Formatter-Fehler bringen die Anwendung nicht zum
+/// Absturz.
 /// </summary>
 public sealed class RollingFileLoggerProviderTests : IDisposable
 {
@@ -114,5 +114,26 @@ public sealed class RollingFileLoggerProviderTests : IDisposable
             (_, _) => throw new InvalidOperationException("formatter kapow"));
 
         // Erfolg = keine Exception.
+    }
+
+    [Fact]
+    public void Logger_BelowTheMinimumLevel_WritesNothing()
+    {
+        using RollingFileLoggerProvider provider = new(_logDirectory, LogLevel.Warning);
+        ILogger logger = provider.CreateLogger("TestCat");
+
+        logger.Log(LogLevel.Information, new EventId(0), "leise", null, (state, _) => state);
+
+        Assert.Empty(Directory.EnumerateFiles(_logDirectory, "lookaway-*.log"));
+    }
+
+    /// <remarks>Der Datei-Sink kennt keine Verschachtelung; ein Scope ändert an den Zeilen nichts.</remarks>
+    [Fact]
+    public void Logger_HasNoScopes()
+    {
+        using RollingFileLoggerProvider provider = new(_logDirectory);
+        ILogger logger = provider.CreateLogger("TestCat");
+
+        Assert.Null(logger.BeginScope("Bereich"));
     }
 }

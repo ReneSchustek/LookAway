@@ -31,7 +31,8 @@ public sealed class JsonWorkTaskRepository : IWorkTaskRepository, IDisposable
     private bool _disposed;
 
     /// <summary>
-    /// Erzeugt das Repository mit dem Standardpfad <c>%APPDATA%\LookAway\tasks.json</c>.
+    /// Erzeugt das Repository mit dem Standardpfad <c>tasks.json</c> im Datenverzeichnis
+    /// (<see cref="AppDataLocation"/>).
     /// </summary>
     /// <param name="logger">Logger für Persistenz-Vorgänge.</param>
     public JsonWorkTaskRepository(ILogger<JsonWorkTaskRepository> logger)
@@ -53,7 +54,7 @@ public sealed class JsonWorkTaskRepository : IWorkTaskRepository, IDisposable
         _logger = logger;
     }
 
-    /// <summary>Standardpfad der Aufgaben-Datei im Roaming-AppData.</summary>
+    /// <summary>Standardpfad der Aufgaben-Datei im Datenverzeichnis.</summary>
     public static string GetDefaultFilePath()
         => Path.Combine(AppDataLocation.GetDataDirectory(), TasksFileName);
 
@@ -119,23 +120,7 @@ public sealed class JsonWorkTaskRepository : IWorkTaskRepository, IDisposable
 
     private async Task<List<WorkTask>> ReadUnlockedAsync(CancellationToken cancellationToken)
     {
-        string? json;
-        try
-        {
-            json = await _store.ReadAllTextOrNullAsync(cancellationToken).ConfigureAwait(false);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            // Aufgaben sind nicht startkritisch — bei Zugriffsfehler leer behandeln.
-            JsonWorkTaskRepositoryLog.TasksReadFailed(_logger, ex, _store.FilePath);
-            return [];
-        }
-        catch (IOException ex)
-        {
-            JsonWorkTaskRepositoryLog.TasksReadFailed(_logger, ex, _store.FilePath);
-            return [];
-        }
-
+        string? json = await TryReadAsync(cancellationToken).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(json))
         {
             return [];
@@ -145,18 +130,27 @@ public sealed class JsonWorkTaskRepository : IWorkTaskRepository, IDisposable
         {
             return JsonSerializer.Deserialize<List<WorkTask>>(json, SerializerOptions) ?? [];
         }
-        catch (JsonException ex)
+        // Eine Aufgabe mit unbrauchbaren Werten lässt den Konstruktor werfen; das zählt wie
+        // unlesbares JSON.
+        catch (Exception ex) when (ex is JsonException or ArgumentException)
         {
             JsonWorkTaskRepositoryLog.TasksCorrupted(_logger, ex, _store.FilePath);
             await BackUpCorruptAsync(json, cancellationToken).ConfigureAwait(false);
             return [];
         }
-        catch (ArgumentException ex)
+    }
+
+    // Aufgaben sind nicht startkritisch — ein Zugriffsfehler liest sich wie eine leere Datei.
+    private async Task<string?> TryReadAsync(CancellationToken cancellationToken)
+    {
+        try
         {
-            // Eine Aufgabe mit unbrauchbaren Werten lässt den Konstruktor werfen.
-            JsonWorkTaskRepositoryLog.TasksCorrupted(_logger, ex, _store.FilePath);
-            await BackUpCorruptAsync(json, cancellationToken).ConfigureAwait(false);
-            return [];
+            return await _store.ReadAllTextOrNullAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+        {
+            JsonWorkTaskRepositoryLog.TasksReadFailed(_logger, ex, _store.FilePath);
+            return null;
         }
     }
 

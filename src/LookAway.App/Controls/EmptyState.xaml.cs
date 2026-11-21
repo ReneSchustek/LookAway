@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
@@ -12,6 +13,7 @@ namespace LookAway.App.Controls;
 /// Deshalb trennt die Ansicht „nichts vorhanden" von „nichts gefunden" und
 /// reicht hier den passenden Text herein.
 /// </remarks>
+[ExcludeFromCodeCoverage(Justification = "Steuerelement aus Abhängigkeitseigenschaften ohne eigene Logik; braucht die WinUI-Laufzeit.")]
 internal sealed partial class EmptyState : UserControl
 {
     /// <summary>Zeichen aus „Segoe MDL2 Assets" — dieselbe Quelle wie im System.</summary>

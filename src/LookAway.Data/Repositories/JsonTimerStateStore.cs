@@ -7,7 +7,7 @@ namespace LookAway.Data.Repositories;
 
 /// <summary>
 /// Persistiert die <see cref="TimerSnapshot"/>-Momentaufnahme als kleine JSON-Datei
-/// neben den übrigen Benutzerdaten. Bewusst schlank und fehlertolerant gehalten:
+/// neben den übrigen Benutzerdaten. Schlank und fehlertolerant gehalten:
 /// die Momentaufnahme ist unkritisch, daher führt jeder Lese-/Schreibfehler
 /// lediglich dazu, dass der Timer regulär (auf volle Arbeitsdauer) startet.
 /// </summary>
@@ -52,13 +52,9 @@ public sealed class JsonTimerStateStore : ITimerStateStore
 
             File.WriteAllText(_filePath, JsonSerializer.Serialize(snapshot, SerializerOptions));
         }
-        catch (IOException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             // Momentaufnahme ist unkritisch — bei Schreibfehler einfach nicht sichern.
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // wie oben: bewusst ignoriert
         }
     }
 
@@ -77,15 +73,7 @@ public sealed class JsonTimerStateStore : ITimerStateStore
                 ? null
                 : JsonSerializer.Deserialize<TimerSnapshot>(json, SerializerOptions);
         }
-        catch (IOException)
-        {
-            return null;
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return null;
-        }
-        catch (JsonException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         {
             return null;
         }
@@ -101,11 +89,7 @@ public sealed class JsonTimerStateStore : ITimerStateStore
                 File.Delete(_filePath);
             }
         }
-        catch (IOException)
-        {
-            // Aufräumen ist best-effort.
-        }
-        catch (UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             // Aufräumen ist best-effort.
         }

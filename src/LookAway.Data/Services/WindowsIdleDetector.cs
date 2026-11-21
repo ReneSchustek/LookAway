@@ -7,8 +7,8 @@ namespace LookAway.Data.Services;
 
 /// <summary>
 /// Liest die Benutzer-Inaktivitätsdauer über die Win32-API
-/// <c>GetLastInputInfo</c>. Erste Stelle mit Plattform-spezifischem P/Invoke;
-/// bewusst in der Data-/Infrastructure-Schicht isoliert.
+/// <c>GetLastInputInfo</c>. Der Plattformaufruf liegt in der Data-Schicht, damit
+/// Core die Inaktivität nur über <see cref="IIdleDetector"/> kennt.
 /// </summary>
 /// <remarks>
 /// Von der Abdeckungsmessung ausgenommen: Die Klasse reicht einen einzelnen
@@ -44,6 +44,7 @@ public sealed partial class WindowsIdleDetector : IIdleDetector
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool GetLastInputInfo(ref LastInputInfo plii);
 
+    // Gegenstück zur Win32-Struktur LASTINPUTINFO; Reihenfolge und Breite der Felder sind vorgegeben.
     [StructLayout(LayoutKind.Sequential)]
     private struct LastInputInfo
     {

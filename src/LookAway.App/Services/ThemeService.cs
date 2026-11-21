@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using LookAway.Core.Enums;
 using Microsoft.UI.Xaml;
 
@@ -37,6 +38,7 @@ internal sealed class ThemeService
     /// Legt das aktuelle Erscheinungsbild auf ein Fenster.
     /// </summary>
     /// <param name="window">Fenster, dessen Inhalt umgestellt wird.</param>
+    [ExcludeFromCodeCoverage(Justification = "Braucht ein WinUI-Fenster mit Inhalt; die Abbildung auf ElementTheme prüft ThemeServiceTests.")]
     public void Apply(Window window) => Apply(window, Current);
 
     /// <summary>
@@ -45,6 +47,7 @@ internal sealed class ThemeService
     /// </summary>
     /// <param name="window">Fenster, dessen Inhalt umgestellt wird.</param>
     /// <param name="theme">Anzuwendendes Erscheinungsbild.</param>
+    [ExcludeFromCodeCoverage(Justification = "Braucht ein WinUI-Fenster mit Inhalt; die Abbildung auf ElementTheme prüft ThemeServiceTests.")]
     public static void Apply(Window window, AppTheme theme)
     {
         ArgumentNullException.ThrowIfNull(window);
@@ -57,7 +60,10 @@ internal sealed class ThemeService
         }
     }
 
-    private static ElementTheme ToElementTheme(AppTheme theme) => theme switch
+    /// <summary>Übersetzt die Wahl in das Erscheinungsbild eines WinUI-Elements.</summary>
+    /// <param name="theme">Gewähltes Erscheinungsbild.</param>
+    /// <returns>Hell, dunkel oder der Systemwert.</returns>
+    internal static ElementTheme ToElementTheme(AppTheme theme) => theme switch
     {
         AppTheme.Light => ElementTheme.Light,
         AppTheme.Dark => ElementTheme.Dark,

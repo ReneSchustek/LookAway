@@ -21,8 +21,8 @@ internal sealed partial class WelcomeViewModel : ObservableObject, IDisposable
     /// <summary>Anzahl der Wizard-Schritte.</summary>
     public const int TotalSteps = 3;
 
-    /// <summary>Default-Pausenmodell der Erstkonfiguration.</summary>
-    public const BreakModel DefaultModel = BreakModel.ModifiedPomodoro;
+    /// <summary>Vorschlag des Assistenten für das Pausenmodell, dieselbe Vorgabe wie in den Einstellungen.</summary>
+    public const BreakModel DefaultModel = Settings.DefaultBreakModel;
 
     private readonly ISettingsRepository _settingsRepository;
     private readonly AutoStartCoordinator _autoStartCoordinator;
@@ -72,16 +72,8 @@ internal sealed partial class WelcomeViewModel : ObservableObject, IDisposable
         // keine Feld-Initialisierer.
         AutoStart = true;
 
-        Languages = Enum.GetValues<Language>()
-            .Select(language => new SettingsOption<Language>(
-                language,
-                () => _localization.GetText(SettingsTextKeys.ForLanguage(language))))
-            .ToList();
-        Models = Enum.GetValues<BreakModel>()
-            .Select(model => new SettingsOption<BreakModel>(
-                model,
-                () => _localization.GetText(SettingsTextKeys.ForModel(model))))
-            .ToList();
+        Languages = SettingsOptions.For<Language>(localization, SettingsTextKeys.ForLanguage);
+        Models = SettingsOptions.For<BreakModel>(localization, SettingsTextKeys.ForModel);
 
         _localization.LanguageChanged += OnLanguageChanged;
         _localization.SetLanguage(detectedLanguage);

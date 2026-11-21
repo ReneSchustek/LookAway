@@ -11,12 +11,15 @@ namespace LookAway.Core.Services;
 /// oder UI-Abhängigkeit testbar.
 /// </summary>
 /// <remarks>
-/// Ein selbst ausgelöster Idle-Pause wird gemerkt (<c>_pausedByIdle</c>), damit
+/// Eine selbst ausgelöste Idle-Pause wird gemerkt (<c>_pausedByIdle</c>), damit
 /// eine vom Benutzer ausgelöste Pause nicht fälschlich fortgesetzt wird.
 /// </remarks>
 public sealed class IdleDetectionService
 {
-    /// <summary>Standard-Inaktivitätsschwelle (5 Minuten).</summary>
+    /// <summary>
+    /// Standard-Inaktivitätsschwelle (5 Minuten), dieselbe wie in den Einstellungen.
+    /// Kürzer zählte schon das Lesen eines längeren Textes als Abwesenheit.
+    /// </summary>
     public static readonly TimeSpan DefaultThreshold = TimeSpan.FromMinutes(5);
 
     private readonly IIdleDetector _idleDetector;

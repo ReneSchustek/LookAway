@@ -18,12 +18,14 @@
         <TextBlock
             x:Name="TitleText"
             Grid.Row="0"
-            Style="{StaticResource RcH1TextStyle}" />
+            Style="{StaticResource RcH1TextStyle}"
+            TextWrapping="Wrap" />
 
         <TextBlock
             x:Name="HintText"
             Grid.Row="1"
-            Style="{StaticResource RcH3TextStyle}" />
+            Style="{StaticResource RcH3TextStyle}"
+            TextWrapping="Wrap" />
 
         <TextBlock
             x:Name="CountdownText"

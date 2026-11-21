@@ -30,8 +30,8 @@ public sealed class JsonSettingsRepository : ISettingsRepository, IDisposable
     private bool _disposed;
 
     /// <summary>
-    /// Erzeugt das Repository mit dem Standardpfad
-    /// <c>%APPDATA%\LookAway\settings.json</c>.
+    /// Erzeugt das Repository mit dem Standardpfad <c>settings.json</c> im
+    /// Datenverzeichnis (<see cref="AppDataLocation"/>).
     /// </summary>
     /// <param name="logger">Logger für Persistenz-Vorgänge.</param>
     public JsonSettingsRepository(ILogger<JsonSettingsRepository> logger)
@@ -55,8 +55,8 @@ public sealed class JsonSettingsRepository : ISettingsRepository, IDisposable
     }
 
     /// <summary>
-    /// Standardpfad der Konfigurationsdatei im Roaming-AppData des aktuellen
-    /// Windows-Benutzers.
+    /// Standardpfad der Konfigurationsdatei im Datenverzeichnis des aktuellen
+    /// Windows-Benutzers, im Portable-Modus neben der EXE.
     /// </summary>
     public static string GetDefaultFilePath()
         => Path.Combine(AppDataLocation.GetDataDirectory(), SettingsFileName);
@@ -119,7 +119,7 @@ public sealed class JsonSettingsRepository : ISettingsRepository, IDisposable
     /// <param name="cancellationToken">Abbruch-Token.</param>
     /// <returns>Die gelesenen Einstellungen oder Standardwerte.</returns>
     /// <remarks>
-    /// Hier wird geschluckt statt geworfen, und das ist der Unterschied zum Lesen: Eine
+    /// Auswerten schluckt, Lesen wirft, und der Unterschied ist gewollt: Eine
     /// unlesbare Datei ist ein Zustand des Rechners, eine unbrauchbare ein Zustand der
     /// Daten. Letztere lässt sich beiseitelegen, und der Nutzer beginnt neu — statt vor
     /// einem Programm zu sitzen, das nicht mehr startet.

@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.Versioning;
 using LookAway.Data.Logging;
 using Microsoft.Extensions.Logging;
 
@@ -65,6 +66,38 @@ public sealed class RollingFileSinkTests : IDisposable
         Assert.Contains("LookAway.Foo: Pause übersprungen", content, StringComparison.Ordinal);
     }
 
+    /// <remarks>
+    /// Alte Instanz, Update-Helfer und neue Instanz schreiben in dieselbe Tagesdatei. Ohne
+    /// Laufkennung ließe sich nicht sagen, welcher Prozess welche Zeile geschrieben hat.
+    /// </remarks>
+    [Fact]
+    public void Write_TagsEveryLineWithTheRun()
+    {
+        using (RollingFileSink first = new(_logDirectory, runId: "100"))
+        {
+            first.Write(new DateTimeOffset(2026, 5, 10, 12, 0, 0, TimeSpan.Zero), LogLevel.Information, "A", "alt", null);
+        }
+
+        using (RollingFileSink second = new(_logDirectory, runId: "200"))
+        {
+            second.Write(new DateTimeOffset(2026, 5, 10, 12, 0, 1, TimeSpan.Zero), LogLevel.Information, "A", "neu", null);
+        }
+
+        string content = ReadAllLogs();
+        Assert.Contains("[Information] [p100] A: alt", content, StringComparison.Ordinal);
+        Assert.Contains("[Information] [p200] A: neu", content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Write_WithoutRunId_TagsTheLineWithTheProcessId()
+    {
+        using RollingFileSink sink = CreateSink();
+
+        sink.Write(new DateTimeOffset(2026, 5, 10, 12, 0, 0, TimeSpan.Zero), LogLevel.Information, "A", "x", null);
+
+        Assert.Contains($"[p{Environment.ProcessId}] A: x", ReadAllLogs(), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Write_AppendsExceptionStackTrace()
     {
@@ -118,10 +151,8 @@ public sealed class RollingFileSinkTests : IDisposable
     [Fact]
     public void PruneNow_DeletesFilesOlderThanRetention()
     {
-        using RollingFileSink sink = new(_logDirectory, retentionDays: 7);
-        // RollingFileSink vergleicht Dateidaten mit der realen Uhr; die Testdaten sind
-        // deshalb bewusst relativ zu heute (kein injizierbarer IClock in der Sink-Klasse).
-        DateTime today = DateTime.UtcNow.Date;
+        using RollingFileSink sink = CreateSinkAtFixedTime();
+        DateTime today = FixedNow.UtcDateTime.Date;
 
         string oldFile = WriteLogFileWithDate(today.AddDays(-10), "old content");
         string keepFile = WriteLogFileWithDate(today.AddDays(-2), "fresh content");
@@ -137,11 +168,10 @@ public sealed class RollingFileSinkTests : IDisposable
     [Fact]
     public void PruneNow_IgnoresFilesNotMatchingPattern()
     {
-        using RollingFileSink sink = new(_logDirectory, retentionDays: 7);
+        using RollingFileSink sink = CreateSinkAtFixedTime();
         string foreignFile = Path.Combine(_logDirectory, "fremde-datei.txt");
         File.WriteAllText(foreignFile, "kein log");
-        // Reale Uhr, siehe PruneNow_DeletesFilesOlderThanRetention.
-        File.SetLastWriteTimeUtc(foreignFile, DateTime.UtcNow.AddDays(-30));
+        File.SetLastWriteTimeUtc(foreignFile, FixedNow.UtcDateTime.AddDays(-30));
 
         sink.PruneNow();
 
@@ -209,6 +239,12 @@ public sealed class RollingFileSinkTests : IDisposable
         return output;
     }
 
+    // Aufräumtests laufen gegen eine feste Uhr; was „zehn Tage alt“ ist, hängt so nicht vom Kalender ab.
+    private static readonly DateTimeOffset FixedNow = new(2026, 8, 15, 12, 0, 0, TimeSpan.Zero);
+
+    private RollingFileSink CreateSinkAtFixedTime()
+        => new(_logDirectory, retentionDays: 7, utcNow: static () => FixedNow);
+
     private string WriteLogFileWithDate(DateTime date, string content)
     {
         string fileName = $"lookaway-{date:yyyy-MM-dd}.log";
@@ -243,8 +279,8 @@ public sealed class RollingFileSinkTests : IDisposable
     [Fact]
     public void PruneNow_WithLockedOldFile_KeepsGoing()
     {
-        using RollingFileSink sink = new(_logDirectory, retentionDays: 7);
-        DateTime today = DateTime.UtcNow.Date;
+        using RollingFileSink sink = CreateSinkAtFixedTime();
+        DateTime today = FixedNow.UtcDateTime.Date;
 
         string lockedPath = Path.Combine(_logDirectory, $"lookaway-{today.AddDays(-10):yyyy-MM-dd}.log");
         using LockedFile locked = new(lockedPath, "alter Inhalt");
@@ -261,8 +297,8 @@ public sealed class RollingFileSinkTests : IDisposable
     [Fact]
     public void PruneNow_AfterDisposal_DoesNothing()
     {
-        RollingFileSink sink = new(_logDirectory, retentionDays: 7);
-        string oldFile = WriteLogFileWithDate(DateTime.UtcNow.Date.AddDays(-30), "alt");
+        RollingFileSink sink = CreateSinkAtFixedTime();
+        string oldFile = WriteLogFileWithDate(FixedNow.UtcDateTime.Date.AddDays(-30), "alt");
         sink.Dispose();
 
         Exception? thrown = Record.Exception(sink.PruneNow);
@@ -293,5 +329,36 @@ public sealed class RollingFileSinkTests : IDisposable
 
         string content = File.ReadAllText(Path.Combine(_logDirectory, "lookaway-2026-05-10.log"));
         Assert.Contains($"[{expected}]", content, StringComparison.Ordinal);
+    }
+
+    /// <remarks>Eine Stufe, die es heute nicht gibt, geht nicht verloren: Sie steht mit ihrer Zahl in der Zeile.</remarks>
+    [Fact]
+    public void Write_WithAnUnknownLevel_WritesItsNumber()
+    {
+        using RollingFileSink sink = CreateSink();
+        DateTimeOffset timestamp = new(2026, 5, 10, 12, 0, 0, TimeSpan.Zero);
+
+        sink.Write(timestamp, (LogLevel)42, "Cat", "Eintrag", null);
+
+        string content = File.ReadAllText(Path.Combine(_logDirectory, "lookaway-2026-05-10.log"));
+        Assert.Contains("[42]", content, StringComparison.Ordinal);
+    }
+
+    /// <remarks>Darf der Benutzer den Protokollordner nicht auflisten, bleibt das Aufräumen eben aus.</remarks>
+    [Fact]
+    [SupportedOSPlatform("windows")]
+    public void PruneNow_WithAnUnlistableFolder_DoesNotThrow()
+    {
+        using RollingFileSink sink = CreateSinkAtFixedTime();
+        string oldFile = WriteLogFileWithDate(FixedNow.UtcDateTime.Date.AddDays(-30), "alt");
+
+        using (UnlistableFolder denied = new(_logDirectory))
+        {
+            Exception? thrown = Record.Exception(sink.PruneNow);
+
+            Assert.Null(thrown);
+        }
+
+        Assert.True(File.Exists(oldFile));
     }
 }

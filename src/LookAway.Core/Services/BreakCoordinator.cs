@@ -1,10 +1,8 @@
 using LookAway.Core.Domain;
 using LookAway.Core.Entities;
 using LookAway.Core.Enums;
-using LookAway.Core.Events;
 using LookAway.Core.Interfaces;
 using LookAway.Core.ValueObjects;
-using Microsoft.Extensions.Logging;
 
 namespace LookAway.Core.Services;
 
@@ -16,18 +14,20 @@ namespace LookAway.Core.Services;
 /// die App-Schicht liefert nur die konkreten Presenter, das Tray und die
 /// Ereignisschleifen.
 /// </summary>
-public sealed class BreakCoordinator
+// Über der Grenze: Erinnerung, Pause, Nicht-stören und Zeitplan teilen einen Zustand hinter einer
+// einzigen Sperre zwischen UI-Thread und Erkennungsschleife. Historie, Vorlieben und Anzeigen sind
+// schon ausgelagert; eine weitere Teilung müsste die Sperre über Klassen verteilen.
+public sealed class BreakCoordinator : IBreakSignalSink
 {
     private readonly ITimerService _timer;
     private readonly IReminderPresenter _reminder;
     private readonly IBreakOverlayPresenter _overlay;
+    private readonly ITrayController _tray;
     private readonly PauseActionService _pauseActions;
     private readonly ISoundService _sound;
     private readonly IClock _clock;
-    private readonly IBreakHistoryRepository _history;
-    private readonly ITrayController _tray;
+    private readonly BreakHistoryRecorder _recorder;
     private readonly FullscreenDetectionService _fullscreen;
-    private readonly ILogger<BreakCoordinator> _logger;
 
     // Der Coordinator wird aus zwei Threads bedient: Timer-Ereignisse, Hotkeys und
     // Presenter-Callbacks laufen auf dem UI-Thread, die Erkennungs-Schleife
@@ -36,58 +36,49 @@ public sealed class BreakCoordinator
     // HandleTimerEvent gefahrlos ShowReminder aufrufen darf.
     private readonly Lock _gate = new();
 
-    private BreakModel _model = BreakModel.ClassicPomodoro;
-    // Optional: Nur beim aufgabenbasierten Modell hängt eine Pause an einer Aufgabe.
-    private readonly CurrentWorkTaskTracker? _workTasks;
-
+    private BreakModel _model = Settings.DefaultBreakModel;
     private BreakInterval? _interval;
-    private bool _soundEnabled;
-    private SoundType _soundType = SoundType.Chime;
-    private int _soundVolume;
-    // Verzögerung bis zum automatischen Pausenstart, oder null wenn deaktiviert
-    // (dann bleibt die Erinnerung offen, bis der Benutzer eine Aktion wählt).
-    private TimeSpan? _autoStartBreakAfter = TimeSpan.FromSeconds(15);
-    private string _overlayColor = HexColor.Default;
-    private bool _darkenAllScreens = true;
+    private BreakPreferences _preferences = BreakPreferences.Default;
     private bool _manualDnd;
     private DateTimeOffset _reminderShownAt;
 
+    // Beginn der laufenden Pause, solange das Overlay offen ist. Aufgezeichnet wird die Pause
+    // erst an ihrem Ende, damit die Historie die tatsächliche Dauer trägt und nicht die
+    // geplante: Wer per Esc nach einer Minute aufhört, hat eine Minute Pause gemacht.
+    private DateTimeOffset? _breakStartedAt;
+
     /// <summary>Erzeugt den Coordinator mit seinen Abhängigkeiten.</summary>
+    /// <param name="timer">Timer, dessen Ereignisse den Ablauf treiben.</param>
+    /// <param name="presenters">Erinnerung, Overlay und Infobereich.</param>
+    /// <param name="pauseActions">Abdunkeln und Medien während der Pause.</param>
+    /// <param name="sound">Erinnerungston.</param>
+    /// <param name="clock">Uhr für Beginn und Ende der aufgezeichneten Pausen.</param>
+    /// <param name="recorder">Schreibt Pausen in die Historie.</param>
+    /// <param name="fullscreen">Entscheidet, ob gerade erinnert werden darf.</param>
     public BreakCoordinator(
         ITimerService timer,
-        IReminderPresenter reminder,
-        IBreakOverlayPresenter overlay,
+        BreakPresenters presenters,
         PauseActionService pauseActions,
         ISoundService sound,
         IClock clock,
-        IBreakHistoryRepository history,
-        ITrayController tray,
-        FullscreenDetectionService fullscreen,
-        ILogger<BreakCoordinator> logger,
-        CurrentWorkTaskTracker? workTasks = null)
+        BreakHistoryRecorder recorder,
+        FullscreenDetectionService fullscreen)
     {
         ArgumentNullException.ThrowIfNull(timer);
-        ArgumentNullException.ThrowIfNull(reminder);
-        ArgumentNullException.ThrowIfNull(overlay);
+        ArgumentNullException.ThrowIfNull(presenters);
         ArgumentNullException.ThrowIfNull(pauseActions);
         ArgumentNullException.ThrowIfNull(sound);
         ArgumentNullException.ThrowIfNull(clock);
-        ArgumentNullException.ThrowIfNull(history);
-        ArgumentNullException.ThrowIfNull(tray);
+        ArgumentNullException.ThrowIfNull(recorder);
         ArgumentNullException.ThrowIfNull(fullscreen);
-        ArgumentNullException.ThrowIfNull(logger);
 
         _timer = timer;
-        _reminder = reminder;
-        _overlay = overlay;
+        (_reminder, _overlay, _tray) = presenters;
         _pauseActions = pauseActions;
         _sound = sound;
         _clock = clock;
-        _history = history;
-        _tray = tray;
+        _recorder = recorder;
         _fullscreen = fullscreen;
-        _logger = logger;
-        _workTasks = workTasks;
     }
 
     /// <summary>Manuelles Nicht-stören aktiv? (Nur für Tests/Diagnose.)</summary>
@@ -142,53 +133,6 @@ public sealed class BreakCoordinator
         lock (_gate)
         {
             ApplyScheduleLocked(settings, interval, resumeWorkRemaining);
-        }
-    }
-
-    private void ApplyScheduleLocked(Settings settings, BreakInterval interval, TimeSpan? resumeWorkRemaining)
-    {
-        // Den laufenden Countdown nur dann (neu) starten, wenn sich das effektive
-        // Intervall (Arbeits-/Pausendauer) tatsächlich geändert hat oder der Timer
-        // noch nicht läuft. So setzt das bloße Speichern unveränderter Intervalle —
-        // etwa von Sprache, Ton, Overlay-Farbe oder Update-Häufigkeit — den Timer
-        // NICHT zurück. (Die Rücksetzung nach Standby/Bildschirm-Aus bleibt davon
-        // unberührt; sie läuft über den Power-/Idle-Pfad des TimerService.)
-        bool intervalUnchanged = _interval is not null
-            && _timer.State != TimerState.Idle
-            && _interval.WorkDuration == interval.WorkDuration
-            && _interval.BreakDuration == interval.BreakDuration;
-
-        _model = settings.BreakModel;
-        _interval = interval;
-
-        _soundEnabled = settings.SoundEnabled;
-        _soundType = settings.ReminderSound;
-        _soundVolume = settings.SoundVolumePercent;
-
-        _pauseActions.DimScreenEnabled = settings.DimScreenDuringBreak;
-        _pauseActions.DimBrightnessPercent = settings.DimBrightnessPercent;
-        _pauseActions.PauseMediaEnabled = settings.PauseMediaDuringBreak;
-        _pauseActions.ResumeMediaAfterBreak = settings.ResumeMediaAfterBreak;
-
-        _overlayColor = settings.BreakOverlayColor;
-        _darkenAllScreens = settings.DarkenAllScreens;
-
-        _autoStartBreakAfter = settings.AutoStartBreakEnabled
-            ? TimeSpan.FromSeconds(settings.AutoStartBreakSeconds)
-            : null;
-
-        _tray.SetActiveModel(settings.BreakModel);
-
-        if (resumeWorkRemaining is { } remaining && _timer.State == TimerState.Idle)
-        {
-            // Nahtloser Neustart innerhalb derselben Windows-Sitzung (z. B. nach einer
-            // Aktualisierung): mit der gemerkten Restzeit fortsetzen statt auf die volle
-            // Arbeitsdauer zurückzusetzen.
-            _timer.RestoreWorking(interval, remaining);
-        }
-        else if (!intervalUnchanged)
-        {
-            _timer.Start(interval);
         }
     }
 
@@ -257,10 +201,7 @@ public sealed class BreakCoordinator
                 return;
             }
 
-            if (_interval is not null)
-            {
-                _timer.Start(_interval);
-            }
+            RestartIntervalLocked();
         }
     }
 
@@ -287,6 +228,43 @@ public sealed class BreakCoordinator
         }
     }
 
+    private void ApplyScheduleLocked(Settings settings, BreakInterval interval, TimeSpan? resumeWorkRemaining)
+    {
+        // Wer nur Sprache, Ton oder Overlay-Farbe speichert, verliert seinen Countdown
+        // nicht. Standby und Bildschirm-Aus setzen ihn trotzdem zurück; das läuft über
+        // den Power- und Idle-Pfad des TimerService, nicht über diese Methode.
+        bool intervalUnchanged = _interval is not null
+            && _timer.State != TimerState.Idle
+            && _interval.WorkDuration == interval.WorkDuration
+            && _interval.BreakDuration == interval.BreakDuration;
+
+        _model = settings.BreakModel;
+        _interval = interval;
+        _preferences = BreakPreferences.From(settings);
+        ConfigurePauseActions(settings);
+        _tray.SetActiveModel(settings.BreakModel);
+
+        if (resumeWorkRemaining is { } remaining && _timer.State == TimerState.Idle)
+        {
+            // Nahtloser Neustart innerhalb derselben Windows-Sitzung (z. B. nach einer
+            // Aktualisierung): mit der gemerkten Restzeit fortsetzen statt auf die volle
+            // Arbeitsdauer zurückzusetzen.
+            _timer.RestoreWorking(interval, remaining);
+        }
+        else if (!intervalUnchanged)
+        {
+            _timer.Start(interval);
+        }
+    }
+
+    private void ConfigurePauseActions(Settings settings)
+    {
+        _pauseActions.DimScreenEnabled = settings.DimScreenDuringBreak;
+        _pauseActions.DimBrightnessPercent = settings.DimBrightnessPercent;
+        _pauseActions.PauseMediaEnabled = settings.PauseMediaDuringBreak;
+        _pauseActions.ResumeMediaAfterBreak = settings.ResumeMediaAfterBreak;
+    }
+
     // Erwartet den gehaltenen _gate-Lock.
     private void ShowReminder()
     {
@@ -295,13 +273,13 @@ public sealed class BreakCoordinator
             return;
         }
 
-        if (_soundEnabled)
+        if (_preferences.SoundEnabled)
         {
-            _sound.Play(_soundType, _soundVolume);
+            _sound.Play(_preferences.Sound, _preferences.SoundVolume);
         }
 
         _reminderShownAt = _clock.UtcNow;
-        _reminder.Show(_model, _autoStartBreakAfter, OnReminderResult);
+        _reminder.Show(_model, _preferences.AutoStartBreakAfter, OnReminderResult);
     }
 
     private void OnReminderResult(ReminderResult result)
@@ -314,32 +292,37 @@ public sealed class BreakCoordinator
 
     private void OnReminderResultLocked(ReminderResult result)
     {
-        RecordSession(result);
-
-        if (_interval is null)
-        {
-            return;
-        }
-
         switch (result)
         {
-            case ReminderResult.StartBreak:
-                // Pause-Aktionen starten und den Bildschirm mit dem Overlay verdecken;
-                // ab hier ist das Overlay maßgeblich für das Pausenende.
-                _ = _pauseActions.BeginBreakAsync();
-                _overlay.Show(_model, _interval.BreakDuration, _overlayColor, _darkenAllScreens, OnOverlayEnded);
+            case ReminderResult.StartBreak when _interval is not null:
+                BeginBreakLocked(_interval);
                 break;
             case ReminderResult.Snooze:
-                _timer.Start(BreakInterval.Create(
-                    BreakDefaults.SnoozeWorkDuration,
-                    _interval.BreakDuration));
+                _recorder.Record(_model, BreakOutcome.Snoozed, _reminderShownAt, _reminderShownAt);
+                if (_interval is not null)
+                {
+                    _timer.Start(BreakInterval.Create(BreakDefaults.SnoozeWorkDuration, _interval.BreakDuration));
+                }
+
                 break;
             case ReminderResult.Skip:
-                _timer.Start(_interval);
+                _recorder.Record(_model, BreakOutcome.Skipped, _reminderShownAt, _reminderShownAt);
+                RestartIntervalLocked();
                 break;
             default:
+                // Ohne Intervall läuft noch kein Zeitplan; eine Pause, die nie begann, wird
+                // nicht aufgezeichnet.
                 break;
         }
+    }
+
+    // Pause-Aktionen starten und den Bildschirm mit dem Overlay verdecken; ab hier ist das
+    // Overlay maßgeblich für das Pausenende und die Aufzeichnung.
+    private void BeginBreakLocked(BreakInterval interval)
+    {
+        _breakStartedAt = _clock.UtcNow;
+        _ = _pauseActions.BeginBreakAsync();
+        _overlay.Show(_model, interval.BreakDuration, _preferences.OverlayBackdrop, _preferences.DarkenAllScreens, OnOverlayEnded);
     }
 
     private void OnOverlayEnded(BreakEndReason reason)
@@ -353,62 +336,28 @@ public sealed class BreakCoordinator
     }
 
     // Erwartet den gehaltenen _gate-Lock. Nimmt die Pause-Aktionen zurück und beginnt
-    // eine frische Arbeitsphase — unabhängig davon, wodurch die Pause endete.
+    // eine frische Arbeitsphase — unabhängig davon, wodurch die Pause endete. Verschobene und
+    // übersprungene Erinnerungen haben keine Dauer; eine angenommene Pause reicht vom
+    // Pausenbeginn bis zu ihrem tatsächlichen Ende. Endet das Programm mitten in der Pause,
+    // fehlt sie in der Historie: Ein halber Eintrag mit geschätztem Ende wäre die schlechtere Wahl.
     private void EndBreakLocked()
     {
-        _ = _pauseActions.EndBreakAsync();
+        if (_breakStartedAt is { } startedAt)
+        {
+            _breakStartedAt = null;
+            _recorder.Record(_model, BreakOutcome.Taken, startedAt, _clock.UtcNow);
+        }
 
+        _ = _pauseActions.EndBreakAsync();
+        RestartIntervalLocked();
+    }
+
+    // Erwartet den gehaltenen _gate-Lock. Ohne Intervall läuft noch kein Zeitplan.
+    private void RestartIntervalLocked()
+    {
         if (_interval is not null)
         {
             _timer.Start(_interval);
         }
     }
-
-    private void RecordSession(ReminderResult result)
-    {
-        BreakOutcome outcome = result switch
-        {
-            ReminderResult.StartBreak => BreakOutcome.Taken,
-            ReminderResult.Snooze => BreakOutcome.Snoozed,
-            ReminderResult.Skip => BreakOutcome.Skipped,
-            _ => BreakOutcome.Taken,
-        };
-
-        DateTimeOffset end = outcome == BreakOutcome.Taken && _interval is not null
-            ? _reminderShownAt + _interval.BreakDuration
-            : _reminderShownAt;
-
-        // Die Aufgabe wird nur beim aufgabenbasierten Modell vermerkt: Bei den übrigen
-        // entsteht die Pause aus der Uhr und nicht aus dem, was man gerade tut.
-        Guid? taskId = _model == BreakModel.TaskBased ? _workTasks?.CurrentTaskId : null;
-
-        BreakSession session = new(Guid.NewGuid(), _reminderShownAt, end, _model, outcome, taskId);
-        _ = AppendSessionAsync(session);
-    }
-
-    private async Task AppendSessionAsync(BreakSession session)
-    {
-        try
-        {
-            await _history.AppendAsync(session).ConfigureAwait(false);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            BreakCoordinatorLog.HistoryWriteFailed(_logger, ex);
-        }
-        catch (IOException ex)
-        {
-            BreakCoordinatorLog.HistoryWriteFailed(_logger, ex);
-        }
-    }
-}
-
-/// <summary>Source-generierte Logging-Methoden des Coordinators.</summary>
-internal static partial class BreakCoordinatorLog
-{
-    [LoggerMessage(
-        EventId = 1300,
-        Level = LogLevel.Warning,
-        Message = "Pausen-Historie konnte nicht geschrieben werden — Statistik bleibt unverändert.")]
-    public static partial void HistoryWriteFailed(ILogger logger, Exception exception);
 }

@@ -86,6 +86,8 @@
         solange der Code die gespeicherte Farbe noch nicht gesetzt hat.
     -->
     <SolidColorBrush x:Key="RcOverlayBackground" Color="#0F1115" />
+    <!-- Abdunklung über einem Overlay-Bild; ihre Stärke kommt als Deckkraft aus den Einstellungen. -->
+    <SolidColorBrush x:Key="RcOverlayImageDim" Color="#000000" />
     <SolidColorBrush x:Key="RcOverlayForeground" Color="#FFFFFF" />
     <SolidColorBrush x:Key="RcOverlayForegroundMuted" Color="#E5E7EB" />
     <SolidColorBrush x:Key="RcOverlayForegroundFaint" Color="#9CA3AF" />

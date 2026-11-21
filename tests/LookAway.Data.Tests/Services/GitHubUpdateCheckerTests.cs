@@ -6,10 +6,14 @@ using Microsoft.Extensions.Logging.Abstractions;
 namespace LookAway.Data.Tests;
 
 /// <summary>
-/// Tests für den <see cref="GitHubUpdateChecker"/> mit gefaketem HTTP-Zugriff.
+/// Tests für den <see cref="GitHubUpdateChecker"/> mit gefälschtem HTTP-Zugriff. Sie halten
+/// fest, welches Paket aus der Release-Antwort gewählt wird und dass Pakete von fremden Hosts
+/// oder über HTTP nicht als Update gelten. Ein Netz- oder Formatfehler zählt als „kein
+/// Update“ statt als Ausnahme.
 /// </summary>
 public sealed class GitHubUpdateCheckerTests
 {
+    // Liefert eine feste API-Antwort; null steht für einen Netzfehler.
     private sealed class FakeHttpGetClient : IHttpGetClient
     {
         private readonly string? _response;
@@ -32,7 +36,7 @@ public sealed class GitHubUpdateCheckerTests
         const string json = """{ "tag_name": "v2.0.0", "html_url": "https://github.com/x/releases/2.0.0", "body": "Neu" }""";
         GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
 
-        UpdateInfo info = await checker.CheckForUpdateAsync();
+        UpdateInfo info = await checker.CheckForUpdateAsync(TestContext.Current.CancellationToken);
 
         Assert.True(info.IsUpdateAvailable);
         Assert.Equal("2.0.0", info.LatestVersion);
@@ -55,7 +59,7 @@ public sealed class GitHubUpdateCheckerTests
         """;
         GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
 
-        UpdateInfo info = await checker.CheckForUpdateAsync();
+        UpdateInfo info = await checker.CheckForUpdateAsync(TestContext.Current.CancellationToken);
 
         Assert.True(info.IsUpdateAvailable);
         Assert.NotNull(info.PackageUrl);
@@ -76,7 +80,7 @@ public sealed class GitHubUpdateCheckerTests
         """;
         GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
 
-        UpdateInfo info = await checker.CheckForUpdateAsync();
+        UpdateInfo info = await checker.CheckForUpdateAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal("https://github.com/x/a.zip", info.PackageUrl!.ToString());
     }
@@ -95,7 +99,7 @@ public sealed class GitHubUpdateCheckerTests
         """;
         GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
 
-        UpdateInfo info = await checker.CheckForUpdateAsync();
+        UpdateInfo info = await checker.CheckForUpdateAsync(TestContext.Current.CancellationToken);
 
         Assert.Null(info.PackageUrl);
     }
@@ -111,9 +115,73 @@ public sealed class GitHubUpdateCheckerTests
         """;
         GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
 
-        UpdateInfo info = await checker.CheckForUpdateAsync();
+        UpdateInfo info = await checker.CheckForUpdateAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal("https://objects.githubusercontent.com/abc/p.zip", info.PackageUrl!.ToString());
+    }
+
+    /// <remarks>
+    /// Die Signatur des Setups steht zuerst. Wer „die erste .sig“ nähme, prüfte das ZIP gegen die
+    /// falsche Signatur und wiese jedes Update ab.
+    /// </remarks>
+    [Fact]
+    public async Task CheckForUpdate_PairsEachSignatureWithItsFileByName()
+    {
+        const string json = """
+        {
+          "tag_name": "v2.0.0", "html_url": "https://github.com/x", "body": "",
+          "assets": [
+            { "name": "LookAway-Setup-v2.0.0.exe.sig", "browser_download_url": "https://github.com/x/setup.sig" },
+            { "name": "LookAway-Setup-v2.0.0.exe", "browser_download_url": "https://github.com/x/setup.exe" },
+            { "name": "LookAway-Portable-v2.0.0.zip.sig", "browser_download_url": "https://github.com/x/portable.sig" },
+            { "name": "LookAway-Portable-v2.0.0.zip", "browser_download_url": "https://github.com/x/portable.zip" }
+          ]
+        }
+        """;
+        GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
+
+        UpdateInfo info = await checker.CheckForUpdateAsync(TestContext.Current.CancellationToken);
+
+        Assert.Equal("https://github.com/x/portable.zip", info.PackageUrl?.ToString());
+        Assert.Equal("https://github.com/x/portable.sig", info.SignatureUrl?.ToString());
+        Assert.Equal("https://github.com/x/setup.exe", info.SetupUrl?.ToString());
+        Assert.Equal("https://github.com/x/setup.sig", info.SetupSignatureUrl?.ToString());
+    }
+
+    [Fact]
+    public async Task CheckForUpdate_WithoutMatchingSignature_HasNone()
+    {
+        const string json = """
+        {
+          "tag_name": "v2.0.0", "html_url": "https://github.com/x", "body": "",
+          "assets": [
+            { "name": "LookAway-Setup-v2.0.0.exe", "browser_download_url": "https://github.com/x/setup.exe" },
+            { "name": "irgendwas.sig", "browser_download_url": "https://github.com/x/other.sig" }
+          ]
+        }
+        """;
+        GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
+
+        UpdateInfo info = await checker.CheckForUpdateAsync(TestContext.Current.CancellationToken);
+
+        Assert.NotNull(info.SetupUrl);
+        Assert.Null(info.SetupSignatureUrl);
+    }
+
+    [Fact]
+    public async Task CheckForUpdate_IgnoresASetupOnAForeignHost()
+    {
+        const string json = """
+        {
+          "tag_name": "v2.0.0", "html_url": "https://github.com/x", "body": "",
+          "assets": [ { "name": "LookAway-Setup-v2.0.0.exe", "browser_download_url": "https://evil.example.com/setup.exe" } ]
+        }
+        """;
+        GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
+
+        UpdateInfo info = await checker.CheckForUpdateAsync(TestContext.Current.CancellationToken);
+
+        Assert.Null(info.SetupUrl);
     }
 
     [Fact]
@@ -127,7 +195,7 @@ public sealed class GitHubUpdateCheckerTests
         """;
         GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
 
-        UpdateInfo info = await checker.CheckForUpdateAsync();
+        UpdateInfo info = await checker.CheckForUpdateAsync(TestContext.Current.CancellationToken);
 
         Assert.Null(info.PackageUrl);
     }
@@ -138,7 +206,7 @@ public sealed class GitHubUpdateCheckerTests
         const string json = """{ "tag_name": "v2.0.0", "html_url": "https://github.com/x", "body": "" }""";
         GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
 
-        UpdateInfo info = await checker.CheckForUpdateAsync();
+        UpdateInfo info = await checker.CheckForUpdateAsync(TestContext.Current.CancellationToken);
 
         Assert.Null(info.PackageUrl);
     }
@@ -149,7 +217,7 @@ public sealed class GitHubUpdateCheckerTests
         const string json = """{ "tag_name": "v1.0.0", "html_url": "https://github.com/x", "body": "" }""";
         GitHubUpdateChecker checker = CreateChecker(json, new Version(1, 0, 0));
 
-        UpdateInfo info = await checker.CheckForUpdateAsync();
+        UpdateInfo info = await checker.CheckForUpdateAsync(TestContext.Current.CancellationToken);
 
         Assert.False(info.IsUpdateAvailable);
     }
@@ -159,7 +227,7 @@ public sealed class GitHubUpdateCheckerTests
     {
         GitHubUpdateChecker checker = CreateChecker(response: null, new Version(1, 0, 0));
 
-        UpdateInfo info = await checker.CheckForUpdateAsync();
+        UpdateInfo info = await checker.CheckForUpdateAsync(TestContext.Current.CancellationToken);
 
         Assert.False(info.IsUpdateAvailable);
     }
@@ -169,7 +237,7 @@ public sealed class GitHubUpdateCheckerTests
     {
         GitHubUpdateChecker checker = CreateChecker("nicht json", new Version(1, 0, 0));
 
-        UpdateInfo info = await checker.CheckForUpdateAsync();
+        UpdateInfo info = await checker.CheckForUpdateAsync(TestContext.Current.CancellationToken);
 
         Assert.False(info.IsUpdateAvailable);
     }

@@ -20,7 +20,7 @@ public sealed class WorkTaskListViewModelTests
         WorkTask newer = WorkTask.Create("Neue Aufgabe", Now);
         WorkTaskListViewModel viewModel = CreateViewModel([older, newer]);
 
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(2, viewModel.VisibleTasks.Count);
         Assert.Equal("Neue Aufgabe", viewModel.VisibleTasks[0].Text);
@@ -34,7 +34,7 @@ public sealed class WorkTaskListViewModelTests
             WorkTask.Create("Angebot für Meier", Now),
             WorkTask.Create("Rechnung prüfen", Now),
         ]);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SearchText = "angebot";
 
@@ -49,7 +49,7 @@ public sealed class WorkTaskListViewModelTests
             WorkTask.Create("Offen", Now),
             WorkTask.Create("Fertig", Now).Complete(Now.AddHours(1)),
         ]);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.Filter = WorkTaskFilter.Open;
 
@@ -64,7 +64,7 @@ public sealed class WorkTaskListViewModelTests
             WorkTask.Create("Offen", Now),
             WorkTask.Create("Fertig", Now).Complete(Now.AddHours(1)),
         ]);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.Filter = WorkTaskFilter.Completed;
 
@@ -79,7 +79,7 @@ public sealed class WorkTaskListViewModelTests
     {
         WorkTaskListViewModel viewModel = CreateViewModel([]);
 
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.True(viewModel.ShowEmpty);
         Assert.False(viewModel.ShowNoResults);
@@ -92,7 +92,7 @@ public sealed class WorkTaskListViewModelTests
     public async Task ShowNoResults_IsSetWhenTheSearchMatchesNothing()
     {
         WorkTaskListViewModel viewModel = CreateViewModel([WorkTask.Create("Angebot", Now)]);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SearchText = "gibt es nicht";
 
@@ -105,7 +105,7 @@ public sealed class WorkTaskListViewModelTests
     {
         FakeWorkTaskRepository repository = new();
         WorkTaskListViewModel viewModel = CreateViewModel([], repository);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         viewModel.NewTaskText = "  Angebot schreiben  ";
 
         await viewModel.AddCommand.ExecuteAsync(parameter: null);
@@ -119,7 +119,7 @@ public sealed class WorkTaskListViewModelTests
     public async Task AddCommand_IsBlockedWithoutText()
     {
         WorkTaskListViewModel viewModel = CreateViewModel([]);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.NewTaskText = "   ";
 
@@ -131,7 +131,7 @@ public sealed class WorkTaskListViewModelTests
     {
         FakeWorkTaskRepository repository = new([WorkTask.Create("Ablage", Now)]);
         WorkTaskListViewModel viewModel = CreateViewModel(null, repository);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         WorkTaskListItem item = viewModel.VisibleTasks[0];
 
         await viewModel.ToggleCompletedCommand.ExecuteAsync(item);
@@ -146,7 +146,7 @@ public sealed class WorkTaskListViewModelTests
     {
         FakeWorkTaskRepository repository = new([WorkTask.Create("Weg damit", Now)]);
         WorkTaskListViewModel viewModel = CreateViewModel(null, repository);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         await viewModel.DeleteCommand.ExecuteAsync(viewModel.VisibleTasks[0]);
 
@@ -159,7 +159,7 @@ public sealed class WorkTaskListViewModelTests
     {
         FakeWorkTaskRepository repository = new([WorkTask.Create("Alter Text", Now)]);
         WorkTaskListViewModel viewModel = CreateViewModel(null, repository);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         WorkTaskListItem item = viewModel.VisibleTasks[0];
 
         viewModel.StartEditCommand.Execute(item);
@@ -179,7 +179,7 @@ public sealed class WorkTaskListViewModelTests
     {
         FakeWorkTaskRepository repository = new([WorkTask.Create("Bleibt so", Now)]);
         WorkTaskListViewModel viewModel = CreateViewModel(null, repository);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         WorkTaskListItem item = viewModel.VisibleTasks[0];
 
         viewModel.StartEditCommand.Execute(item);
@@ -193,7 +193,7 @@ public sealed class WorkTaskListViewModelTests
     public async Task CancelEditCommand_DiscardsTheChange()
     {
         WorkTaskListViewModel viewModel = CreateViewModel([WorkTask.Create("Unverändert", Now)]);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         WorkTaskListItem item = viewModel.VisibleTasks[0];
 
         viewModel.StartEditCommand.Execute(item);
@@ -208,7 +208,7 @@ public sealed class WorkTaskListViewModelTests
     public async Task ResetSearchCommand_ClearsTextAndFilter()
     {
         WorkTaskListViewModel viewModel = CreateViewModel([WorkTask.Create("Angebot", Now)]);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         viewModel.SearchText = "nichts";
         viewModel.Filter = WorkTaskFilter.Completed;
 
@@ -237,7 +237,7 @@ public sealed class WorkTaskListViewModelTests
         ]);
         WorkTaskListViewModel viewModel = CreateViewModel([task, ohne], history: history);
 
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(2, viewModel.VisibleTasks.Single(item => item.Id == task.Id).BreakCount);
         Assert.Equal(0, viewModel.VisibleTasks.Single(item => item.Id == ohne.Id).BreakCount);
@@ -255,7 +255,7 @@ public sealed class WorkTaskListViewModelTests
     public async Task FilterChip_StaysSelectedWhenClickedAgain(string chip)
     {
         WorkTaskListViewModel viewModel = CreateViewModel([WorkTask.Create("Ablage", Now)]);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         SetChip(viewModel, chip, value: true);
 
         SetChip(viewModel, chip, value: false);
@@ -269,7 +269,7 @@ public sealed class WorkTaskListViewModelTests
     public async Task FilterChip_TakesTheSelectionFromAll(string chosen)
     {
         WorkTaskListViewModel viewModel = CreateViewModel([WorkTask.Create("Ablage", Now)]);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         SetChip(viewModel, chosen, value: true);
 
@@ -286,7 +286,7 @@ public sealed class WorkTaskListViewModelTests
     public async Task ItemCommands_IgnoreAMissingItem()
     {
         WorkTaskListViewModel viewModel = CreateViewModel([WorkTask.Create("Ablage", Now)]);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.StartEditCommand.Execute(null);
         viewModel.CancelEditCommand.Execute(null);
@@ -325,7 +325,7 @@ public sealed class WorkTaskListViewModelTests
         => (bool)typeof(WorkTaskListViewModel).GetProperty(chip)!.GetValue(viewModel)!;
 
     private static BreakSession Session(Guid? taskId) => new(
-        Guid.NewGuid(),
+        TestIds.Next(),
         Now,
         Now.AddMinutes(10),
         BreakModel.TaskBased,

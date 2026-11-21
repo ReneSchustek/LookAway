@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.UI.Xaml;
 
 namespace LookAway.App;
@@ -5,6 +6,7 @@ namespace LookAway.App;
 /// <summary>
 /// Hauptfenster der Anwendung. Bleibt beim Start verborgen — die App lebt im Tray-Icon.
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "Unsichtbares Hauptfenster, das nur den Dispatcher stellt; ohne eigene Logik.")]
 internal sealed partial class MainWindow : Window
 {
     /// <summary>

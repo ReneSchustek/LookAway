@@ -1,3 +1,4 @@
+using System.Text.Json;
 using LookAway.Core.Entities;
 using LookAway.Core.Interfaces;
 
@@ -25,6 +26,9 @@ internal sealed class InMemorySettingsRepository : ISettingsRepository
     /// <summary>Der zuletzt persistierte Autostart-Wert.</summary>
     public bool PersistedAutoStart => _settings.AutoStart;
 
+    /// <summary>Wird beim Sichern geworfen, wenn gesetzt (etwa eine gesperrte Datei).</summary>
+    public Exception? SaveFailure { get; set; }
+
     /// <inheritdoc />
     public Task<Settings> LoadAsync(CancellationToken cancellationToken = default)
     {
@@ -36,39 +40,18 @@ internal sealed class InMemorySettingsRepository : ISettingsRepository
     {
         ArgumentNullException.ThrowIfNull(settings);
 
+        if (SaveFailure is not null)
+        {
+            return Task.FromException(SaveFailure);
+        }
+
         _settings = Clone(settings);
         SaveCallCount++;
         return Task.CompletedTask;
     }
 
-    private static Settings Clone(Settings source) => new()
-    {
-        Language = source.Language,
-        BreakModel = source.BreakModel,
-        AutoStart = source.AutoStart,
-        PauseOnIdle = source.PauseOnIdle,
-        IdleThresholdMinutes = source.IdleThresholdMinutes,
-        SuppressOnFullscreen = source.SuppressOnFullscreen,
-        CustomDurations = source.CustomDurations,
-        SoundEnabled = source.SoundEnabled,
-        ReminderSound = source.ReminderSound,
-        SoundVolumePercent = source.SoundVolumePercent,
-        HotkeysEnabled = source.HotkeysEnabled,
-        HotkeyStartBreak = source.HotkeyStartBreak,
-        HotkeySkipOrSnooze = source.HotkeySkipOrSnooze,
-        HotkeyToggleDnd = source.HotkeyToggleDnd,
-        UpdateCheckEnabled = source.UpdateCheckEnabled,
-        UpdateCheckFrequency = source.UpdateCheckFrequency,
-        AutoUpdate = source.AutoUpdate,
-        LastUpdateCheck = source.LastUpdateCheck,
-        PendingUpdateVersion = source.PendingUpdateVersion,
-        PendingUpdateSha256 = source.PendingUpdateSha256,
-        DimScreenDuringBreak = source.DimScreenDuringBreak,
-        DimBrightnessPercent = source.DimBrightnessPercent,
-        PauseMediaDuringBreak = source.PauseMediaDuringBreak,
-        ResumeMediaAfterBreak = source.ResumeMediaAfterBreak,
-        DarkenAllScreens = source.DarkenAllScreens,
-        BreakOverlayColor = source.BreakOverlayColor,
-        IsFirstRun = source.IsFirstRun,
-    };
+    // Über JSON statt Feld für Feld, wie bei der echten Ablage: Eine neue Einstellung kommt so von
+    // selbst mit, statt im Test still verloren zu gehen.
+    private static Settings Clone(Settings source)
+        => JsonSerializer.Deserialize<Settings>(JsonSerializer.Serialize(source))!; // eine serialisierte Instanz ist nie "null"
 }

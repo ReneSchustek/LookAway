@@ -19,6 +19,8 @@ namespace LookAway.Data.Services;
 [SupportedOSPlatform("windows")]
 public sealed partial class WindowsFullscreenDetector : IFullscreenDetector
 {
+    // MONITOR_DEFAULTTONEAREST: Liegt das Fenster auf keinem Monitor, zählt der nächstgelegene.
+    // Sonst liefert MonitorFromWindow ohnehin den mit der größten Überschneidung.
     private const uint MonitorDefaultToNearest = 0x00000002;
 
     /// <inheritdoc />
@@ -35,28 +37,29 @@ public sealed partial class WindowsFullscreenDetector : IFullscreenDetector
             return false;
         }
 
-        if (!GetWindowRect(foreground, out Rect windowRect))
-        {
-            return false;
-        }
+        return GetWindowRect(foreground, out Rect windowRect)
+            && TryGetMonitorBounds(foreground, out Rect screen)
+            && Covers(windowRect, screen);
+    }
 
-        nint monitor = MonitorFromWindow(foreground, MonitorDefaultToNearest);
+    // Grenzen des Monitors, auf dem das Fenster überwiegend liegt.
+    private static bool TryGetMonitorBounds(nint window, out Rect bounds)
+    {
         MonitorInfo monitorInfo = new()
         {
             CbSize = (uint)Marshal.SizeOf<MonitorInfo>(),
         };
 
-        if (!GetMonitorInfo(monitor, ref monitorInfo))
-        {
-            return false;
-        }
-
-        Rect screen = monitorInfo.RcMonitor;
-        return windowRect.Left <= screen.Left
-            && windowRect.Top <= screen.Top
-            && windowRect.Right >= screen.Right
-            && windowRect.Bottom >= screen.Bottom;
+        bool found = GetMonitorInfo(MonitorFromWindow(window, MonitorDefaultToNearest), ref monitorInfo);
+        bounds = monitorInfo.RcMonitor;
+        return found;
     }
+
+    private static bool Covers(Rect window, Rect screen)
+        => window.Left <= screen.Left
+            && window.Top <= screen.Top
+            && window.Right >= screen.Right
+            && window.Bottom >= screen.Bottom;
 
     [LibraryImport("user32.dll")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
@@ -84,6 +87,8 @@ public sealed partial class WindowsFullscreenDetector : IFullscreenDetector
     [return: MarshalAs(UnmanagedType.Bool)]
     private static partial bool GetMonitorInfo(nint hMonitor, ref MonitorInfo lpmi);
 
+    // Gegenstücke zu den Win32-Strukturen RECT und MONITORINFO; Reihenfolge und Breite
+    // der Felder sind vorgegeben.
     [StructLayout(LayoutKind.Sequential)]
     private struct Rect
     {
@@ -93,6 +98,7 @@ public sealed partial class WindowsFullscreenDetector : IFullscreenDetector
         public int Bottom;
     }
 
+    // Nur RcMonitor wird gelesen; die übrigen Felder braucht die Struktur für ihre Größe.
     [StructLayout(LayoutKind.Sequential)]
     private struct MonitorInfo
     {

@@ -4,14 +4,26 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Core.Domain;
 
 /// <summary>
-/// Single source of truth für die fachlichen Pausenmodelle: Standardintervalle,
+/// Die eine Stelle für die fachlichen Pausenmodelle: Standardintervalle,
 /// erlaubte Anpassungsbereiche und die Lokalisierungs-Schlüssel der Hinweise.
 /// </summary>
+/// <remarks>
+/// Die Intervalle sind die der namensgebenden Methoden (Pomodoro 25/5, Ultradian
+/// 90/20) bzw. der Empfehlung für Bildschirmarbeit (120/15). Wer sie ändert, ändert
+/// auch, was das Modell im Einstellungsfenster verspricht.
+/// </remarks>
 public static class BreakModelRegistry
 {
+    // Haltungspausen wirken nur, wenn sie oft kommen: Mehr als 45 Minuten Sitzen am
+    // Stück ist genau das, wogegen das Modell gedacht ist, unter 30 Minuten wird die
+    // Zwei-Minuten-Übung zur Dauerunterbrechung. 40 liegt dazwischen.
     private const int PhysicalCounterWorkDefaultMinutes = 40;
     private const int PhysicalCounterWorkMinMinutes = 30;
     private const int PhysicalCounterWorkMaxMinutes = 45;
+
+    // Beim aufgabenbasierten Modell löst eigentlich der Benutzer die Pause aus. Zwei
+    // Stunden sind die Grenze, nach der die Erinnerung trotzdem kommt — dieselbe wie
+    // beim Modell nach der Empfehlung für Bildschirmarbeit.
     private const int TaskBasedMaxMinutes = 120;
 
     /// <summary>

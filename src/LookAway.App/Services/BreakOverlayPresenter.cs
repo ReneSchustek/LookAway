@@ -1,60 +1,46 @@
-using System;
-using System.Collections.Generic;
+using LookAway.App.ViewModels;
 using LookAway.Core.Domain;
 using LookAway.Core.Enums;
 using LookAway.Core.Interfaces;
-using LookAway.App.ViewModels;
+using LookAway.Core.ValueObjects;
 using Microsoft.Extensions.Logging;
-using Microsoft.UI.Dispatching;
-using Microsoft.UI.Windowing;
-using WinColor = Windows.UI.Color;
 
 namespace LookAway.App.Services;
 
 /// <summary>
-/// WinUI-Implementierung von <see cref="IBreakOverlayPresenter"/>: erzeugt je
-/// Monitor ein <see cref="Views.BreakOverlayWindow"/> auf dem UI-Thread und taktet
-/// den gemeinsamen Countdown. Auf Wunsch wird jeder angeschlossene Monitor mit
-/// einem eigenen Overlay abgedeckt; der Countdown bleibt über alle Fenster
-/// synchron. Stellt sicher, dass nie mehrere Overlay-Sätze gleichzeitig offen sind.
+/// Implementierung von <see cref="IBreakOverlayPresenter"/>: legt für eine Pause den gemeinsamen
+/// Zustand an, lässt die Fensterseite je Monitor ein Overlay öffnen und taktet den gemeinsamen
+/// Countdown. Auf Wunsch wird jeder angeschlossene Monitor mit einem eigenen Overlay abgedeckt;
+/// der Countdown bleibt über alle Fenster synchron. Es ist höchstens ein Satz Overlays offen; ein
+/// zweites Show verfällt. Ein gewähltes Bild wird vorher probeweise gelesen; taugt es nicht, zeigt
+/// das Overlay die Farbe.
 /// </summary>
 internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
 {
-    private readonly DispatcherQueue _dispatcher;
-    private readonly ILocalizationService _localization;
-    private readonly ITopmostWindowGuard _topmost;
-    private readonly IWindowFrameSuppressor _frameSuppressor;
+    private readonly IBreakOverlayUi _ui;
+    private readonly IOverlayImageInspector _imageInspector;
     private readonly ILogger<BreakOverlayPresenter> _logger;
-    private readonly List<Views.BreakOverlayWindow> _windows = new();
-    private DispatcherQueueTimer? _countdownTimer;
     // Wird auf dem UI-Thread gesetzt, aber vom Timer-Consumer-Thread gelesen
     // (BreakCompletedEvent-Gate) — daher volatile für korrekte Sichtbarkeit.
     private volatile bool _isOverlayOpen;
 
+    // Zählt jedes Show und Close. Das Bild wird außerhalb des UI-Threads gelesen; wird die Pause
+    // inzwischen geschlossen oder neu gezeigt, verfällt der veraltete Fensteraufbau daran.
+    private int _generation;
+
     /// <summary>
-    /// Erzeugt den Presenter mit dem UI-Dispatcher und der Lokalisierung.
+    /// Erzeugt den Presenter über seiner Fensterseite.
     /// </summary>
-    /// <param name="dispatcher">Dispatcher des Hauptfensters.</param>
-    /// <param name="localization">Liefert die sprachabhängigen Texte.</param>
-    /// <param name="topmost">Hält die Overlays über allen anderen Fenstern.</param>
-    /// <param name="frameSuppressor">Nimmt den Overlays Randlinie und runde Ecken.</param>
+    /// <param name="ui">Öffnet, taktet und schließt die Overlay-Fenster.</param>
+    /// <param name="imageInspector">Liest ein gewähltes Overlay-Bild probeweise.</param>
     /// <param name="logger">Protokolliert fehlgeschlagene Fenster-Aufbauten.</param>
-    public BreakOverlayPresenter(
-        DispatcherQueue dispatcher,
-        ILocalizationService localization,
-        ITopmostWindowGuard topmost,
-        IWindowFrameSuppressor frameSuppressor,
-        ILogger<BreakOverlayPresenter> logger)
+    public BreakOverlayPresenter(IBreakOverlayUi ui, IOverlayImageInspector imageInspector, ILogger<BreakOverlayPresenter> logger)
     {
-        ArgumentNullException.ThrowIfNull(dispatcher);
-        ArgumentNullException.ThrowIfNull(localization);
-        ArgumentNullException.ThrowIfNull(topmost);
-        ArgumentNullException.ThrowIfNull(frameSuppressor);
+        ArgumentNullException.ThrowIfNull(ui);
+        ArgumentNullException.ThrowIfNull(imageInspector);
         ArgumentNullException.ThrowIfNull(logger);
-        _dispatcher = dispatcher;
-        _localization = localization;
-        _topmost = topmost;
-        _frameSuppressor = frameSuppressor;
+        _ui = ui;
+        _imageInspector = imageInspector;
         _logger = logger;
     }
 
@@ -62,8 +48,9 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
     public bool IsOverlayOpen => _isOverlayOpen;
 
     /// <inheritdoc />
-    public void Show(BreakModel model, TimeSpan breakDuration, string overlayColorHex, bool allScreens, Action<BreakEndReason> onEnded)
+    public void Show(BreakModel model, TimeSpan breakDuration, OverlayBackdrop backdrop, bool allScreens, Action<BreakEndReason> onEnded)
     {
+        ArgumentNullException.ThrowIfNull(backdrop);
         ArgumentNullException.ThrowIfNull(onEnded);
 
         if (_isOverlayOpen || breakDuration <= TimeSpan.Zero)
@@ -72,93 +59,16 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
         }
 
         _isOverlayOpen = true;
+        OverlayRequest request = new(Interlocked.Increment(ref _generation), model, breakDuration, allScreens, onEnded);
+        OverlayLook colorOnly = OverlayLook.ForColor(OpaqueBackground(backdrop.ColorHex));
 
-        _ = _dispatcher.TryEnqueue(() => TryShowWindows(model, breakDuration, overlayColorHex, allScreens, onEnded));
-    }
-
-    // Erzeugt die Overlay-Fenster auf dem UI-Thread. Scheitert der Aufbau (z. B. ein
-    // Fenster-/Vollbild-Fehler auf ungewöhnlichen Monitor-Konfigurationen), wird
-    // sauber aufgeräumt und das Pausenende signalisiert — so bleibt die App bedienbar,
-    // statt mit gesetztem Overlay-Flag und aktiven Pause-Aktionen hängenzubleiben.
-    private void TryShowWindows(BreakModel model, TimeSpan breakDuration, string overlayColorHex, bool allScreens, Action<BreakEndReason> onEnded)
-    {
-        try
+        if (backdrop.ImagePath is { } imagePath)
         {
-            string hintKey = BreakModelRegistry.GetHintKey(model);
-            BreakOverlayViewModel viewModel = new(hintKey, breakDuration);
-            viewModel.Ended += (_, e) =>
-            {
-                BreakEndReason reason = e.Reason;
-                TeardownWindows();
-                _isOverlayOpen = false;
-                onEnded(reason);
-            };
-
-            // Deckend rechnen, bevor die Farbe an die Fenster geht: Das Overlay-Fenster
-            // ist nicht durchsichtig, eine Alpha-Angabe könnte also gar nichts durchscheinen
-            // lassen — sie würde nur gegen den Fenstergrund gemischt, und der ist je nach
-            // Monitor nicht derselbe. Nach dieser Zeile zeigen alle Monitore dieselbe Fläche,
-            // und die Schriftfarbe rechnet gegen genau diese Farbe.
-            (byte cr, byte cg, byte cb) = HexColor.FlattenOverWhite(HexColor.ParseOrDefault(overlayColorHex));
-            WinColor background = WinColor.FromArgb(0xFF, cr, cg, cb);
-
-            DisplayArea primary = DisplayArea.Primary;
-
-            foreach (DisplayArea area in CreateDisplayOrder(primary, allScreens))
-            {
-                // Inhalt (Titel/Hinweis/Countdown) nur auf dem Hauptmonitor; weitere
-                // Monitore werden nur abgedunkelt (leeres Overlay).
-                bool isPrimary = area.DisplayId.Value == primary.DisplayId.Value;
-                Views.BreakOverlayWindow window = new(viewModel, _localization, _topmost, _frameSuppressor, background, isPrimary);
-                _windows.Add(window);
-                window.ShowOnDisplay(area);
-            }
-
-            StartCountdown(viewModel);
-        }
-        catch (Exception ex) when (LogWindowFailure(ex))
-        {
-            TeardownWindows();
-            _isOverlayOpen = false;
-            // Als reguläres Pausenende behandeln: Helligkeit/Medien werden
-            // zurückgenommen und eine frische Arbeitsphase gestartet.
-            onEnded(BreakEndReason.Elapsed);
-        }
-    }
-
-    // Reihenfolge der Monitore: Nebenmonitore zuerst, der Hauptmonitor zuletzt. Jedes
-    // Fenster wird beim Anzeigen aktiviert und nimmt dem vorigen dabei den Fokus — nach
-    // dem letzten liegt er also auf dem Hauptmonitor, wo der Inhalt steht und ESC wirkt.
-    private static IReadOnlyList<DisplayArea> CreateDisplayOrder(DisplayArea primary, bool allScreens)
-    {
-        if (!allScreens)
-        {
-            return new[] { primary };
+            _ = ShowWithImageAsync(request, imagePath, backdrop.ImageDimPercent, colorOnly);
+            return;
         }
 
-        // DisplayArea.FindAll() liefert eine WinRT-Projektion, deren Enumeration per
-        // foreach in CsWinRT einen InvalidCastException wirft (fehlschlagende
-        // IIterable-Abfrage). Daher per Index (IVectorView) übernehmen.
-        IReadOnlyList<DisplayArea> found = DisplayArea.FindAll();
-        List<DisplayArea> ordered = new(found.Count);
-        for (int i = 0; i < found.Count; i++)
-        {
-            if (found[i].DisplayId.Value != primary.DisplayId.Value)
-            {
-                ordered.Add(found[i]);
-            }
-        }
-
-        ordered.Add(primary);
-        return ordered;
-    }
-
-    // Der Overlay-Aufbau darf die App nie hängen lassen. Der Filter protokolliert den
-    // Fehler und lässt anschließend den Aufräumpfad laufen.
-    private bool LogWindowFailure(Exception exception)
-    {
-        BreakOverlayPresenterLog.WindowCreationFailed(_logger, exception);
-        return true;
+        PostWindows(request, colorOnly);
     }
 
     /// <inheritdoc />
@@ -170,41 +80,100 @@ internal sealed class BreakOverlayPresenter : IBreakOverlayPresenter
         }
 
         _isOverlayOpen = false;
+        _ = Interlocked.Increment(ref _generation);
 
-        _ = _dispatcher.TryEnqueue(TeardownWindows);
+        _ui.Post(_ui.CloseWindows);
     }
 
-    private void StartCountdown(BreakOverlayViewModel viewModel)
+    // Das Bild wird gelesen, bevor ein Fenster entsteht: Taugt es nicht, steht das Overlay gleich
+    // in der Farbe da, statt erst leer und dann ohne Bild. Der Bildprüfer meldet einen Fehlschlag
+    // selbst mit Grund; scheitert er unerwartet, gilt dasselbe wie für ein unlesbares Bild.
+    private async Task ShowWithImageAsync(OverlayRequest request, string imagePath, int dimPercent, OverlayLook colorOnly)
     {
-        _countdownTimer = _dispatcher.CreateTimer();
-        _countdownTimer.Interval = TimeSpan.FromSeconds(1);
-        _countdownTimer.IsRepeating = true;
-        _countdownTimer.Tick += (_, _) =>
+        OverlayLook look = colorOnly;
+        try
         {
-            viewModel.Tick();
-            foreach (Views.BreakOverlayWindow window in _windows)
+            OverlayImageInfo? info = await _imageInspector.InspectAsync(imagePath).ConfigureAwait(false);
+            if (info is not null)
             {
-                window.RefreshCountdown();
-                // Jede Sekunde die oberste Lage nachziehen: Fremde Fenster, die sich
-                // selbst nach vorn holen, verdecken die Pause damit höchstens kurz.
-                window.KeepOnTop();
+                look = OverlayLook.WithImage(colorOnly.Color, imagePath, info, dimPercent);
             }
-        };
-        _countdownTimer.Start();
-    }
-
-    private void TeardownWindows()
-    {
-        _countdownTimer?.Stop();
-        _countdownTimer = null;
-
-        foreach (Views.BreakOverlayWindow window in _windows)
+        }
+        catch (Exception ex) when (LogImageFailure(ex))
         {
-            window.CloseFromCaller();
+            // Der Filter hat protokolliert; das Overlay bleibt bei der Farbe.
         }
 
-        _windows.Clear();
+        PostWindows(request, look);
     }
+
+    private void PostWindows(OverlayRequest request, OverlayLook look)
+        => _ui.Post(() =>
+        {
+            if (request.Generation == Volatile.Read(ref _generation))
+            {
+                TryShowWindows(request, look);
+            }
+        });
+
+    // Erzeugt die Overlay-Fenster auf dem UI-Thread. Scheitert der Aufbau (z. B. ein
+    // Fenster-/Vollbild-Fehler auf ungewöhnlichen Monitor-Konfigurationen), wird
+    // sauber aufgeräumt und das Pausenende signalisiert — so bleibt die App bedienbar,
+    // statt mit gesetztem Overlay-Flag und aktiven Pause-Aktionen hängenzubleiben.
+    private void TryShowWindows(OverlayRequest request, OverlayLook look)
+    {
+        try
+        {
+            BreakOverlayViewModel viewModel = new(BreakModelRegistry.GetHintKey(request.Model), request.BreakDuration);
+            viewModel.Ended += (_, e) => EndOverlay(request.OnEnded, e.Reason);
+
+            _ui.OpenWindows(viewModel, look, request.AllScreens);
+            _ui.StartCountdown(() =>
+            {
+                viewModel.Tick();
+                _ui.RefreshWindows();
+            });
+        }
+        catch (Exception ex) when (LogWindowFailure(ex))
+        {
+            // Als reguläres Pausenende behandeln: Helligkeit/Medien werden
+            // zurückgenommen und eine frische Arbeitsphase gestartet.
+            EndOverlay(request.OnEnded, BreakEndReason.Elapsed);
+        }
+    }
+
+    // Deckend rechnen, bevor die Farbe an die Fenster geht: Das Overlay-Fenster ist nicht
+    // durchsichtig, eine Alpha-Angabe könnte also gar nichts durchscheinen lassen — sie würde nur
+    // gegen den Fenstergrund gemischt, und der ist je nach Monitor nicht derselbe. So zeigen alle
+    // Monitore dieselbe Fläche, und die Schriftfarbe rechnet gegen genau diese Farbe.
+    private static (byte R, byte G, byte B) OpaqueBackground(string overlayColorHex)
+        => HexColor.FlattenOverWhite(HexColor.ParseOrDefault(overlayColorHex));
+
+    private void EndOverlay(Action<BreakEndReason> onEnded, BreakEndReason reason)
+    {
+        _ui.CloseWindows();
+        _isOverlayOpen = false;
+        onEnded(reason);
+    }
+
+    // Der Overlay-Aufbau darf die App nie hängen lassen. Der Filter protokolliert den
+    // Fehler und lässt anschließend den Aufräumpfad laufen.
+    private bool LogWindowFailure(Exception exception)
+    {
+        BreakOverlayPresenterLog.WindowCreationFailed(_logger, exception);
+        return true;
+    }
+
+    // Ein Bild ist Schmuck, keine Voraussetzung der Pause: Was auch immer beim Lesen scheitert,
+    // wird protokolliert, und das Overlay zeigt die Farbe.
+    private bool LogImageFailure(Exception exception)
+    {
+        BreakOverlayPresenterLog.ImageInspectionFailed(_logger, exception);
+        return true;
+    }
+
+    // Alles, was ein verzögerter Fensteraufbau von seinem Show noch braucht.
+    private sealed record OverlayRequest(int Generation, BreakModel Model, TimeSpan BreakDuration, bool AllScreens, Action<BreakEndReason> OnEnded);
 }
 
 /// <summary>
@@ -214,4 +183,7 @@ internal static partial class BreakOverlayPresenterLog
 {
     [LoggerMessage(EventId = 1820, Level = LogLevel.Error, Message = "Pausen-Overlay konnte nicht erzeugt werden; die Pause wird als beendet behandelt.")]
     public static partial void WindowCreationFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(EventId = 1821, Level = LogLevel.Error, Message = "Overlay-Bild konnte nicht geprüft werden; das Overlay zeigt die Farbe.")]
+    public static partial void ImageInspectionFailed(ILogger logger, Exception exception);
 }

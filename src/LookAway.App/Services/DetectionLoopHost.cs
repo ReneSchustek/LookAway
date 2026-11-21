@@ -1,6 +1,3 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using LookAway.Core.Entities;
 using LookAway.Core.Domain;
 using LookAway.Core.Interfaces;
@@ -11,17 +8,20 @@ namespace LookAway.App.Services;
 /// <summary>
 /// Betreibt die beiden Hintergrund-Schleifen der App: die periodische Idle-/
 /// Vollbild-Erkennung und den Verbrauch des Timer-Ereignisstroms. Beide speisen
-/// den <see cref="BreakCoordinator"/>. Ausgelagert aus der App-Klasse, damit diese
-/// nur noch verdrahtet statt selbst Schleifen zu führen.
+/// den Pausen-Ablauf über <see cref="IBreakSignalSink"/>. Die Schleifen liegen hier und nicht in der
+/// App-Klasse, damit diese nur verdrahtet.
 /// </summary>
 internal sealed class DetectionLoopHost : IDisposable
 {
-    private const int PollSeconds = 5;
+    // Die Idle-Schwelle zählt in Minuten, und ein Vollbildwechsel ist nach fünf Sekunden
+    // erkannt. Häufiger zu fragen brächte nichts außer zusätzlichen Win32-Aufrufen.
+    private static readonly TimeSpan DefaultPollInterval = TimeSpan.FromSeconds(5);
 
     private readonly IdleDetectionService _idle;
     private readonly FullscreenDetectionService _fullscreen;
     private readonly ITimerService _timer;
-    private readonly BreakCoordinator _coordinator;
+    private readonly IBreakSignalSink _coordinator;
+    private readonly TimeSpan _pollInterval;
 
     private CancellationTokenSource? _cts;
 
@@ -29,12 +29,14 @@ internal sealed class DetectionLoopHost : IDisposable
     /// <param name="idle">Inaktivitäts-Erkennung.</param>
     /// <param name="fullscreen">Vollbild-/DND-Erkennung.</param>
     /// <param name="timer">Timer-Dienst (Ereignisquelle).</param>
-    /// <param name="coordinator">Pausen-Koordinator, der die Ereignisse verarbeitet.</param>
+    /// <param name="coordinator">Pausen-Ablauf, der die Ereignisse verarbeitet.</param>
+    /// <param name="pollInterval">Abstand der Erkennungsabfragen; <c>null</c> für fünf Sekunden.</param>
     public DetectionLoopHost(
         IdleDetectionService idle,
         FullscreenDetectionService fullscreen,
         ITimerService timer,
-        BreakCoordinator coordinator)
+        IBreakSignalSink coordinator,
+        TimeSpan? pollInterval = null)
     {
         ArgumentNullException.ThrowIfNull(idle);
         ArgumentNullException.ThrowIfNull(fullscreen);
@@ -45,6 +47,7 @@ internal sealed class DetectionLoopHost : IDisposable
         _fullscreen = fullscreen;
         _timer = timer;
         _coordinator = coordinator;
+        _pollInterval = pollInterval ?? DefaultPollInterval;
     }
 
     /// <summary>
@@ -71,7 +74,7 @@ internal sealed class DetectionLoopHost : IDisposable
 
     private async Task RunDetectionLoopAsync(CancellationToken cancellationToken)
     {
-        using PeriodicTimer timer = new(TimeSpan.FromSeconds(PollSeconds));
+        using PeriodicTimer timer = new(_pollInterval);
         try
         {
             while (await timer.WaitForNextTickAsync(cancellationToken).ConfigureAwait(false))

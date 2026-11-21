@@ -3,8 +3,9 @@ using LookAway.Core.Domain;
 namespace LookAway.Core.Tests;
 
 /// <summary>
-/// Tests für die ARGB-Hex-Hilfslogik <see cref="HexColor"/> (Validierung,
-/// Parsing, Formatierung, Helligkeitsentscheidung).
+/// Tests für die ARGB-Hex-Hilfslogik <see cref="HexColor"/>: Validierung, Parsing,
+/// Formatierung, das Einrechnen über Weiß und das Kontrastverhältnis, nach dem das Overlay
+/// seine Schriftfarbe wählt.
 /// </summary>
 public sealed class HexColorTests
 {
@@ -128,4 +129,19 @@ public sealed class HexColorTests
         // 6-stellige Eingabe gilt als deckend.
         Assert.Equal("#FF123456", HexColor.FlattenOverWhite("#123456"));
     }
+
+    /// <remarks>
+    /// Auf dem mittleren Grau, das eine halbtransparente Farbe ergibt, liest sich dunkle Schrift
+    /// besser, obwohl eine Helligkeitsschwelle dort die helle wählte.
+    /// </remarks>
+    [Theory]
+    [InlineData(0xFF, 0xFF, 0xFF, true)]
+    [InlineData(0x0F, 0x11, 0x15, false)]
+    [InlineData(0x80, 0x80, 0x80, true)]
+    public void PrefersDarkInk_PicksTheInkWithMoreContrast(byte r, byte g, byte b, bool expected)
+        => Assert.Equal(expected, HexColor.PrefersDarkInk((r, g, b), (0x1A, 0x1A, 0x1A), (0xF5, 0xF5, 0xF5)));
+
+    [Fact]
+    public void PrefersDarkInk_OnATie_KeepsTheLightInk()
+        => Assert.False(HexColor.PrefersDarkInk((0x80, 0x80, 0x80), (0x20, 0x20, 0x20), (0x20, 0x20, 0x20)));
 }

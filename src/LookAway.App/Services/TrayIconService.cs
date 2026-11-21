@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using H.NotifyIcon;
-using H.NotifyIcon.Core;
 using LookAway.Core.Enums;
 using LookAway.Core.Interfaces;
-using LookAway.Core.Localization;
 using LookAway.Core.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
@@ -15,41 +12,33 @@ using Microsoft.UI.Xaml.Media.Imaging;
 namespace LookAway.App.Services;
 
 /// <summary>
-/// Stellt das LookAway-Tray-Icon mit Kontextmenü bereit. Vereint die
-/// Tray-Bedienung mit den Domain-Operationen über den
-/// <see cref="ITimerService"/>.
+/// Stellt das LookAway-Tray-Icon mit Kontextmenü bereit. Was Symbol und Menü zeigen und was die
+/// Einträge auslösen, bestimmt <see cref="TrayMenu"/>; dieser Dienst überträgt es auf die
+/// Steuerelemente und hält den Kurztext sekundengenau.
 /// </summary>
 /// <remarks>
 /// WinUI 3 bringt kein natives Tray-API mit; <c>H.NotifyIcon.WinUI</c>
 /// liefert das <see cref="TaskbarIcon"/>-Control.
 /// </remarks>
+[ExcludeFromCodeCoverage(Justification = "Überträgt TrayMenu auf Symbol und Kontextmenü von H.NotifyIcon und WinUI; das braucht den Fenster-Thread. Die Logik prüft TrayMenuTests.")]
 internal sealed class TrayIconService : ITrayController, IDisposable
 {
+    // Der Kurztext zeigt die Restzeit sekundengenau (mm:ss).
     private const int TooltipRefreshIntervalSeconds = 1;
 
-    private readonly ITimerService _timerService;
-    private readonly TrayStatusPresenter _statusPresenter;
-    private readonly ILocalizationService _localization;
+    private readonly TrayMenu _menu;
     private readonly ILogger<TrayIconService> _logger;
     private readonly DispatcherQueue _dispatcher;
-    private readonly Action _showSettingsHandler;
-    private readonly Action _exitHandler;
-    private readonly Action _updateDownloadHandler;
-    private readonly Action _startBreakHandler;
     private readonly Dictionary<TrayIconVariant, BitmapImage> _iconCache = new();
 
     private TaskbarIcon? _icon;
+    // Jeder Eintrag mit fester Beschriftung und der Quelle seines Textes; ein Sprachwechsel
+    // liest sie neu. Der Umschalt-Eintrag hängt am Zustand und läuft über RefreshStatus.
+    private readonly List<(MenuFlyoutItem Item, Func<string> Text)> _labelledItems = [];
     private MenuFlyoutItem? _updateItem;
-    private MenuFlyoutItem? _settingsItem;
-    private MenuFlyoutItem? _startBreakItem;
     private MenuFlyoutItem? _toggleItem;
-    private MenuFlyoutItem? _aboutItem;
-    private MenuFlyoutItem? _exitItem;
     private DispatcherQueueTimer? _statusTimer;
     private TrayIconVariant? _currentVariant;
-    private BreakModel _activeModel = BreakModel.ClassicPomodoro;
-    private string? _currentTask;
-    private bool _isDndActive;
     private bool _disposed;
 
     /// <summary>
@@ -60,42 +49,23 @@ internal sealed class TrayIconService : ITrayController, IDisposable
     /// <param name="localization">Liefert die sprachabhängigen Menü- und Tooltip-Texte.</param>
     /// <param name="dispatcher">UI-Dispatcher des Hauptfensters.</param>
     /// <param name="logger">Logger.</param>
-    /// <param name="showSettingsHandler">Callback für Settings-Klick (zeigt das Hauptfenster).</param>
-    /// <param name="exitHandler">Callback für "Beenden".</param>
-    /// <param name="updateDownloadHandler">Callback für "Update herunterladen".</param>
-    /// <param name="startBreakHandler">Callback für "Pause jetzt starten".</param>
+    /// <param name="actions">Was die Menüeinträge in der Anwendung auslösen.</param>
     public TrayIconService(
         ITimerService timerService,
         TrayStatusPresenter statusPresenter,
         ILocalizationService localization,
         DispatcherQueue dispatcher,
         ILogger<TrayIconService> logger,
-        Action showSettingsHandler,
-        Action exitHandler,
-        Action updateDownloadHandler,
-        Action startBreakHandler)
+        TrayActions actions)
     {
-        ArgumentNullException.ThrowIfNull(timerService);
-        ArgumentNullException.ThrowIfNull(statusPresenter);
-        ArgumentNullException.ThrowIfNull(localization);
         ArgumentNullException.ThrowIfNull(dispatcher);
         ArgumentNullException.ThrowIfNull(logger);
-        ArgumentNullException.ThrowIfNull(showSettingsHandler);
-        ArgumentNullException.ThrowIfNull(exitHandler);
-        ArgumentNullException.ThrowIfNull(updateDownloadHandler);
-        ArgumentNullException.ThrowIfNull(startBreakHandler);
 
-        _timerService = timerService;
-        _statusPresenter = statusPresenter;
-        _localization = localization;
+        _menu = new TrayMenu(timerService, statusPresenter, localization, logger, actions);
         _dispatcher = dispatcher;
         _logger = logger;
-        _showSettingsHandler = showSettingsHandler;
-        _exitHandler = exitHandler;
-        _updateDownloadHandler = updateDownloadHandler;
-        _startBreakHandler = startBreakHandler;
 
-        _localization.LanguageChanged += OnLanguageChanged;
+        _menu.TextsChanged += OnTextsChanged;
     }
 
     /// <summary>
@@ -105,6 +75,7 @@ internal sealed class TrayIconService : ITrayController, IDisposable
     public void SetUpdateAvailable(bool available)
         => _ = _dispatcher.TryEnqueue(() =>
         {
+            _menu.IsUpdateAvailable = available;
             if (_updateItem is not null)
             {
                 _updateItem.Visibility = available ? Visibility.Visible : Visibility.Collapsed;
@@ -115,21 +86,21 @@ internal sealed class TrayIconService : ITrayController, IDisposable
     /// Setzt das aktive Pausenmodell, das im Tooltip angezeigt wird.
     /// </summary>
     /// <param name="model">Aktuelles Pausenmodell.</param>
-    public void SetActiveModel(BreakModel model) => _activeModel = model;
+    public void SetActiveModel(BreakModel model) => _menu.ActiveModel = model;
 
     /// <summary>
     /// Übernimmt die Aufgabe, an der gerade gearbeitet wird. Nur beim
     /// aufgabenbasierten Modell steht sie im Kurztext; <c>null</c> blendet sie aus.
     /// </summary>
     /// <param name="task">Text der laufenden Aufgabe oder <c>null</c>.</param>
-    public void SetCurrentTask(string? task) => _currentTask = task;
+    public void SetCurrentTask(string? task) => _menu.CurrentTask = task;
 
     /// <summary>
     /// Schaltet die DND-Anzeige (ausgesetzte Erinnerungen). Wird von der
     /// Idle-/Vollbild-Erkennung angesteuert.
     /// </summary>
     /// <param name="isDndActive">Sind Erinnerungen aktuell ausgesetzt?</param>
-    public void SetDndActive(bool isDndActive) => _isDndActive = isDndActive;
+    public void SetDndActive(bool isDndActive) => _menu.IsDndActive = isDndActive;
 
     /// <summary>
     /// Erstellt das Tray-Icon und meldet die Klick-Handler an.
@@ -146,13 +117,13 @@ internal sealed class TrayIconService : ITrayController, IDisposable
 
         _icon = new TaskbarIcon
         {
-            ToolTipText = _localization.GetText(TrayTextKeys.TooltipBackground),
+            ToolTipText = _menu.BackgroundTooltip,
             ContextMenuMode = ContextMenuMode.SecondWindow,
             ContextFlyout = BuildContextMenu(),
         };
 
-        _icon.LeftClickCommand = new DelegateCommand(OnLeftClick);
-        _icon.DoubleClickCommand = new DelegateCommand(OnSettingsRequested);
+        _icon.LeftClickCommand = new DelegateCommand(_menu.OpenSettings);
+        _icon.DoubleClickCommand = new DelegateCommand(_menu.OpenSettings);
 
         _icon.ForceCreate();
 
@@ -163,9 +134,40 @@ internal sealed class TrayIconService : ITrayController, IDisposable
     }
 
     /// <summary>
-    /// Aktualisiert Icon-Variante und Tooltip anhand des aktuellen
-    /// Timer-Zustands. Das Icon wird nur bei einem Variantenwechsel neu gesetzt.
+    /// Entfernt das Tray-Icon und gibt die Ressourcen frei.
     /// </summary>
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        _menu.TextsChanged -= OnTextsChanged;
+        _menu.Dispose();
+
+        _statusTimer?.Stop();
+        _statusTimer = null;
+        DisposeIcon();
+    }
+
+    private void DisposeIcon()
+    {
+        try
+        {
+            _icon?.Dispose();
+        }
+        catch (InvalidOperationException)
+        {
+            // Tray-API kann beim Shutdown überraschend werfen — tolerieren.
+        }
+
+        _icon = null;
+    }
+
+    // Überträgt Kurztext, Symbol und Umschalt-Eintrag; das Symbol nur bei einem Variantenwechsel.
     private void RefreshStatus()
     {
         if (_disposed || _icon is null)
@@ -173,20 +175,20 @@ internal sealed class TrayIconService : ITrayController, IDisposable
             return;
         }
 
-        TimerState state = _timerService.State;
-        TimeSpan remaining = _timerService.Remaining;
+        _menu.Refresh();
+        _icon.ToolTipText = _menu.Tooltip;
 
-        TrayIconVariant variant = _statusPresenter.GetIconVariant(state, _isDndActive);
-        _icon.ToolTipText = _statusPresenter.GetTooltip(state, remaining, _activeModel, _isDndActive, _currentTask);
-
-        if (_currentVariant != variant)
+        if (_currentVariant != _menu.Variant)
         {
-            _icon.IconSource = GetIcon(variant);
-            _currentVariant = variant;
+            _icon.IconSource = GetIcon(_menu.Variant);
+            _currentVariant = _menu.Variant;
         }
 
-        // Pausieren/Fortsetzen-Eintrag an den aktuellen Zustand angleichen.
-        UpdateMenuForState(state);
+        if (_toggleItem is not null)
+        {
+            _toggleItem.Text = _menu.ToggleText;
+            _toggleItem.IsEnabled = _menu.IsToggleEnabled;
+        }
     }
 
     private void StartStatusTimer()
@@ -204,116 +206,42 @@ internal sealed class TrayIconService : ITrayController, IDisposable
             return cached;
         }
 
-        BitmapImage image = new(new Uri($"ms-appx:///Assets/{GetAssetFileName(variant)}"));
+        BitmapImage image = new(new Uri($"ms-appx:///Assets/{TrayMenu.GetAssetFileName(variant)}"));
         _iconCache[variant] = image;
         return image;
-    }
-
-    // ICO (mit unkomprimierten DIB-Frames), nicht PNG: H.NotifyIcon reicht den
-    // Datei-Stream an System.Drawing.Icon weiter, das nur DIB-Icons lesen kann.
-    private static string GetAssetFileName(TrayIconVariant variant) => variant switch
-    {
-        TrayIconVariant.Working => "tray-working.ico",
-        TrayIconVariant.OnBreak => "tray-onbreak.ico",
-        TrayIconVariant.Paused => "tray-paused.ico",
-        TrayIconVariant.Disabled => "tray-disabled.ico",
-        _ => "tray-paused.ico",
-    };
-
-    /// <summary>
-    /// Aktualisiert die Sichtbarkeit der Pause/Fortsetzen-Einträge passend
-    /// zum aktuellen <see cref="TimerState"/>.
-    /// </summary>
-    public void UpdateMenuForState(TimerState state)
-    {
-        if (_disposed || _toggleItem is null)
-        {
-            return;
-        }
-
-        _ = _dispatcher.TryEnqueue(() =>
-        {
-            _toggleItem.Text = state == TimerState.Paused
-                ? _localization.GetText(TrayTextKeys.MenuResume)
-                : _localization.GetText(TrayTextKeys.MenuPause);
-            _toggleItem.IsEnabled = state != TimerState.Idle;
-        });
-    }
-
-    /// <summary>
-    /// Entfernt das Tray-Icon und gibt die Ressourcen frei.
-    /// </summary>
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        _localization.LanguageChanged -= OnLanguageChanged;
-
-        if (_statusTimer is not null)
-        {
-            _statusTimer.Stop();
-            _statusTimer = null;
-        }
-
-        if (_icon is not null)
-        {
-            try
-            {
-                _icon.Dispose();
-            }
-            catch (InvalidOperationException)
-            {
-                // Tray-API kann beim Shutdown überraschend werfen — tolerieren.
-            }
-            _icon = null;
-        }
     }
 
     private MenuFlyout BuildContextMenu()
     {
         MenuFlyout flyout = new();
 
-        _updateItem = new MenuFlyoutItem
-        {
-            Text = _localization.GetText(TrayTextKeys.MenuUpdate),
-            Visibility = Visibility.Collapsed,
-        };
-        _updateItem.Click += (_, _) => _updateDownloadHandler();
-        flyout.Items.Add(_updateItem);
+        _updateItem = AddItem(flyout, () => _menu.UpdateText, _menu.DownloadUpdate);
+        _updateItem.Visibility = _menu.IsUpdateAvailable ? Visibility.Visible : Visibility.Collapsed;
+        _ = AddItem(flyout, () => _menu.SettingsText, _menu.OpenSettings);
+        _ = AddItem(flyout, () => _menu.StartBreakText, _menu.StartBreak);
 
-        _settingsItem = new MenuFlyoutItem { Text = _localization.GetText(TrayTextKeys.MenuSettings) };
-        _settingsItem.Click += (_, _) => OnSettingsRequested();
-        flyout.Items.Add(_settingsItem);
-
-        _startBreakItem = new MenuFlyoutItem { Text = _localization.GetText(TrayTextKeys.MenuStartBreak) };
-        _startBreakItem.Click += (_, _) => OnStartBreakNow();
-        flyout.Items.Add(_startBreakItem);
-
-        _toggleItem = new MenuFlyoutItem { Text = _localization.GetText(TrayTextKeys.MenuPause), IsEnabled = false };
-        _toggleItem.Click += (_, _) => OnTogglePause();
+        _toggleItem = new MenuFlyoutItem { Text = _menu.ToggleText, IsEnabled = _menu.IsToggleEnabled };
+        _toggleItem.Click += (_, _) => _menu.TogglePause();
         flyout.Items.Add(_toggleItem);
 
         flyout.Items.Add(new MenuFlyoutSeparator());
-
-        _aboutItem = new MenuFlyoutItem { Text = _localization.GetText(TrayTextKeys.MenuAbout) };
-        _aboutItem.Click += (_, _) => OnAboutRequested();
-        flyout.Items.Add(_aboutItem);
-
+        _ = AddItem(flyout, () => _menu.AboutText, _menu.ShowAbout);
         flyout.Items.Add(new MenuFlyoutSeparator());
-
-        _exitItem = new MenuFlyoutItem { Text = _localization.GetText(TrayTextKeys.MenuExit) };
-        _exitItem.Click += (_, _) => OnExitRequested();
-        flyout.Items.Add(_exitItem);
+        _ = AddItem(flyout, () => _menu.ExitText, _menu.Exit);
 
         return flyout;
     }
 
-    private void OnLanguageChanged(object? sender, EventArgs e)
+    private MenuFlyoutItem AddItem(MenuFlyout flyout, Func<string> text, Action click)
+    {
+        MenuFlyoutItem item = new() { Text = text() };
+        item.Click += (_, _) => click();
+        flyout.Items.Add(item);
+        _labelledItems.Add((item, text));
+        return item;
+    }
+
+    private void OnTextsChanged(object? sender, EventArgs e)
         => _ = _dispatcher.TryEnqueue(RefreshMenuTexts);
 
     private void RefreshMenuTexts()
@@ -323,76 +251,17 @@ internal sealed class TrayIconService : ITrayController, IDisposable
             return;
         }
 
-        if (_updateItem is not null)
+        foreach ((MenuFlyoutItem item, Func<string> text) in _labelledItems)
         {
-            _updateItem.Text = _localization.GetText(TrayTextKeys.MenuUpdate);
+            item.Text = text();
         }
 
-        if (_settingsItem is not null)
-        {
-            _settingsItem.Text = _localization.GetText(TrayTextKeys.MenuSettings);
-        }
-
-        if (_startBreakItem is not null)
-        {
-            _startBreakItem.Text = _localization.GetText(TrayTextKeys.MenuStartBreak);
-        }
-
-        if (_aboutItem is not null)
-        {
-            _aboutItem.Text = _localization.GetText(TrayTextKeys.MenuAbout);
-        }
-
-        if (_exitItem is not null)
-        {
-            _exitItem.Text = _localization.GetText(TrayTextKeys.MenuExit);
-        }
-
-        // Toggle-Text hängt vom Zustand ab; Tooltip aktualisiert RefreshStatus.
-        UpdateMenuForState(_timerService.State);
+        // Umschalt-Eintrag und Kurztext hängen vom Zustand ab.
         RefreshStatus();
     }
 
-    private void OnLeftClick() => OnSettingsRequested();
-
-    private void OnSettingsRequested()
-    {
-        TrayIconLog.SettingsRequested(_logger);
-        _showSettingsHandler();
-    }
-
-    private void OnStartBreakNow()
-    {
-        TrayIconLog.StartBreakRequested(_logger);
-        _startBreakHandler();
-    }
-
-    private void OnTogglePause()
-    {
-        if (_timerService.State == TimerState.Paused)
-        {
-            TrayIconLog.ResumeRequested(_logger);
-            _timerService.ResumeAfterPause();
-        }
-        else if (_timerService.State == TimerState.Working || _timerService.State == TimerState.OnBreak)
-        {
-            TrayIconLog.PauseRequested(_logger);
-            _timerService.Pause();
-        }
-    }
-
-    private void OnAboutRequested()
-    {
-        TrayIconLog.AboutRequested(_logger);
-        _showSettingsHandler();
-    }
-
-    private void OnExitRequested()
-    {
-        TrayIconLog.ExitRequested(_logger);
-        _exitHandler();
-    }
-
+    // Kleinster ICommand für die Klickbefehle des Tray-Symbols: ohne Parameter und
+    // immer ausführbar.
     private sealed class DelegateCommand : System.Windows.Input.ICommand
     {
         private readonly Action _action;

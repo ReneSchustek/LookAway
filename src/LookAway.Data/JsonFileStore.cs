@@ -15,6 +15,7 @@ internal sealed class JsonFileStore : IDisposable
 {
     private const string TempFileSuffix = ".tmp";
     private const string CorruptFileSuffix = ".corrupt";
+    // Die Standardgröße von FileStream; die Dateien sind wenige Kilobyte groß.
     private const int FileBufferSize = 4096;
 
     private readonly string _filePath;
@@ -60,11 +61,7 @@ internal sealed class JsonFileStore : IDisposable
                 return await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
             }
         }
-        catch (FileNotFoundException)
-        {
-            return null;
-        }
-        catch (DirectoryNotFoundException)
+        catch (IOException ex) when (ex is FileNotFoundException or DirectoryNotFoundException)
         {
             return null;
         }
@@ -129,11 +126,7 @@ internal sealed class JsonFileStore : IDisposable
             await File.WriteAllTextAsync(CorruptBackupPath, corruptContent, cancellationToken).ConfigureAwait(false);
             return true;
         }
-        catch (IOException)
-        {
-            return false;
-        }
-        catch (UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             return false;
         }

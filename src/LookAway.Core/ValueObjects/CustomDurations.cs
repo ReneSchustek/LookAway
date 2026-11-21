@@ -2,7 +2,8 @@ namespace LookAway.Core.ValueObjects;
 
 /// <summary>
 /// Optionale Benutzer-Überschreibung der Arbeits- und Pausendauer in Minuten.
-/// Gilt zusätzlich zu den Defaults des aktiven Pausenmodells.
+/// Ersetzt beide Dauern des aktiven Pausenmodells; dessen Höchstgrenze
+/// (<see cref="BreakInterval.MaxLimit"/>) bleibt bestehen.
 /// </summary>
 public sealed record CustomDurations
 {

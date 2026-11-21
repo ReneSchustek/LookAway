@@ -79,6 +79,37 @@ public sealed class SingleInstanceLockTests
         Assert.False(signaled);
     }
 
+    /// <remarks>So fordert das Setup die laufende Instanz zum Beenden auf.</remarks>
+    [Fact]
+    public void QuitSignal_FromOutside_RaisesQuitRequested()
+    {
+        string user = UniqueUser();
+        using SingleInstanceLock first = new(user);
+        Assert.True(first.TryAcquire());
+        using ManualResetEventSlim asked = new();
+        first.QuitRequested += (_, _) => asked.Set();
+
+        using (EventWaitHandle quit = EventWaitHandle.OpenExisting($@"Local\LookAway-Quit-{user}"))
+        {
+            _ = quit.Set();
+        }
+
+        Assert.True(asked.Wait(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public void QuitSignal_ExistsOnlyWhileAnInstanceRuns()
+    {
+        string user = UniqueUser();
+        using (SingleInstanceLock first = new(user))
+        {
+            Assert.True(first.TryAcquire());
+            using EventWaitHandle running = EventWaitHandle.OpenExisting($@"Local\LookAway-Quit-{user}");
+        }
+
+        _ = Assert.Throws<WaitHandleCannotBeOpenedException>(() => EventWaitHandle.OpenExisting($@"Local\LookAway-Quit-{user}"));
+    }
+
     [Fact]
     public void Constructor_RejectsBlankUserName()
     {

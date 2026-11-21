@@ -1,6 +1,7 @@
 using LookAway.Core.Domain;
 using LookAway.Core.Interfaces;
 using LookAway.Core.Services;
+using LookAway.Core.ValueObjects;
 using LookAway.Core.Enums;
 
 namespace LookAway.Core.Tests.Fakes;
@@ -37,16 +38,16 @@ internal sealed class FakeBreakOverlayPresenter : IBreakOverlayPresenter
 
     public int ShowCount { get; private set; }
 
-    public string? LastColor { get; private set; }
+    public OverlayBackdrop? LastBackdrop { get; private set; }
 
     public bool LastDarkenAllScreens { get; private set; }
 
     private Action<BreakEndReason>? _onEnded;
 
-    public void Show(BreakModel model, TimeSpan breakDuration, string overlayColorHex, bool darkenAllScreens, Action<BreakEndReason> onEnded)
+    public void Show(BreakModel model, TimeSpan breakDuration, OverlayBackdrop backdrop, bool darkenAllScreens, Action<BreakEndReason> onEnded)
     {
         ShowCount++;
-        LastColor = overlayColorHex;
+        LastBackdrop = backdrop;
         LastDarkenAllScreens = darkenAllScreens;
         _onEnded = onEnded;
         IsOverlayOpen = true;

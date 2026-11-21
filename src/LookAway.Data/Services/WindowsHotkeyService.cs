@@ -31,6 +31,7 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
     private const uint WmHotkey = 0x0312;
     private const uint WmApplyBindings = 0x0400; // WM_APP
     private const uint WmQuitLoop = 0x0401;      // WM_APP + 1 — beendet den Message-Loop
+    // MOD_NOREPEAT: Gedrückt gehaltene Tasten lösen die Aktion nur einmal aus.
     private const uint ModNoRepeat = 0x4000;
     private const uint PmNoRemove = 0x0000;
 
@@ -104,10 +105,13 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
 
     // Eine Thread-Nachricht geht verloren, solange der Thread noch keine Warteschlange
     // besitzt. Deshalb erst auf deren Erzeugung warten (der Thread signalisiert sie).
+    // Er legt sie gleich nach dem Start an; die zwei Sekunden greifen nur, wenn er gar
+    // nicht anläuft. Dann sind die Hotkeys nicht registriert, und das gehört ins Protokoll.
     private void PostToMessageThread(uint message)
     {
         if (!_queueReady.Wait(TimeSpan.FromSeconds(2)))
         {
+            WindowsHotkeyServiceLog.MessageThreadNotReady(_logger, message);
             return;
         }
 
@@ -120,15 +124,7 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
 
     private void RunMessageLoop()
     {
-        Volatile.Write(ref _threadId, GetCurrentThreadId());
-
-        // Erzwingt die Erzeugung der Nachrichtenwarteschlange, bevor der erste
-        // PostThreadMessage-Aufruf eintreffen kann.
-        _ = PeekMessageW(out _, NoWindow, 0, 0, PmNoRemove);
-        _queueReady.Set();
-
-        // Falls vor dem Start des Loops bereits Bindings gesetzt wurden.
-        ApplyPending();
+        PrepareQueue();
 
         while (true)
         {
@@ -147,23 +143,44 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
                 break;
             }
 
-            switch (message.Message)
+            if (!Dispatch(message))
             {
-                case WmHotkey:
-                    OnHotkey((int)message.WParam);
-                    break;
-                case WmApplyBindings:
-                    ApplyPending();
-                    break;
-                case WmQuitLoop:
-                    UnregisterAllOnMessageThread();
-                    return;
-                default:
-                    break;
+                break;
             }
         }
 
         UnregisterAllOnMessageThread();
+    }
+
+    private void PrepareQueue()
+    {
+        Volatile.Write(ref _threadId, GetCurrentThreadId());
+
+        // Erzwingt die Erzeugung der Nachrichtenwarteschlange, bevor der erste
+        // PostThreadMessage-Aufruf eintreffen kann.
+        _ = PeekMessageW(out _, NoWindow, 0, 0, PmNoRemove);
+        _queueReady.Set();
+
+        // Falls vor dem Start des Loops bereits Bindings gesetzt wurden.
+        ApplyPending();
+    }
+
+    // Verarbeitet eine Nachricht; false beendet die Schleife (eigene Abbau-Nachricht).
+    private bool Dispatch(Msg message)
+    {
+        switch (message.Message)
+        {
+            case WmHotkey:
+                OnHotkey((int)message.WParam);
+                return true;
+            case WmApplyBindings:
+                ApplyPending();
+                return true;
+            case WmQuitLoop:
+                return false;
+            default:
+                return true;
+        }
     }
 
     private void UnregisterAllOnMessageThread()
@@ -226,11 +243,13 @@ public sealed partial class WindowsHotkeyService : IHotkeyService, IDisposable
         // Abbau auf dem Nachrichten-Thread anstoßen (Hotkeys sind thread-affin).
         PostToMessageThread(WmQuitLoop);
 
+        // Dieselbe Grenze wie beim Zustellen: Ein hängender Thread darf das Beenden nicht aufhalten.
         _ = _thread?.Join(TimeSpan.FromSeconds(2));
         _thread = null;
         _queueReady.Dispose();
     }
 
+    // Gegenstück zur Win32-Struktur MSG; Reihenfolge und Breite der Felder sind vorgegeben.
     [StructLayout(LayoutKind.Sequential)]
     private struct Msg
     {
@@ -282,4 +301,7 @@ internal static partial class WindowsHotkeyServiceLog
 
     [LoggerMessage(EventId = 1502, Level = LogLevel.Warning, Message = "Hotkey-Nachrichtenschleife mit Fehler beendet — globale Hotkeys sind bis zum Neustart inaktiv.")]
     public static partial void MessageLoopFailed(ILogger logger);
+
+    [LoggerMessage(EventId = 1503, Level = LogLevel.Warning, Message = "Hotkey-Nachricht {Message} verworfen: Der Nachrichten-Thread ist nach zwei Sekunden nicht bereit.")]
+    public static partial void MessageThreadNotReady(ILogger logger, uint message);
 }

@@ -52,15 +52,7 @@ public sealed class WindowsMediaController : IMediaController
         // Die SMTC-Projektion meldet fehlende Unterstützung, abgemeldete Sessions und
         // Rechteprobleme über diese drei Typen; ein Abbruch-Token wird bewusst nicht
         // verschluckt.
-        catch (COMException ex)
-        {
-            MediaControllerLog.PauseFailed(_logger, ex);
-        }
-        catch (TypeLoadException ex)
-        {
-            MediaControllerLog.PauseFailed(_logger, ex);
-        }
-        catch (UnauthorizedAccessException ex)
+        catch (Exception ex) when (ex is COMException or TypeLoadException or UnauthorizedAccessException)
         {
             MediaControllerLog.PauseFailed(_logger, ex);
         }
@@ -87,15 +79,7 @@ public sealed class WindowsMediaController : IMediaController
                 }
             }
         }
-        catch (COMException ex)
-        {
-            MediaControllerLog.ResumeFailed(_logger, ex);
-        }
-        catch (TypeLoadException ex)
-        {
-            MediaControllerLog.ResumeFailed(_logger, ex);
-        }
-        catch (UnauthorizedAccessException ex)
+        catch (Exception ex) when (ex is COMException or TypeLoadException or UnauthorizedAccessException)
         {
             MediaControllerLog.ResumeFailed(_logger, ex);
         }

@@ -31,33 +31,7 @@ public sealed class SettingsViewModelHotkeyCaptureTests
     private static SettingsViewModel CreateViewModel(out InMemorySettingsRepository repository)
     {
         repository = new InMemorySettingsRepository(null);
-        FakeLocalizationService localization = new();
-        AutoStartCoordinator coordinator = new(
-            new FakeAutoStartService(),
-            repository,
-            NullLogger<AutoStartCoordinator>.Instance);
-        FakeBreakHistoryRepository history = new();
-        FakeClock clock = new(new DateTimeOffset(2026, 8, 2, 12, 0, 0, TimeSpan.Zero));
-        StatisticsViewModel statistics = new(
-            new StatisticsService(history, clock),
-            history,
-            new CsvExporter(),
-            localization);
-
-        return new SettingsViewModel(
-            repository,
-            coordinator,
-            localization,
-            new FakeSoundService(),
-            new FakeUpdateChecker(),
-            new FakeUpdateInstaller(),
-            new SettingsSections(
-                statistics,
-                new BreakModelListViewModel(localization, history),
-                new LogViewModel(new FakeLogEntryReader(), localization, clock),
-                new WorkTaskListViewModel(new FakeWorkTaskRepository(), history, localization, clock)),
-            NullLogger<SettingsViewModel>.Instance,
-            "1.0.0");
+        return TestSettingsViewModels.Create(repository);
     }
 
     [Fact]
@@ -184,14 +158,14 @@ public sealed class SettingsViewModelHotkeyCaptureTests
     public async Task CapturedAssignment_IsSaved()
     {
         using SettingsViewModel viewModel = CreateViewModel(out InMemorySettingsRepository repository);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.SkipOrSnooze);
         HotkeyDefinition combination = new(HotkeyModifiers.Control | HotkeyModifiers.Alt, VkQ);
         Assert.True(viewModel.TryCompleteHotkeyCapture(combination));
 
         await viewModel.SaveCommand.ExecuteAsync(null);
 
-        Settings saved = await repository.LoadAsync();
+        Settings saved = await repository.LoadAsync(TestContext.Current.CancellationToken);
         Assert.Equal(combination, saved.HotkeySkipOrSnooze);
     }
 

@@ -7,13 +7,26 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <!-- Abgedunkelter Vollbild-Hintergrund; helle Schrift für den Pausen-Inhalt.
-         Die konkrete Hintergrundfarbe setzt der Code-Behind aus den Einstellungen,
-         der Pinsel hier trägt nur so lange, bis das geschehen ist. -->
-    <Grid x:Name="RootGrid" Background="{ThemeResource RcOverlayBackground}">
+    <!-- Vollbild-Hintergrund in der Overlay-Farbe, darüber auf Wunsch ein eigenes Bild mit einer
+         schwarzen Abdunklung. Farbe, Bild und Abdunklung setzt der Code-Behind aus den
+         Einstellungen; der Pinsel hier trägt nur so lange, bis das geschehen ist. Die Farbe
+         bleibt unter dem Bild liegen: Sie deckt den Monitor, bis das Bild gezeichnet ist, und
+         falls es sich nicht laden lässt.
+
+         KeyboardAcceleratorPlacementMode="Hidden": Ein Element mit Tastenkürzel blendet sonst
+         die Taste als Tooltip ein, sobald der Zeiger darüber ruht. Das Raster deckt den ganzen
+         Bildschirm, also stünde „Esc" überall dort, wo die Maus stehen bleibt. Die Taste nennt
+         der Endhinweis auf dem Hauptmonitor ohnehin. -->
+    <Grid
+        x:Name="RootGrid"
+        Background="{ThemeResource RcOverlayBackground}"
+        KeyboardAcceleratorPlacementMode="Hidden">
         <Grid.KeyboardAccelerators>
             <KeyboardAccelerator Key="Escape" Invoked="OnEscapeInvoked" />
         </Grid.KeyboardAccelerators>
+
+        <Border x:Name="ImageLayer" Visibility="Collapsed" />
+        <Border x:Name="DimLayer" Background="{ThemeResource RcOverlayImageDim}" Visibility="Collapsed" />
 
         <StackPanel
             x:Name="ContentPanel"

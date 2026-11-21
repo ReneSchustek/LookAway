@@ -29,7 +29,7 @@ public sealed class BreakModelListViewModelTests
     {
         BreakModelListViewModel viewModel = CreateViewModel();
 
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(Enum.GetValues<BreakModel>().Length, viewModel.VisibleModels.Count);
         Assert.True(viewModel.HasResults);
@@ -40,7 +40,7 @@ public sealed class BreakModelListViewModelTests
     public async Task SearchText_FiltersByNameWhileTyping()
     {
         BreakModelListViewModel viewModel = CreateViewModel();
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SearchText = "pomodoro";
 
@@ -54,7 +54,7 @@ public sealed class BreakModelListViewModelTests
     public async Task SearchText_IgnoresCaseAndSurroundingSpace()
     {
         BreakModelListViewModel viewModel = CreateViewModel();
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SearchText = "  ULTRADIANER  ";
 
@@ -66,7 +66,7 @@ public sealed class BreakModelListViewModelTests
     public async Task Filter_Active_KeepsOnlyTheChosenModel()
     {
         BreakModelListViewModel viewModel = CreateViewModel(active: BreakModel.Ultradian);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.Filter = BreakModelFilter.Active;
 
@@ -79,7 +79,7 @@ public sealed class BreakModelListViewModelTests
     public async Task Filter_Inactive_DropsTheChosenModel()
     {
         BreakModelListViewModel viewModel = CreateViewModel(active: BreakModel.Ultradian);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.Filter = BreakModelFilter.Inactive;
 
@@ -96,7 +96,7 @@ public sealed class BreakModelListViewModelTests
     public async Task ShowNoResults_IsSetWhenSearchMatchesNothing()
     {
         BreakModelListViewModel viewModel = CreateViewModel();
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SearchText = "gibt es nicht";
 
@@ -109,7 +109,7 @@ public sealed class BreakModelListViewModelTests
     public async Task ResetSearch_ClearsTextAndFilter()
     {
         BreakModelListViewModel viewModel = CreateViewModel(active: BreakModel.Ultradian);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         viewModel.SearchText = "gibt es nicht";
         viewModel.Filter = BreakModelFilter.Active;
 
@@ -124,7 +124,7 @@ public sealed class BreakModelListViewModelTests
     public async Task SetActiveModel_MovesTheMarkToTheNewModel()
     {
         BreakModelListViewModel viewModel = CreateViewModel(active: BreakModel.Ultradian);
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         viewModel.SetActiveModel(BreakModel.ClassicPomodoro);
 
@@ -136,7 +136,7 @@ public sealed class BreakModelListViewModelTests
     public async Task SelectCommand_ReportsTheChosenModel()
     {
         BreakModelListViewModel viewModel = CreateViewModel();
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         BreakModel? reported = null;
         viewModel.ModelSelected += (_, model) => reported = model;
 
@@ -160,7 +160,7 @@ public sealed class BreakModelListViewModelTests
         ]);
         BreakModelListViewModel viewModel = CreateViewModel(history: history);
 
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(2, viewModel.VisibleModels.Single(item => item.Model == BreakModel.Ultradian).BreakCount);
         Assert.Equal(1, viewModel.VisibleModels.Single(item => item.Model == BreakModel.ClassicPomodoro).BreakCount);
@@ -205,7 +205,7 @@ public sealed class BreakModelListViewModelTests
     public async Task SelectCommand_IgnoresAMissingItem()
     {
         BreakModelListViewModel viewModel = CreateViewModel();
-        await viewModel.LoadAsync();
+        await viewModel.LoadAsync(TestContext.Current.CancellationToken);
         BreakModel before = viewModel.VisibleModels.Single(item => item.IsActive).Model;
 
         viewModel.SelectCommand.Execute(null);
@@ -241,7 +241,7 @@ public sealed class BreakModelListViewModelTests
         => (bool)typeof(BreakModelListViewModel).GetProperty(chip)!.GetValue(viewModel)!;
 
     private static BreakSession Session(BreakModel model) => new(
-        Guid.NewGuid(),
+        TestIds.Next(),
         new DateTimeOffset(2026, 8, 1, 9, 0, 0, TimeSpan.Zero),
         new DateTimeOffset(2026, 8, 1, 9, 10, 0, TimeSpan.Zero),
         model,

@@ -1,4 +1,3 @@
-using LookAway.Core.Enums;
 using Microsoft.Extensions.Logging;
 
 namespace LookAway.Core.Services;
@@ -11,8 +10,8 @@ internal static partial class LogServiceLog
     [LoggerMessage(
         EventId = 1001,
         Level = LogLevel.Information,
-        Message = "App gestartet: Version {Version}, Sprache {Language}, vorheriger Crash: {LastRunCrashed}.")]
-    public static partial void AppStarted(ILogger logger, string version, Language language, bool lastRunCrashed);
+        Message = "App gestartet: Version {Version}, vorheriger Crash: {LastRunCrashed}.")]
+    public static partial void AppStarted(ILogger logger, string version, bool lastRunCrashed);
 
     [LoggerMessage(
         EventId = 1002,

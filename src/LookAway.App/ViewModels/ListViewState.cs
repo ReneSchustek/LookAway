@@ -8,7 +8,7 @@ namespace LookAway.App.ViewModels;
 /// <param name="Visible">Anzahl der nach Suche und Filter sichtbaren Einträge.</param>
 /// <remarks>
 /// Als eigener Wert und nicht als Basisklasse: Die drei Listen der Anwendung führen
-/// verschiedene Filtertypen und Datenquellen: Vererbung würde sie aneinander binden,
+/// verschiedene Filtertypen und Datenquellen; Vererbung würde sie aneinander binden,
 /// ohne dass sie etwas voneinander bräuchten. Sie halten stattdessen einen dieser
 /// Werte und beantworten ihre Fragen daraus.
 /// </remarks>

@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.IO;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using LookAway.Core.Domain;
 using LookAway.Core.Enums;
 using LookAway.Core.ValueObjects;
@@ -16,8 +12,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Windows.Graphics;
-using Windows.Storage;
-using Windows.Storage.Pickers;
 using Windows.System;
 using Windows.UI.Core;
 using WinColor = Windows.UI.Color;
@@ -30,12 +24,12 @@ namespace LookAway.App.Views;
 /// Persistenzlogik liegt dort. Die Auswahl im Menü blendet den passenden
 /// Abschnitt ein.
 /// </summary>
+[ExcludeFromCodeCoverage(Justification = "Fenster-Code-Behind: legt WinUI-Elemente an und braucht den Fenster-Thread. Entscheidungen stehen in prüfbaren Klassen (SettingsViewModel, HotkeyCaptureKeys, WindowPlacement).")]
 internal sealed partial class SettingsWindow : Window
 {
+    // Startgröße; danach lässt sich das Fenster frei ziehen, nur nicht maximieren.
     private const int WindowWidth = 840;
     private const int WindowHeight = 680;
-
-    private static readonly string[] CsvFileExtensions = { ".csv" };
 
     private readonly SettingsViewModel _viewModel;
     private readonly Dictionary<string, FrameworkElement> _panels;
@@ -55,24 +49,8 @@ internal sealed partial class SettingsWindow : Window
         RootGrid.DataContext = viewModel;
         Title = viewModel.Texts.Title;
 
-        _panels = new Dictionary<string, FrameworkElement>(StringComparer.Ordinal)
-        {
-            ["General"] = PanelGeneral,
-            ["Model"] = PanelModel,
-            ["Intervals"] = PanelIntervals,
-            ["Sound"] = PanelSound,
-            ["Pause"] = PanelPause,
-            ["Hotkeys"] = PanelHotkeys,
-            ["Tasks"] = PanelTasks,
-            ["Statistics"] = PanelStatistics,
-            ["Log"] = PanelLog,
-            ["About"] = PanelAbout,
-        };
-
-        // Farbwähler auf die gespeicherte Overlay-Farbe setzen (Load lief bereits).
-        _suppressColorWriteback = true;
-        OverlayColorPicker.Color = ParseColor(viewModel.BreakOverlayColor);
-        _suppressColorWriteback = false;
+        _panels = CreatePanelMap();
+        ShowStoredOverlayColor();
 
         _viewModel.CloseRequested += OnCloseRequested;
         _viewModel.Statistics.CsvExportRequested += OnCsvExportRequested;
@@ -80,6 +58,30 @@ internal sealed partial class SettingsWindow : Window
         Closed += OnWindowClosed;
 
         ConfigureWindow();
+    }
+
+    // Die Navigation trägt je Eintrag ein Kennwort; es wählt die anzuzeigende Seite.
+    private Dictionary<string, FrameworkElement> CreatePanelMap() => new(StringComparer.Ordinal)
+    {
+        ["General"] = PanelGeneral,
+        ["Model"] = PanelModel,
+        ["Intervals"] = PanelIntervals,
+        ["Sound"] = PanelSound,
+        ["Pause"] = PanelPause,
+        ["Hotkeys"] = PanelHotkeys,
+        ["Tasks"] = PanelTasks,
+        ["Statistics"] = PanelStatistics,
+        ["Log"] = PanelLog,
+        ["About"] = PanelAbout,
+    };
+
+    // Farbwähler auf die gespeicherte Overlay-Farbe setzen (Load lief bereits), ohne dass das
+    // Setzen selbst als Änderung zurückgeschrieben wird.
+    private void ShowStoredOverlayColor()
+    {
+        _suppressColorWriteback = true;
+        OverlayColorPicker.Color = ParseColor(_viewModel.BreakOverlayColor);
+        _suppressColorWriteback = false;
     }
 
     private void ConfigureWindow()
@@ -97,14 +99,12 @@ internal sealed partial class SettingsWindow : Window
 
     private void CenterOnPrimaryDisplay()
     {
-        DisplayArea display = DisplayArea.Primary;
-        RectInt32 work = display.WorkArea;
-        int left = work.X + ((work.Width - WindowWidth) / 2);
-        int top = work.Y + ((work.Height - WindowHeight) / 2);
+        RectInt32 work = DisplayArea.Primary.WorkArea;
+        (int left, int top) = WindowPlacement.CenterIn(work.X, work.Y, work.Width, work.Height, WindowWidth, WindowHeight);
         AppWindow.Move(new PointInt32(left, top));
     }
 
-    private void OnNavSelectionChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
+    private void OnNavSelectionChanged(NavigationView _, NavigationViewSelectionChangedEventArgs args)
     {
         // Kann während InitializeComponent feuern, bevor das Panel-Verzeichnis steht.
         if (_panels is null || args.SelectedItem is not NavigationViewItem { Tag: string tag })
@@ -118,7 +118,7 @@ internal sealed partial class SettingsWindow : Window
         }
     }
 
-    private void OnOverlayColorChanged(ColorPicker sender, ColorChangedEventArgs args)
+    private void OnOverlayColorChanged(ColorPicker _, ColorChangedEventArgs args)
     {
         if (_suppressColorWriteback)
         {
@@ -161,13 +161,13 @@ internal sealed partial class SettingsWindow : Window
         }
     }
 
-    private async void OnOpenDocs(object sender, RoutedEventArgs e)
+    private async void OnOpenDocs(object _, RoutedEventArgs __)
         => await OpenLinkAsync(_viewModel.DocsUri).ConfigureAwait(true);
 
-    private async void OnOpenDonation(object sender, RoutedEventArgs e)
+    private async void OnOpenDonation(object _, RoutedEventArgs __)
         => await OpenLinkAsync(_viewModel.DonationUri).ConfigureAwait(true);
 
-    private async void OnOpenDownload(object sender, RoutedEventArgs e)
+    private async void OnOpenDownload(object _, RoutedEventArgs __)
         => await OpenLinkAsync(_viewModel.DownloadUri).ConfigureAwait(true);
 
     /// <summary>
@@ -195,7 +195,7 @@ internal sealed partial class SettingsWindow : Window
     /// Legt eine Aufgabe auch per Eingabetaste an — wer tippt, will nicht zur Maus
     /// greifen, um den Satz abzuschließen.
     /// </summary>
-    private void OnNewTaskKeyDown(object sender, KeyRoutedEventArgs e)
+    private void OnNewTaskKeyDown(object _, KeyRoutedEventArgs e)
     {
         ArgumentNullException.ThrowIfNull(e);
 
@@ -210,55 +210,13 @@ internal sealed partial class SettingsWindow : Window
 
     private void OnCloseRequested(object? sender, EventArgs e) => Close();
 
-    private async void OnCsvExportRequested(object? sender, CsvExportRequestedEventArgs e)
-    {
-        // Als async-void-Event-Handler muss der gesamte Rumpf gegen Ausnahmen
-        // abgesichert sein — eine unbehandelte Ausnahme würde sonst den Prozess beenden.
-        try
-        {
-            FileSavePicker picker = new()
-            {
-                SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
-                SuggestedFileName = "lookaway-history",
-            };
-            picker.FileTypeChoices.Add("CSV", CsvFileExtensions);
-
-            nint hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-
-            StorageFile? file = await picker.PickSaveFileAsync();
-            if (file is null)
-            {
-                return;
-            }
-
-            // UTF-8 mit BOM, damit Excel die Datei korrekt erkennt.
-            byte[] bytes = new UTF8Encoding(encoderShouldEmitUTF8Identifier: true).GetBytes(e.Content);
-            await FileIO.WriteBytesAsync(file, bytes);
-        }
-        catch (IOException)
-        {
-            // Schreibfehler (z. B. voller Datenträger) darf den Export nicht
-            // zum Absturz bringen — der Benutzer kann erneut versuchen.
-        }
-        catch (UnauthorizedAccessException)
-        {
-            // Fehlende Schreibrechte am Zielort — bewusst toleriert.
-        }
-        catch (COMException)
-        {
-            // Datei-Dialog/Storage-Interop kann bei Abbruch oder Shell-Fehlern
-            // einen COM-Fehler melden — der Export bleibt dann einfach aus.
-        }
-    }
-
-    private void OnCaptureStartBreak(object sender, RoutedEventArgs e)
+    private void OnCaptureStartBreak(object _, RoutedEventArgs __)
         => _viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.StartBreak);
 
-    private void OnCaptureSkipOrSnooze(object sender, RoutedEventArgs e)
+    private void OnCaptureSkipOrSnooze(object _, RoutedEventArgs __)
         => _viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.SkipOrSnooze);
 
-    private void OnCaptureToggleDnd(object sender, RoutedEventArgs e)
+    private void OnCaptureToggleDnd(object _, RoutedEventArgs __)
         => _viewModel.BeginHotkeyCaptureCommand.Execute(HotkeyAction.ToggleDnd);
 
     /// <summary>
@@ -267,7 +225,7 @@ internal sealed partial class SettingsWindow : Window
     /// eine Kombination taugt, entscheidet <see cref="SettingsViewModel"/> — nur so
     /// bleibt die Regel ohne Fenster prüfbar.
     /// </summary>
-    private void OnHotkeyCaptureKeyDown(object sender, KeyRoutedEventArgs e)
+    private void OnHotkeyCaptureKeyDown(object _, KeyRoutedEventArgs e)
     {
         ArgumentNullException.ThrowIfNull(e);
 
@@ -278,7 +236,7 @@ internal sealed partial class SettingsWindow : Window
 
         // Modifikatoren allein sind noch keine Kombination — sonst wäre jede
         // Aufnahme schon mit dem Druck auf Strg beendet.
-        if (IsModifierKey(e.Key))
+        if (HotkeyCaptureKeys.IsModifier(e.Key))
         {
             return;
         }
@@ -293,40 +251,7 @@ internal sealed partial class SettingsWindow : Window
 
         // Das Ergebnis interessiert hier nicht: Ob übernommen, abgelehnt oder
         // kollidiert — die Rückmeldung steht danach im Hinweistext des ViewModels.
-        _ = _viewModel.TryCompleteHotkeyCapture(new HotkeyDefinition(ReadModifiers(), (int)e.Key));
-    }
-
-    private static bool IsModifierKey(VirtualKey key) => key is VirtualKey.Control
-        or VirtualKey.LeftControl or VirtualKey.RightControl
-        or VirtualKey.Menu or VirtualKey.LeftMenu or VirtualKey.RightMenu
-        or VirtualKey.Shift or VirtualKey.LeftShift or VirtualKey.RightShift
-        or VirtualKey.LeftWindows or VirtualKey.RightWindows;
-
-    private static HotkeyModifiers ReadModifiers()
-    {
-        HotkeyModifiers modifiers = HotkeyModifiers.None;
-
-        if (IsDown(VirtualKey.Control))
-        {
-            modifiers |= HotkeyModifiers.Control;
-        }
-
-        if (IsDown(VirtualKey.Menu))
-        {
-            modifiers |= HotkeyModifiers.Alt;
-        }
-
-        if (IsDown(VirtualKey.Shift))
-        {
-            modifiers |= HotkeyModifiers.Shift;
-        }
-
-        if (IsDown(VirtualKey.LeftWindows) || IsDown(VirtualKey.RightWindows))
-        {
-            modifiers |= HotkeyModifiers.Win;
-        }
-
-        return modifiers;
+        _ = _viewModel.TryCompleteHotkeyCapture(new HotkeyDefinition(HotkeyCaptureKeys.ReadModifiers(IsDown), (int)e.Key));
     }
 
     private static bool IsDown(VirtualKey key)

@@ -4,7 +4,6 @@ using CommunityToolkit.Mvvm.Input;
 using LookAway.Core.Entities;
 using LookAway.Core.Enums;
 using LookAway.Core.Localization;
-using LookAway.Core.Services;
 using LookAway.Core.ValueObjects;
 
 namespace LookAway.App.ViewModels;
@@ -12,7 +11,7 @@ namespace LookAway.App.ViewModels;
 /// <summary>
 /// Update-Belange des <see cref="SettingsViewModel"/>: Aktivierung/Auto-Update,
 /// Prüf-Häufigkeit, manuelle Prüfung sowie die direkte Ein-Klick-Installation eines
-/// gefundenen Updates. Laden/Speichern der übrigen Einstellungen liegen im Kern-ViewModel.
+/// gefundenen Updates.
 /// </summary>
 internal sealed partial class SettingsViewModel
 {
@@ -57,7 +56,7 @@ internal sealed partial class SettingsViewModel
     public string AutoUpdateLabel => _localization.GetText(SettingsTextKeys.UpdateAutoLabel);
 
     /// <summary>Hinweistext zur Auto-Update-Option.</summary>
-    public string AutoUpdateHint => _localization.GetText(SettingsTextKeys.UpdateAutoHint);
+    public string AutoUpdateHint => _localization.GetText(_setupUpdate.IsActive ? SettingsTextKeys.UpdateAutoHintSetup : SettingsTextKeys.UpdateAutoHint);
 
     /// <summary>Beschriftung der Prüf-Häufigkeit.</summary>
     public string UpdateFrequencyLabel => _localization.GetText(SettingsTextKeys.UpdateFrequencyLabel);
@@ -85,10 +84,12 @@ internal sealed partial class SettingsViewModel
         UpdateInfo info = await _updateChecker.CheckForUpdateAsync(cancellationToken).ConfigureAwait(true);
 
         // Letzten Prüfzeitpunkt persistieren.
-        Settings settings = await _settingsRepository.LoadAsync(cancellationToken).ConfigureAwait(true);
-        settings.LastUpdateCheck = DateTimeOffset.UtcNow;
-        await _settingsRepository.SaveAsync(settings, cancellationToken).ConfigureAwait(true);
+        await ChangeSettingsAsync(settings => settings.LastUpdateCheck = DateTimeOffset.UtcNow, cancellationToken).ConfigureAwait(true);
+        ShowCheckResult(info);
+    }
 
+    private void ShowCheckResult(UpdateInfo info)
+    {
         if (info.IsUpdateAvailable)
         {
             UpdateStatusText = string.Format(
@@ -97,10 +98,11 @@ internal sealed partial class SettingsViewModel
                 info.LatestVersion);
             DownloadUri = info.DownloadUrl;
 
-            // Direkte Installation nur anbieten, wenn ein Paket vorliegt (Portable-ZIP).
-            // Die Release-Seite (DownloadUri) bleibt als manueller Ausweg sichtbar.
+            // Direkte Installation nur anbieten, wenn für diese Kopie etwas Installierbares vorliegt
+            // (Setup samt Signatur oder Portable-ZIP). Die Release-Seite (DownloadUri) bleibt als
+            // manueller Ausweg sichtbar.
             _lastUpdate = info;
-            IsUpdateInstallable = info.PackageUrl is not null;
+            IsUpdateInstallable = _setupUpdate.CanInstall(info);
         }
         else
         {
@@ -128,32 +130,76 @@ internal sealed partial class SettingsViewModel
         IsUpdateInstallable = false;
         UpdateStatusText = _localization.GetText(SettingsTextKeys.UpdateStaging);
 
+        if (_setupUpdate.IsActive)
+        {
+            await StartSetupAsync(info, cancellationToken).ConfigureAwait(true);
+            return;
+        }
+
+        await StagePackageAsync(info, cancellationToken).ConfigureAwait(true);
+    }
+
+    // Portable Kopie: Paket laden, prüfen und für den nächsten Start vormerken.
+    private async Task StagePackageAsync(UpdateInfo info, CancellationToken cancellationToken)
+    {
         StagedUpdate? staged = await _updateInstaller
             .DownloadAndStageAsync(info, cancellationToken)
             .ConfigureAwait(true);
         if (staged is null)
         {
-            // Fehlgeschlagen (Netz/Signatur/Entpacken): Button wieder anbieten und auf
-            // den manuellen Ausweg (Release-Seite) hinweisen.
-            UpdateStatusText = _localization.GetText(SettingsTextKeys.UpdateInstallFailed);
-            IsUpdateInstallable = true;
+            OfferInstallationAgain();
             return;
         }
 
         // Version + Datei-Hash vermerken: Der Anwendungs-Bootstrap spielt das Paket
         // beim nächsten Start verifiziert ein (Datei-Tausch mit Backup/Rollback).
-        Settings settings = await _settingsRepository.LoadAsync(cancellationToken).ConfigureAwait(true);
-        settings.PendingUpdateVersion = staged.Version;
-        settings.PendingUpdateSha256 = staged.ExecutableSha256;
-        await _settingsRepository.SaveAsync(settings, cancellationToken).ConfigureAwait(true);
+        await ChangeSettingsAsync(
+            settings => (settings.PendingUpdateVersion, settings.PendingUpdateSha256) = (staged.Version, staged.ExecutableSha256),
+            cancellationToken).ConfigureAwait(true);
 
         UpdateStatusText = _localization.GetText(SettingsTextKeys.UpdateReady);
     }
 
-    private List<SettingsOption<UpdateCheckFrequency>> BuildFrequencyOptions()
-        => Enum.GetValues<UpdateCheckFrequency>()
-            .Select(frequency => new SettingsOption<UpdateCheckFrequency>(
-                frequency,
-                () => _localization.GetText(SettingsTextKeys.ForFrequency(frequency))))
-            .ToList();
+    // Installation: Das geprüfte Setup startet; es beendet LookAway erst, wenn der Benutzer der
+    // Rechteabfrage zustimmt. Bis dahin sagt der Status, worauf es wartet.
+    private async Task StartSetupAsync(UpdateInfo info, CancellationToken cancellationToken)
+    {
+        if (await _setupUpdate.StartAsync(info, cancellationToken).ConfigureAwait(true))
+        {
+            UpdateStatusText = _localization.GetText(SettingsTextKeys.UpdateSetupStarted);
+            return;
+        }
+
+        OfferInstallationAgain();
+    }
+
+    // Fehlgeschlagen (Netz/Signatur/Entpacken): Button wieder anbieten und auf den manuellen
+    // Ausweg (Release-Seite) hinweisen.
+    private void OfferInstallationAgain()
+    {
+        UpdateStatusText = _localization.GetText(SettingsTextKeys.UpdateInstallFailed);
+        IsUpdateInstallable = true;
+    }
+
+    // Lädt den gespeicherten Stand, ändert ihn und speichert ihn; Schreibfehler gehen an den Aufrufer.
+    private async Task ChangeSettingsAsync(Action<Settings> change, CancellationToken cancellationToken)
+    {
+        Settings settings = await _settingsRepository.LoadAsync(cancellationToken).ConfigureAwait(true);
+        change(settings);
+        await _settingsRepository.SaveAsync(settings, cancellationToken).ConfigureAwait(true);
+    }
+
+    private void LoadUpdates(Settings settings)
+    {
+        UpdateCheckEnabled = settings.UpdateCheckEnabled;
+        AutoUpdate = settings.AutoUpdate;
+        SelectFrequency(settings.UpdateCheckFrequency);
+    }
+
+    private void StoreUpdates(Settings settings)
+    {
+        settings.UpdateCheckEnabled = UpdateCheckEnabled;
+        settings.AutoUpdate = AutoUpdate;
+        settings.UpdateCheckFrequency = SelectedFrequency;
+    }
 }

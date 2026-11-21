@@ -5,7 +5,9 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Core.Tests;
 
 /// <summary>
-/// Tests für die Hotkey-Validierung, -Defaults und -Darstellung.
+/// Gültigkeit, Kollisionen, Standardbelegung und Anzeige der Hotkeys. Eine Kombination ohne
+/// Strg, Alt oder Win finge normale Eingaben ab; zwei Aktionen auf derselben Kombination
+/// ließen eine davon nie auslösen.
 /// </summary>
 public sealed class HotkeyTests
 {

@@ -5,7 +5,9 @@ using LookAway.Core.ValueObjects;
 namespace LookAway.Core.Tests;
 
 /// <summary>
-/// Tests für die Update-Vergleichslogik und die Prüf-Fälligkeit.
+/// Versionsvergleich und Prüffälligkeit der Aktualisierung. Ein falscher Vergleich böte eine
+/// ältere oder dieselbe Version als Update an oder verpasste eine neuere; eine falsche
+/// Fälligkeit fragte bei jedem Start oder nie.
 /// </summary>
 public sealed class UpdateTests
 {
@@ -30,6 +32,35 @@ public sealed class UpdateTests
     }
 
     [Fact]
+    public void Create_TakesSetupAndSignatureAddresses()
+    {
+        UpdateInfo info = UpdateInfo.Create(
+            Current,
+            "v1.3.0",
+            null,
+            null,
+            new ReleaseAssets(
+                "https://example.com/p.zip",
+                "https://example.com/p.zip.sig",
+                "https://example.com/LookAway-Setup-v1.3.0.exe",
+                "https://example.com/LookAway-Setup-v1.3.0.exe.sig"));
+
+        Assert.Equal("https://example.com/p.zip.sig", info.SignatureUrl?.ToString());
+        Assert.Equal("https://example.com/LookAway-Setup-v1.3.0.exe", info.SetupUrl?.ToString());
+        Assert.Equal("https://example.com/LookAway-Setup-v1.3.0.exe.sig", info.SetupSignatureUrl?.ToString());
+    }
+
+    [Fact]
+    public void Create_WithoutAssets_HasNoDownloads()
+    {
+        UpdateInfo info = UpdateInfo.Create(Current, "v1.3.0", null, null);
+
+        Assert.Null(info.PackageUrl);
+        Assert.Null(info.SetupUrl);
+        Assert.Null(info.SetupSignatureUrl);
+    }
+
+    [Fact]
     public void Create_TakesThePackageAddress()
     {
         UpdateInfo info = UpdateInfo.Create(
@@ -37,7 +68,7 @@ public sealed class UpdateTests
             "v1.3.0",
             "https://example.com/r",
             "Notes",
-            "https://example.com/LookAway-Portable-v1.3.0.zip");
+            new ReleaseAssets("https://example.com/LookAway-Portable-v1.3.0.zip", null));
 
         Assert.NotNull(info.PackageUrl);
         Assert.Equal("https://example.com/LookAway-Portable-v1.3.0.zip", info.PackageUrl!.ToString());

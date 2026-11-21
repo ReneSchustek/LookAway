@@ -20,9 +20,15 @@ eyes, posture and focus.
 
 ## Latest release
 
-**[v1.4.1](https://github.com/ReneSchustek/LookAway/releases/latest)** is the current version –
+**[v1.5.0](https://github.com/ReneSchustek/LookAway/releases/latest)** is the current version –
 available as a Setup.exe and as a portable ZIP. Highlights of the most recent versions:
 
+- **Your own picture for the break** – instead of the colour, the break screen can show a photo of
+  your choice, across all monitors and with adjustable darkening.
+- **Installed to `C:\Program Files`** – the setup replaces an installation in the user profile;
+  updates come through the signed setup and are installed only on a click.
+- **Splash screen and new typeface** – LookAway shows its logo and version at startup and uses
+  Roboto Flex throughout, bundled and never fetched from the network.
 - **The break overlay reliably sits above everything**: on every monitor, out to the very last
   pixel and without an entry in the taskbar or Alt-Tab. **Ctrl + Alt + S** ends a running break.
 - **Light and dark appearance**: choose freely or follow the Windows setting; the choice takes
@@ -48,7 +54,8 @@ available as a Setup.exe and as a portable ZIP. Highlights of the most recent ve
   timer restarts fresh, since your eyes have already rested
 - **Dimmed break screen**: a calm full-screen overlay covers the screen during the break, shows the
   countdown and the exercise goal, and can be ended at any time with **ESC**; optionally on **all
-  monitors** and in a **freely selectable colour**. It sits above all windows and above the taskbar
+  monitors**, in a **freely selectable colour** or with **your own picture** (a forest photo, say),
+  darkened as strongly as you like. It sits above all windows and above the taskbar
   and shows up neither in the taskbar nor in the Alt-Tab switcher
 - **Break actions**: dim the screen (DDC/CI) and pause media playback during the break
   (only players with Windows media controls such as Spotify, the Music app, Chrome/Edge/Firefox; VLC is not supported)
@@ -76,8 +83,9 @@ The ready-to-run application is published in two flavours on the
 ### Setup.exe
 
 1. Download `LookAway-Setup-<version>.exe` and run it.
-2. The installer asks for the target folder, a Start-menu entry and optional autostart. Uninstall via
-   "Apps & features".
+2. The installer asks for administrator rights and installs to `C:\Program Files\LookAway`, with a
+   Start-menu entry and optional autostart. It replaces an earlier installation in the user profile;
+   settings and history are kept. Uninstall via "Apps & features".
 
 ### Portable
 
@@ -117,7 +125,7 @@ double click opens the settings.
 
 All options live in the settings window (tray menu → "Settings…") in the collapsible side menu:
 General (incl. appearance), break model, custom intervals, sound, break (incl. screen dimming and
-colour picker), hotkeys, statistics, log and About (with update options).
+a colour or your own picture as background), hotkeys, statistics, log and About (with update options).
 
 The break models are shown as cards with a search box and filter chips: each one says what to do
 during that break and how many breaks have come out of it. A click selects the model.
@@ -127,12 +135,14 @@ during that break and how many breaks have come out of it. A click selects the m
 LookAway can keep itself up to date:
 
 - When the update check is enabled and a new version is available, the tray shows an "Update" entry.
-- A click downloads the new portable ZIP, swaps the program files after closing and restarts.
-- With the **"Update automatically"** option this happens in the background and is applied on the next
-  start, with no interaction.
-- Before applying, the version and SHA-256 of the downloaded file are verified; the download runs over
-  HTTPS from GitHub only. The automatic swap works for portable and per-user installations (for
-  "all users" LookAway opens the release page instead).
+- **Installed copy:** a click downloads the setup of the new version and starts it; Windows asks for
+  administrator rights. The setup closes LookAway, installs and starts it again. With **"Update
+  automatically"** the setup is already downloaded and verified in the background, but it is only
+  installed on a click, so the rights prompt never appears unasked.
+- **Portable copy:** a click downloads the new portable ZIP, swaps the program files after closing and
+  restarts; with "Update automatically" this happens on the next start, with no interaction.
+- Setup and ZIP each carry a signature that LookAway verifies before starting or applying them; the
+  download runs over HTTPS from GitHub only.
 
 ## Break models
 
@@ -211,5 +221,6 @@ Architecture, build, tests and the internal details are described in
 
 MIT License, see [LICENSE](LICENSE).
 
-The bundled **Roboto** typeface is licensed under the Apache License 2.0; the licence text sits
-next to the font files in `src/LookAway.App/Assets/Fonts/LICENSE.txt`.
+The bundled typefaces **Roboto Flex** and **Roboto Mono** are licensed under the SIL Open Font
+License 1.1; the licence texts sit next to the font files in `src/LookAway.App/Assets/Fonts/`
+(`OFL-roboto-flex.txt`, `OFL-roboto-mono.txt`). LookAway loads no font from the network at runtime.

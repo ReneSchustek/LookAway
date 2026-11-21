@@ -8,6 +8,47 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.0] – 2026-11-21
+
+### Added
+
+- **Your own picture for the break screen.** Instead of the colour, the break can show a photo of
+  your choice, a forest for example. It fills every monitor, and adjustable darkening keeps the
+  text readable. If the file is missing or cannot be read, the break shows the colour.
+
+- **Splash screen at startup.** While LookAway reads its settings and sets up the timer, it
+  shows its logo and version for at least one and a half seconds.
+
+### Fixed
+
+- **The reminder window shows the full hint.** A longer hint, for example with the task-based
+  break model, was cut off at the right edge; it now wraps.
+
+- **No more “Esc” under the mouse pointer on the break overlay.** Wherever the mouse came to rest
+  during a break, Windows showed a small tip with the key. Esc still ends the break.
+
+- **Statistics now count the break time actually taken.** A break ended early with Esc or
+  Ctrl+Alt+S used to count with its full planned length.
+
+- **The CSV export now tells you whether the file was saved.** If saving failed, for instance
+  because the target folder was not writable, nothing indicated it.
+
+### Changed
+
+- **LookAway installs to `C:\Program Files`.** The setup asks for administrator rights for this and
+  replaces an earlier installation in the user profile; settings, history and autostart are kept. An
+  installed copy updates itself through the signed setup: Windows asks for administrator rights, and
+  installing happens only on a click, never unasked at startup.
+
+- **New typeface: Roboto Flex, with Roboto Mono in the log.** Both ship with the program, and
+  buttons and drop-downs use them now too.
+
+- Source code comments revised and corrected where they no longer matched the code. The
+  program behaves exactly as before.
+
+- The user interface runs on a newer version of the Windows App SDK. Nothing visible
+  changes.
+
 ## [1.4.1] – 2026-08-19
 
 ### Fixed
@@ -340,7 +381,22 @@ First complete version.
 - Autostart with Windows via the per-user Run entry
 - Distribution as a portable ZIP and an MSIX package
 
-[Unreleased]: https://github.com/ReneSchustek/LookAway/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/ReneSchustek/LookAway/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/ReneSchustek/LookAway/compare/v1.4.1...v1.5.0
+[1.4.1]: https://github.com/ReneSchustek/LookAway/compare/v1.4.0...v1.4.1
+[1.4.0]: https://github.com/ReneSchustek/LookAway/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/ReneSchustek/LookAway/compare/v1.2.9...v1.3.0
+[1.2.9]: https://github.com/ReneSchustek/LookAway/compare/v1.2.8...v1.2.9
+[1.2.8]: https://github.com/ReneSchustek/LookAway/compare/v1.2.7...v1.2.8
+[1.2.7]: https://github.com/ReneSchustek/LookAway/compare/v1.2.6...v1.2.7
+[1.2.6]: https://github.com/ReneSchustek/LookAway/compare/v1.2.5...v1.2.6
+[1.2.5]: https://github.com/ReneSchustek/LookAway/compare/v1.2.4...v1.2.5
+[1.2.4]: https://github.com/ReneSchustek/LookAway/compare/v1.2.3...v1.2.4
+[1.2.3]: https://github.com/ReneSchustek/LookAway/compare/v1.2.2...v1.2.3
+[1.2.2]: https://github.com/ReneSchustek/LookAway/compare/v1.2.1...v1.2.2
+[1.2.1]: https://github.com/ReneSchustek/LookAway/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/ReneSchustek/LookAway/compare/v1.1.1...v1.2.0
+[1.1.1]: https://github.com/ReneSchustek/LookAway/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/ReneSchustek/LookAway/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/ReneSchustek/LookAway/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/ReneSchustek/LookAway/compare/v1.0.0...v1.0.1

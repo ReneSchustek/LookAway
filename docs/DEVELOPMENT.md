@@ -42,6 +42,31 @@ dotnet build --configuration Release
 dotnet test
 ```
 
+### Messungen
+
+Was mit dem Bestand wächst, wird mit BenchmarkDotNet gemessen, getrennt vom normalen Testlauf
+(`tests/LookAway.Benchmarks`, kein Testprojekt):
+
+- Historie über ein Jahr laden, eine Pause anhängen (das tut jedes Pausenende), die Statistikseite
+  und der CSV-Export über den vollen Bestand
+- die Protokollseite über eine Woche Logdateien, ruhig und laut, mit 500 und 2.000 Einträgen
+- das Prüfen eines Overlay-Fotos mit 12 und 50 Megapixeln, auf das jeder Pausenbeginn wartet
+
+Der Messbestand entsteht aus festen Startwerten (`tests/MeasurementData`) und ist auf jedem Rechner
+derselbe; jede Messung prüft beim Aufbau, dass sie über den ganzen Bestand läuft. Gestartet wird über
+
+```powershell
+./tools/run-benchmarks.ps1 -ResultsDir <Ablage außerhalb des Repositorys>
+```
+
+Das Skript legt je Lauf die Berichte mit Datum, Fassung, Commit und Rechnername ab. Werte
+verschiedener Rechner sind nicht vergleichbar; erst die Reihe eines Rechners zeigt ein Abrutschen.
+
+Im normalen Testlauf halten drei grobe Wächter (`SpeedGuardTests`) fest, was nicht schlechter
+werden darf: Statistikseite und Anhängen über ein Jahr, die Protokollseite in einer lauten Woche,
+ein 12-Megapixel-Foto vor der Pause. Ihre Grenzen liegen ein Vielfaches über den gemessenen Werten,
+damit kein langsamer Rechner sie reißt.
+
 ## Entwicklung
 
 ```bash
@@ -92,7 +117,8 @@ LookAway protokolliert in eine tagesbasierte Datei pro Windows-Benutzer:
 %APPDATA%\LookAway\logs\crashes\crash-YYYYMMDD-hhmmss-fff.json
 ```
 
-- **Format pro Eintrag:** `[Timestamp ISO-8601 UTC] [Level] Category: Message` plus optional Stack-Trace
+- **Format pro Eintrag:** `[Timestamp ISO-8601 UTC] [Level] [p<Prozess-ID>] Category: Message` plus optional Stack-Trace
+- **Laufkennung:** Die Prozess-ID in der dritten Klammer hält auseinander, was alte Instanz, Update-Helfer und neue Instanz in dieselbe Tagesdatei schreiben; über sie lassen sich die Schritte eines Updates prozessübergreifend verfolgen. Ältere Zeilen ohne Kennung liest die Protokollansicht weiterhin
 - **Rotation:** täglich, alte Dateien (>7 Tage) werden beim ersten Schreibvorgang des Tages aufgeräumt
 - **Log-Level:** Debug-Build = `Debug`, Release = `Information`. Microsoft- und System-Kategorien standardmäßig auf `Warning`
 - **Sanitisierung:** der Windows-Benutzername und Pfade unter `%LOCALAPPDATA%`, `%APPDATA%`, `%USERPROFILE%` werden vor dem Schreiben durch generische Platzhalter ersetzt
@@ -101,6 +127,25 @@ LookAway protokolliert in eine tagesbasierte Datei pro Windows-Benutzer:
 - **Erkennung:** beim nächsten Start meldet `LogService` über `ICrashReporter.HasUnresolvedCrashes`, ob der vorherige Lauf gecrasht ist; das Ergebnis wird im Start-Log geschrieben
 
 Die Implementierung ist Microsoft-Standard (kein Serilog/NLog): eigener `RollingFileLoggerProvider` (Data) mit `LoggerMessage`-Source-Generator-Aufrufern in den Konsumenten.
+
+**Ereignisnummern** (`EventId`) sind nach Hunderterbereichen vergeben; jede Nummer gehört genau einer Meldung, das prüft `LogEventIdGuardTests`:
+
+| Bereich | Herkunft |
+|---|---|
+| 10xx | Lebenszyklus (`LogService`) |
+| 11xx | App-Klasse und Update-Ablauf (`UpdateOrchestrator`) |
+| 12xx | ViewModels (Einstellungen, Assistent, Statistik) |
+| 13xx | Pausenablauf (`BreakCoordinator`) |
+| 14xx | Historie und Aufgaben (JSON-Repositories) |
+| 15xx | Globale Hotkeys |
+| 16xx | Update-Prüfung, Download und Installation |
+| 17xx | Pause-Aktionen und Ton (Dimmen, Medien, Erinnerungston) |
+| 18xx | Erinnerungs- und Overlay-Fenster |
+| 20xx | Einstellungen (Datei) |
+| 30xx | Timer und Autostart-Eintrag |
+| 31xx | Autostart-Abgleich |
+| 32xx | Inaktivitäts-Erkennung |
+| 40xx | Tray-Symbol |
 
 ## Timer-Engine
 
@@ -206,10 +251,24 @@ Monitor mit einem `BreakOverlayWindow` ab (bei `DarkenAllScreens`; sonst nur den
   an die Fenster geht. Das Fenster ist nicht durchsichtig, eine Alpha-Angabe könnte also nichts
   durchscheinen lassen — sie würde nur gegen den Fenstergrund gemischt, und der ist je Monitor
   nicht derselbe. Danach zeigen alle Monitore dieselbe Fläche.
+- Statt der Farbe kann ein eigenes Bild (JPG/PNG) den Hintergrund bilden
+  (`Settings.BreakOverlayBackground`, `BreakOverlayImagePath`, `BreakOverlayImageDimPercent`;
+  zusammengefasst in `OverlayBackdrop`). Vor dem ersten Fenster liest `IOverlayImageInspector`
+  (Core) → `WindowsOverlayImageInspector` (Data) das Bild probeweise mit dem Windows-Bilddecoder:
+  Größe und mittlere Farbe. Fehlt die Datei oder ist sie unlesbar, liefert er `null` mit
+  Protokolleintrag, und der Presenter zeigt die Farbe — die Pause hängt nie an einem Bild. Weil
+  das Lesen außerhalb des UI-Threads läuft, verwirft ein Generationszähler einen Fensteraufbau,
+  dessen Pause inzwischen geschlossen wurde.
+- Jedes Fenster zeichnet das Bild füllend (`UniformToFill`) über der deckenden Farbe, darüber eine
+  schwarze Ebene mit der eingestellten Deckkraft. Dekodiert wird nur so groß, wie der Monitor es
+  füllend braucht (`OverlayImage.DecodeWidth`); ein 50-Megapixel-Foto belegte voll dekodiert je
+  Monitor rund 200 MB. Die Farbe darunter deckt den Monitor, bis das Bild steht, und springt ein,
+  wenn es sich im Fenster doch nicht laden lässt.
 - Welcher Schriftsatz auf dieser Fläche liegt, entscheidet das Kontrastverhältnis
   (`HexColor.ContrastRatio`, WCAG 2.1) zwischen Fläche und den beiden Farbsätzen aus den
   Belegungen (`RcOverlayForeground*` und `…OnLight`). Eine Helligkeitsschwelle stand vorher an
-  zwei Stellen mit zwei verschiedenen Formeln und lag auf mittlerem Grau falsch.
+  zwei Stellen mit zwei verschiedenen Formeln und lag auf mittlerem Grau falsch. Mit Bild ist die
+  Fläche dessen mittlere Farbe nach der Abdunklung (`OverlayImage.Dim`).
 - Den Notausstieg bildet `BreakCoordinator.SkipOrSnooze`: Bei offenem Overlay schließt er es und
   läuft in denselben Abschluss wie das reguläre Pausenende (`EndBreakLocked`), sodass Helligkeit
   und Medienwiedergabe auf beiden Wegen zurückkommen.
@@ -277,8 +336,14 @@ Assistent durch die Erstkonfiguration: Sprache, Pausenmodell und Autostart.
 Das visuelle Design liegt in `src/LookAway.App/Themes/` und wird in `App.xaml` zusammengeführt:
 
 - `Tokens.xaml`: alles, was in beiden Erscheinungsbildern gleich ist — Abstände (Grundmaß 8 px),
-  Radien (4–6 px), Kantenstärken, `RcFontFamily` (Roboto mit System-Fallback) und die
-  Schriftstaffel (H1 28, H2 22, H3 18, Body 14, Caption 12). **Kein Farbwert.**
+  Radien (4–6 px), Kantenstärken, `RcFontFamily` (Roboto Flex mit System-Fallback),
+  `RcMonoFontFamily` (Roboto Mono für Zeitstempel und Kennungen im Protokoll),
+  `ContentControlThemeFontFamily` (damit eingebaute Steuerelemente Roboto Flex nutzen) und die
+  Schriftstaffel (H1 28, H2 22, H3 18, Body 14, Caption 12). **Kein Farbwert.** Beide Schriften
+  liegen als variable TTF unter `Assets/Fonts/`, eine Datei trägt alle Gewichte; den Lizenztext
+  (SIL Open Font License 1.1) und die Auslieferung als `Content` hält `SchriftGuardTests` fest.
+  Roboto Flex hat von Haus aus gleich breite Ziffern; der Countdown im Overlay braucht deshalb
+  keine Mono-Schrift, um beim Sekundenwechsel stillzustehen.
 - `Light.xaml` und `Dark.xaml`: dieselben Schlüssel, zwei Belegungen. Flächen, Text, Primärfarbe
   (`RcPrimary`), Statusfarben — dazu die Pinsel des Rahmenwerks, damit Standard-Steuerelemente
   nicht die in Windows eingestellte Akzentfarbe ziehen.
@@ -387,8 +452,21 @@ LookAway prüft optional auf neue Versionen über die GitHub-Releases-API (Stand
   letzten Prüfzeitpunkts, ob beim Start geprüft wird — schont das GitHub-Rate-Limit.
 - Einstellungen (Über-Tab): Aktivieren, Häufigkeit, "Jetzt prüfen" mit Statusanzeige sowie die
   Option "Automatisch aktualisieren".
-- **Automatische Installation:** Findet die Prüfung ein Update, kann LookAway es selbst einspielen.
-  `UpdateInstallerService` (Data) lädt die Portable-ZIP aus den Release-Assets (nur HTTPS auf
+- **Update-Weg nach Installationsart:** Eine **installierte** Kopie (ohne `portable.flag`, unter
+  `C:\Program Files`) aktualisiert sich über das signierte Setup des Releases: `SetupUpdate` (App)
+  lässt `UpdateInstallerService.PrepareSetupAsync` (Data, `SetupStager`) Setup und `.sig` nach
+  `%LOCALAPPDATA%\LookAway\updates\<Version>` laden, die Datei gegen Schreiben sperren und die
+  Signatur an genau diesem offenen Strom prüfen (`ReleaseSignatureVerifier.VerifyStream`). Die
+  Sperre (`VerifiedSetup`) hält bis nach dem Start, damit niemand die geprüfte Datei austauscht. Das
+  Setup läuft still (`InstallerArguments.SilentUpdate`) und erhöht seine Rechte selbst; LookAway
+  läuft bis dahin weiter. Erst nach der Zustimmung setzt das Setup das Ereignis
+  `Local\LookAway-Quit-<Benutzer>` der Einzelinstanz-Sperre und wartet, bis ihr Mutex frei ist; die
+  laufende Instanz endet dabei wie über das Tray-Menü. Danach startet das Setup LookAway mit den Rechten des
+  Benutzers neu (`/RELAUNCH`, `runasoriginaluser`). Bei aktivem Auto-Update wird das Setup im
+  Hintergrund nur vorbereitet; gestartet wird es auf Klick (Tray „Update“, Einstellungen „Jetzt
+  installieren“), weil Windows dafür nach Administratorrechten fragt.
+- **Automatische Installation (portabel):** Findet die Prüfung ein Update, kann eine portable Kopie es
+  selbst einspielen. `UpdateInstallerService` (Data) lädt die Portable-ZIP aus den Release-Assets (nur HTTPS auf
   GitHub-Hosts, mit Größen-/Zip-Bomben-Limit), entpackt sie in `%LOCALAPPDATA%\LookAway\updates\<Version>`
   und tauscht beim nächsten Start über einen kurzlebigen Helfer-Prozess (`--apply-update`, in
   `UpdateProcess`/`UpdateApplyArgs`) die Programmdateien — mit Backup/Rollback, ohne `portable.flag` zu
@@ -405,9 +483,10 @@ LookAway prüft optional auf neue Versionen über die GitHub-Releases-API (Stand
   `tools/sign-release.ps1` signiert ein Paket. Die CI signiert automatisch, wenn das Secret
   `LOOKAWAY_SIGNING_KEY` (privates PEM) gesetzt ist; sonst bleibt das Paket unsigniert und muss lokal
   signiert werden.
-- **Grenzen:** Der Datei-Tausch funktioniert nur, wenn der Programmordner beschreibbar ist
-  (portable und Per-User-Installation); bei einer "für alle Benutzer"-Installation in `Programme` fällt
-  LookAway auf das Öffnen der Release-Seite zurück. Zusätzlich zur Signatur sichern HTTPS +
+- **Grenzen:** Der Datei-Tausch ist der portablen Kopie vorbehalten; eine installierte Kopie nimmt
+  immer das Setup, das auch Startmenü und Deinstallationseintrag aktuell hält (der Datei-Tausch ließ
+  dort die alte Version stehen). Scheitert beides, öffnet LookAway die Release-Seite. Zusätzlich zur
+  Signatur sichern HTTPS +
   GitHub-Host-Pinning den Transport und der SHA-256-Abgleich das beim nächsten Start einzuspielende
   Staging-Verzeichnis.
 
@@ -458,11 +537,20 @@ hängt sie an das GitHub-Release (`.github/workflows/ci.yml`, Job `release`):
 | Artefakt | Erzeugt von | Signatur |
 |----------|-------------|----------|
 | `LookAway-Portable-v<Version>.zip` | `tools/publish-portable.ps1` | `.zip.sig`, sofern das Secret `LOOKAWAY_SIGNING_KEY` hinterlegt ist |
-| `LookAway-Setup-v<Version>.exe` | `tools/publish-setup.ps1` (Inno Setup vom Runner) | keine — SHA-256 im Release-Text |
+| `LookAway-Setup-v<Version>.exe` | `tools/publish-setup.ps1` (Inno Setup vom Runner) | `.exe.sig`, unter derselben Bedingung |
 
-Die Setup.exe bekommt bewusst **keine** `.sig`: Der Updater greift sich die erste `.sig` des Releases
-(`GitHubUpdateChecker.FindSignatureAssetUrl`) und würde eine zweite womöglich als Signatur des ZIPs
-lesen. Beide Hashes stehen stattdessen im Release-Text, den der Job vor die generierten Notizen setzt.
+Jede Signatur gehört zu der Datei, deren Namen sie trägt; so ordnet sie `GitHubUpdateChecker` zu.
+Versionen bis 1.4 nehmen noch die erste `.sig` des Releases. Für sie zählt, dass die des ZIPs zuerst
+steht: nach Name (`LookAway-Portable-…` vor `LookAway-Setup-…`) wie nach Upload-Reihenfolge (das ZIP
+zuerst). Beide Hashes stehen zusätzlich im Release-Text, den der Job vor die generierten Notizen setzt.
+
+Das Setup installiert immer mit Administratorrechten nach `C:\Program Files\LookAway`. Eine frühere
+Installation im Benutzerprofil (Deinstallationseintrag unter HKCU) beendet und entfernt es still,
+samt Dateien, die frühere Updates per Datei-Tausch hinzugefügt hatten und die der alte Deinstaller
+nicht kennt;
+Einstellungen und Verlauf unter `%APPDATA%` bleiben, der Autostart-Zustand wird übernommen. Eine
+Instanz vor 1.5 legt das Ereignis nicht an; läuft sie noch, bricht das Setup mit der Bitte ab,
+LookAway zu beenden.
 
 ## Lokale Qualitäts-Checks
 

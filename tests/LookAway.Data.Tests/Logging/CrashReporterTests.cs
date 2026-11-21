@@ -3,7 +3,10 @@ using LookAway.Data.Logging;
 namespace LookAway.Data.Tests;
 
 /// <summary>
-/// Integrationstests für den <see cref="CrashReporter"/>.
+/// Integrationstests für den <see cref="CrashReporter"/> auf einem echten Verzeichnis. Sie
+/// verhindern zweierlei: dass ein Absturz unbemerkt bleibt, weil die Erkennung „ungelesen“
+/// falsch rechnet, und dass der Bericht den Benutzernamen enthält oder beim Schreiben selbst
+/// einen zweiten Absturz auslöst.
 /// </summary>
 public sealed class CrashReporterTests : IDisposable
 {
@@ -31,6 +34,15 @@ public sealed class CrashReporterTests : IDisposable
         }
         catch (IOException)
         {
+        }
+    }
+
+    // Verlegt alle bisherigen Absturzdateien in die Vergangenheit; ersetzt das Warten auf die Dateizeit.
+    private void BackdateCrashFiles(TimeSpan by)
+    {
+        foreach (string file in Directory.EnumerateFiles(_crashDirectory, "crash-*.json"))
+        {
+            File.SetLastWriteTimeUtc(file, File.GetLastWriteTimeUtc(file) - by);
         }
     }
 
@@ -102,29 +114,30 @@ public sealed class CrashReporterTests : IDisposable
     }
 
     [Fact]
-    public async Task MarkResolved_HidesExistingCrashes()
+    public void MarkResolved_HidesExistingCrashes()
     {
         CrashReporter reporter = new(_crashDirectory);
         reporter.Report(new InvalidOperationException("x"), "TestSource");
         Assert.True(reporter.HasUnresolvedCrashes());
 
-        // FileSystem-Timestamp-Auflösung: minimal warten, damit ack > crashtime gilt.
-        await Task.Delay(50);
+        // Statt auf die Auflösung der Dateizeit zu warten, liegt der Absturz eine Minute zurück.
+        BackdateCrashFiles(TimeSpan.FromMinutes(1));
         reporter.MarkResolved();
 
         Assert.False(reporter.HasUnresolvedCrashes());
     }
 
     [Fact]
-    public async Task NewCrashAfterMarkResolved_BecomesUnresolved()
+    public void NewCrashAfterMarkResolved_BecomesUnresolved()
     {
         CrashReporter reporter = new(_crashDirectory);
         reporter.Report(new InvalidOperationException("x"), "FirstSource");
-        await Task.Delay(50);
+        BackdateCrashFiles(TimeSpan.FromMinutes(2));
         reporter.MarkResolved();
+        string ackPath = Path.Combine(_crashDirectory, ".acknowledged");
+        File.SetLastWriteTimeUtc(ackPath, File.GetLastWriteTimeUtc(ackPath).AddMinutes(-1));
         Assert.False(reporter.HasUnresolvedCrashes());
 
-        await Task.Delay(50);
         reporter.Report(new InvalidOperationException("y"), "SecondSource");
 
         Assert.True(reporter.HasUnresolvedCrashes());

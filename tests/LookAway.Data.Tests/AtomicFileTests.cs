@@ -37,23 +37,23 @@ public sealed class AtomicFileTests : IDisposable
     [Fact]
     public async Task ReplacesTheDestinationAndRemovesTheSource()
     {
-        await File.WriteAllTextAsync(_destinationPath, "alt");
-        await File.WriteAllTextAsync(_sourcePath, "neu");
+        await File.WriteAllTextAsync(_destinationPath, "alt", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(_sourcePath, "neu", TestContext.Current.CancellationToken);
 
         await AtomicFile.ReplaceWithRetryAsync(_sourcePath, _destinationPath, CancellationToken.None);
 
-        Assert.Equal("neu", await File.ReadAllTextAsync(_destinationPath));
+        Assert.Equal("neu", await File.ReadAllTextAsync(_destinationPath, TestContext.Current.CancellationToken));
         Assert.False(File.Exists(_sourcePath));
     }
 
     [Fact]
     public async Task WritesTheDestinationWhenItDoesNotExistYet()
     {
-        await File.WriteAllTextAsync(_sourcePath, "neu");
+        await File.WriteAllTextAsync(_sourcePath, "neu", TestContext.Current.CancellationToken);
 
         await AtomicFile.ReplaceWithRetryAsync(_sourcePath, _destinationPath, CancellationToken.None);
 
-        Assert.Equal("neu", await File.ReadAllTextAsync(_destinationPath));
+        Assert.Equal("neu", await File.ReadAllTextAsync(_destinationPath, TestContext.Current.CancellationToken));
     }
 
     /// <remarks>
@@ -65,18 +65,18 @@ public sealed class AtomicFileTests : IDisposable
     [Fact]
     public async Task RetriesWhileTheDestinationIsBusy()
     {
-        await File.WriteAllTextAsync(_destinationPath, "alt");
-        await File.WriteAllTextAsync(_sourcePath, "neu");
+        await File.WriteAllTextAsync(_destinationPath, "alt", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(_sourcePath, "neu", TestContext.Current.CancellationToken);
 
         FileStream blocker = new(_destinationPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
         Task replacing = AtomicFile.ReplaceWithRetryAsync(_sourcePath, _destinationPath, CancellationToken.None);
 
-        await Task.Delay(30);
+        await Task.Delay(30, TestContext.Current.CancellationToken);
         await blocker.DisposeAsync();
 
         await replacing.ConfigureAwait(true);
 
-        Assert.Equal("neu", await File.ReadAllTextAsync(_destinationPath));
+        Assert.Equal("neu", await File.ReadAllTextAsync(_destinationPath, TestContext.Current.CancellationToken));
     }
 
     /// <remarks>
@@ -92,8 +92,8 @@ public sealed class AtomicFileTests : IDisposable
     [Fact]
     public async Task GivesUpOnAPermanentlyBusyDestinationAndCleansUp()
     {
-        await File.WriteAllTextAsync(_destinationPath, "alt");
-        await File.WriteAllTextAsync(_sourcePath, "neu");
+        await File.WriteAllTextAsync(_destinationPath, "alt", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(_sourcePath, "neu", TestContext.Current.CancellationToken);
 
         using LockedFile locked = new(_destinationPath, "alt");
 
@@ -112,13 +112,13 @@ public sealed class AtomicFileTests : IDisposable
     [Fact]
     public async Task KeepsTheOriginalErrorWhenCleanupFailsToo()
     {
-        await File.WriteAllTextAsync(_destinationPath, "alt");
+        await File.WriteAllTextAsync(_destinationPath, "alt", TestContext.Current.CancellationToken);
         using LockedFile locked = new(_sourcePath, "neu");
 
         Exception thrown = await Assert.ThrowsAnyAsync<Exception>(
             () => AtomicFile.ReplaceWithRetryAsync(_sourcePath, _destinationPath, CancellationToken.None));
 
         Assert.True(thrown is IOException or UnauthorizedAccessException, thrown.GetType().Name);
-        Assert.Equal("alt", await File.ReadAllTextAsync(_destinationPath));
+        Assert.Equal("alt", await File.ReadAllTextAsync(_destinationPath, TestContext.Current.CancellationToken));
     }
 }

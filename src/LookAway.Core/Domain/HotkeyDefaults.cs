@@ -8,6 +8,7 @@ namespace LookAway.Core.Domain;
 /// </summary>
 public static class HotkeyDefaults
 {
+    // Virtuelle Tastencodes von Windows; für Buchstaben gleich dem ASCII-Großbuchstaben.
     private const int VkP = 0x50;
     private const int VkS = 0x53;
     private const int VkD = 0x44;

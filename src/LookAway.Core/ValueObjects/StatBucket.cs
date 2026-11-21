@@ -5,5 +5,8 @@ namespace LookAway.Core.ValueObjects;
 /// </summary>
 /// <param name="Label">Anzeigebezeichnung des Abschnitts.</param>
 /// <param name="Count">Anzahl der Erinnerungen im Abschnitt.</param>
-/// <param name="TotalBreakTime">Summe der tatsächlich gemachten Pausenzeit.</param>
+/// <param name="TotalBreakTime">
+/// Summe der tatsächlich gemachten Pausenzeit: vom Pausenbeginn bis zu ihrem Ende, auch wenn
+/// sie per Esc früher endete.
+/// </param>
 public sealed record StatBucket(string Label, int Count, TimeSpan TotalBreakTime);

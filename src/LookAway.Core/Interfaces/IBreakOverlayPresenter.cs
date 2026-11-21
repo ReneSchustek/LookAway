@@ -1,4 +1,5 @@
 using LookAway.Core.Enums;
+using LookAway.Core.ValueObjects;
 
 namespace LookAway.Core.Interfaces;
 
@@ -13,10 +14,10 @@ public interface IBreakOverlayPresenter
     /// <summary>Zeigt das Overlay für die Pausendauer; bei offenem passiert nichts.</summary>
     /// <param name="model">Aktives Pausenmodell.</param>
     /// <param name="breakDuration">Dauer der Pause.</param>
-    /// <param name="overlayColorHex">Hintergrundfarbe als <c>#AARRGGBB</c>/<c>#RRGGBB</c>.</param>
+    /// <param name="backdrop">Farbe und gegebenenfalls Bild des Overlays.</param>
     /// <param name="darkenAllScreens">Alle Monitore abdecken?</param>
     /// <param name="onEnded">Callback mit dem Grund des Pausenendes.</param>
-    void Show(BreakModel model, TimeSpan breakDuration, string overlayColorHex, bool darkenAllScreens, Action<BreakEndReason> onEnded);
+    void Show(BreakModel model, TimeSpan breakDuration, OverlayBackdrop backdrop, bool darkenAllScreens, Action<BreakEndReason> onEnded);
 
     /// <summary>Schließt offene Overlays ohne den Ende-Callback auszulösen.</summary>
     void Close();

@@ -4,7 +4,9 @@ using LookAway.Core.Events;
 namespace LookAway.Core.Tests;
 
 /// <summary>
-/// Tests für <see cref="HotkeyPressedEventArgs"/>.
+/// Die Ereignisdaten tragen die ausgelöste Aktion unverändert weiter. Ginge sie unterwegs
+/// verloren oder würde vertauscht, löste ein Hotkey die falsche Aktion aus, und kein anderer
+/// Test sähe es, weil die Win32-Anbindung selbst nicht getestet wird.
 /// </summary>
 public sealed class HotkeyPressedEventArgsTests
 {

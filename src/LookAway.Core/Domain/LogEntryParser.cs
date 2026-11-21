@@ -10,7 +10,9 @@ namespace LookAway.Core.Domain;
 /// </summary>
 /// <remarks>
 /// Gegenstück zum Schreibformat des Datei-Protokolls:
-/// <c>[2026-08-11T12:34:56.789Z] [Information] Kategorie: Meldung</c>. Zeilen ohne
+/// <c>[2026-08-11T12:34:56.789Z] [Information] [p4711] Kategorie: Meldung</c>. Die
+/// Laufkennung in der dritten Klammer fehlt in älteren Dateien; deren Zeilen bleiben
+/// lesbar, und ihr Wert wird nicht in den Eintrag übernommen. Zeilen ohne
 /// diesen Kopf sind Fortsetzungen — vor allem die Zeilen eines Ausnahme-Stapels — und
 /// gehören zum Eintrag davor. Wer sie verwirft, verliert genau den Teil, wegen dem
 /// man ins Protokoll schaut; wer sie als eigene Einträge führt, bekommt eine Liste
@@ -78,27 +80,52 @@ public static class LogEntryParser
             return false;
         }
 
+        if (!TryReadLevel(line, timestampEnd, out LogLevel level, out int levelEnd))
+        {
+            return false;
+        }
+
+        (string category, string message) = SplitCategory(SkipRunTag(line[(levelEnd + 1)..].TrimStart()));
+        draft = new LogEntryDraft(timestamp, level, category, message);
+        return true;
+    }
+
+    // Die Stufe steht als zweites Klammerpaar hinter dem Zeitstempel.
+    private static bool TryReadLevel(string line, int timestampEnd, out LogLevel level, out int levelEnd)
+    {
+        level = default;
+        levelEnd = -1;
         int levelStart = line.IndexOf('[', timestampEnd);
         if (levelStart < 0)
         {
             return false;
         }
 
-        int levelEnd = line.IndexOf(']', levelStart);
-        if (levelEnd < 0 || !Enum.TryParse(line[(levelStart + 1)..levelEnd], out LogLevel level))
+        levelEnd = line.IndexOf(']', levelStart);
+        return levelEnd >= 0 && Enum.TryParse(line[(levelStart + 1)..levelEnd], out level);
+    }
+
+    // Hinter der Stufe steht die Laufkennung, dann "Kategorie: Meldung". Der erste
+    // Doppelpunkt trennt; spätere gehören zur Meldung.
+    private static (string Category, string Message) SplitCategory(string remainder)
+    {
+        int separator = remainder.IndexOf(':', StringComparison.Ordinal);
+        return separator < 0
+            ? (string.Empty, remainder)
+            : (remainder[..separator], remainder[(separator + 1)..].TrimStart());
+    }
+
+    // Die Laufkennung steht zur Unterscheidung der Prozesse in der Datei; die Protokollansicht
+    // braucht sie nicht. Eine Kategorie beginnt nie mit '[', die Verwechslung ist ausgeschlossen.
+    private static string SkipRunTag(string remainder)
+    {
+        if (!remainder.StartsWith('['))
         {
-            return false;
+            return remainder;
         }
 
-        // Hinter der Stufe steht "Kategorie: Meldung". Der erste Doppelpunkt trennt;
-        // spätere gehören zur Meldung.
-        string remainder = line[(levelEnd + 1)..].TrimStart();
-        int separator = remainder.IndexOf(':', StringComparison.Ordinal);
-        string category = separator < 0 ? string.Empty : remainder[..separator];
-        string message = separator < 0 ? remainder : remainder[(separator + 1)..].TrimStart();
-
-        draft = new LogEntryDraft(timestamp, level, category, message);
-        return true;
+        int end = remainder.IndexOf(']', StringComparison.Ordinal);
+        return end < 0 ? remainder : remainder[(end + 1)..].TrimStart();
     }
 
     private static bool TryReadTimestamp(ReadOnlySpan<char> value, out DateTimeOffset timestamp)
@@ -108,6 +135,8 @@ public static class LogEntryParser
             DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal,
             out timestamp);
 
+    // Ein Eintrag im Aufbau: Die Kopfzeile ist gelesen, Fortsetzungszeilen sammeln sich,
+    // bis der nächste Kopf den Eintrag abschließt.
     private sealed class LogEntryDraft(DateTimeOffset timestamp, LogLevel level, string category, string message)
     {
         public DateTimeOffset Timestamp { get; } = timestamp;

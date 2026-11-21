@@ -1,70 +1,69 @@
-using System;
-using LookAway.Core.Entities;
 using LookAway.App.ViewModels;
-using Microsoft.UI.Dispatching;
+using LookAway.Core.Entities;
 
 namespace LookAway.App.Services;
 
 /// <summary>
-/// Öffnet das Settings-Fenster und stellt sicher, dass nie zwei Fenster
-/// gleichzeitig offen sind: ein zweiter Aufruf aktiviert das bestehende. Erzeugt
-/// das <see cref="Views.SettingsWindow"/> samt ViewModel auf dem UI-Thread und
-/// reicht angewendete Einstellungen an einen Callback weiter (Live-Übernahme).
+/// Öffnet das Settings-Fenster, und zwar höchstens eines: Ein zweiter Aufruf
+/// holt das bestehende nach vorn. Erzeugt das Fenster samt ViewModel auf dem
+/// UI-Thread und reicht angewendete Einstellungen an einen Callback weiter
+/// (Live-Übernahme).
 /// </summary>
 internal sealed class SettingsPresenter
 {
-    private readonly DispatcherQueue _dispatcher;
+    private readonly IUiDispatcher _dispatcher;
     private readonly Func<SettingsViewModel> _viewModelFactory;
-    private readonly ThemeService _themeService;
+    private readonly Func<SettingsViewModel, IAppWindow> _windowFactory;
     private readonly Action<Settings> _onSettingsApplied;
     private readonly Action<bool> _onHotkeyCaptureChanged;
     private readonly Action _onTasksChanged;
-    private Views.SettingsWindow? _window;
+    private IAppWindow? _window;
     private SettingsViewModel? _viewModel;
 
     /// <summary>
     /// Erzeugt den Presenter.
     /// </summary>
-    /// <param name="dispatcher">UI-Dispatcher des Hauptfensters.</param>
+    /// <param name="dispatcher">Wechselt auf den Fenster-Thread.</param>
     /// <param name="viewModelFactory">Erzeugt ein frisches Settings-ViewModel.</param>
-    /// <param name="themeService">Liefert das gewählte Erscheinungsbild.</param>
+    /// <param name="windowFactory">Legt das Settings-Fenster zum ViewModel an.</param>
     /// <param name="onSettingsApplied">Callback bei gespeicherten Einstellungen.</param>
-    /// <param name="onTasksChanged">
-    /// Callback, wenn sich an den Aufgaben etwas geändert hat. Danach muss die laufende
-    /// Aufgabe neu bestimmt und das Symbol im Infobereich aktualisiert werden.
-    /// </param>
     /// <param name="onHotkeyCaptureChanged">
     /// Callback für Beginn und Ende einer Hotkey-Aufnahme. Während der Aufnahme
     /// müssen die globalen Hotkeys freigegeben sein, sonst fängt Windows genau die
     /// Kombinationen ab, die aufgenommen werden sollen.
     /// </param>
+    /// <param name="onTasksChanged">
+    /// Callback, wenn sich an den Aufgaben etwas geändert hat. Danach muss die laufende
+    /// Aufgabe neu bestimmt und das Symbol im Infobereich aktualisiert werden.
+    /// </param>
     public SettingsPresenter(
-        DispatcherQueue dispatcher,
+        IUiDispatcher dispatcher,
         Func<SettingsViewModel> viewModelFactory,
-        ThemeService themeService,
+        Func<SettingsViewModel, IAppWindow> windowFactory,
         Action<Settings> onSettingsApplied,
         Action<bool> onHotkeyCaptureChanged,
         Action onTasksChanged)
     {
         ArgumentNullException.ThrowIfNull(dispatcher);
         ArgumentNullException.ThrowIfNull(viewModelFactory);
-        ArgumentNullException.ThrowIfNull(themeService);
+        ArgumentNullException.ThrowIfNull(windowFactory);
         ArgumentNullException.ThrowIfNull(onSettingsApplied);
         ArgumentNullException.ThrowIfNull(onHotkeyCaptureChanged);
         ArgumentNullException.ThrowIfNull(onTasksChanged);
-
         _dispatcher = dispatcher;
         _viewModelFactory = viewModelFactory;
-        _themeService = themeService;
+        _windowFactory = windowFactory;
         _onSettingsApplied = onSettingsApplied;
         _onHotkeyCaptureChanged = onHotkeyCaptureChanged;
         _onTasksChanged = onTasksChanged;
     }
 
     /// <summary>Zeigt das Settings-Fenster (oder aktiviert das bereits offene).</summary>
-    public void Show() => _ = _dispatcher.TryEnqueue(() => _ = OpenWindowAsync());
+    public void Show() => _dispatcher.Post(() => _ = OpenWindowAsync());
 
-    private async Task OpenWindowAsync()
+    /// <summary>Wie <see cref="Show"/>, aber abwartbar und schon auf dem Fenster-Thread.</summary>
+    /// <returns>Der Vorgang bis zum Anzeigen des Fensters.</returns>
+    public async Task OpenWindowAsync()
     {
         if (_window is not null)
         {
@@ -77,10 +76,10 @@ internal sealed class SettingsPresenter
         viewModel.HotkeyCaptureChanged += OnHotkeyCaptureChanged;
         viewModel.Tasks.TasksChanged += OnTasksChanged;
         _viewModel = viewModel;
+
         await viewModel.LoadAsync().ConfigureAwait(true);
 
-        Views.SettingsWindow window = new(viewModel);
-        _themeService.Apply(window);
+        IAppWindow window = _windowFactory(viewModel);
         _window = window;
         window.Closed += OnWindowClosed;
         window.Activate();
@@ -94,7 +93,7 @@ internal sealed class SettingsPresenter
 
     private void OnTasksChanged(object? sender, EventArgs e) => _onTasksChanged();
 
-    private void OnWindowClosed(object sender, Microsoft.UI.Xaml.WindowEventArgs args)
+    private void OnWindowClosed(object? sender, EventArgs args)
     {
         if (_window is not null)
         {

@@ -21,6 +21,9 @@ internal sealed class FakeUpdateChecker : IUpdateChecker
     /// <summary>Anzahl der Prüf-Aufrufe.</summary>
     public int CheckCallCount { get; private set; }
 
+    /// <summary>Wird statt eines Ergebnisses geworfen, wenn gesetzt (etwa ein Offline-Start).</summary>
+    public Exception? Failure { get; init; }
+
     /// <inheritdoc />
     /// <remarks>
     /// Der Abbruch wird beachtet wie beim echten Dienst: Eine Attrappe, die ihn
@@ -32,6 +35,6 @@ internal sealed class FakeUpdateChecker : IUpdateChecker
         cancellationToken.ThrowIfCancellationRequested();
 
         CheckCallCount++;
-        return Task.FromResult(_result);
+        return Failure is null ? Task.FromResult(_result) : Task.FromException<UpdateInfo>(Failure);
     }
 }

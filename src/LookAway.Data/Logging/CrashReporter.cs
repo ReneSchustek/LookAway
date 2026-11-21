@@ -54,48 +54,21 @@ public sealed class CrashReporter : ICrashReporter
         ArgumentException.ThrowIfNullOrWhiteSpace(source);
 
         DateTimeOffset now = DateTimeOffset.UtcNow;
-        CrashReport report = new(
-            Timestamp: now,
-            Source: source,
-            ExceptionType: exception.GetType().FullName ?? exception.GetType().Name,
-            Message: _sanitizer.Sanitize(exception.Message),
-            StackTrace: _sanitizer.Sanitize(exception.ToString()),
-            ManagedThreadId: Environment.CurrentManagedThreadId,
-            OsVersion: RuntimeInformationSafe.OsVersionDescription,
-            RuntimeVersion: Environment.Version.ToString());
-
+        CrashReport report = CreateReport(exception, source, now);
         string fileName = $"crash-{now:yyyyMMdd-HHmmss-fff}.json";
-        string filePath;
 
         lock (_lock)
         {
             try
             {
                 _ = Directory.CreateDirectory(_crashDirectory);
-                filePath = Path.Combine(_crashDirectory, fileName);
-                string json = JsonSerializer.Serialize(report, SerializerOptions);
-                File.WriteAllText(filePath, json);
-
-                // Beim Erzeugen eines neuen Berichts ein vorhandenes
-                // Acknowledged-Marker-File entfernen, damit der nächste
-                // Start den neuen Crash erkennt.
-                string ackPath = Path.Combine(_crashDirectory, AcknowledgedFileName);
-                if (File.Exists(ackPath))
-                {
-                    File.Delete(ackPath);
-                }
+                File.WriteAllText(Path.Combine(_crashDirectory, fileName), JsonSerializer.Serialize(report, SerializerOptions));
+                RemoveAcknowledgement();
             }
-            catch (IOException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or NotSupportedException)
             {
-                // Persistenter Crash beim Schreiben des Crash-Reports — bewusst geschluckt.
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // wie oben: bewusst geschluckt
-            }
-            catch (NotSupportedException)
-            {
-                // wie oben: bewusst geschluckt
+                // Scheitert schon der Bericht, bleibt der laufende Absturz die eigentliche
+                // Nachricht; ein zweiter Fehler aus dieser Stelle würde ihn verdecken.
             }
         }
     }
@@ -107,43 +80,45 @@ public sealed class CrashReporter : ICrashReporter
         {
             try
             {
-                if (!Directory.Exists(_crashDirectory))
-                {
-                    return false;
-                }
-
-                bool anyCrashes = Directory.EnumerateFiles(_crashDirectory, "crash-*.json").Any();
-                if (!anyCrashes)
-                {
-                    return false;
-                }
-
-                string ackPath = Path.Combine(_crashDirectory, AcknowledgedFileName);
-                if (!File.Exists(ackPath))
-                {
-                    return true;
-                }
-
-                DateTime ackTime = File.GetLastWriteTimeUtc(ackPath);
-                foreach (string file in Directory.EnumerateFiles(_crashDirectory, "crash-*.json"))
-                {
-                    if (File.GetLastWriteTimeUtc(file) > ackTime)
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
+                return Directory.Exists(_crashDirectory) && AnyReportNewerThanAcknowledgement();
             }
-            catch (IOException)
-            {
-                return false;
-            }
-            catch (UnauthorizedAccessException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 return false;
             }
         }
+    }
+
+    // Ein neuer Bericht macht eine vorhandene Quittung ungültig, damit der nächste Start den neuen
+    // Absturz erkennt.
+    private void RemoveAcknowledgement()
+    {
+        string ackPath = Path.Combine(_crashDirectory, AcknowledgedFileName);
+        if (File.Exists(ackPath))
+        {
+            File.Delete(ackPath);
+        }
+    }
+
+    private CrashReport CreateReport(Exception exception, string source, DateTimeOffset now) => new(
+        Timestamp: now,
+        Source: source,
+        ExceptionType: exception.GetType().FullName ?? exception.GetType().Name,
+        Message: _sanitizer.Sanitize(exception.Message),
+        StackTrace: _sanitizer.Sanitize(exception.ToString()),
+        ManagedThreadId: Environment.CurrentManagedThreadId,
+        OsVersion: RuntimeInformationSafe.OsVersionDescription,
+        RuntimeVersion: Environment.Version.ToString());
+
+    // Ein Bericht gilt als offen, solange ihn keine Quittung abdeckt: Fehlt die Quittung, ist jeder
+    // Bericht offen; sonst nur einer, der nach ihr geschrieben wurde.
+    private bool AnyReportNewerThanAcknowledgement()
+    {
+        string ackPath = Path.Combine(_crashDirectory, AcknowledgedFileName);
+        DateTime? acknowledgedAt = File.Exists(ackPath) ? File.GetLastWriteTimeUtc(ackPath) : null;
+
+        return Directory.EnumerateFiles(_crashDirectory, "crash-*.json")
+            .Any(file => acknowledgedAt is not { } ack || File.GetLastWriteTimeUtc(file) > ack);
     }
 
     /// <inheritdoc />
@@ -163,13 +138,9 @@ public sealed class CrashReporter : ICrashReporter
                     ackPath,
                     DateTimeOffset.UtcNow.ToString("o", CultureInfo.InvariantCulture));
             }
-            catch (IOException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                // Bestätigungsvermerk ist unkritisch — Schreibfehler bewusst geschluckt.
-            }
-            catch (UnauthorizedAccessException)
-            {
-                // wie oben: bewusst geschluckt
+                // Fehlt der Vermerk, meldet der nächste Start denselben Absturz noch einmal; mehr geht nicht verloren.
             }
         }
     }
@@ -189,8 +160,8 @@ internal sealed record CrashReport(
     string RuntimeVersion);
 
 /// <summary>
-/// Kleine Indirection, damit OS-/Runtime-Infos im Test überschreibbar bleiben,
-/// ohne <see cref="System.Runtime.InteropServices.RuntimeInformation"/> zu mocken.
+/// Liefert die Betriebssystem-Angabe für den Crash-Bericht. Ein fester Getter ohne
+/// Schalter: Tests sehen hier dieselbe Angabe wie das laufende Programm.
 /// </summary>
 internal static class RuntimeInformationSafe
 {

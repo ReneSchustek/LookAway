@@ -20,9 +20,15 @@ arbeiten und dabei Augen, Haltung und Konzentration schonen möchten.
 
 ## Aktuelles Release
 
-**[v1.4.1](https://github.com/ReneSchustek/LookAway/releases/latest)** ist die aktuelle Version,
+**[v1.5.0](https://github.com/ReneSchustek/LookAway/releases/latest)** ist die aktuelle Version,
 zu haben als Setup.exe und als portable ZIP. Das hat sich zuletzt getan:
 
+- **Eigenes Bild für die Pause:** Statt der Farbe zeigt der Pausen-Bildschirm auf Wunsch ein eigenes
+  Foto, über alle Monitore und mit einstellbarer Abdunklung.
+- **Installation unter `C:\Program Files`:** Das Setup löst eine Installation im Benutzerprofil ab;
+  Aktualisierungen kommen über das signierte Setup und werden erst auf Klick installiert.
+- **Startbild und neue Schrift:** LookAway zeigt beim Start Logo und Version und trägt durchgehend
+  Roboto Flex, mitgeliefert und ohne Abruf aus dem Netz.
 - **Das Pausen-Overlay liegt zuverlässig über allem**, auf jedem Monitor, bis zum äußersten
   Bildpunkt und ohne Eintrag in Taskleiste und Alt-Tab. **Strg + Alt + S** beendet eine laufende
   Pause.
@@ -49,7 +55,8 @@ zu haben als Setup.exe und als portable ZIP. Das hat sich zuletzt getan:
   die Arbeitszeit von vorn, denn die Augen haben ohnehin pausiert
 - **Abgedunkelter Pausen-Screen:** Ein ruhiges Vollbild-Overlay verdeckt den Bildschirm während der
   Pause, zeigt den Countdown und das Übungs-Ziel und lässt sich jederzeit mit **ESC** beenden;
-  optional auf **allen Monitoren** und in **frei wählbarer Farbe**. Es liegt über allen Fenstern und
+  optional auf **allen Monitoren**, in **frei wählbarer Farbe** oder mit einem **eigenen Bild** (etwa
+  einem Waldfoto), über das sich eine einstellbare Abdunklung legt. Es liegt über allen Fenstern und
   über der Taskleiste und erscheint dabei weder in der Taskleiste noch im Alt-Tab-Umschalter
 - **Pause-Aktionen:** Bildschirm dimmen (DDC/CI) und Medienwiedergabe während der Pause pausieren
   (nur Player mit Windows-Mediensteuerung wie Spotify, Musik-App, Chrome/Edge/Firefox; VLC wird nicht unterstützt)
@@ -77,8 +84,9 @@ als **portables ZIP**.
 ### Setup.exe
 
 1. `LookAway-Setup-<Version>.exe` herunterladen und ausführen.
-2. Der Installer fragt Zielordner, Startmenü-Eintrag und optionalen Autostart ab. Deinstalliert wird
-   über „Apps & Features".
+2. Der Installer fragt nach Administratorrechten und installiert unter `C:\Program Files\LookAway`,
+   mit Startmenü-Eintrag und optionalem Autostart. Eine frühere Installation im Benutzerprofil löst er
+   dabei ab; Einstellungen und Verlauf bleiben erhalten. Deinstalliert wird über „Apps & Features".
 
 ### Portable
 
@@ -120,7 +128,7 @@ ein Doppelklick die Einstellungen.
 
 Alle Optionen finden sich im Einstellungsfenster (Tray-Menü → „Einstellungen…") im aufklappbaren
 Seitenmenü: Allgemein (inkl. Erscheinungsbild), Pausenmodell, eigene Intervalle, Sound, Pause
-(inkl. Bildschirm-Abdunkelung und Farbwähler), Hotkeys, Statistik, Protokoll und Über (mit
+(inkl. Bildschirm-Abdunkelung, Hintergrund als Farbe oder eigenes Bild), Hotkeys, Statistik, Protokoll und Über (mit
 Update-Optionen).
 
 Die Pausenmodelle stehen als Kacheln mit Suchfeld und Filterleiste: Jede zeigt, was in der Pause
@@ -131,12 +139,15 @@ zu tun ist und wie viele Pausen daraus bereits entstanden sind. Ein Klick wählt
 LookAway kann sich selbst aktuell halten:
 
 - Ist die Update-Prüfung aktiv und eine neue Version verfügbar, erscheint im Tray der Eintrag „Update".
-- Ein Klick lädt die neue Portable-ZIP, ersetzt nach dem Beenden die Programmdateien und startet neu.
-- Mit der Option **„Automatisch aktualisieren"** geschieht das im Hintergrund und beim nächsten Start
+- **Installierte Kopie:** Ein Klick lädt das Setup der neuen Version und startet es; Windows fragt
+  dabei nach Administratorrechten. Das Setup beendet LookAway, installiert und startet es wieder.
+  Mit **„Automatisch aktualisieren"** wird das Setup schon im Hintergrund geladen und geprüft,
+  installiert wird aber erst auf Klick, damit die Rechteabfrage nie ungefragt erscheint.
+- **Portable Kopie:** Ein Klick lädt die neue Portable-ZIP, ersetzt nach dem Beenden die
+  Programmdateien und startet neu; mit „Automatisch aktualisieren" geschieht das beim nächsten Start
   ganz ohne Zutun.
-- Vor dem Einspielen werden Version und SHA-256 der heruntergeladenen Datei geprüft; der Download läuft
-  ausschließlich über HTTPS von GitHub. Der automatische Tausch funktioniert für portable und
-  Per-Benutzer-Installationen (bei „für alle Benutzer" öffnet LookAway stattdessen die Release-Seite).
+- Setup und ZIP tragen je eine Signatur, die LookAway vor dem Start bzw. Einspielen prüft; der
+  Download läuft ausschließlich über HTTPS von GitHub.
 
 ## Pausenmodelle
 
@@ -216,5 +227,6 @@ beschrieben.
 
 MIT-Lizenz, siehe [LICENSE](LICENSE).
 
-Die mitgelieferte Schrift **Roboto** steht unter der Apache-Lizenz 2.0; der Lizenztext liegt bei
-den Schriftdateien unter `src/LookAway.App/Assets/Fonts/LICENSE.txt`.
+Die mitgelieferten Schriften **Roboto Flex** und **Roboto Mono** stehen unter der SIL Open Font
+License 1.1; die Lizenztexte liegen bei den Schriftdateien unter `src/LookAway.App/Assets/Fonts/`
+(`OFL-roboto-flex.txt`, `OFL-roboto-mono.txt`). Zur Laufzeit lädt LookAway keine Schrift aus dem Netz.

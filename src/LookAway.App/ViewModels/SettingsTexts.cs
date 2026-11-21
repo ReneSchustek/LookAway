@@ -8,11 +8,10 @@ namespace LookAway.App.ViewModels;
 /// Die Beschriftungen des Einstellungsfensters.
 /// </summary>
 /// <remarks>
-/// Sie standen als rund vierzig Eigenschaften im <see cref="SettingsViewModel"/> und
-/// machten dort den größten Teil der Klasse aus, ohne zu ihrer Aufgabe zu gehören:
-/// Das ViewModel lädt, prüft und speichert Einstellungen — Beschriftungen nachzuschlagen
-/// ist eine andere Verantwortung. Als eigenes Objekt komponiert statt vererbt, damit
-/// beide unabhängig bleiben.
+/// Rund vierzig Beschriftungen machten im <see cref="SettingsViewModel"/> den größten
+/// Teil der Klasse aus, ohne zu ihrer Aufgabe zu gehören: Das ViewModel lädt, prüft und
+/// speichert Einstellungen, Beschriftungen nachzuschlagen ist eine andere Verantwortung.
+/// Als eigenes Objekt komponiert statt vererbt, damit beide unabhängig bleiben.
 ///
 /// Nach einem Sprachwechsel ruft das ViewModel <see cref="Refresh"/>; alle gebundenen
 /// Texte werden dann neu gelesen.
@@ -161,8 +160,20 @@ internal sealed class SettingsTexts : ObservableObject
     /// <summary>Beschriftung des Overlay-Farbwählers.</summary>
     public string OverlayColorLabel => _localization.GetText(SettingsTextKeys.PauseActionsOverlayColor);
 
-    /// <summary>Hinweistext zum Overlay-Farbwähler (Transparenz).</summary>
+    /// <summary>Hinweistext zum Overlay-Farbwähler.</summary>
     public string OverlayColorHint => _localization.GetText(SettingsTextKeys.PauseActionsOverlayColorHint);
+
+    /// <summary>Überschrift und Beschriftung der Wahl zwischen Farbe und Bild.</summary>
+    public string OverlayBackgroundLabel => _localization.GetText(SettingsTextKeys.PauseActionsOverlayBackground);
+
+    /// <summary>Hinweistext zum Overlay-Bild.</summary>
+    public string OverlayImageHint => _localization.GetText(SettingsTextKeys.PauseActionsOverlayImageHint);
+
+    /// <summary>Beschriftung des Knopfs „Bild wählen“.</summary>
+    public string OverlayImageChooseLabel => _localization.GetText(SettingsTextKeys.PauseActionsOverlayImageChoose);
+
+    /// <summary>Beschriftung des Reglers für die Abdunklung über dem Bild.</summary>
+    public string OverlayImageDimLabel => _localization.GetText(SettingsTextKeys.PauseActionsOverlayImageDim);
 
     /// <summary>
     /// Liest alle Beschriftungen neu — nach einem Sprachwechsel aufzurufen.

@@ -31,8 +31,8 @@ public sealed class JsonBreakHistoryRepository : IBreakHistoryRepository, IDispo
     private bool _disposed;
 
     /// <summary>
-    /// Erzeugt das Repository mit dem Standardpfad
-    /// <c>%APPDATA%\LookAway\history.json</c>.
+    /// Erzeugt das Repository mit dem Standardpfad <c>history.json</c> im
+    /// Datenverzeichnis (<see cref="AppDataLocation"/>).
     /// </summary>
     /// <param name="logger">Logger für Persistenz-Vorgänge.</param>
     public JsonBreakHistoryRepository(ILogger<JsonBreakHistoryRepository> logger)
@@ -54,7 +54,7 @@ public sealed class JsonBreakHistoryRepository : IBreakHistoryRepository, IDispo
         _logger = logger;
     }
 
-    /// <summary>Standardpfad der Historie-Datei im Roaming-AppData.</summary>
+    /// <summary>Standardpfad der Historie-Datei im Datenverzeichnis.</summary>
     public static string GetDefaultFilePath()
         => Path.Combine(AppDataLocation.GetDataDirectory(), HistoryFileName);
 
@@ -110,23 +110,7 @@ public sealed class JsonBreakHistoryRepository : IBreakHistoryRepository, IDispo
 
     private async Task<List<BreakSession>> ReadUnlockedAsync(CancellationToken cancellationToken)
     {
-        string? json;
-        try
-        {
-            json = await _store.ReadAllTextOrNullAsync(cancellationToken).ConfigureAwait(false);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            // Historie ist nicht startkritisch — bei Zugriffsfehler leer behandeln.
-            JsonBreakHistoryRepositoryLog.HistoryReadFailed(_logger, ex, _store.FilePath);
-            return new List<BreakSession>();
-        }
-        catch (IOException ex)
-        {
-            JsonBreakHistoryRepositoryLog.HistoryReadFailed(_logger, ex, _store.FilePath);
-            return new List<BreakSession>();
-        }
-
+        string? json = await TryReadAsync(cancellationToken).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(json))
         {
             return new List<BreakSession>();
@@ -137,18 +121,27 @@ public sealed class JsonBreakHistoryRepository : IBreakHistoryRepository, IDispo
             List<BreakSession>? sessions = JsonSerializer.Deserialize<List<BreakSession>>(json, SerializerOptions);
             return sessions ?? new List<BreakSession>();
         }
-        catch (JsonException ex)
+        // Unlesbares JSON wie eine Sitzung, deren Werte der Konstruktor ablehnt: Beschädigte
+        // Historie soll die App nicht blockieren — sichern und leer starten.
+        catch (Exception ex) when (ex is JsonException or ArgumentException)
         {
-            // Beschädigte Historie soll die App nicht blockieren — leer starten.
             JsonBreakHistoryRepositoryLog.HistoryCorrupted(_logger, ex, _store.FilePath);
             await BackUpCorruptAsync(json, cancellationToken).ConfigureAwait(false);
             return new List<BreakSession>();
         }
-        catch (ArgumentException ex)
+    }
+
+    // Historie ist nicht startkritisch — ein Zugriffsfehler liest sich wie eine leere Datei.
+    private async Task<string?> TryReadAsync(CancellationToken cancellationToken)
+    {
+        try
         {
-            JsonBreakHistoryRepositoryLog.HistoryCorrupted(_logger, ex, _store.FilePath);
-            await BackUpCorruptAsync(json, cancellationToken).ConfigureAwait(false);
-            return new List<BreakSession>();
+            return await _store.ReadAllTextOrNullAsync(cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+        {
+            JsonBreakHistoryRepositoryLog.HistoryReadFailed(_logger, ex, _store.FilePath);
+            return null;
         }
     }
 

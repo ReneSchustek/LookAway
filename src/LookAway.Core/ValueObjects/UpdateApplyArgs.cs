@@ -44,6 +44,20 @@ public readonly record struct UpdateApplyArgs(int Pid, string Source, string Tar
             return false;
         }
 
+        (bool hasFlag, int pid, string source, string target) = ReadArguments(args);
+        if (!hasFlag || pid <= 0 || string.IsNullOrWhiteSpace(source) || string.IsNullOrWhiteSpace(target))
+        {
+            return false;
+        }
+
+        result = new UpdateApplyArgs(pid, source, target);
+        return true;
+    }
+
+    // Liest Kennzeichen und Wertepaare; unbekannte Argumente und ein Schalter ohne Wert am Ende
+    // werden übergangen.
+    private static (bool HasFlag, int Pid, string Source, string Target) ReadArguments(IReadOnlyList<string> args)
+    {
         bool hasFlag = false;
         int pid = 0;
         string source = string.Empty;
@@ -70,12 +84,6 @@ public readonly record struct UpdateApplyArgs(int Pid, string Source, string Tar
             }
         }
 
-        if (!hasFlag || pid <= 0 || string.IsNullOrWhiteSpace(source) || string.IsNullOrWhiteSpace(target))
-        {
-            return false;
-        }
-
-        result = new UpdateApplyArgs(pid, source, target);
-        return true;
+        return (hasFlag, pid, source, target);
     }
 }

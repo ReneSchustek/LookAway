@@ -28,7 +28,7 @@ public sealed class JsonWorkTaskRepositoryTests : IDisposable
     {
         using JsonWorkTaskRepository repository = CreateRepository();
 
-        Assert.Empty(await repository.LoadAllAsync());
+        Assert.Empty(await repository.LoadAllAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -37,11 +37,11 @@ public sealed class JsonWorkTaskRepositoryTests : IDisposable
         WorkTask task = WorkTask.Create("Angebot schreiben", Now);
         using (JsonWorkTaskRepository writer = CreateRepository())
         {
-            await writer.SaveAsync(task);
+            await writer.SaveAsync(task, TestContext.Current.CancellationToken);
         }
 
         using JsonWorkTaskRepository reader = CreateRepository();
-        WorkTask loaded = Assert.Single(await reader.LoadAllAsync());
+        WorkTask loaded = Assert.Single(await reader.LoadAllAsync(TestContext.Current.CancellationToken));
 
         Assert.Equal(task.Id, loaded.Id);
         Assert.Equal("Angebot schreiben", loaded.Text);
@@ -58,12 +58,12 @@ public sealed class JsonWorkTaskRepositoryTests : IDisposable
         using JsonWorkTaskRepository repository = CreateRepository();
         WorkTask first = WorkTask.Create("Erste", Now);
         WorkTask second = WorkTask.Create("Zweite", Now);
-        await repository.SaveAsync(first);
-        await repository.SaveAsync(second);
+        await repository.SaveAsync(first, TestContext.Current.CancellationToken);
+        await repository.SaveAsync(second, TestContext.Current.CancellationToken);
 
-        await repository.SaveAsync(first.Complete(Now.AddHours(1)));
+        await repository.SaveAsync(first.Complete(Now.AddHours(1)), TestContext.Current.CancellationToken);
 
-        IReadOnlyList<WorkTask> all = await repository.LoadAllAsync();
+        IReadOnlyList<WorkTask> all = await repository.LoadAllAsync(TestContext.Current.CancellationToken);
         Assert.Equal(2, all.Count);
         Assert.Equal(first.Id, all[0].Id);
         Assert.True(all[0].IsCompleted);
@@ -75,10 +75,10 @@ public sealed class JsonWorkTaskRepositoryTests : IDisposable
     {
         using JsonWorkTaskRepository repository = CreateRepository();
         WorkTask task = WorkTask.Create("Wieder weg", Now);
-        await repository.SaveAsync(task);
+        await repository.SaveAsync(task, TestContext.Current.CancellationToken);
 
-        Assert.True(await repository.DeleteAsync(task.Id));
-        Assert.Empty(await repository.LoadAllAsync());
+        Assert.True(await repository.DeleteAsync(task.Id, TestContext.Current.CancellationToken));
+        Assert.Empty(await repository.LoadAllAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -86,16 +86,16 @@ public sealed class JsonWorkTaskRepositoryTests : IDisposable
     {
         using JsonWorkTaskRepository repository = CreateRepository();
 
-        Assert.False(await repository.DeleteAsync(Guid.NewGuid()));
+        Assert.False(await repository.DeleteAsync(Guid.NewGuid(), TestContext.Current.CancellationToken));
     }
 
     [Fact]
     public async Task LoadAllAsync_KeepsTheCompletionTime()
     {
         using JsonWorkTaskRepository repository = CreateRepository();
-        await repository.SaveAsync(WorkTask.Create("Erledigt", Now).Complete(Now.AddHours(3)));
+        await repository.SaveAsync(WorkTask.Create("Erledigt", Now).Complete(Now.AddHours(3)), TestContext.Current.CancellationToken);
 
-        WorkTask loaded = Assert.Single(await repository.LoadAllAsync());
+        WorkTask loaded = Assert.Single(await repository.LoadAllAsync(TestContext.Current.CancellationToken));
 
         Assert.True(loaded.IsCompleted);
         Assert.Equal(Now.AddHours(3), loaded.CompletedAt);
@@ -108,21 +108,21 @@ public sealed class JsonWorkTaskRepositoryTests : IDisposable
     [Fact]
     public async Task LoadAllAsync_TreatsACorruptFileAsEmpty()
     {
-        await File.WriteAllTextAsync(_filePath, "{kein gültiges JSON");
+        await File.WriteAllTextAsync(_filePath, "{kein gültiges JSON", TestContext.Current.CancellationToken);
         using JsonWorkTaskRepository repository = CreateRepository();
 
-        Assert.Empty(await repository.LoadAllAsync());
+        Assert.Empty(await repository.LoadAllAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
     public async Task SaveAsync_WorksAfterACorruptFile()
     {
-        await File.WriteAllTextAsync(_filePath, "[[[");
+        await File.WriteAllTextAsync(_filePath, "[[[", TestContext.Current.CancellationToken);
         using JsonWorkTaskRepository repository = CreateRepository();
 
-        await repository.SaveAsync(WorkTask.Create("Neu nach Schaden", Now));
+        await repository.SaveAsync(WorkTask.Create("Neu nach Schaden", Now), TestContext.Current.CancellationToken);
 
-        Assert.Equal("Neu nach Schaden", Assert.Single(await repository.LoadAllAsync()).Text);
+        Assert.Equal("Neu nach Schaden", Assert.Single(await repository.LoadAllAsync(TestContext.Current.CancellationToken)).Text);
     }
 
     [Fact]
@@ -135,7 +135,7 @@ public sealed class JsonWorkTaskRepositoryTests : IDisposable
     {
         using JsonWorkTaskRepository repository = CreateRepository();
 
-        _ = await Assert.ThrowsAsync<ArgumentNullException>(() => repository.SaveAsync(null!));
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() => repository.SaveAsync(null!, TestContext.Current.CancellationToken));
     }
 
     private JsonWorkTaskRepository CreateRepository()
@@ -152,5 +152,28 @@ public sealed class JsonWorkTaskRepositoryTests : IDisposable
         {
             // Aufräumen ist bestes Bemühen.
         }
+    }
+
+    /// <remarks>Aufgaben sind nicht startkritisch: Eine gesperrte Datei liest sich als leere Liste.</remarks>
+    [Fact]
+    public async Task LoadAll_WhenTheFileIsLocked_ReturnsAnEmptyList()
+    {
+        using JsonWorkTaskRepository repository = CreateRepository();
+        using LockedFile locked = new(_filePath, "[]");
+
+        IReadOnlyList<WorkTask> all = await repository.LoadAllAsync(TestContext.Current.CancellationToken);
+
+        Assert.Empty(all);
+    }
+
+    [Fact]
+    public void Dispose_Twice_IsHarmless()
+    {
+        JsonWorkTaskRepository repository = CreateRepository();
+        repository.Dispose();
+
+        Exception? thrown = Record.Exception(repository.Dispose);
+
+        Assert.Null(thrown);
     }
 }

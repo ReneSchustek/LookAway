@@ -10,8 +10,8 @@ namespace LookAway.Core.Interfaces;
 /// </summary>
 /// <remarks>
 /// Das tatsächliche Einspielen (Datei-Tausch) geschieht bewusst erst beim nächsten
-/// Programmstart über den Anwendungs-Bootstrap; hier wird das Paket nur geprüft
-/// (inkl. Signatur) und in den Staging-Ordner entpackt.
+/// Programmstart über den Anwendungs-Bootstrap. Bis dahin ist das Paket nur geprüft
+/// (samt Signatur) und in den Staging-Ordner entpackt; das laufende Programm bleibt unberührt.
 /// </remarks>
 public interface IUpdateInstaller
 {
@@ -26,4 +26,16 @@ public interface IUpdateInstaller
     /// wenn Download, Signaturprüfung oder Entpacken fehlschlagen.
     /// </returns>
     Task<StagedUpdate?> DownloadAndStageAsync(UpdateInfo info, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Stellt das Setup der Aktualisierung bereit: lädt es samt Signatur, falls es noch nicht
+    /// bereitliegt, sperrt die Datei gegen Schreiben und prüft die Signatur an ihr.
+    /// </summary>
+    /// <param name="info">Die zu installierende Aktualisierung.</param>
+    /// <param name="cancellationToken">Abbruch-Token.</param>
+    /// <returns>
+    /// Das gesperrte, geprüfte Setup, das der Aufrufer nach dem Start entsorgt; <see langword="null"/>,
+    /// wenn das Release kein signiertes Setup hat oder Download oder Prüfung scheitern.
+    /// </returns>
+    Task<VerifiedSetup?> PrepareSetupAsync(UpdateInfo info, CancellationToken cancellationToken = default);
 }

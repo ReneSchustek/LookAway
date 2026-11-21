@@ -26,7 +26,7 @@ public sealed class RollingFileLogReaderTests : IDisposable
         WriteLog("2026-08-11", "[2026-08-11T08:00:00.000Z] [Information] A: heute früh");
         AppendLog("2026-08-11", "[2026-08-11T12:00:00.000Z] [Warning] A: heute mittag");
 
-        IReadOnlyList<LogEntry> entries = await new RollingFileLogReader(_directory).ReadRecentAsync(10);
+        IReadOnlyList<LogEntry> entries = await new RollingFileLogReader(_directory).ReadRecentAsync(10, TestContext.Current.CancellationToken);
 
         Assert.Equal(3, entries.Count);
         Assert.Equal("heute mittag", entries[0].Message);
@@ -41,7 +41,7 @@ public sealed class RollingFileLogReaderTests : IDisposable
         AppendLog("2026-08-11", "[2026-08-11T09:00:00.000Z] [Information] A: zwei");
         AppendLog("2026-08-11", "[2026-08-11T10:00:00.000Z] [Information] A: drei");
 
-        IReadOnlyList<LogEntry> entries = await new RollingFileLogReader(_directory).ReadRecentAsync(2);
+        IReadOnlyList<LogEntry> entries = await new RollingFileLogReader(_directory).ReadRecentAsync(2, TestContext.Current.CancellationToken);
 
         Assert.Equal(2, entries.Count);
         Assert.Equal("drei", entries[0].Message);
@@ -56,7 +56,7 @@ public sealed class RollingFileLogReaderTests : IDisposable
             "[2026-08-11T08:00:00.000Z] [Error] A: Fehler beim Speichern",
             "System.IO.IOException: Zugriff verweigert");
 
-        LogEntry entry = Assert.Single(await new RollingFileLogReader(_directory).ReadRecentAsync(10));
+        LogEntry entry = Assert.Single(await new RollingFileLogReader(_directory).ReadRecentAsync(10, TestContext.Current.CancellationToken));
 
         Assert.Equal(LogLevel.Error, entry.Level);
         Assert.Contains("IOException", entry.Message, StringComparison.Ordinal);
@@ -64,7 +64,7 @@ public sealed class RollingFileLogReaderTests : IDisposable
 
     [Fact]
     public async Task ReadRecentAsync_ReturnsEmptyWhenNothingWasLogged()
-        => Assert.Empty(await new RollingFileLogReader(_directory).ReadRecentAsync(10));
+        => Assert.Empty(await new RollingFileLogReader(_directory).ReadRecentAsync(10, TestContext.Current.CancellationToken));
 
     /// <remarks>
     /// Vor dem ersten Start gibt es das Verzeichnis noch nicht. Das ist kein Fehler,
@@ -75,18 +75,16 @@ public sealed class RollingFileLogReaderTests : IDisposable
     {
         string missing = Path.Combine(_directory, "gibt-es-nicht");
 
-        Assert.Empty(await new RollingFileLogReader(missing).ReadRecentAsync(10));
+        Assert.Empty(await new RollingFileLogReader(missing).ReadRecentAsync(10, TestContext.Current.CancellationToken));
     }
 
     [Fact]
     public async Task ReadRecentAsync_IgnoresForeignFiles()
     {
         WriteLog("2026-08-11", "[2026-08-11T08:00:00.000Z] [Information] A: gehört dazu");
-        await File.WriteAllTextAsync(
-            Path.Combine(_directory, "notizen.txt"),
-            "[2026-08-11T09:00:00.000Z] [Information] A: gehört nicht dazu");
+        await File.WriteAllTextAsync(Path.Combine(_directory, "notizen.txt"), "[2026-08-11T09:00:00.000Z] [Information] A: gehört nicht dazu", TestContext.Current.CancellationToken);
 
-        LogEntry entry = Assert.Single(await new RollingFileLogReader(_directory).ReadRecentAsync(10));
+        LogEntry entry = Assert.Single(await new RollingFileLogReader(_directory).ReadRecentAsync(10, TestContext.Current.CancellationToken));
 
         Assert.Equal("gehört dazu", entry.Message);
     }
@@ -98,7 +96,7 @@ public sealed class RollingFileLogReaderTests : IDisposable
     [Fact]
     public async Task ReadRecentAsync_RejectsANonPositiveCount()
         => await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            () => new RollingFileLogReader(_directory).ReadRecentAsync(0));
+            () => new RollingFileLogReader(_directory).ReadRecentAsync(0, TestContext.Current.CancellationToken));
 
     /// <summary>Räumt das Testverzeichnis wieder ab.</summary>
     public void Dispose()
@@ -118,4 +116,22 @@ public sealed class RollingFileLogReaderTests : IDisposable
 
     private void AppendLog(string date, params string[] lines)
         => File.AppendAllLines(Path.Combine(_directory, $"lookaway-{date}.log"), lines);
+
+    /// <remarks>
+    /// Das Protokoll wird nebenher geschrieben. Eine gesperrte Datei macht die Ansicht kürzer,
+    /// nicht kaputt: Was vor ihr gelesen wurde, wird gezeigt.
+    /// </remarks>
+    [Fact]
+    public async Task ReadRecentAsync_WithALockedFile_ReturnsWhatWasReadBefore()
+    {
+        WriteLog("2026-08-11", "[2026-08-11T08:00:00.000Z] [Information] A: heute");
+        using LockedFile locked = new(
+            Path.Combine(_directory, "lookaway-2026-08-10.log"),
+            "[2026-08-10T08:00:00.000Z] [Information] A: gestern");
+
+        IReadOnlyList<LogEntry> entries = await new RollingFileLogReader(_directory).ReadRecentAsync(10, TestContext.Current.CancellationToken);
+
+        LogEntry only = Assert.Single(entries);
+        Assert.Equal("heute", only.Message);
+    }
 }

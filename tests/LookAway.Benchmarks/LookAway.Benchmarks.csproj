@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Messprojekt, kein Testprojekt: Es läuft nicht mit dotnet test, sondern über
+         tools/run-benchmarks.ps1. Messungen dauern Minuten und gehören nicht in jeden Commit. -->
+    <OutputType>Exe</OutputType>
+    <!-- Windows-TFM wie die Data-Schicht: Das Overlay-Bild liest der Windows-Bilddecoder. -->
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <!-- BenchmarkDotNet findet nur öffentliche Klassen mit öffentlichen Mess-Methoden. -->
+    <NoWarn>$(NoWarn);CA1515</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Derselbe Messbestand wie in den Wächtern des normalen Testlaufs. -->
+    <Compile Include="..\MeasurementData\*.cs" LinkBase="MeasurementData" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\LookAway.Core\LookAway.Core.csproj" />
+    <ProjectReference Include="..\..\src\LookAway.Data\LookAway.Data.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -378,6 +378,44 @@
                         </Border>
 
                         <TextBlock
+                            Text="{Binding Texts.OverlayBackgroundLabel, Converter={StaticResource UpperCase}}"
+                            Style="{StaticResource RcSectionLabelStyle}"
+                            Margin="2,8,0,4" />
+                        <Border Style="{StaticResource RcCardStyle}">
+                            <StackPanel Spacing="12">
+                                <ComboBox
+                                    ItemsSource="{Binding OverlayBackgrounds}"
+                                    SelectedItem="{Binding SelectedOverlayBackgroundOption, Mode=TwoWay}"
+                                    DisplayMemberPath="Label"
+                                    AutomationProperties.Name="{Binding Texts.OverlayBackgroundLabel}"
+                                    MinWidth="240" />
+                                <StackPanel Spacing="12" Visibility="{Binding IsOverlayImageSelected, Converter={StaticResource BoolToVisibility}}">
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                        <Button
+                                            Content="{Binding Texts.OverlayImageChooseLabel}"
+                                            AutomationProperties.Name="{Binding Texts.OverlayImageChooseLabel}"
+                                            Click="OnChooseOverlayImage" />
+                                        <TextBlock
+                                            Text="{Binding OverlayImageName}"
+                                            Style="{StaticResource RcBodyTextStyle}"
+                                            VerticalAlignment="Center"
+                                            TextTrimming="CharacterEllipsis"
+                                            MaxWidth="320" />
+                                    </StackPanel>
+                                    <Slider
+                                        Header="{Binding Texts.OverlayImageDimLabel}"
+                                        AutomationProperties.Name="{Binding Texts.OverlayImageDimLabel}"
+                                        Value="{Binding BreakOverlayImageDimPercent, Mode=TwoWay}"
+                                        Minimum="{Binding OverlayImageDimMin}"
+                                        Maximum="{Binding OverlayImageDimMax}"
+                                        Width="240"
+                                        HorizontalAlignment="Left" />
+                                    <TextBlock Text="{Binding Texts.OverlayImageHint}" Style="{StaticResource RcPageSubtitleStyle}" />
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <TextBlock
                             Text="{Binding Texts.OverlayColorLabel, Converter={StaticResource UpperCase}}"
                             Style="{StaticResource RcSectionLabelStyle}"
                             Margin="2,8,0,4" />
@@ -676,13 +714,14 @@
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
                                 <Button Content="{Binding Statistics.ExportLabel}" Command="{Binding Statistics.ExportCsvCommand}" HorizontalAlignment="Left" Margin="0,4,0,0" />
+                                <TextBlock Text="{Binding Statistics.ExportStatusText}" Style="{StaticResource RcMutedTextStyle}" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
                             </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
 
                 <!-- ══ Protokoll ══════════════════════════════════════════════
-                     Bis hierher lag das Protokoll nur als Datei im Datenverzeichnis. -->
+                     Ohne diese Seite läge das Protokoll nur als Datei im Datenverzeichnis. -->
                 <Grid x:Name="PanelLog" Visibility="Collapsed" RowSpacing="12">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -759,22 +798,37 @@
                                     <DataTemplate>
                                         <Border Style="{StaticResource RcCardStyle}">
                                             <StackPanel Spacing="4">
-                                                <StackPanel Orientation="Horizontal" Spacing="12">
-                                                    <TextBlock Text="{Binding TimestampText}" Style="{StaticResource RcMutedTextStyle}" />
+                                                <!-- Raster statt Zeile: Die Kategorie bekommt den Restplatz und endet
+                                                     notfalls mit einer Auslassung; der volle Name steht im Tooltip. -->
+                                                <Grid ColumnSpacing="12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{Binding TimestampText}" Style="{StaticResource RcMonoMutedTextStyle}" />
+                                                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                        <TextBlock
+                                                            Text="{Binding LevelText}"
+                                                            Style="{StaticResource RcLogLevelInformationStyle}"
+                                                            Visibility="{Binding IsInformation, Converter={StaticResource BoolToVisibility}}" />
+                                                        <TextBlock
+                                                            Text="{Binding LevelText}"
+                                                            Style="{StaticResource RcLogLevelWarningStyle}"
+                                                            Visibility="{Binding IsWarning, Converter={StaticResource BoolToVisibility}}" />
+                                                        <TextBlock
+                                                            Text="{Binding LevelText}"
+                                                            Style="{StaticResource RcLogLevelErrorStyle}"
+                                                            Visibility="{Binding IsError, Converter={StaticResource BoolToVisibility}}" />
+                                                    </StackPanel>
                                                     <TextBlock
-                                                        Text="{Binding LevelText}"
-                                                        Style="{StaticResource RcLogLevelInformationStyle}"
-                                                        Visibility="{Binding IsInformation, Converter={StaticResource BoolToVisibility}}" />
-                                                    <TextBlock
-                                                        Text="{Binding LevelText}"
-                                                        Style="{StaticResource RcLogLevelWarningStyle}"
-                                                        Visibility="{Binding IsWarning, Converter={StaticResource BoolToVisibility}}" />
-                                                    <TextBlock
-                                                        Text="{Binding LevelText}"
-                                                        Style="{StaticResource RcLogLevelErrorStyle}"
-                                                        Visibility="{Binding IsError, Converter={StaticResource BoolToVisibility}}" />
-                                                    <TextBlock Text="{Binding Category}" Style="{StaticResource RcMutedTextStyle}" />
-                                                </StackPanel>
+                                                        Grid.Column="2"
+                                                        Text="{Binding Category}"
+                                                        Style="{StaticResource RcMonoMutedTextStyle}"
+                                                        TextWrapping="NoWrap"
+                                                        TextTrimming="CharacterEllipsis"
+                                                        ToolTipService.ToolTip="{Binding Category}" />
+                                                </Grid>
                                                 <TextBlock Text="{Binding Message}" Style="{StaticResource RcBodyTextStyle}" IsTextSelectionEnabled="True" />
                                             </StackPanel>
                                         </Border>

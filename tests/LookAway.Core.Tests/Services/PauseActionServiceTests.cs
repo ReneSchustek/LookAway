@@ -5,7 +5,9 @@ using LookAway.Core.Tests.Fakes;
 namespace LookAway.Core.Tests;
 
 /// <summary>
-/// Tests für die UI-freie Koordination der Pause-Aktionen.
+/// Dimmen und Medienpause beim Pausenbeginn und ihre Rücknahme am Ende, auch wenn sich beide
+/// Aufrufe überholen. Liefe das Ende vor dem Beginn, bliebe der Bildschirm nach der Pause
+/// gedimmt.
 /// </summary>
 public sealed class PauseActionServiceTests
 {
@@ -26,7 +28,7 @@ public sealed class PauseActionServiceTests
         service.DimBrightnessPercent = 25;
         service.PauseMediaEnabled = true;
 
-        await service.BeginBreakAsync();
+        await service.BeginBreakAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(1, dimmer.DimCallCount);
         Assert.Equal(25, dimmer.LastTargetPercent);
@@ -38,7 +40,7 @@ public sealed class PauseActionServiceTests
     {
         using PauseActionService service = Create(out FakeScreenDimmer dimmer, out FakeMediaController media);
 
-        await service.BeginBreakAsync();
+        await service.BeginBreakAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(0, dimmer.DimCallCount);
         Assert.Equal(0, media.PauseCallCount);
@@ -52,7 +54,7 @@ public sealed class PauseActionServiceTests
         service.PauseMediaEnabled = true;
         service.ResumeMediaAfterBreak = true;
 
-        await service.EndBreakAsync();
+        await service.EndBreakAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(1, dimmer.RestoreCallCount);
         Assert.Equal(1, media.ResumeCallCount);
@@ -65,7 +67,7 @@ public sealed class PauseActionServiceTests
         service.PauseMediaEnabled = true;
         service.ResumeMediaAfterBreak = false;
 
-        await service.EndBreakAsync();
+        await service.EndBreakAsync(TestContext.Current.CancellationToken);
 
         Assert.Equal(0, media.ResumeCallCount);
     }
@@ -80,8 +82,8 @@ public sealed class PauseActionServiceTests
         };
 
         // Begin und End gleichzeitig anstoßen (wie im Coordinator „fire-and-forget").
-        Task begin = service.BeginBreakAsync();
-        Task end = service.EndBreakAsync();
+        Task begin = service.BeginBreakAsync(TestContext.Current.CancellationToken);
+        Task end = service.EndBreakAsync(TestContext.Current.CancellationToken);
         await Task.WhenAll(begin, end);
 
         // Das Semaphore erzwingt die Aufrufreihenfolge: Dimmen vor Wiederherstellen.

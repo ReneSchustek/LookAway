@@ -1,3 +1,4 @@
+using LookAway.Core.Exceptions;
 using System.Runtime.Versioning;
 using LookAway.Data.Services;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -123,4 +124,33 @@ public sealed class RegistryAutoStartServiceTests : IDisposable
         using RegistryKey? runKey = Registry.CurrentUser.OpenSubKey(RunKeyPath, writable: false);
         return runKey?.GetValue(_valueName) as string;
     }
+
+    /// <remarks>
+    /// Richtlinie, fehlende Rechte und E/A-Fehler lassen sich an der echten Registry nicht
+    /// gezielt auslösen. Die Übersetzung ist deshalb eine eigene Methode und wird hier direkt
+    /// mit einem werfenden Zugriff geprüft.
+    /// </remarks>
+    [Theory]
+    [InlineData(typeof(System.Security.SecurityException))]
+    [InlineData(typeof(UnauthorizedAccessException))]
+    [InlineData(typeof(IOException))]
+    public void RegistryErrors_BecomeAnAutoStartExceptionWithTheCause(Type errorType)
+    {
+        Exception cause = (Exception)Activator.CreateInstance(errorType, "Ursache")!; // alle drei haben einen Konstruktor mit Meldung
+
+        AutoStartException thrown = Assert.Throws<AutoStartException>(
+            () => RegistryAutoStartService.TranslateRegistryErrors<bool>("Meldung", () => throw cause));
+
+        Assert.Equal("Meldung", thrown.Message);
+        Assert.Same(cause, thrown.InnerException);
+    }
+
+    [Fact]
+    public void OtherErrors_PassThroughUnchanged()
+        => Assert.Throws<InvalidOperationException>(
+            () => RegistryAutoStartService.TranslateRegistryErrors<bool>("Meldung", () => throw new InvalidOperationException()));
+
+    [Fact]
+    public void ResolveCurrentExecutablePath_NamesAnExistingFile()
+        => Assert.True(File.Exists(RegistryAutoStartService.ResolveCurrentExecutablePath()));
 }

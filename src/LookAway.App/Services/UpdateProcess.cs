@@ -1,26 +1,52 @@
-using System;
 using System.Diagnostics;
-using System.IO;
-using LookAway.Core.Services;
+using System.Diagnostics.CodeAnalysis;
+using LookAway.Core.Domain;
 using LookAway.Core.ValueObjects;
+using LookAway.Data;
 
 namespace LookAway.App.Services;
 
 /// <summary>
-/// Startet die zwei Prozess-Rollen der automatischen Aktualisierung: den
-/// Helfer-Modus (die gestagte EXE ersetzt nach dem Beenden die Programmdateien)
-/// und den Neustart der installierten Anwendung. Das Parsen/Erzeugen der
-/// Argumente liegt in <see cref="UpdateApplyArgs"/> (App-frei und testbar).
+/// Echte Umsetzung von <see cref="IUpdateProcess"/>: startet den Helfer-Modus (die gestagte EXE
+/// ersetzt nach dem Beenden die Programmdateien), den Neustart der installierten Anwendung und
+/// den Browser. Das Parsen und Erzeugen der Helfer-Argumente liegt in
+/// <see cref="UpdateApplyArgs"/> (App-frei und testbar).
 /// </summary>
-internal static class UpdateProcess
+[ExcludeFromCodeCoverage(Justification = "Startet und beendet echte Prozesse; wann das geschieht, prüft UpdateOrchestratorTests über eine Attrappe.")]
+internal sealed class UpdateProcess : IUpdateProcess
 {
-    /// <summary>
-    /// Startet die neue (gestagte) EXE im Helfer-Modus, damit sie nach dem Beenden
-    /// dieser Instanz die Dateien im Zielordner ersetzt.
-    /// </summary>
-    /// <param name="stagedExePath">Pfad der EXE im Staging-Ordner.</param>
-    /// <param name="args">Helfer-Parameter (PID, Quelle, Ziel).</param>
-    public static void StartApply(string stagedExePath, UpdateApplyArgs args)
+    /// <inheritdoc />
+    public string InstallDirectory => AppContext.BaseDirectory;
+
+    /// <inheritdoc />
+    public int CurrentProcessId => Environment.ProcessId;
+
+    /// <inheritdoc />
+    public bool IsSetupInstallation => !AppDataLocation.IsPortable();
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Ohne „Als Administrator ausführen“: Das Setup erhöht seine Rechte selbst. Nur so kennt es
+    /// den ursprünglichen Benutzer und kann LookAway danach ohne Administratorrechte neu starten;
+    /// und bricht der Benutzer die Abfrage ab, läuft LookAway einfach weiter.
+    /// </remarks>
+    public void StartSetup(string setupPath)
+    {
+        ProcessStartInfo psi = new(setupPath)
+        {
+            UseShellExecute = true,
+            WorkingDirectory = Path.GetDirectoryName(setupPath) ?? AppContext.BaseDirectory,
+        };
+        foreach (string argument in InstallerArguments.SilentUpdate)
+        {
+            psi.ArgumentList.Add(argument);
+        }
+
+        _ = Process.Start(psi);
+    }
+
+    /// <inheritdoc />
+    public void StartApply(string stagedExePath, UpdateApplyArgs args)
     {
         ProcessStartInfo psi = new(stagedExePath)
         {
@@ -35,9 +61,8 @@ internal static class UpdateProcess
         _ = Process.Start(psi);
     }
 
-    /// <summary>Startet die installierte Anwendung normal.</summary>
-    /// <param name="exePath">Pfad der installierten EXE.</param>
-    public static void StartApp(string exePath)
+    /// <inheritdoc />
+    public void StartApp(string exePath)
     {
         _ = Process.Start(new ProcessStartInfo(exePath)
         {
@@ -45,4 +70,30 @@ internal static class UpdateProcess
             WorkingDirectory = Path.GetDirectoryName(exePath) ?? AppContext.BaseDirectory,
         });
     }
+
+    /// <inheritdoc />
+    public void OpenInBrowser(Uri address)
+    {
+        ArgumentNullException.ThrowIfNull(address);
+
+        _ = Process.Start(new ProcessStartInfo(address.ToString()) { UseShellExecute = true });
+    }
+
+    /// <inheritdoc />
+    public void WaitForExit(int processId, TimeSpan timeout)
+    {
+        try
+        {
+            using Process process = Process.GetProcessById(processId);
+            _ = process.WaitForExit((int)timeout.TotalMilliseconds);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            // Gibt es den Prozess nicht mehr (ArgumentException) oder ist er zwischen Suchen und
+            // Warten beendet worden (InvalidOperationException), ist er schlicht schon fort.
+        }
+    }
+
+    /// <inheritdoc />
+    public void Exit() => Environment.Exit(0);
 }

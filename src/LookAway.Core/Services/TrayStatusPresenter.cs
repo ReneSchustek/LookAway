@@ -10,8 +10,8 @@ namespace LookAway.Core.Services;
 /// Tooltip-Text. Reine, UI-freie Logik — damit ohne Tray-Control testbar.
 /// </summary>
 /// <remarks>
-/// Die Tooltip-Texte sind bewusst kompakt gehalten (Windows-Tooltip-Limit) und
-/// werden über die Lokalisierung in der aktuellen Sprache aufgelöst.
+/// Die Tooltip-Texte sind kurz gehalten, weil Windows den Tray-Text nach 127 Zeichen
+/// abschneidet. Sie werden über die Lokalisierung in der aktuellen Sprache aufgelöst.
 /// </remarks>
 public sealed class TrayStatusPresenter
 {

@@ -64,6 +64,5 @@ if ($fehler.Count -gt 0) {
 Write-Host 'Alle READMEs nennen die aktuelle Version.' -ForegroundColor Green
 
 # Ausdrücklich, nicht implizit: Ohne eigenes 'exit' behält der Aufrufer den $LASTEXITCODE
-# des vorherigen Befehls — der Aufruf in review.ps1 lief damit trotz grüner Prüfung auf
-# einen Fehlschlag.
+# des vorherigen Befehls, und review.ps1 meldete trotz grüner Prüfung einen Fehlschlag.
 exit 0

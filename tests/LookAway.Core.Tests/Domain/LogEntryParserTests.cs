@@ -23,6 +23,22 @@ public sealed class LogEntryParserTests
         Assert.Equal("Timer gestartet", entry.Message);
     }
 
+    /// <remarks>
+    /// Seit der Laufkennung steht zwischen Stufe und Kategorie eine dritte Klammer. Die
+    /// Ansicht liest beide Formate, denn alte Tagesdateien bleiben eine Woche liegen.
+    /// </remarks>
+    [Theory]
+    [InlineData("[2026-08-11T12:00:00.000Z] [Warning] [p4711] LookAway.App: Ziel: C:\\x")]
+    [InlineData("[2026-08-11T12:00:00.000Z] [Warning] LookAway.App: Ziel: C:\\x")]
+    public void Parse_ReadsLinesWithAndWithoutRunTag(string line)
+    {
+        LogEntry entry = Assert.Single(LogEntryParser.Parse([line]));
+
+        Assert.Equal(LogLevel.Warning, entry.Level);
+        Assert.Equal("LookAway.App", entry.Category);
+        Assert.Equal("Ziel: C:\\x", entry.Message);
+    }
+
     [Fact]
     public void Parse_AppendsContinuationLinesToPrecedingEntry()
     {

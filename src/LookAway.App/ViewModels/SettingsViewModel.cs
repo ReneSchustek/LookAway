@@ -1,4 +1,3 @@
-using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LookAway.App.Services;
@@ -7,9 +6,7 @@ using LookAway.Core.Entities;
 using LookAway.Core.Enums;
 using LookAway.Core.Exceptions;
 using LookAway.Core.Interfaces;
-using LookAway.Core.Localization;
 using LookAway.Core.Services;
-using LookAway.Core.ValueObjects;
 using Microsoft.Extensions.Logging;
 
 namespace LookAway.App.ViewModels;
@@ -24,6 +21,8 @@ namespace LookAway.App.ViewModels;
 /// Sprachwechsel wirken sofort: das Setzen der Auswahl schaltet die
 /// <see cref="ILocalizationService"/>-Sprache um, woraufhin alle gebundenen Texte
 /// aktualisiert werden. "Abbrechen" stellt die zuletzt gespeicherte Sprache wieder her.
+/// Die Seiten stehen in Teilen der Klasse: Allgemein hier, Intervalle, Ton und
+/// Pausen-Aktionen, Hotkeys und Updates in eigenen Dateien.
 /// </remarks>
 internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
 {
@@ -33,8 +32,66 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
     private readonly ISoundService _soundService;
     private readonly IUpdateChecker _updateChecker;
     private readonly IUpdateInstaller _updateInstaller;
+    private readonly ISetupUpdate _setupUpdate;
     private readonly ILogger<SettingsViewModel> _logger;
     private readonly string _applicationVersion;
+
+    private Language _originalLanguage;
+    private bool _isInitializing;
+    private bool _disposed;
+
+    /// <summary>
+    /// Erzeugt das ViewModel mit seinen Abhängigkeiten.
+    /// </summary>
+    /// <param name="services">Dienste für Laden, Speichern, Autostart, Ton und Updates.</param>
+    /// <param name="sections">Die eigenständigen Bereiche des Fensters (komponiert).</param>
+    /// <param name="logger">Logger.</param>
+    /// <param name="applicationVersion">Anzuzeigende Versionsnummer (Über-Bereich).</param>
+    public SettingsViewModel(
+        SettingsServices services,
+        SettingsSections sections,
+        ILogger<SettingsViewModel> logger,
+        string applicationVersion)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        ArgumentNullException.ThrowIfNull(sections);
+        ArgumentNullException.ThrowIfNull(logger);
+        ArgumentException.ThrowIfNullOrWhiteSpace(applicationVersion);
+
+        (_settingsRepository, _autoStartCoordinator, _localization, _soundService, _updateChecker, _updateInstaller, _setupUpdate) = services;
+        (Statistics, BreakModels, Log, Tasks) = sections;
+        Texts = new SettingsTexts(_localization);
+        _logger = logger;
+        _applicationVersion = applicationVersion;
+
+        // Die Kachel-Auswahl und das Auswahlfeld führen dieselbe Einstellung. Damit
+        // es dabei nur eine Wahrheit gibt, meldet die Liste ihre Wahl hierher und
+        // bekommt umgekehrt die Marke gesetzt, wenn sie anderswo umgestellt wird.
+        BreakModels.ModelSelected += OnBreakModelSelected;
+
+        InitializeBindings();
+        _localization.LanguageChanged += OnLanguageChanged;
+    }
+
+    // Startwerte der gebundenen Eigenschaften und die Auswahllisten; partielle Properties
+    // erlauben keine Feld-Initialisierer.
+    private void InitializeBindings()
+    {
+        BreakOverlayColor = Settings.DefaultBreakOverlayColor;
+        BreakOverlayImageDimPercent = Settings.DefaultOverlayImageDimPercent;
+        UpdateStatusText = string.Empty;
+        BuildAllOptions();
+    }
+
+    /// <summary>Wird ausgelöst, wenn das Fenster geschlossen werden soll.</summary>
+    public event EventHandler? CloseRequested;
+
+    /// <summary>
+    /// Wird nach erfolgreichem Speichern/Anwenden mit den gültigen Einstellungen
+    /// ausgelöst, damit laufende Dienste (Timer, Idle-/Vollbild-Erkennung) sie
+    /// sofort übernehmen können.
+    /// </summary>
+    public event EventHandler<SettingsAppliedEventArgs>? SettingsApplied;
 
     /// <summary>
     /// Die Beschriftungen des Fensters, als eigenes Objekt komponiert.
@@ -57,10 +114,6 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Aufgabenliste mit Suche und Filter, als eigenes ViewModel komponiert.</summary>
     public WorkTaskListViewModel Tasks { get; }
 
-    private Language _originalLanguage;
-    private bool _isInitializing;
-    private bool _disposed;
-
     [ObservableProperty]
     public partial SettingsOption<Language>? SelectedLanguageOption { get; set; }
 
@@ -72,15 +125,6 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     public partial bool AutoStart { get; set; }
-
-    [ObservableProperty]
-    public partial bool UseCustomDurations { get; set; }
-
-    [ObservableProperty]
-    public partial int WorkMinutes { get; set; }
-
-    [ObservableProperty]
-    public partial int BreakMinutes { get; set; }
 
     [ObservableProperty]
     public partial bool PauseOnIdle { get; set; }
@@ -97,142 +141,6 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     public partial int AutoStartBreakSeconds { get; set; }
 
-    [ObservableProperty]
-    public partial string? WorkError { get; set; }
-
-    [ObservableProperty]
-    public partial string? BreakError { get; set; }
-
-    [ObservableProperty]
-    public partial bool SoundEnabled { get; set; }
-
-    [ObservableProperty]
-    public partial SettingsOption<SoundType>? SelectedSoundOption { get; set; }
-
-    [ObservableProperty]
-    public partial int SoundVolume { get; set; }
-
-    [ObservableProperty]
-    public partial bool HotkeysEnabled { get; set; }
-
-    [ObservableProperty]
-    public partial bool DimScreenDuringBreak { get; set; }
-
-    [ObservableProperty]
-    public partial int DimBrightnessPercent { get; set; }
-
-    [ObservableProperty]
-    public partial bool PauseMediaDuringBreak { get; set; }
-
-    [ObservableProperty]
-    public partial bool ResumeMediaAfterBreak { get; set; }
-
-    [ObservableProperty]
-    public partial bool DarkenAllScreens { get; set; }
-
-    [ObservableProperty]
-    public partial string BreakOverlayColor { get; set; }
-
-    /// <summary>
-    /// Erzeugt das ViewModel mit seinen Abhängigkeiten.
-    /// </summary>
-    /// <param name="settingsRepository">Persistenz der Einstellungen.</param>
-    /// <param name="autoStartCoordinator">Hält Einstellung und Registry synchron.</param>
-    /// <param name="localization">Liefert Texte und steuert den Sprachwechsel.</param>
-    /// <param name="soundService">Spielt den Erinnerungston für die Vorschau.</param>
-    /// <param name="updateChecker">Prüft auf Updates.</param>
-    /// <param name="updateInstaller">Lädt und stellt ein gefundenes Update bereit (Ein-Klick-Installation).</param>
-    /// <param name="sections">Die eigenständigen Bereiche des Fensters (komponiert).</param>
-    /// <param name="logger">Logger.</param>
-    /// <param name="applicationVersion">Anzuzeigende Versionsnummer (Über-Bereich).</param>
-    public SettingsViewModel(
-        ISettingsRepository settingsRepository,
-        AutoStartCoordinator autoStartCoordinator,
-        ILocalizationService localization,
-        ISoundService soundService,
-        IUpdateChecker updateChecker,
-        IUpdateInstaller updateInstaller,
-        SettingsSections sections,
-        ILogger<SettingsViewModel> logger,
-        string applicationVersion)
-    {
-        ArgumentNullException.ThrowIfNull(settingsRepository);
-        ArgumentNullException.ThrowIfNull(autoStartCoordinator);
-        ArgumentNullException.ThrowIfNull(localization);
-        ArgumentNullException.ThrowIfNull(soundService);
-        ArgumentNullException.ThrowIfNull(updateChecker);
-        ArgumentNullException.ThrowIfNull(updateInstaller);
-        ArgumentNullException.ThrowIfNull(sections);
-        ArgumentNullException.ThrowIfNull(logger);
-        ArgumentException.ThrowIfNullOrWhiteSpace(applicationVersion);
-
-        _settingsRepository = settingsRepository;
-        _autoStartCoordinator = autoStartCoordinator;
-        _localization = localization;
-        _soundService = soundService;
-        _updateChecker = updateChecker;
-        _updateInstaller = updateInstaller;
-        Texts = new SettingsTexts(localization);
-        Statistics = sections.Statistics;
-        BreakModels = sections.BreakModels;
-        Log = sections.Log;
-        Tasks = sections.Tasks;
-        _logger = logger;
-        _applicationVersion = applicationVersion;
-
-        // Die Kachel-Auswahl und das Auswahlfeld führen dieselbe Einstellung. Damit
-        // es dabei nur eine Wahrheit gibt, meldet die Liste ihre Wahl hierher und
-        // bekommt umgekehrt die Marke gesetzt, wenn sie anderswo umgestellt wird.
-        BreakModels.ModelSelected += OnBreakModelSelected;
-
-        // Startwerte der gebundenen Eigenschaften; partielle Properties erlauben
-        // keine Feld-Initialisierer.
-        BreakOverlayColor = Settings.DefaultBreakOverlayColor;
-        UpdateStatusText = string.Empty;
-
-        Languages = BuildLanguageOptions();
-        Models = BuildModelOptions();
-        Sounds = BuildSoundOptions();
-        Appearances = BuildThemeOptions();
-        UpdateFrequencies = BuildFrequencyOptions();
-
-        _localization.LanguageChanged += OnLanguageChanged;
-    }
-
-    /// <summary>Wird ausgelöst, wenn das Fenster geschlossen werden soll.</summary>
-    public event EventHandler? CloseRequested;
-
-    /// <summary>
-    /// Wird nach erfolgreichem Speichern/Anwenden mit den gültigen Einstellungen
-    /// ausgelöst, damit laufende Dienste (Timer, Idle-/Vollbild-Erkennung) sie
-    /// sofort übernehmen können.
-    /// </summary>
-    public event EventHandler<SettingsAppliedEventArgs>? SettingsApplied;
-
-    /// <summary>Auswählbare Sprachen mit lokalisierter Beschriftung.</summary>
-    public IReadOnlyList<SettingsOption<Language>> Languages { get; }
-
-    /// <summary>Auswählbare Pausenmodelle mit lokalisierter Beschriftung.</summary>
-    public IReadOnlyList<SettingsOption<BreakModel>> Models { get; }
-
-    /// <summary>Auswählbare Erinnerungstöne mit lokalisierter Beschriftung.</summary>
-    public IReadOnlyList<SettingsOption<SoundType>> Sounds { get; }
-
-    /// <summary>Auswählbare Erscheinungsbilder mit lokalisierter Beschriftung.</summary>
-    public IReadOnlyList<SettingsOption<AppTheme>> Appearances { get; }
-
-    /// <summary>Untere Grenze der Arbeitsdauer (Minuten) für das aktive Modell.</summary>
-    public int WorkMinMinutes { get; private set; } = (int)BreakInterval.MinWorkDuration.TotalMinutes;
-
-    /// <summary>Obere Grenze der Arbeitsdauer (Minuten) für das aktive Modell.</summary>
-    public int WorkMaxMinutes { get; private set; } = (int)BreakInterval.MaxWorkDuration.TotalMinutes;
-
-    /// <summary>Untere Grenze der Pausendauer (Minuten).</summary>
-    public int BreakMinMinutes => (int)BreakInterval.MinBreakDuration.TotalMinutes;
-
-    /// <summary>Obere Grenze der Pausendauer (Minuten).</summary>
-    public int BreakMaxMinutes => (int)BreakInterval.MaxBreakDuration.TotalMinutes;
-
     /// <summary>Untere Grenze der Inaktivitätsschwelle (Minuten).</summary>
     public int IdleMinMinutes => Settings.MinIdleThresholdMinutes;
 
@@ -248,156 +156,34 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
     /// <summary>Schrittweite der Auto-Pausenstart-Verzögerung (Sekunden).</summary>
     public int AutoStartBreakStepSeconds => Settings.AutoStartBreakSecondsStep;
 
-    /// <summary>Wahr, wenn das aktive Modell die Arbeitsdauer nur in einem Bereich erlaubt.</summary>
-    public bool HasWorkRange { get; private set; }
-
     /// <summary>Das aktuell gewählte Pausenmodell.</summary>
-    public BreakModel SelectedModel => SelectedModelOption?.Value ?? BreakModel.ClassicPomodoro;
+    public BreakModel SelectedModel => SelectedModelOption?.Value ?? Settings.DefaultBreakModel;
 
     /// <summary>Die aktuell gewählte Sprache.</summary>
     public Language SelectedLanguage => SelectedLanguageOption?.Value ?? Language.German;
 
-    /// <summary>Der aktuell gewählte Erinnerungston.</summary>
-    public SoundType SelectedSound => SelectedSoundOption?.Value ?? SoundType.Chime;
-
     /// <summary>Das aktuell gewählte Erscheinungsbild.</summary>
     public AppTheme SelectedTheme => SelectedThemeOption?.Value ?? AppTheme.System;
 
-    /// <summary>Untere Grenze der Lautstärke.</summary>
-    public int SoundVolumeMin => Settings.MinSoundVolumePercent;
-
-    /// <summary>Obere Grenze der Lautstärke.</summary>
-    public int SoundVolumeMax => Settings.MaxSoundVolumePercent;
-
     /// <summary>Wahr, wenn die aktuellen Eingaben gespeichert werden dürfen.</summary>
     public bool CanPersist => WorkError is null && BreakError is null && HexColor.IsValid(BreakOverlayColor);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    /// <summary>Hinweis auf den erlaubten Arbeitsdauer-Bereich (leer, wenn unbeschränkt).</summary>
-    public string WorkRangeText => HasWorkRange
-        ? string.Format(CultureInfo.CurrentCulture, _localization.GetText(SettingsTextKeys.WorkRangeHint), WorkMinMinutes, WorkMaxMinutes)
-        : string.Empty;
-
-
-    /// <summary>Anzuzeigende Versionsnummer.</summary>
-    public string Version => _applicationVersion;
-
-
-
-
-    /// <summary>URL zur Dokumentation (für einen HyperlinkButton); <c>null</c> bei ungültigem Wert.</summary>
-    public Uri? DocsUri =>
-        Uri.TryCreate(_localization.GetText(SettingsTextKeys.DocsUrl), UriKind.Absolute, out Uri? uri) ? uri : null;
-
-
-
-    /// <summary>
-    /// Ziel des Spenden-Links. Anders als <see cref="DocsUri"/> stammt die Adresse
-    /// <b>nicht</b> aus den Sprachdateien, sondern aus einer Compile-Zeit-Konstante:
-    /// Ein zur Laufzeit austauschbares Spendenziel würde fremdes Geld umleiten.
-    /// </summary>
-    public Uri DonationUri => new(SupportDonation.PayPalUrl);
-
-    /// <summary>
-    /// Steuert die Sichtbarkeit des Spenden-Eintrags. Ohne echten Handle bleibt er
-    /// verborgen, damit nie ein toter Link auf der Seite steht.
-    /// </summary>
-    public bool IsSupportVisible => SupportDonation.IsConfigured;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    /// <summary>Untere Grenze der Pause-Helligkeit.</summary>
-    public int DimBrightnessMin => Settings.MinDimBrightnessPercent;
-
-    /// <summary>Obere Grenze der Pause-Helligkeit.</summary>
-    public int DimBrightnessMax => Settings.MaxDimBrightnessPercent;
 
     /// <summary>
     /// Lädt die persistierten Einstellungen in das ViewModel. Vor dem ersten
     /// Anzeigen aufzurufen.
     /// </summary>
     /// <param name="cancellationToken">Abbruch-Token.</param>
+    /// <returns>Der Ladevorgang samt der eigenständigen Bereiche.</returns>
     public async Task LoadAsync(CancellationToken cancellationToken = default)
     {
         _isInitializing = true;
         try
         {
             Settings settings = await _settingsRepository.LoadAsync(cancellationToken).ConfigureAwait(true);
-
-            _originalLanguage = settings.Language;
-            _localization.SetLanguage(settings.Language);
-            SelectLanguage(settings.Language);
-            SelectModel(settings.BreakModel);
-            SelectTheme(settings.AppTheme);
-            UpdateModelRanges(settings.BreakModel);
-
-            AutoStart = settings.AutoStart;
-            PauseOnIdle = settings.PauseOnIdle;
-            IdleThresholdMinutes = settings.IdleThresholdMinutes;
-            SuppressOnFullscreen = settings.SuppressOnFullscreen;
-            AutoStartBreakEnabled = settings.AutoStartBreakEnabled;
-            AutoStartBreakSeconds = settings.AutoStartBreakSeconds;
-
-            SoundEnabled = settings.SoundEnabled;
-            SelectSound(settings.ReminderSound);
-            SoundVolume = settings.SoundVolumePercent;
-
-            HotkeysEnabled = settings.HotkeysEnabled;
-            _hotkeyStartBreak = settings.HotkeyStartBreak;
-            _hotkeySkipOrSnooze = settings.HotkeySkipOrSnooze;
-            _hotkeyToggleDnd = settings.HotkeyToggleDnd;
-
-            UpdateCheckEnabled = settings.UpdateCheckEnabled;
-            AutoUpdate = settings.AutoUpdate;
-            SelectFrequency(settings.UpdateCheckFrequency);
-
-            DimScreenDuringBreak = settings.DimScreenDuringBreak;
-            DimBrightnessPercent = settings.DimBrightnessPercent;
-            PauseMediaDuringBreak = settings.PauseMediaDuringBreak;
-            ResumeMediaAfterBreak = settings.ResumeMediaAfterBreak;
-            DarkenAllScreens = settings.DarkenAllScreens;
-            // Overlay-Farbe deckend übernehmen: WinUI 3 kann einen Alpha-Anteil nicht
-            // als Durchsicht umsetzen. Eine gespeicherte halbtransparente Farbe wird
-            // deshalb auf ihr sichtbares, opakes Äquivalent umgerechnet, damit sich das
-            // Erscheinungsbild nicht ändert.
-            BreakOverlayColor = HexColor.FlattenOverWhite(settings.BreakOverlayColor);
-
+            LoadGeneral(settings);
+            LoadBreakSettings(settings);
+            LoadHotkeys(settings);
+            LoadUpdates(settings);
             LoadDurations(settings);
         }
         finally
@@ -405,12 +191,7 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
             _isInitializing = false;
         }
 
-        await Statistics.LoadAsync(cancellationToken).ConfigureAwait(true);
-        BreakModels.SetActiveModel(SelectedModel);
-        await BreakModels.LoadAsync(cancellationToken).ConfigureAwait(true);
-        await Log.LoadAsync(cancellationToken).ConfigureAwait(true);
-        await Tasks.LoadAsync(cancellationToken).ConfigureAwait(true);
-
+        await LoadSectionsAsync(cancellationToken).ConfigureAwait(true);
         Validate();
         OnPropertyChanged(string.Empty);
     }
@@ -420,35 +201,49 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
     public void SelectModel(BreakModel model)
         => SelectedModelOption = Models.First(option => option.Value == model);
 
-    /// <summary>Wählt die Sprache anhand ihres Werts (UI/Test-Hilfe).</summary>
-    /// <param name="language">Zu wählende Sprache.</param>
-    public void SelectLanguage(Language language)
-        => SelectedLanguageOption = Languages.First(option => option.Value == language);
-
-    /// <summary>Wählt den Erinnerungston anhand seines Werts (UI/Test-Hilfe).</summary>
-    /// <param name="soundType">Zu wählender Ton.</param>
-    public void SelectSound(SoundType soundType)
-        => SelectedSoundOption = Sounds.First(option => option.Value == soundType);
-
     /// <summary>Wählt das Erscheinungsbild anhand seines Werts (UI/Test-Hilfe).</summary>
     /// <param name="theme">Zu wählendes Erscheinungsbild.</param>
     public void SelectTheme(AppTheme theme)
         => SelectedThemeOption = Appearances.First(option => option.Value == theme);
 
-    private void LoadDurations(Settings settings)
+    /// <summary>Meldet den Sprachwechsel-Handler ab.</summary>
+    public void Dispose()
     {
-        if (settings.CustomDurations is { } custom)
+        if (_disposed)
         {
-            UseCustomDurations = true;
-            WorkMinutes = custom.WorkMinutes;
-            BreakMinutes = custom.BreakMinutes;
             return;
         }
 
-        UseCustomDurations = false;
-        BreakInterval defaults = BreakModelRegistry.GetDefault(settings.BreakModel);
-        WorkMinutes = (int)defaults.WorkDuration.TotalMinutes;
-        BreakMinutes = (int)defaults.BreakDuration.TotalMinutes;
+        _disposed = true;
+        EndCaptureOnDispose();
+        BreakModels.ModelSelected -= OnBreakModelSelected;
+        _localization.LanguageChanged -= OnLanguageChanged;
+    }
+
+    private void LoadGeneral(Settings settings)
+    {
+        _originalLanguage = settings.Language;
+        _localization.SetLanguage(settings.Language);
+        SelectLanguage(settings.Language);
+        SelectModel(settings.BreakModel);
+        SelectTheme(settings.AppTheme);
+        UpdateModelRanges(settings.BreakModel);
+
+        AutoStart = settings.AutoStart;
+        PauseOnIdle = settings.PauseOnIdle;
+        IdleThresholdMinutes = settings.IdleThresholdMinutes;
+        SuppressOnFullscreen = settings.SuppressOnFullscreen;
+        AutoStartBreakEnabled = settings.AutoStartBreakEnabled;
+        AutoStartBreakSeconds = settings.AutoStartBreakSeconds;
+    }
+
+    private async Task LoadSectionsAsync(CancellationToken cancellationToken)
+    {
+        await Statistics.LoadAsync(cancellationToken).ConfigureAwait(true);
+        BreakModels.SetActiveModel(SelectedModel);
+        await BreakModels.LoadAsync(cancellationToken).ConfigureAwait(true);
+        await Log.LoadAsync(cancellationToken).ConfigureAwait(true);
+        await Tasks.LoadAsync(cancellationToken).ConfigureAwait(true);
     }
 
     [RelayCommand(CanExecute = nameof(CanPersist))]
@@ -456,9 +251,6 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
 
     [RelayCommand(CanExecute = nameof(CanPersist))]
     private Task ApplyAsync() => PersistAsync(closeAfterwards: false);
-
-    [RelayCommand]
-    private void PreviewSound() => _soundService.Play(SelectedSound, SoundVolume);
 
     [RelayCommand]
     private void Cancel()
@@ -473,34 +265,11 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         await ApplyAutoStartAsync().ConfigureAwait(true);
 
         Settings settings = await _settingsRepository.LoadAsync().ConfigureAwait(true);
-        settings.Language = SelectedLanguage;
-        settings.BreakModel = SelectedModel;
-        settings.AppTheme = SelectedTheme;
-        settings.PauseOnIdle = PauseOnIdle;
-        settings.IdleThresholdMinutes = Math.Clamp(IdleThresholdMinutes, IdleMinMinutes, IdleMaxMinutes);
-        settings.SuppressOnFullscreen = SuppressOnFullscreen;
-        settings.AutoStartBreakEnabled = AutoStartBreakEnabled;
-        settings.AutoStartBreakSeconds = Math.Clamp(AutoStartBreakSeconds, AutoStartBreakMinSeconds, AutoStartBreakMaxSeconds);
-        settings.CustomDurations = UseCustomDurations
-            ? new CustomDurations { WorkMinutes = WorkMinutes, BreakMinutes = BreakMinutes }
-            : null;
-        settings.SoundEnabled = SoundEnabled;
-        settings.ReminderSound = SelectedSound;
-        settings.SoundVolumePercent = Math.Clamp(SoundVolume, SoundVolumeMin, SoundVolumeMax);
-        settings.HotkeysEnabled = HotkeysEnabled;
-        settings.HotkeyStartBreak = _hotkeyStartBreak;
-        settings.HotkeySkipOrSnooze = _hotkeySkipOrSnooze;
-        settings.HotkeyToggleDnd = _hotkeyToggleDnd;
-        settings.UpdateCheckEnabled = UpdateCheckEnabled;
-        settings.AutoUpdate = AutoUpdate;
-        settings.UpdateCheckFrequency = SelectedFrequency;
-        settings.DimScreenDuringBreak = DimScreenDuringBreak;
-        settings.DimBrightnessPercent = Math.Clamp(DimBrightnessPercent, DimBrightnessMin, DimBrightnessMax);
-        settings.PauseMediaDuringBreak = PauseMediaDuringBreak;
-        settings.ResumeMediaAfterBreak = ResumeMediaAfterBreak;
-        settings.DarkenAllScreens = DarkenAllScreens;
-        settings.BreakOverlayColor = BreakOverlayColor;
-
+        StoreGeneral(settings);
+        StoreDurations(settings);
+        StoreBreakSettings(settings);
+        StoreHotkeys(settings);
+        StoreUpdates(settings);
         await _settingsRepository.SaveAsync(settings).ConfigureAwait(true);
 
         _originalLanguage = SelectedLanguage;
@@ -510,6 +279,18 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         {
             CloseRequested?.Invoke(this, EventArgs.Empty);
         }
+    }
+
+    private void StoreGeneral(Settings settings)
+    {
+        settings.Language = SelectedLanguage;
+        settings.BreakModel = SelectedModel;
+        settings.AppTheme = SelectedTheme;
+        settings.PauseOnIdle = PauseOnIdle;
+        settings.IdleThresholdMinutes = Math.Clamp(IdleThresholdMinutes, IdleMinMinutes, IdleMaxMinutes);
+        settings.SuppressOnFullscreen = SuppressOnFullscreen;
+        settings.AutoStartBreakEnabled = AutoStartBreakEnabled;
+        settings.AutoStartBreakSeconds = Math.Clamp(AutoStartBreakSeconds, AutoStartBreakMinSeconds, AutoStartBreakMaxSeconds);
     }
 
     private async Task ApplyAutoStartAsync()
@@ -526,85 +307,7 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         }
     }
 
-    private void Validate()
-    {
-        if (!UseCustomDurations)
-        {
-            WorkError = null;
-            BreakError = null;
-            return;
-        }
-
-        WorkError = WorkMinutes < WorkMinMinutes || WorkMinutes > WorkMaxMinutes
-            ? string.Format(CultureInfo.CurrentCulture, _localization.GetText(SettingsTextKeys.ValidationWorkRange), WorkMinMinutes, WorkMaxMinutes)
-            : null;
-
-        BreakError = BreakMinutes < BreakMinMinutes || BreakMinutes > BreakMaxMinutes
-            ? string.Format(CultureInfo.CurrentCulture, _localization.GetText(SettingsTextKeys.ValidationBreakRange), BreakMinMinutes, BreakMaxMinutes)
-            : null;
-    }
-
-    private void UpdateModelRanges(BreakModel model)
-    {
-        BreakInterval defaults = BreakModelRegistry.GetDefault(model);
-        WorkDurationRange? range = BreakModelRegistry.GetWorkDurationRange(model);
-
-        HasWorkRange = range.HasValue;
-        WorkMinMinutes = range.HasValue
-            ? (int)range.Value.Min.TotalMinutes
-            : (int)BreakInterval.MinWorkDuration.TotalMinutes;
-        WorkMaxMinutes = range.HasValue
-            ? (int)range.Value.Max.TotalMinutes
-            : (int)(defaults.MaxLimit ?? BreakInterval.MaxWorkDuration).TotalMinutes;
-
-        OnPropertyChanged(nameof(WorkMinMinutes));
-        OnPropertyChanged(nameof(WorkMaxMinutes));
-        OnPropertyChanged(nameof(HasWorkRange));
-        OnPropertyChanged(nameof(WorkRangeText));
-    }
-
     private void OnBreakModelSelected(object? sender, BreakModel model) => SelectModel(model);
-
-    partial void OnSelectedModelOptionChanged(SettingsOption<BreakModel>? value)
-    {
-        if (_isInitializing || value is null)
-        {
-            return;
-        }
-
-        BreakModels.SetActiveModel(value.Value);
-        UpdateModelRanges(value.Value);
-
-        // Bei Modellwechsel die Dauern auf die Modell-Vorgaben zurücksetzen,
-        // damit zuvor eingegebene Werte nicht außerhalb des neuen Bereichs liegen.
-        BreakInterval defaults = BreakModelRegistry.GetDefault(value.Value);
-        WorkMinutes = (int)defaults.WorkDuration.TotalMinutes;
-        BreakMinutes = (int)defaults.BreakDuration.TotalMinutes;
-
-        Validate();
-    }
-
-    partial void OnSelectedLanguageOptionChanged(SettingsOption<Language>? value)
-    {
-        if (_isInitializing || value is null)
-        {
-            return;
-        }
-
-        _localization.SetLanguage(value.Value);
-    }
-
-    partial void OnUseCustomDurationsChanged(bool value) => Validate();
-
-    partial void OnWorkMinutesChanged(int value) => Validate();
-
-    partial void OnBreakMinutesChanged(int value) => Validate();
-
-    partial void OnWorkErrorChanged(string? value) => NotifyPersistCommands();
-
-    partial void OnBreakErrorChanged(string? value) => NotifyPersistCommands();
-
-    partial void OnBreakOverlayColorChanged(string value) => NotifyPersistCommands();
 
     private void NotifyPersistCommands()
     {
@@ -613,88 +316,6 @@ internal sealed partial class SettingsViewModel : ObservableObject, IDisposable
         ApplyCommand.NotifyCanExecuteChanged();
     }
 
-    private void OnLanguageChanged(object? sender, EventArgs e)
-    {
-        foreach (SettingsOption<Language> option in Languages)
-        {
-            option.RefreshLabel();
-        }
-
-        foreach (SettingsOption<BreakModel> option in Models)
-        {
-            option.RefreshLabel();
-        }
-
-        foreach (SettingsOption<SoundType> option in Sounds)
-        {
-            option.RefreshLabel();
-        }
-
-        foreach (SettingsOption<UpdateCheckFrequency> option in UpdateFrequencies)
-        {
-            option.RefreshLabel();
-        }
-
-        foreach (SettingsOption<AppTheme> option in Appearances)
-        {
-            option.RefreshLabel();
-        }
-
-        // Fehlertexte in neuer Sprache, danach alle gebundenen Texte aktualisieren.
-        Validate();
-        Texts.Refresh();
-        Statistics.RefreshTexts();
-        Log.RefreshTexts();
-
-        // Die Modell-Kacheln tragen übersetzte Namen und Sätze; sie werden neu
-        // aufgebaut, statt nur die Bindungen anzustoßen. Die Aufgaben ebenso.
-        _ = BreakModels.RefreshTextsAsync();
-        _ = Tasks.RefreshTextsAsync();
-
-        OnPropertyChanged(string.Empty);
-    }
-
-    private List<SettingsOption<Language>> BuildLanguageOptions()
-        => Enum.GetValues<Language>()
-            .Select(language => new SettingsOption<Language>(
-                language,
-                () => _localization.GetText(SettingsTextKeys.ForLanguage(language))))
-            .ToList();
-
-    private List<SettingsOption<BreakModel>> BuildModelOptions()
-        => Enum.GetValues<BreakModel>()
-            .Select(model => new SettingsOption<BreakModel>(
-                model,
-                () => _localization.GetText(SettingsTextKeys.ForModel(model))))
-            .ToList();
-
-    private List<SettingsOption<SoundType>> BuildSoundOptions()
-        => Enum.GetValues<SoundType>()
-            .Select(sound => new SettingsOption<SoundType>(
-                sound,
-                () => _localization.GetText(SettingsTextKeys.ForSound(sound))))
-            .ToList();
-
-    private List<SettingsOption<AppTheme>> BuildThemeOptions()
-        => Enum.GetValues<AppTheme>()
-            .Select(theme => new SettingsOption<AppTheme>(
-                theme,
-                () => _localization.GetText(SettingsTextKeys.ForTheme(theme))))
-            .ToList();
-
-    /// <summary>Meldet den Sprachwechsel-Handler ab.</summary>
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-        EndCaptureOnDispose();
-        BreakModels.ModelSelected -= OnBreakModelSelected;
-        _localization.LanguageChanged -= OnLanguageChanged;
-    }
 }
 
 /// <summary>
@@ -707,4 +328,10 @@ internal static partial class SettingsViewModelLog
         Level = LogLevel.Warning,
         Message = "Autostart konnte nicht angewendet werden — übrige Einstellungen wurden trotzdem gespeichert.")]
     public static partial void AutoStartApplyFailed(ILogger logger, Exception exception);
+
+    [LoggerMessage(
+        EventId = 1201,
+        Level = LogLevel.Warning,
+        Message = "Der Dateidialog für das Overlay-Bild ist gescheitert; die Bildwahl bleibt unverändert.")]
+    public static partial void OverlayImagePickFailed(ILogger logger, Exception exception);
 }

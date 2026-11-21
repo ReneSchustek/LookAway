@@ -22,6 +22,8 @@ internal static class SafeArchiveExtractor
     private const long MaxExtractedBytes = 1024L * 1024 * 1024;
     private const int MaxEntries = 20_000;
 
+    // Die Puffergröße von Stream.CopyTo; sie bleibt knapp unter der Grenze, ab der ein
+    // Array auf dem Large Object Heap landet.
     private const int CopyBufferSize = 81920;
 
     /// <summary>
@@ -51,33 +53,40 @@ internal static class SafeArchiveExtractor
         long totalWritten = 0;
         foreach (ZipArchiveEntry entry in archive.Entries)
         {
-            string targetPath = Path.GetFullPath(Path.Combine(destinationDir, entry.FullName));
-            if (!targetPath.StartsWith(destinationFull, StringComparison.Ordinal))
-            {
-                throw new InvalidDataException($"Unsicherer ZIP-Eintrag (Pfadverlassen): {entry.FullName}");
-            }
-
-            // Verzeichniseintrag (endet auf '/').
-            if (entry.FullName.EndsWith('/') || entry.FullName.EndsWith('\\'))
-            {
-                _ = Directory.CreateDirectory(targetPath);
-                continue;
-            }
-
-            // Die Portable-Markierung des Pakets nie in den Staging-Ordner übernehmen:
-            // Der Helfer startet von dort und würde sich sonst für eine portable
-            // Installation halten — er läse seine Einstellungen aus dem Staging-Ordner
-            // statt aus dem Datenverzeichnis der laufenden Installation, fände dort den
-            // vermerkten Datei-Hash nicht und lehnte das eigene Update ab.
-            if (string.Equals(entry.FullName, AppPaths.PortableFlagFileName, StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            _ = Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
-
-            totalWritten = CopyEntry(entry, targetPath, totalWritten);
+            totalWritten = ExtractEntry(entry, destinationDir, destinationFull, totalWritten);
         }
+    }
+
+    // Entpackt einen Eintrag und liefert die neue Summe der geschriebenen Bytes. Ein Eintrag, der
+    // aus dem Zielverzeichnis herausführt, bricht das ganze Entpacken ab.
+    private static long ExtractEntry(ZipArchiveEntry entry, string destinationDir, string destinationFull, long totalWritten)
+    {
+        string targetPath = Path.GetFullPath(Path.Combine(destinationDir, entry.FullName));
+        if (!targetPath.StartsWith(destinationFull, StringComparison.Ordinal))
+        {
+            throw new InvalidDataException($"Unsicherer ZIP-Eintrag (Pfadverlassen): {entry.FullName}");
+        }
+
+        // Verzeichniseintrag (endet auf '/').
+        if (entry.FullName.EndsWith('/') || entry.FullName.EndsWith('\\'))
+        {
+            _ = Directory.CreateDirectory(targetPath);
+            return totalWritten;
+        }
+
+        // Die Portable-Markierung des Pakets nie in den Staging-Ordner übernehmen:
+        // Der Helfer startet von dort und würde sich sonst für eine portable
+        // Installation halten — er läse seine Einstellungen aus dem Staging-Ordner
+        // statt aus dem Datenverzeichnis der laufenden Installation, fände dort den
+        // vermerkten Datei-Hash nicht und lehnte das eigene Update ab.
+        if (string.Equals(entry.FullName, AppPaths.PortableFlagFileName, StringComparison.OrdinalIgnoreCase))
+        {
+            return totalWritten;
+        }
+
+        _ = Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!); // ein voller Dateipfad unter dem Ziel hat immer einen Ordner
+
+        return CopyEntry(entry, targetPath, totalWritten);
     }
 
     /// <remarks>

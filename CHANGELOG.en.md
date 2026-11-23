@@ -8,6 +8,13 @@ and versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.5.1] – 2026-11-23
+
+### Changed
+
+- **Up-to-date .NET components.** The Microsoft libraries for services, logging, network access and
+  system events are on the latest 10.0.15. Behaviour is unchanged.
+
 ## [1.5.0] – 2026-11-21
 
 ### Added
@@ -381,7 +388,8 @@ First complete version.
 - Autostart with Windows via the per-user Run entry
 - Distribution as a portable ZIP and an MSIX package
 
-[Unreleased]: https://github.com/ReneSchustek/LookAway/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/ReneSchustek/LookAway/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/ReneSchustek/LookAway/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/ReneSchustek/LookAway/compare/v1.4.1...v1.5.0
 [1.4.1]: https://github.com/ReneSchustek/LookAway/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/ReneSchustek/LookAway/compare/v1.3.0...v1.4.0

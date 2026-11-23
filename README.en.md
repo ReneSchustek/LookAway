@@ -20,7 +20,7 @@ eyes, posture and focus.
 
 ## Latest release
 
-**[v1.5.0](https://github.com/ReneSchustek/LookAway/releases/latest)** is the current version –
+**[v1.5.1](https://github.com/ReneSchustek/LookAway/releases/latest)** is the current version –
 available as a Setup.exe and as a portable ZIP. Highlights of the most recent versions:
 
 - **Your own picture for the break** – instead of the colour, the break screen can show a photo of
@@ -216,6 +216,18 @@ The version history is in [`CHANGELOG.md`](CHANGELOG.md).
 
 Architecture, build, tests and the internal details are described in
 [`docs/DEVELOPMENT.en.md`](docs/DEVELOPMENT.en.md).
+
+## Continuing development
+
+The project has been complete since 23 November 2026: there are no open tasks, version 1.5.1 is
+released, and installed copies update themselves from the GitHub Releases. To change it, reopen it:
+
+1. Clone the repository and run `dotnet build LookAway.slnx`; run the tests with `dotnet test`.
+2. Start it with `dotnet run --project src/LookAway.App`. Quit an installed LookAway instance first:
+   only one instance runs per user, and with autostart switched on every start writes
+   its own path into it; start the installed version once afterwards.
+3. Everything else (architecture, release, signature, measurements) is in
+   [`docs/DEVELOPMENT.en.md`](docs/DEVELOPMENT.en.md), the history in [`CHANGELOG.en.md`](CHANGELOG.en.md).
 
 ## License
 

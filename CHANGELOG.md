@@ -8,6 +8,13 @@ die Versionierung an [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unveröffentlicht]
 
+## [1.5.1] – 2026-11-23
+
+### Geändert
+
+- **Aktuelle .NET-Bausteine.** Die Microsoft-Bibliotheken für Dienste, Protokoll, Netzzugriff und
+  Systemereignisse stehen auf dem neuesten Stand 10.0.15. Am Verhalten ändert sich nichts.
+
 ## [1.5.0] – 2026-11-21
 
 ### Hinzugefügt
@@ -395,7 +402,8 @@ Erste vollständige Version.
 - Autostart mit Windows über den benutzerspezifischen Run-Eintrag
 - Distribution als portable ZIP und MSIX-Paket
 
-[Unveröffentlicht]: https://github.com/ReneSchustek/LookAway/compare/v1.5.0...HEAD
+[Unveröffentlicht]: https://github.com/ReneSchustek/LookAway/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/ReneSchustek/LookAway/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/ReneSchustek/LookAway/compare/v1.4.1...v1.5.0
 [1.4.1]: https://github.com/ReneSchustek/LookAway/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/ReneSchustek/LookAway/compare/v1.3.0...v1.4.0

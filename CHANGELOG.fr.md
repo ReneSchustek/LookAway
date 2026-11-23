@@ -8,6 +8,14 @@ et la gestion des versions suit [Semantic Versioning](https://semver.org/lang/fr
 
 ## [Non publié]
 
+## [1.5.1] – 2026-11-23
+
+### Modifié
+
+- **Composants .NET à jour.** Les bibliothèques Microsoft pour les services, la journalisation,
+  l'accès réseau et les événements système sont à la dernière version 10.0.15. Le comportement ne
+  change pas.
+
 ## [1.5.0] – 2026-11-21
 
 ### Ajouté
@@ -410,7 +418,8 @@ Première version complète.
 - Démarrage automatique avec Windows via l'entrée Run propre à l'utilisateur
 - Distribution sous forme de ZIP portable et de paquet MSIX
 
-[Non publié]: https://github.com/ReneSchustek/LookAway/compare/v1.5.0...HEAD
+[Non publié]: https://github.com/ReneSchustek/LookAway/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/ReneSchustek/LookAway/compare/v1.5.0...v1.5.1
 [1.5.0]: https://github.com/ReneSchustek/LookAway/compare/v1.4.1...v1.5.0
 [1.4.1]: https://github.com/ReneSchustek/LookAway/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/ReneSchustek/LookAway/compare/v1.3.0...v1.4.0

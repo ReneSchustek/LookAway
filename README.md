@@ -20,7 +20,7 @@ arbeiten und dabei Augen, Haltung und Konzentration schonen möchten.
 
 ## Aktuelles Release
 
-**[v1.5.0](https://github.com/ReneSchustek/LookAway/releases/latest)** ist die aktuelle Version,
+**[v1.5.1](https://github.com/ReneSchustek/LookAway/releases/latest)** ist die aktuelle Version,
 zu haben als Setup.exe und als portable ZIP. Das hat sich zuletzt getan:
 
 - **Eigenes Bild für die Pause:** Statt der Farbe zeigt der Pausen-Bildschirm auf Wunsch ein eigenes
@@ -222,6 +222,19 @@ Die Versionshistorie steht in [`CHANGELOG.md`](CHANGELOG.md).
 
 Architektur, Build, Tests und die internen Details sind in [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)
 beschrieben.
+
+## Weiterarbeiten
+
+Das Projekt ist seit dem 23.11.2026 abgeschlossen: Es gibt keine offenen Aufgaben, die Fassung 1.5.1
+ist veröffentlicht, und installierte Kopien aktualisieren sich über die GitHub Releases. Für
+Änderungen wird es wieder geöffnet:
+
+1. Das Repository klonen und `dotnet build LookAway.slnx` ausführen; die Tests mit `dotnet test`.
+2. Starten mit `dotnet run --project src/LookAway.App`. Eine installierte LookAway-Instanz vorher
+   beenden: Es läuft immer nur eine Instanz je Benutzer, und ist der Autostart eingeschaltet, trägt
+   jeder Start seinen eigenen Pfad ein; danach die installierte Fassung einmal starten.
+3. Alles Weitere (Aufbau, Release, Signatur, Messungen) steht in
+   [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md), der Verlauf in [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Lizenz
 

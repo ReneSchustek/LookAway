@@ -21,7 +21,7 @@ et leur concentration.
 
 ## Version actuelle
 
-**[v1.5.0](https://github.com/ReneSchustek/LookAway/releases/latest)** est la version actuelle –
+**[v1.5.1](https://github.com/ReneSchustek/LookAway/releases/latest)** est la version actuelle –
 disponible en Setup.exe et en ZIP portable. Points forts des versions les plus récentes :
 
 - **Votre propre image pour la pause** – au lieu de la couleur, l'écran de pause peut afficher la
@@ -229,6 +229,19 @@ L'historique des versions est dans [`CHANGELOG.md`](CHANGELOG.md).
 
 L'architecture, la compilation, les tests et les détails internes sont décrits dans
 [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md).
+
+## Reprendre le développement
+
+Le projet est terminé depuis le 23 novembre 2026 : aucune tâche n'est ouverte, la version 1.5.1 est
+publiée et les copies installées se mettent à jour depuis les GitHub Releases. Pour le modifier, on
+le rouvre :
+
+1. Cloner le dépôt et lancer `dotnet build LookAway.slnx` ; les tests avec `dotnet test`.
+2. Démarrer avec `dotnet run --project src/LookAway.App`. Quitter d'abord une instance installée de
+   LookAway : une seule instance tourne par utilisateur, et si le démarrage automatique est activé,
+   chaque démarrage y inscrit son propre chemin ; relancer ensuite une fois la version installée.
+3. Tout le reste (architecture, publication, signature, mesures) se trouve dans
+   [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md), l'historique dans [`CHANGELOG.fr.md`](CHANGELOG.fr.md).
 
 ## Licence
 
